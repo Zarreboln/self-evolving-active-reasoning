@@ -2,7 +2,7 @@
 ### Self-improving information acquisition for active reasoning
 
 MAS.S62 *Self-Evolving AI* (Fall 2026) course project.
-**Zining Liu** (ziningl@mit.edu) · **Yang Zi Sun** — Massachusetts Institute of Technology
+**Zining Liu** (ziningl@mit.edu) — Massachusetts Institute of Technology
 
 ## The question
 
@@ -44,17 +44,17 @@ Measured on the 1000 released episodes: weights lie strictly on the grid {0.0 �
 is underdetermined by design — which is why the benchmark scores the *rank* of the recommended
 film rather than recovery of the weights.
 
-## Two ideas, one implementation
+## One idea, two layers
 
-Both evolve one artifact: a small set of written rules, `When [condition], [action]`, deciding
+Both layers act on one artifact: a small set of written rules, `When [condition], [action]`, deciding
 whether the next turn is spent on another question, which question, and what to do once
 questioning has stopped paying. Rules are proposed, scored by accuracy bought per question
 asked, and kept or retired. No model weights change.
 
-| | | lead |
-|---|---|---|
-| **Idea 1** | Derive a task's instantiation from outcomes — what counts as the hypothesis set, how refinement is measured, how many flat steps to tolerate, what to do on a stall | Sun |
-| **Idea 2** | A shared layer mapping a task's signature to a starting instantiation, plus an exact error decomposition: *did not ask well* vs *had the answer and did not use it* | Liu |
+| | |
+|---|---|
+| **Task-specific layer** | Derive a task's instantiation from outcomes — what counts as the hypothesis set, how refinement is measured, how many flat steps to tolerate, what to do on a stall |
+| **General layer** | A mapping from a task's signature to a starting instantiation, plus an exact error decomposition: *did not ask well* vs *had the answer and did not use it* |
 
 The decomposition is the point. Given the constraints collected in an episode, the
 best-supported recommendation is computable. The gap to the agent's choice is error from not

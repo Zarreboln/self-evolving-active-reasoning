@@ -1,5 +1,5 @@
-# When Questions Stop Paying
-### A self-evolving policy for active reasoning
+# Self-Evolving Questioning Policies
+### for active reasoning of LLM agents
 
 MAS.S62 *Self-Evolving AI* (Fall 2026) course project.
 **Zining Liu** (ziningl@mit.edu) — Massachusetts Institute of Technology

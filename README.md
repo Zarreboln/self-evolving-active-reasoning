@@ -1,14 +1,15 @@
-# Evolving the Question
-### Self-improving information acquisition for active reasoning
+# When Questions Stop Paying
+### A self-evolving policy for active reasoning
 
 MAS.S62 *Self-Evolving AI* (Fall 2026) course project.
 **Zining Liu** (ziningl@mit.edu) — Massachusetts Institute of Technology
 
 ## The question
 
-Active reasoning asks an agent to acquire the information a problem withholds, one question at
-a time. The dominant failure is not a wrong final answer but a stalled one: the agent keeps
-interacting while its questions stop narrowing what the answer could be.
+A question that buys nothing still costs a turn. Active reasoning asks an agent to acquire the
+information a problem withholds, one question at a time, and its dominant failure is not a wrong
+final answer but a stalled one: the agent keeps interacting while its questions stop narrowing
+what the answer could be.
 
 The strongest current remedy, **T3** ([arXiv:2510.12264](https://arxiv.org/abs/2510.12264),
 ICLR 2026), detects that stall and truncates the training trajectory. Three things about it

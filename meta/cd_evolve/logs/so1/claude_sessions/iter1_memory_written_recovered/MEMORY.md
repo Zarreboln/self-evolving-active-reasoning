@@ -1,0 +1,2 @@
+- [CD context budget and mock limits](cd-evolve-context-and-mocks.md) — prompt cap 11,088 (open1) / 15,184 (so1); ~0.55 tok/char; follow/sequential mock blind spots
+- [CD candidate evaluation order](cd-evolve-eval-order.md) — pending_eval order changes the incumbent for the cost rule; list the expensive candidate first

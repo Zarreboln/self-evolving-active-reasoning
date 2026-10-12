@@ -1,0 +1,15 @@
+---
+name: cd-evolve-eval-order
+description: "Order of candidates in pending_eval.json changes admissibility: each is judged against the incumbent at that moment, including siblings admitted earlier in the same iteration"
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: af7d714c-c2e2-446c-a5b5-108e27c4efdd
+  modified: 2026-10-11T02:09:55.634Z
+---
+
+evolve.py benchmarks the candidates in the order of pending_eval.json. Each one's cost rule (dC <= 0.1 + 2*dS, or a >= 5% token saving inside the noise band) is computed against whatever `_best` is at that moment. A sibling admitted earlier in the same iteration can be that `_best`. The floor S* is the max uniq@end over all evaluated candidates, admitted or not. `_best` changes only on strictly higher (uniq, exact).
+
+**Why:** if a cheap sibling with a higher (uniq, exact) is evaluated first, a more expensive candidate is then priced against it. It can be rejected on cost even with a large gain over the original frontier. Learned in so1 iteration 1 (2026-10-10), where veto_determined (~95k tokens/episode, est.) was ordered ahead of veto_only (~56k) and answer_grid (~40k).
+
+**How to apply:** list the most expensive candidate first. Estimate tokens per episode from the frontier's traces before ordering. Related: [[cd-evolve-context-and-mocks]].

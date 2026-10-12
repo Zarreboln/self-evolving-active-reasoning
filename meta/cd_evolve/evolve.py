@@ -271,11 +271,13 @@ def critic_llm(name, cand, regime):
                                   src=src[:12000], parent=parent, parent_src=parent_src[:6000])
     os.environ.pop("CLAUDECODE", None)
     saved = os.environ.pop("ANTHROPIC_API_KEY", None)
+    _isolate_memory(f"critic_{name}")
     res = claude_wrapper.run(prompt=prompt, model="opus", allowed_tools=None, cwd=str(WS),
                              log_dir=str(RUN / "critic_sessions"), name=f"critic_{name}",
                              timeout_seconds=600, effort="medium")
     if saved:
         os.environ["ANTHROPIC_API_KEY"] = saved
+    _archive_memory(f"critic_{name}")
     text = (getattr(res, "final_text", None) or getattr(res, "result", None)
             or getattr(res, "text", None) or "")
     m = re.search(r"\{.*\}", text, re.S)
@@ -427,6 +429,34 @@ def render_task_prompt(iteration, regime):
             f"- Write pending_eval.json to: `logs/{RUN.name}/pending_eval.json`\n")
 
 
+def _claude_memory_dir():
+    """Claude Code keeps an auto-memory directory per working directory. A proposer session
+    must see nothing but the workspace, so that directory is emptied before each session and
+    whatever the session wrote is archived with the session log afterwards."""
+    slug = "-" + str(WS).strip("/").replace("/", "-")
+    return Path.home() / ".claude" / "projects" / slug / "memory"
+
+
+def _isolate_memory(tag):
+    mem = _claude_memory_dir()
+    if mem.exists() and any(mem.iterdir()):
+        dst = RUN / "claude_sessions" / f"{tag}_memory_before"
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in mem.iterdir():
+            shutil.move(str(f), str(dst / f.name))
+        log(f"  moved pre-existing proposer memory ({len(list(dst.iterdir()))} files) to {dst.name}")
+
+
+def _archive_memory(tag):
+    mem = _claude_memory_dir()
+    if mem.exists() and any(mem.iterdir()):
+        dst = RUN / "claude_sessions" / f"{tag}_memory_written"
+        dst.mkdir(parents=True, exist_ok=True)
+        for f in mem.iterdir():
+            shutil.move(str(f), str(dst / f.name))
+        log(f"  session {tag} wrote {len(list(dst.iterdir()))} memory file(s); archived to {dst.name}")
+
+
 def propose(iteration, regime, timeout):
     if STUB_PROPOSER:   # loop plumbing test: three renamed copies of seed harnesses
         cands = []
@@ -443,6 +473,7 @@ def propose(iteration, regime, timeout):
     pending = RUN / "pending_eval.json"
     if pending.exists():
         pending.unlink()
+    _isolate_memory(f"iter{iteration}")
     res = claude_wrapper.run(
         prompt=render_task_prompt(iteration, regime), model="opus",
         allowed_tools=PROPOSER_TOOLS, skills=[str(WS / ".claude/skills/meta-harness-cd")],
@@ -450,6 +481,7 @@ def propose(iteration, regime, timeout):
         timeout_seconds=timeout, effort="max")
     if saved:
         os.environ["ANTHROPIC_API_KEY"] = saved
+    _archive_memory(f"iter{iteration}")
     if res.exit_code != 0:
         log(f"  proposer exit={res.exit_code} {res.stderr[:300] if res.stderr else ''}")
     try:
@@ -493,6 +525,10 @@ def iterate(iteration, regime, args):
         return False
     log(f"  proposed {len(cands)} in {t_prop:.0f}s: " + ", ".join(c["name"] for c in cands))
     delta = noise_delta()
+    fr0 = frontier()
+    inc0 = fr0["candidates"].get((fr0.get("_best") or {}).get("agent")) if fr0.get("_best") else None
+    s_star0 = (fr0.get("_best") or {}).get("uniq", 0.0)   # S*: best ACCEPTED score so far (RRSI)
+    scored = []                                            # (cand, s, row) judged against inc0
     for c in cands:
         err = validate(c, regime)
         if err:
@@ -521,24 +557,31 @@ def iterate(iteration, regime, args):
             log(f"  {c['name']}: {100*s['err']:.0f}% errored episodes -> invalid")
             append_summary(summary_row(iteration, c, s, best_before, regime, status="too_many_errors"))
             continue
-        fr = frontier()
-        inc = fr["candidates"].get((fr.get("_best") or {}).get("agent")) if fr.get("_best") else None
-        s_star = max([e["uniq"] for e in fr["candidates"].values()] + [0.0])
-        ok, why, dS, dC = admissible(s, inc, s_star, delta)
+        ok, why, dS, dC = admissible(s, inc0, s_star0, delta)
         row = summary_row(iteration, c, s, best_before, regime,
                           timing={"propose": round(t_prop), "bench": round(time.time() - t1)})
         row.update({"admissible": ok, "selection": why, "delta_S": round(dS, 4), "delta_C": round(dC, 4),
                     "noise_delta": delta})
-        if ok:
-            update_frontier(c["name"], s, iteration)
-        else:
-            fr["candidates"][c["name"]] = {"uniq": s["uniq"], "exact": s["exact"], "eff": s["eff"],
-                                           "cost": (s["tok_in"] or 0) + (s["tok_out"] or 0),
-                                           "iteration": iteration, "admissible": False}
-            (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
-        append_summary(row)
+        scored.append((c, s, row, ok))
         log("  " + "\n  ".join(txt.strip().splitlines()[-2:]))
         log(f"  selection[{c['name']}]: {'ADMISSIBLE' if ok else 'not admissible'} -- {why}")
+    # round winner: the admissible candidate with the highest uniq@end (ties: exact); siblings
+    # never price each other, and only the winner becomes the incumbent
+    adm = [(c, s, row) for c, s, row, ok in scored if ok]
+    winner = max(adm, key=lambda t: (t[1]["uniq"], t[1]["exact"]), default=None)
+    fr = frontier()
+    for c, s, row, ok in scored:
+        is_winner = winner is not None and c["name"] == winner[0]["name"]
+        row["round_winner"] = is_winner
+        if is_winner:
+            update_frontier(c["name"], s, iteration)
+        else:
+            fr = frontier()
+            fr["candidates"][c["name"]] = {"uniq": s["uniq"], "exact": s["exact"], "eff": s["eff"],
+                                           "cost": (s["tok_in"] or 0) + (s["tok_out"] or 0),
+                                           "iteration": iteration, "admissible": ok}
+            (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
+        append_summary(row)
     best_after = (frontier().get("_best") or {})
     log(f"  iteration {iteration} done in {time.time()-t_iter:.0f}s; frontier now "
         f"{best_after.get('agent')} @ {100*best_after.get('uniq', 0):.1f}%")

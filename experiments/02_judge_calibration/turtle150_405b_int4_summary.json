@@ -1,0 +1,30 @@
+{
+ "model": "meta-llama/Llama-3.1-405B-Instruct-INT4 (hugging-quants AWQ-INT4, vLLM PP=2 on 2xH200)",
+ "sample": "TurtleBench en, 150 cases, seed 7, 0-shot (runner/turtle_judge_eval.py)",
+ "accuracy": 0.82,
+ "n": 150,
+ "unparsed": 0,
+ "pred_dist": {
+  "Incorrect": 87,
+  "Correct": 54,
+  "Unknown": 9
+ },
+ "recall": {
+  "Correct": "46/55",
+  "Incorrect": "71/76",
+  "Unknown": "6/19"
+ },
+ "reference_same_sample": {
+  "Opus 5": 0.88,
+  "Llama-3.1-405B bf16 0-shot (archived)": 0.827,
+  "Llama-3.1-70B 2-shot (archived)": 0.74,
+  "GPT-4o 2-shot (archived)": 0.633,
+  "Qwen2.5-7B-Instruct": 0.505
+ },
+ "per_item_file": "cluster: ~/results/ar_harness/judge/turtle150_405b_int4.json",
+ "stop_token_ids": [
+  128001,
+  128008,
+  128009
+ ]
+}

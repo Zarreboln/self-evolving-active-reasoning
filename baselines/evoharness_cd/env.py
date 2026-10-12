@@ -123,14 +123,14 @@ class CircuitDecodingEnv:
             bits = cand[-1] if cand else ""
         guess = np.array([int(ch) for ch in bits], dtype=np.uint8) if len(bits) == C << K else None
         won = guess is not None and bool((guess == self.truth).all())
-        ckt = 0.0
+        circuit_wise = 0.0
         if guess is not None:
-            ckt = sum(int((guess[i * 8:(i + 1) * 8] == self.truth[i * 8:(i + 1) * 8]).all()) for i in range(C)) / C
+            circuit_wise = sum(int((guess[i * 8:(i + 1) * 8] == self.truth[i * 8:(i + 1) * 8]).all()) for i in range(C)) / C
         info = {"task_type": self._task_type(), "n_alive_end": int(len(self.alive)),
                 "unique_at_end": int(len(self.alive)) == 1, "parsed_guess": guess is not None,
                 "n_queries": len(self.history), "queries": [list(h) for h in self.history]}
         return Step(observation=f"Final guess received. Correct: {won}.", actions=[],
-                    objective=self.objective, done=True, won=won, score=ckt, valid=guess is not None, info=info)
+                    objective=self.objective, done=True, won=won, score=circuit_wise, valid=guess is not None, info=info)
 
     def _after(self, line: str, valid: bool) -> Step:
         remaining = BUDGET - self.used

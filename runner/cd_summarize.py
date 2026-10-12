@@ -38,7 +38,7 @@ def main(path):
         if g and t and len(g) == len(t):
             k = len(t) // 3
             a["bitacc"].append(sum(x == y for x, y in zip(g, t)) / len(t))
-            a["ckt"].append(sum(g[i*k:(i+1)*k] == t[i*k:(i+1)*k] for i in range(3)) / 3)
+            a["circuit_wise"].append(sum(g[i*k:(i+1)*k] == t[i*k:(i+1)*k] for i in range(3)) / 3)
         a["unique"].append(bool(res.get("unique_at_end")))
         a["parsed"].append(bool(res.get("parsed_guess")))
         a["err"].append(bool(r.get("error")))
@@ -60,7 +60,7 @@ def main(path):
         n = len(a["correct"])
         m = lambda k, p=False, nd=3: ("n/a" if not a[k] else
             f"{100*st.mean(a[k]):.1f}%" if p else f"{st.mean(a[k]):.{nd}f}")
-        print(f"{c:<12}{m('ckt'):>23}{(str(sum(a['correct'])) + '/' + str(n)):>27}{m('bitacc'):>9}"
+        print(f"{c:<12}{m('circuit_wise'):>23}{(str(sum(a['correct'])) + '/' + str(n)):>27}{m('bitacc'):>9}"
               f"{sum(a['unique'])}/{n:<8}"
               f"{m('eff'):>8}{m('zero',1):>8}{m('repeat',1):>9}"
               f"{m('illegal',1):>10}{m('parsed',1):>9}{m('tok',nd=0):>8}")

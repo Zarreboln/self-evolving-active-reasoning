@@ -1,6 +1,6 @@
 # Signal: metrics and scoring
 
-* `runner/cd_score.py` — episode metrics (uniq@end, exact, circuit/bit accuracy, parsed%) and
+* `runner/cd_score.py` — episode metrics (circuit-wise accuracy, joint truth table correct, and our diagnostics uniq@end / bit accuracy / parsed%) and
   turn metrics (ex-ante efficiency, zero-info%, oracle-agreement%, repeat%, illegal%) with
   bootstrap CIs and paired deltas; errored episodes count as failures (`err%` column).
 * `runner/cd_score_evoharness.py` — the same metrics replayed from EvoHarness-RL trajectories.

@@ -1,4 +1,4 @@
-"""Stage 0 for Multi-Turn Puzzles CircuitDecoding: exact hypothesis space,
+"""Stage 0 for Multi-Turn Puzzles Circuit Decoding: exact hypothesis space,
 oracle solver, and the per-query information-efficiency measure.
 
 No model calls. Pure CPU.

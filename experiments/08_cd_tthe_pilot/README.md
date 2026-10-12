@@ -10,7 +10,11 @@ incoming harness on the new batch *before* any adaptation; transductive = the co
 the batch it was adapted on. 30 instances = 3 batches, stream seed 0, same instances in both arms.
 Models: questioner Qwen2.5-7B-Instruct (vLLM, temperature 0.7, seed 0); proposer and judge are
 `claude -p --model opus` via Claude Code 2.1.295, which the session metadata and billing resolve to
-`claude-opus-5-5` (effort high; a fresh session per candidate and per judge call).
+`claude-opus-5-5` (effort high; a fresh session per candidate and per judge call). The proposer and
+the judge are therefore not bare models either: they run inside Anthropic's own agent harness
+(Claude Code: system prompt, tool loop, context management, auto-memory, auxiliary Haiku calls).
+That layer is fixed and never touches the environment; only the 7B's harness is evolved. Its
+auto-memory was one of the side channels closed below.
 Arm `scratch`: no oracle library; the proposer sees only the system prompt, the harness interface
 and raw traces. Two signal regimes: **strict** (run status only) and **labeled** (strict + each
 episode's outcome). Metrics follow the paper (see [`../OFFICIAL_DEFINITIONS.md`](../OFFICIAL_DEFINITIONS.md)).

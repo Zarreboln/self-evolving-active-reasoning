@@ -1,0 +1,5 @@
+- [cd_tthe strict traces leak labels](cd-tthe-strict-traces-label-leak.md) — .json traces/res files hold `gold`; judge from .md + history replay only
+- [cd_tthe solver cache → identical traces](cd-tthe-solver-cache-identical-traces.md) — same prompt = same reply; matching parent traces means no effective change
+- [cd_tthe falsified query hypotheses](cd-tthe-falsified-query-hypotheses.md) — structure prior & lookahead lose to uniform joint entropy; outcome saturated
+- [cd_tthe cross-branch answer check](cd-tthe-cross-branch-answer-check.md) — validate tables vs sibling traces' answers; probe for system prompt
+- [cd_tthe read system prompt safely](cd-tthe-read-system-prompt-safely.md) — 1-instance diag harness dumps env.system_prompt; rules summary

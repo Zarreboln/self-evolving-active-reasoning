@@ -1,9 +1,0 @@
-Bash
-
-command:
-cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; python audit.py agents/cand_plumb_b0r0g0.py --arm scratch; echo rc=$?; ls logs/plumb/proposal_cards 2>/dev/null | head
-
-
---- output ---
-OK
-rc=0

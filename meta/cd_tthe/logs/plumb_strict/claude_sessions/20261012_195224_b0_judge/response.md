@@ -1,6 +1,0 @@
-I kept the incumbent, **`bare`**, and wrote it to `logs/plumb_strict/choice_b0.txt`.
-
-- **Interface check:** `cand_plumb_strict_b0r0g0` follows the rules. The model still picks every query. The candidate only adds notes to the prompts (queries per circuit so far, a list of all observed answers), re-asks once if the final guess is missing or contradicts an answer, and then sets the observed cells to the observed answers.
-- **Results on this batch:** on all 5 instances, both harnesses made the same queries and gave exactly the same final guesses. The candidate's re-ask never triggered (no contradiction prompts in any trace). The solver here is scripted and produced no model output tokens, so it ignores the prompt changes. The batch gives no evidence that the candidate is better.
-
-The candidate's ideas look sensible in general, especially using the gate inventory to infer rows the budget can't cover. But this batch can't tell the two harnesses apart, so under the "keep the incumbent unless clearly better" rule, `bare` stays. I didn't re-run either harness, since the two sets of traces already match exactly.

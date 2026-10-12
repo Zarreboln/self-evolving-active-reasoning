@@ -1,1 +1,0 @@
-{"harness": "bare", "index": 250, "output": "/Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/dry/solve_jobs/b0_bare_i250.result.json", "solver": {"base_url": null, "model": "Qwen/Qwen2.5-7B-Instruct", "mock": "sequential", "seed": 0, "cache_dir": "/Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/dry/solver_cache"}, "arm": "scratch"}

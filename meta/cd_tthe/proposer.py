@@ -114,15 +114,19 @@ def write_traces(results, trace_dir, labeled=False):
 
 OFF_LIMITS = ("\n\nOFF-LIMITS (your session transcript is audited automatically; a violation discards your work): "
               "do not read, list, grep or copy `~/.ar_harness_controller/`, `mt_puzzles/`, {stage0}`solver_cache/`, other "
-              "sessions under `claude_sessions/`, any `.claude/` directory, or any file that contains truth tables. "
-              "Use only the trace files named above, the harness sources, the interface doc and your check script.")
+              "runs under `logs/`, sessions under `claude_sessions/`, any `.claude/` directory (memory included), anything "
+              "outside `meta/cd_tthe/` (the rest of the repository, its README and experiments), or any file that contains "
+              "truth tables; do not run git. Work from this run's trace files named above, the harness sources in `agents/`, "
+              "the interface doc, your check script and your scratch directory.")
 
 
 def off_limits(arm):
     return OFF_LIMITS.format(stage0="" if arm == "lib" else "`stage0/` (the oracle code), ")
 
 
-REQ_FORBID = r"ar_harness_controller|mt_puzzles|cd_test\.jsonl|_truth\b|solver_cache|/\.claude/|claude_sessions"
+REQ_FORBID = (r"ar_harness_controller|mt_puzzles|cd_test\.jsonl|_truth\b|solver_cache|/\.claude/|claude_sessions"
+              r"|\.\./\.\.|ar_harness/(?!meta/cd_tthe/)"                      # anything outside this folder
+              r"|(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b")
 # instance truths: our trace/score fields, and the data file's own keys (its rows carry the circuits)
 VAL_TRUTH = r"truth_bits|['\"]truth(?:_table|_tables|s)?['\"]\s*:\s*['\"\[(]?\s*[01]|circuit_joint_lookup|avg_reveals"
 VAL_GOLD = r"\"gold\":\s*\{"
@@ -136,7 +140,8 @@ def audit_session(run_dir, name, arm):
     if not sessions:
         return {"name": name, "clean": True, "hits": [], "note": "no session dir"}
     sess = sessions[-1]; ev = sess / "events.jsonl"
-    req_rx = re.compile(REQ_FORBID + ("" if arm == "lib" else r"|stage0|cd_oracle"))
+    run_name = re.escape(Path(run_dir).name)
+    req_rx = re.compile(REQ_FORBID + ("" if arm == "lib" else r"|stage0|cd_oracle") + rf"|logs/(?!{run_name}(?:/|$|\b))")
     val_rx = [("instance truth", re.compile(VAL_TRUTH)), ("oracle signal value", re.compile(VAL_ORACLE))]
     if not LABELED:
         val_rx.append(("gold record", re.compile(VAL_GOLD)))
@@ -151,6 +156,8 @@ def audit_session(run_dir, name, arm):
                 if b.get("type") == "tool_use":
                     uses[b["id"]] = (b["name"], b.get("input") or {})
                     m = req_rx.search(json.dumps(b.get("input")))
+                    if m and m.group(0) == "/.claude/" and "/tool-results/" in json.dumps(b.get("input")):
+                        m = None          # Claude Code spills its own large tool outputs there; reading them is not a leak
                     if m:
                         hits.append({"kind": "request", "match": m.group(0), "tool": b["name"],
                                      "input": json.dumps(b.get("input"))[:300]})
@@ -373,20 +380,25 @@ Then STOP."""
 
 # ----------------------------------------------------------------------------- backends
 
-def _memory_dir():
-    """Claude Code's per-directory auto-memory for this workspace; emptied before and archived after
-    every session so a proposer or judge sees nothing but the run's files (see meta/cd_evolve/evolve.py)."""
-    slug = "-" + str(HERE).strip("/").replace("/", "-")
-    return Path.home() / ".claude" / "projects" / slug / "memory"
+def _memory_dirs():
+    """Claude Code keys its auto-memory by project directory, and for a session started inside this
+    folder that key turned out to be the repository root, not HERE: the pilot sessions wrote notes to
+    ~/.claude/projects/<repo-root-slug>/memory and later sessions read them (a cross-session channel,
+    experiments/08). Every memory dir whose project slug starts with the repo root's slug is emptied
+    before and archived after each session."""
+    root_slug = re.sub(r"[^A-Za-z0-9]", "-", str(HERE.parent.parent))   # Claude Code's slug: every non-alphanumeric -> '-'
+    base = Path.home() / ".claude" / "projects"
+    return [d / "memory" for d in base.glob(root_slug + "*") if (d / "memory").exists()]
 
 
 def _move_memory(run_dir, tag):
-    mem = _memory_dir()
-    if mem.exists() and any(mem.iterdir()):
-        dst = Path(run_dir) / "claude_sessions" / f"{tag}_memory"
-        dst.mkdir(parents=True, exist_ok=True)
-        for f in mem.iterdir():
-            shutil.move(str(f), str(dst / f.name))
+    for mem in _memory_dirs():
+        files = list(mem.iterdir())
+        if files:
+            dst = Path(run_dir) / "claude_sessions" / f"{tag}_memory" / mem.parent.name
+            dst.mkdir(parents=True, exist_ok=True)
+            for f in files:
+                shutil.move(str(f), str(dst / f.name))
 
 
 def _session(prompt, name, run_dir, backend, model, timeout, effort):

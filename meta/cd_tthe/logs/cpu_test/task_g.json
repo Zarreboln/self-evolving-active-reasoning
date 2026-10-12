@@ -1,1 +1,0 @@
-{"harness":"bare","index":5,"output":"logs/cpu_test/bare_g.json","solver":{"mock":"greedy","seed":0},"arm":"scratch"}

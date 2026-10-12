@@ -1,9 +1,0 @@
-Bash
-
-command:
-cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; grep -rn "sequential\|def .*mock\|class .*Mock" *.py | head -20
-
-
---- output ---
-bridge.py:107:    def __init__(self, base_url=None, model=None, cache_dir=None, mock=None, mock_game=None, seed=0):
-optimize.py:18:    python optimize.py --run-name dry --proposer-backend stub --solver-mock sequential --limit 10 \

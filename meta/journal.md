@@ -221,3 +221,19 @@
   <session>/audit.json and <run>/session_audits.jsonl.
 - Verified on a mock dry run (dry_iso) and on synthetic transcripts. Reruns: strict2_b10g3r2 /
   labeled2_b10g3r2, same stream (seed 0, 30 held-out instances), same B=10 G=3 R=2.
+
+### 2026-10-12 18:20–18:40 EDT — rerun strict2/labeled2 stopped: two more channels; strict3/labeled3 launched
+- The session audit fired on the first adversarial-audit proposers of both arms: they read
+  `~/.claude/projects/-Users-zarreboln-Desktop-ar-harness/memory/` (notes written by pilot sessions from
+  batch 2 on). Root cause: `_memory_dir()` built the slug without turning `_` into `-`, so it never
+  matched Claude Code's real directory and the isolation was a no-op since the first run. The strict2
+  proposer also built its candidate from `agents/cand_pilot_labeled_b10g3r2_b2r1g1.py` (pilot candidates
+  were still in the sandbox) and browsed `logs/pilot_*`. Both runs killed at batch 0 (claude -p children too).
+- Cleanup: memory notes archived to experiments/08/cross_session_memory_notes and removed; pilot
+  candidates moved to experiments/08/candidates (git mv); all previous run dirs moved out of the repo to
+  ~/.ar_harness_controller/archive; `agents/` = bare.py (+2 plumbing stubs), `logs/` empty.
+- Code: `_memory_dirs()` (correct slug, every project dir under the repo root); audit also rejects paths
+  outside meta/cd_tthe, other runs' logs, git commands (Claude Code's tool-results spill files excepted);
+  OFF-LIMITS text extended. Unit cases + mock dry run pass. strict3_b10g3r2 / labeled3_b10g3r2 launched
+  18:24 EDT (same 30 instances). The slug fix landed after launch; for these two runs the memory channel
+  is closed by the audit (any .claude/ read or write discards that session's work), not by the move.

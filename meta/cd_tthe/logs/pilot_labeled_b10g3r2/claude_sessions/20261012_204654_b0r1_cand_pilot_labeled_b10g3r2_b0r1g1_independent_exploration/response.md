@@ -1,1 +1,0 @@
-The audit rejects any source containing "truth" or the substring "os." (which also matches "rows."), so I'm keeping those out of the code and prompt text while I write the formula-checking harness.Parser and audit both pass. Running the check on the 10 instances now. It makes many model calls, so I'm running it in the background.

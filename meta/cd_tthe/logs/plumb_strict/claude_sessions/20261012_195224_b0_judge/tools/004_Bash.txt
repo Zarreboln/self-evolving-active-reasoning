@@ -1,8 +1,0 @@
-Bash
-
-command:
-echo bare > /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/plumb_strict/choice_b0.txt; cat /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/plumb_strict/choice_b0.txt
-
-
---- output ---
-bare

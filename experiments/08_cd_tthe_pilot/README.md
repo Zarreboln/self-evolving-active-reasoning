@@ -74,6 +74,24 @@ public-only traces and logs, OFF-LIMITS paragraph in the prompts, automatic per-
 discards a violating candidate or verdict) and both arms were rerun as `strict2_b10g3r2` /
 `labeled2_b10g3r2` on the same 30 instances — see `09_cd_tthe_isolated/` once finished.
 
+## Two more channels found while rerunning (2026-10-12 18:20)
+
+* **Cross-session memory.** Claude Code keys its auto-memory by the repository root with every
+  non-alphanumeric character turned into `-`; the loop's memory isolation computed a different slug
+  and so always emptied a non-existent directory. From batch 2 of the pilots on, proposer sessions
+  wrote notes to the real memory directory (archived in `cross_session_memory_notes/`: "trace JSON
+  files hold gold, judge from .md only", "falsified query hypotheses", "how to get the system
+  prompt") and later sessions, including the first sessions of the rerun, read them. Batches 0–1
+  predate every note (earliest 17:25 EDT).
+* **The sandbox itself.** The rerun's proposers found the pilots' evolved candidates in `agents/`
+  and the pilots' logs in `logs/`; one built its candidate by copying the body of a pilot harness.
+  That rerun (`strict2` / `labeled2`) was stopped at batch 0 and discarded.
+
+Fixes before the clean rerun (`strict3` / `labeled3`): every memory directory under the repo root's
+slug is emptied before and archived after each session; `agents/` holds only `bare.py`, `logs/` only
+the current run; the session audit additionally rejects reads outside `meta/cd_tthe/`, other runs'
+logs, `.claude/` (memory, read or write), and git commands; the OFF-LIMITS paragraph says so.
+
 ## Takeaways
 
 * A proposer with no library, no labels and no prior about the model's habits reconstructs the

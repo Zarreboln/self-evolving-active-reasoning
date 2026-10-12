@@ -116,7 +116,9 @@ def summarize(latest):
     return s, eps
 
 
-HDR = (f"{'harness':<14}{'n':>5}{'err%':>6}{'uniq@end':>10}{'  95% CI':>14}{'exact':>8}{'ckt':>7}{'bit':>7}"
+# Column order: the benchmark's own metrics first (success = all 24 bits right; ckt-acc = circuit-wise
+# accuracy), then our diagnostics. See experiments/OFFICIAL_DEFINITIONS.md.
+HDR = (f"{'harness':<14}{'n':>5}{'err%':>6}{'success':>9}{'ckt-acc':>9}{'uniq@end':>10}{'  95% CI':>14}{'bit':>7}"
        f"{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill%':>6}{'prs%':>6}{'alive':>7}{'tok':>7}")
 # Errored episodes (context overflow, API failures) count as NOT unique / NOT exact:
 # they are real failures of that harness at this context budget. Turn-level metrics
@@ -125,9 +127,9 @@ HDR = (f"{'harness':<14}{'n':>5}{'err%':>6}{'uniq@end':>10}{'  95% CI':>14}{'exa
 
 def fmt_row(name, s):
     pc = lambda v: "  n/a" if v != v else f"{100 * v:.1f}"
-    return (f"{name:<14}{s['n']:>5}{pc(s['err']):>6}{pc(s['uniq']):>10}"
+    return (f"{name:<14}{s['n']:>5}{pc(s['err']):>6}{pc(s['exact']):>9}{pc(s['ckt']):>9}{pc(s['uniq']):>10}"
             f"{'[' + pc(s['uniq_ci'][0]) + ',' + pc(s['uniq_ci'][1]) + ']':>14}"
-            f"{pc(s['exact']):>8}{pc(s['ckt']):>7}{pc(s['bit']):>7}"
+            f"{pc(s['bit']):>7}"
             f"{s['eff']:>7.3f}{pc(s['zero']):>7}{pc(s['oracle']):>7}{pc(s['repeat']):>6}"
             f"{pc(s['illegal']):>6}{pc(s['parsed']):>6}{s['alive_end']:>7.2f}{s['tok_out']:>7.0f}")
 

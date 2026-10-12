@@ -89,3 +89,22 @@
 - 2026-10-12 18:0x 用户定：proposer 只用 Claude，要看多轮内循环持续进化的轨迹。cd_tthe 加 --budget（每局查询数可配，12 次留余量）、trajectory.py（逐批：在岗 harness、是否换代、换代理由、prequential/transductive 分数 + 图）。等 Duo 后起 GPU：scratch 臂，B=10、G=3、R=2，200 题流；若首批就到顶，并行一条 budget=12 的流。
 - 2026-10-12 18:2x 用户要求 proposer 起步"什么也看不到"：加 --signals strict（proposer/judge 只看原始轨迹 + 运行状态/是否产出终猜/用了几问；不给 uniq_end/alive_end/零信息/eff，不给"模型习惯"先验；judge 也只能读轨迹判断）。stub 干跑通过；启动 strict 管道测试（真 Claude proposer，假求解器，5 题，G=1 R=1），看信念跟踪在零提示下能否长出来。
 - 2026-10-12 18:4x 用户去掉"full"臂（我们算的无标签信号不给 proposer 看）。现在两条臂：strict（只看轨迹+运行状态）与 labeled（strict + 每局最终结果：整表是否正确、三张对几张）；strict 的角色描述也去掉了失败类型例子。
+- 2026-10-12 16:05 EDT Engaging 经用户 Duo 恢复（login010）。run_pilot.sh 提交 serve7b 25669627（mit_normal_gpu，6h，endpoint 文件 serve_7b_tthe.endpoint），等 endpoint 后开隧道 127.0.0.1:18000，再并行起 pilot_strict_b10g3r2 与 pilot_labeled_b10g3r2（各 30 题 = 3 批，G=3，R=2，proposer=Claude opus，effort high）。
+- 2026-10-12 15:55 EDT **strict 管道测试结果（零提示，真 proposer，假求解器，1 批 5 题，G=1 R=1）**：proposer（保守修复，96s/$0.39）从轨迹里自己诊断出"模型按行扫 A、B，到 C 只剩 2 问，终猜里未观测格子全填 0"，提出的改法是提示层面的：每轮附各电路已问次数 + "预算覆盖不了 24 行、要用库存推断"的提示、终猜前按电路列出全部观测、终猜与观测矛盾则重问一次并把观测格子写回。它写明"可以用库存推断行"却没有实现枚举。judge（20s/$0.09）因假模型下两者输出完全相同而保留 bare（回滚门正确）。对比 full 信号下的那次（同角色一个会话就写出枚举器）：proposer 看到什么决定它发明什么。真正的检验要等 7B 上多轮。
+- 2026-10-12 16:11 EDT 试点第一次起来全部崩：mac 的系统代理（HTTP_PROXY）劫持了 127.0.0.1:18000 的隧道，OpenAI 客户端拿到 502（和 memory 里 ollama 那次同一个坑）。bridge.Solver 改为 httpx.Client(trust_env=False)，直测隧道返回 OK；杀掉两条臂和 proposer 会话，清空 run 目录重启。
+
+### 2026-10-12 16:30 EDT — official definitions pinned (user: "完全按照官方定义不要自己编")
+- Wrote `experiments/OFFICIAL_DEFINITIONS.md`: MTP-CD task text (Table 1), the two official metric names
+  ("Normalized circuit-wise accuracy", "Normalized % of trajectories with successful end state"; the
+  normalization is not defined anywhere in the paper or dataset card), official baseline numbers
+  (Fig. 1 success rate: Gemini-2.5-Pro-Exp 39.8 / GPT-4o 15.4 / Claude-3.5-sonnet 9.3; Fig. 5 Gemini-2.0
+  Pro 32.2 / Flash 7.2 / Flash-lite 4.1), and the list of things the official release leaves open
+  (invalid-reply handling, early stop, decoding params, normalization) — all of those are now labelled
+  as our choices. AR-Bench section: DC accuracy / SP char-level F1 / GN exact match, judge 405B.
+- `runner/cd_score.py` table now prints `success` (= our `exact`) and `ckt-acc` first; uniq@end, eff,
+  zero%, orcl% stay as diagnostics. JSON keys unchanged so old score files still load.
+- cd_tthe loop prints "prequential success=…" first, uniq_end in parentheses.
+- Pilots (started 16:14/16:15, 7B on node3502 via tunnel 18000): batch 0 bare prequential success 0%
+  in both arms (uniq_end 20% strict / 30% labeled). Round-0 candidates (3 per arm) passed the static
+  check at 16:16–16:17 and are being solved on the 7B now (solver_cache growing).
+- TTHE clone pinned at 69a614d in THIRD_PARTY.md; `tthe_official/` ignored.

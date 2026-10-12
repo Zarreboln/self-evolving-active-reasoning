@@ -140,8 +140,11 @@ class Solver:
             text = r.choices[0].message.content
         else:
             if self._client is None:
+                import httpx
                 from openai import OpenAI
-                self._client = OpenAI(base_url=self.base_url, api_key="EMPTY", max_retries=3, timeout=600.0)
+                # trust_env=False: the mac's system proxy must not intercept the SSH tunnel on 127.0.0.1
+                self._client = OpenAI(base_url=self.base_url, api_key="EMPTY", max_retries=3, timeout=600.0,
+                                      http_client=httpx.Client(trust_env=False, timeout=600.0))
             r = self._client.chat.completions.create(model=self.model, messages=messages,
                                                      temperature=temperature, max_tokens=max_tokens, seed=self.seed)
             text = r.choices[0].message.content or ""

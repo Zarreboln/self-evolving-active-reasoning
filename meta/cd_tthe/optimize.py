@@ -159,8 +159,8 @@ def main():
 
         ensure(H)
         prequential = agg(results[H])          # the incoming harness, before adaptation
-        print(f"\n===== batch {bi}/{len(batches)} ({len(batch)} inst) H={H}  prequential uniq_end={100*prequential['uniq_end']:.0f}% "
-              f"exact={100*prequential['exact']:.0f}% =====", flush=True)
+        print(f"\n===== batch {bi}/{len(batches)} ({len(batch)} inst) H={H}  prequential success={100*prequential['exact']:.0f}% "
+              f"(diag uniq_end={100*prequential['uniq_end']:.0f}%) =====", flush=True)
         branches = [H] * args.group
         for rnd in range(args.rounds):
             tag = f"b{bi}r{rnd}"
@@ -202,7 +202,7 @@ def main():
                "prequential": prequential, "transductive": transductive,
                "pool": {n: agg(results[n]) for n in pool}, "seconds": round(time.time() - t_batch)}
         log_line(opt_log, row)
-        print(f"   JUDGE -> {H_next}   transductive uniq_end={100*transductive['uniq_end']:.0f}% exact={100*transductive['exact']:.0f}%   "
+        print(f"   JUDGE -> {H_next}   transductive success={100*transductive['exact']:.0f}% (diag uniq_end={100*transductive['uniq_end']:.0f}%)   "
               f"({row['seconds']}s)", flush=True)
         H = H_next
 
@@ -218,8 +218,8 @@ def main():
                               "preq_uniq": r["prequential"]["uniq_end"], "trans_uniq": r["transductive"]["uniq_end"],
                               "preq_exact": r["prequential"]["exact"], "trans_exact": r["transductive"]["exact"]} for r in rows]}
     (run_dir / "result.json").write_text(json.dumps(summary, indent=1))
-    print(f"\n[tthe] final H={H}  prequential uniq_end={100*pq[0]:.1f}% exact={100*pq[1]:.1f}%  "
-          f"transductive uniq_end={100*tr[0]:.1f}% exact={100*tr[1]:.1f}%  -> {run_dir / 'result.json'}", flush=True)
+    print(f"\n[tthe] final H={H}  prequential success={100*pq[1]:.1f}% (uniq_end {100*pq[0]:.1f}%)  "
+          f"transductive success={100*tr[1]:.1f}% (uniq_end {100*tr[0]:.1f}%)  -> {run_dir / 'result.json'}", flush=True)
 
 
 if __name__ == "__main__":

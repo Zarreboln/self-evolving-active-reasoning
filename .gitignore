@@ -4,6 +4,7 @@ meta_harness_official/
 meta_harness_repo/
 rrsi_official/
 evoharness_rl_official/
+tthe_official/
 # ---- papers: PDFs/extracted text are not ours to redistribute (see RELATED_WORK.md for IDs) ----
 papers/
 # ---- raw per-episode traces: attached to GitHub Releases as tarballs, not committed ----
@@ -16,6 +17,7 @@ meta/cd_evolve/logs/*/traces/
 meta/cd_evolve/logs/*/mock/
 meta/cd_evolve/logs/dry_mock/
 meta/cd_evolve/logs/dry2/
+meta/cd_evolve/logs/dry3/
 meta/cd_evolve/logs/wrapper_test/
 meta/cd_evolve/logs/*/*.nohup
 meta/cd_evolve/logs/*/nohup.out

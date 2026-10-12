@@ -9,6 +9,7 @@ Clone each next to this README; scripts expect these directory names.
 | `meta_harness_repo/` | https://github.com/stanford-iris-lab/meta-harness-tbench2-artifact | 57fefdb | reference only |
 | `rrsi_official/` | https://github.com/google-research/rrsi | be50316 | selection-side rules (noise band, cost rule, critic) re-implemented in `meta/cd_evolve/evolve.py` |
 | `evoharness_rl_official/` | https://github.com/EvoHarnessRL/EvoHarness-RL | 1c1e63a | baseline; our CircuitDecoding adapter lives in `baselines/evoharness_cd/` and is copied into `evoharness/envs/circuitdecoding/` of that checkout |
+| `tthe_official/` | https://github.com/junnie00/TTHE | 69a614d | test-time harness evolution protocol (batches, G branches x R rounds, three proposer roles, agentic judge with rollback) ported to CircuitDecoding in `meta/cd_tthe/` |
 
 Data: `mt_puzzles/` holds the CircuitDecoding split of Multi-Turn Puzzles
 (https://huggingface.co/datasets/arianhosseini/mt_puzzles, CC-BY-4.0). TurtleBench

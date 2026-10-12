@@ -71,7 +71,8 @@ def boot_ci(vals, n=2000, seed=0):
 
 
 def main(dirs):
-    print(f"{'run':<34}{'n':>5}{'uniq@end':>10}{'  95% CI':>14}{'exact':>7}{'ckt':>7}{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill/ep':>7}{'meta/ep':>8}{'turns':>7}")
+    # benchmark's own metrics first (success = all 24 bits right, ckt-acc = circuit-wise accuracy); see experiments/OFFICIAL_DEFINITIONS.md
+    print(f"{'run':<34}{'n':>5}{'success':>9}{'ckt-acc':>9}{'uniq@end':>10}{'  95% CI':>14}{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill/ep':>7}{'meta/ep':>8}{'turns':>7}")
     for d in dirs:
         recs = [json.loads(p.read_text()) for p in sorted(Path(d, "trajectories").glob("*.json"))]
         if not recs:
@@ -79,8 +80,8 @@ def main(dirs):
         ms = [replay(r) for r in recs]
         mean = lambda k: st.mean(x[k] for x in ms if x[k] == x[k])
         lo, hi = boot_ci([m["uniq"] for m in ms])
-        print(f"{Path(d).name:<34}{len(ms):>5}{100*mean('uniq'):>10.1f}{'[' + f'{100*lo:.1f},{100*hi:.1f}' + ']':>14}"
-              f"{100*mean('exact'):>7.1f}{100*mean('ckt'):>7.1f}{mean('eff'):>7.3f}{100*mean('zero'):>7.1f}"
+        print(f"{Path(d).name:<34}{len(ms):>5}{100*mean('exact'):>9.1f}{100*mean('ckt'):>9.1f}"
+              f"{100*mean('uniq'):>10.1f}{'[' + f'{100*lo:.1f},{100*hi:.1f}' + ']':>14}{mean('eff'):>7.3f}{100*mean('zero'):>7.1f}"
               f"{100*mean('orcl'):>7.1f}{100*mean('rep'):>6.1f}{mean('ill'):>7.2f}{mean('meta'):>8.2f}{mean('turns'):>7.1f}")
 
 

@@ -1,0 +1,48 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/final2.py <<'EOF'
+import json, sys, collections, re
+from pathlib import Path
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/stage0")
+from cd_oracle import CDGame
+insts = {json.loads(l)["orig_index"]: json.loads(l) for l in open("data/cd_search.jsonl")}
+games = {}
+def game_for(comp):
+    key = tuple(sorted(comp.items()))
+    if key not in games: games[key] = CDGame(dict(key))
+    return games[key]
+for name in sys.argv[1:]:
+    eps = {}
+    for line in open(f"logs/open1/traces/{name}/search.jsonl"):
+        r = json.loads(line); eps[(r["key"], r["seed"])] = r
+    stats = collections.Counter()
+    for (k, s), r in eps.items():
+        if r.get("error"): stats["error"] += 1; continue
+        res = r["result"]; inst = insts[k]
+        g = game_for(inst["controller"]["components"])
+        hist = [(x["query"], x["answer"]) for x in r["rows"] if not x.get("illegal")]
+        alive = g.feasible(hist)
+        guess = res["guess_bits"]
+        u = "uniq" if res["unique_at_end"] else "multi"
+        stats[f"{u}"] += 1
+        if guess is None: stats[f"{u}_unparsed"] += 1; continue
+        gb = np.array(guess, dtype=np.uint8)
+        in_alive = any((g.H[a] == gb).all() for a in alive)
+        in_H = any((g.H == gb).all(axis=1))
+        stats[f"{u}_guess_in_alive"] += in_alive
+        stats[f"{u}_guess_in_H"] += bool(in_H)
+        stats[f"{u}_exact"] += res["correct"]
+        # does the guess agree with all observed answers?
+        stats[f"{u}_consistent_w_obs"] += all(gb[q] == b for q, b in hist)
+        # bits wrong
+    print(name, dict(stats))
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/final2.py bare enum15
+
+description: Analyze final guess quality for bare and enum15
+
+--- output ---
+bare {'multi': 74, 'multi_unparsed': 11, 'multi_guess_in_alive': 0, 'multi_guess_in_H': 0, 'multi_exact': 0, 'multi_consistent_w_obs': 5, 'uniq': 26, 'uniq_guess_in_alive': 0, 'uniq_guess_in_H': 0, 'uniq_exact': 0, 'uniq_consistent_w_obs': 1, 'uniq_unparsed': 3}
+enum15 {'multi': 45, 'multi_guess_in_alive': 9, 'multi_guess_in_H': 13, 'multi_exact': 1, 'multi_consistent_w_obs': 11, 'uniq': 53, 'uniq_guess_in_alive': 4, 'uniq_guess_in_H': 17, 'uniq_exact': 4, 'uniq_consistent_w_obs': 4, 'multi_unparsed': 1, 'error': 2}

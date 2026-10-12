@@ -1,0 +1,12 @@
+Edit: logs/open1/reports/iter0.md
+
+replace_all: False
+old_string:
+- Both crashes: a run-on `<guess>` string (1200 tokens) in the middle of the episode, with ~400-token harness messages on top, overflowed the 12k context.
+
+new_string:
+- Both crashes (keys 12/0, 79/1): from turn 11-13 on, the model put a `<guess>` into every reply (~1,600-1,850 chars each), on top of ~600-char harness messages, so the prompt for query 18 went past 11,088 tokens (12,288 minus the 1,200 reserved for output).
+
+
+--- output ---
+The file /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/reports/iter0.md has been updated successfully. (file state is current in your context — no need to Read it back)

@@ -1,0 +1,16 @@
+Bash
+
+command:
+mkdir -p /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/proto; cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+# token estimate of an env-format observation list vs compact list (chars)
+import sys
+sys.path.insert(0,'.')
+from harness_lib import fmt
+qs=list(range(24))
+print(len(", ".join(fmt(q,3) for q in qs)))
+EOF
+
+description: Measure length of a full compact entry list
+
+--- output ---
+238

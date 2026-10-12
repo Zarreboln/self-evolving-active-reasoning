@@ -1,0 +1,118 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && mkdir -p $S/proto && cat > $S/proto/copy_query.py <<'EOF'
+"""Prototype A: copyable directive only."""
+from harness_lib import best_query
+
+NAME = "copy_query"
+PARENT = "oracle_hint"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine all three truth tables; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    q = best_query(view)
+    ones = int(view.H[view.alive, q].sum())
+    return (f"{n} circuit configurations are still possible. Most informative next query: "
+            f"{_qtag(view, q)} ({n - ones} of the {n} give 0, {ones} give 1). "
+            "Reply with exactly this query and nothing else.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    return (f"{lead} In the required order (A, then B, then C; inputs 000 to 111 within each) "
+            f"it is: <guess>{bits}</guess>\nSubmit exactly this string.")
+EOF
+cat > $S/proto/copier_mock.py <<'EOF'
+"""Scratch mock: copies the first <query> tag of the last user message with prob p;
+otherwise picks the first entry of an 'Outputs still unknown:' list after its last
+query if one is shown (else the next entry in canonical order). Final: copies the
+<guess> tag if shown. Runs a harness end to end through cd_harness_run.run_episode."""
+import asyncio, json, re, sys
+from types import SimpleNamespace
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/runner")
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve")
+import cd_harness_run as R
+from cd_oracle import CDGame, load_instances
+
+QTAG = re.compile(r"<query>\s*([A-H])\s*\(([01]),\s*([01]),\s*([01])\)\s*</query>")
+GTAG = re.compile(r"<guess>([01]{24})</guess>")
+UNK = re.compile(r"Outputs still unknown:\s*([^.(]*)")
+ENT = re.compile(r"([A-H])\(([01]),([01]),([01])\)")
+
+def qi(lb, a, b, c): return "ABC".index(lb) * 8 + int(a + b + c, 2)
+
+class Copier:
+    def __init__(self, p, seed):
+        self.p, self.rng = p, np.random.default_rng(seed)
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+        self.last = -1
+    async def _create(self, model=None, messages=None, **kw):
+        u = messages[-1]["content"]
+        if "truth tables for all circuits" in u:
+            m = GTAG.search(u); txt = f"<guess>{m.group(1)}</guess>" if m else "<guess>" + "0"*24 + "</guess>"
+        else:
+            m = QTAG.search(u)
+            if m and self.rng.random() < self.p:
+                q = qi(*m.groups())
+            else:
+                um = UNK.search(u)
+                unk = [qi(*e) for e in ENT.findall(um.group(1))] if um else []
+                nxt = [x for x in unk if x > self.last]
+                q = (nxt[0] if nxt else unk[0]) if unk else (self.last + 1) % 24
+            self.last = q
+            txt = f"<query>{'ABC'[q//8]}({', '.join(str((q%8 >> (2-i)) & 1) for i in range(3))})</query>"
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=txt))],
+                               usage=SimpleNamespace(completion_tokens=len(txt)//4, prompt_tokens=sum(len(x["content"]) for x in messages)//4))
+
+async def main(path, p, nseeds=2):
+    h = R.load_harness(path)
+    tmpl = open("/Users/zarreboln/Desktop/ar_harness/mt_puzzles/cd_instruction.txt").read()
+    last = open("/Users/zarreboln/Desktop/ar_harness/mt_puzzles/cd_last_turn_prompt.txt").read()
+    insts = load_instances("/Users/zarreboln/Desktop/ar_harness/mt_puzzles/cd_test.jsonl")
+    keys = json.load(open("/Users/zarreboln/Desktop/ar_harness/splits/cd_split.json"))["search"]
+    games, U, E, L, C = {}, [], [], [], []
+    for i in keys:
+        inst = insts[i]; key = tuple(sorted(inst["components"].items()))
+        g = games.setdefault(key, CDGame(dict(key)))
+        sysmsg = R.fill_instruction(tmpl, inst["components"], 3, 3, 18)
+        for s in range(nseeds):
+            res, rows, tok, err, fs, ft, st = await R.run_episode(Copier(p, 1000*i+s), "m", g, inst, sysmsg, last, s, 18, 0.7, 1200, 3, 3, h)
+            assert err is None, err
+            U.append(res["unique_at_end"]); E.append(res["correct"])
+            sent = [len(r.get("sent") or "") for r in rows]
+            L.append(max(sent)); C.append(sum(sent) + len(fs or ""))
+    print(f"{h.__name_tag__:14s} p={p:.1f} uniq={np.mean(U):.3f} exact={np.mean(E):.3f} "
+          f"max_msg_chars={max(L)} mean_total_harness_chars={np.mean(C):.0f}")
+
+if __name__ == "__main__":
+    asyncio.run(main(sys.argv[1], float(sys.argv[2])))
+EOF
+cd $S && for p in 1.0 0.7 0.5; do python3 proto/copier_mock.py proto/copy_query.py $p; done
+
+description: Write prototype A and a copier mock, then run it
+timeout: 600000
+
+--- output ---
+copy_query     p=1.0 uniq=1.000 exact=1.000 max_msg_chars=256 mean_total_harness_chars=4211
+copy_query     p=0.7 uniq=1.000 exact=1.000 max_msg_chars=256 mean_total_harness_chars=4277
+copy_query     p=0.5 uniq=0.940 exact=0.960 max_msg_chars=256 mean_total_harness_chars=4356
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

@@ -1,0 +1,1406 @@
+{
+ "cases": {
+  "1": {
+   "surface": "Emma was found dead in her locked study, with no signs of forced entry or struggle. How could this have happened?",
+   "bottom": "Emma, a successful and independent woman, was known for her meticulous nature and routine. She had a history of a heart condition, which she kept private, not wanting to worry her family or friends. On the day of her death, Emma had locked herself in her study to work on an important project. She had been feeling slightly unwell but dismissed it as stress-related. Unfortunately, her condition worsened, and she suffered a fatal heart attack, dying alone in the locked room. Her sudden death left no signs of struggle or forced entry, as it was a natural occurrence that took her life swiftly and quietly."
+  },
+  "7": {
+   "surface": "Jane was shocked to see her own memorial service being held, with friends and family mourning her supposed death. Yet, she was very much alive and present at the event. How could this happen?",
+   "bottom": "Jane, a lively and healthy woman, was mistakenly declared dead due to a clerical error at the hospital. Her medical records were accidentally swapped with those of another patient who had recently passed away. As a result, a death certificate was issued in her name, and plans for her burial were set in motion. However, before the burial could take place, a diligent hospital staff member noticed the discrepancy while reviewing paperwork and discovered the error. This revelation came just in time to prevent Jane from being buried. Despite the initial shock and confusion, Jane was able to attend her own memorial service the following week, much to the astonishment and relief of her family and friends."
+  },
+  "8": {
+   "surface": "A man was executed for murder, yet he appeared at his own trial and even testified in his defense. How could this happen?",
+   "bottom": "The man who was executed for murder had an identical twin brother who attended the trial and testified in his defense. The executed man was indeed guilty of the crime, but his twin brother, out of a sense of familial loyalty and guilt, decided to impersonate him during the trial. The twin brother's testimony caused significant confusion among the jury, as they could not determine the true identity of the accused. This impersonation led to a mistrial, as the jury was left in doubt about whether the man on trial was the actual murderer or his innocent twin brother. The twin brother's presence and testimony created a scenario where the lines between guilt and innocence were blurred, ultimately leading to the wrongful execution of the guilty brother while the innocent twin walked free."
+  },
+  "9": {
+   "surface": "A letter was received from a man who had been declared dead and buried. How could this happen?",
+   "bottom": "The man, entangled in a web of dangerous criminal activities, realized that his life was at risk due to his involvement with a notorious gang. To escape this perilous situation and start anew, he meticulously planned to fake his own death. He bribed a corrupt official to falsify his death certificate and used a recently deceased, unclaimed body as his double. With the help of a trusted friend, who was also his accomplice, he orchestrated the burial and ensured that a letter he had written was sent to a close family member after his 'death.' The letter, sent posthumously, explained his actions and assured them of his safety, as he intended to disappear and assume a new identity far from his previous life. This elaborate scheme allowed him to evade the legal consequences of his past actions and the wrath of the gang, while the world believed he was dead and buried."
+  },
+  "10": {
+   "surface": "At his own wake, a man walked in, alive and well, shocking all the mourners who believed he was dead. How could this happen?",
+   "bottom": "The man, known as John, suffered from a rare medical condition called catalepsy, which occasionally caused his vital signs to become extremely faint, rendering them temporarily undetectable. One day, after collapsing at home, he was rushed to the hospital where the medical staff, using equipment not sensitive enough to detect his faint vital signs, mistakenly declared him dead. His family, grief-stricken, quickly arranged for a wake. However, a few hours later, John's vital signs began to strengthen as his condition naturally reversed, and he regained consciousness in the hospital morgue. Confused but determined to return to his family, he made his way to the wake. His sudden appearance at the event shocked everyone, revealing the medical error and the unusual nature of his condition."
+  },
+  "12": {
+   "surface": "A week after Emily's funeral, she was found alive and well in her own home. How could this be possible?",
+   "bottom": "Emily was mistakenly declared dead due to a rare medical condition known as 'Lazarus Syndrome,' which caused her to appear lifeless after a failed resuscitation attempt. Her family, believing her to be dead, held a funeral and buried her in a shallow grave. However, the shallow grave and a poorly secured coffin allowed Emily to breathe and eventually regain consciousness. After waking up, she managed to break free from the coffin and dig her way out of the grave. Disoriented and determined to avoid causing a scene, Emily made her way directly back to her home, avoiding public places to prevent being seen in her disheveled state. A week later, she was discovered alive and well in her own home, much to the shock and disbelief of her family and friends."
+  },
+  "15": {
+   "surface": "Sarah was discovered dead in her locked apartment, with no signs of struggle or forced entry. What could have happened to her?",
+   "bottom": "Sarah was a young woman who lived alone in a small apartment. She was known for her trusting nature and often invited friends and acquaintances over for tea. On the day of her death, Sarah had spent the afternoon with a close friend, Emma, who had brought her a homemade herbal tea. Unbeknownst to Sarah, Emma had recently discovered that her husband was having an affair with Sarah and decided to take revenge. Emma had laced the tea with a slow-acting poison, knowing it would take hours to affect Sarah. Later that evening, Sarah locked herself in her room to work on a project, unaware of the poison coursing through her veins. As the poison took effect, Sarah succumbed to its lethal dose, collapsing onto the floor without any struggle. The locked room mystery puzzled investigators, but the lack of struggle and forced entry, combined with the autopsy revealing the presence of poison, eventually led them to Emma. Sarah's death, initially a baffling mystery, was solved by piecing together her last interactions and the hidden motives of someone she once trusted."
+  },
+  "18": {
+   "surface": "John, who was executed for murder, astonishingly appeared at his own trial to testify in his defense. How is this possible?",
+   "bottom": "In a near-future society where virtual reality technology has advanced significantly, John is accused of a heinous murder. To determine his guilt, the court uses a cutting-edge virtual reality simulation to recreate the crime scene and execute a simulated version of John based on the evidence and data available. This simulation is designed to provide a realistic portrayal of John's actions and reactions during the supposed crime and subsequent execution. However, the technology is not without its flaws. During the trial, John appears in person to testify in his defense. He argues that the virtual reality simulation, which portrayed his execution, was flawed and manipulated, failing to accurately represent his true intentions and actions. He presents expert testimony and technical analysis that highlight discrepancies and potential tampering in the simulation data. This evidence casts doubt on the reliability of the simulation, leading to a contentious debate about the use of such technology in legal proceedings. Despite the virtual execution, John remains alive, fighting to prove his innocence in a world where reality and virtual reality are increasingly intertwined."
+  },
+  "21": {
+   "surface": "A man was shocked to receive a speeding ticket for a car he supposedly drove at the exact moment he was declared dead in a hospital. How could this bizarre situation occur?",
+   "bottom": "The man had a twin brother who was driving the car at the time of the speeding incident. The twin brother, who had a suspended license, used his deceased brother's identification to avoid legal trouble. Meanwhile, the man was declared dead in the hospital due to a clerical error, where his records were mistakenly mixed up with another patient. This resulted in the bizarre situation where the man received a speeding ticket at the exact moment he was erroneously declared dead. The twin brother's actions not only risked legal consequences for identity fraud but also complicated the already tragic circumstances surrounding his brother's mistaken death declaration."
+  },
+  "23": {
+   "surface": "Emily's family received a heartfelt letter from her, despite having attended her funeral and believing she was buried. How could Emily have sent this letter?",
+   "bottom": "Emily found herself entangled in a perilous situation involving a criminal organization that threatened her life. Fearing for her safety, she meticulously planned her escape by faking her death. Emily staged an accident that convincingly led authorities to declare her dead and hold a funeral. Meanwhile, she fled to a remote, undisclosed location. Prior to her disappearance, she entrusted a close friend with a letter addressed to her family. In this letter, Emily explained her drastic actions, detailing the imminent danger she faced and assuring them of her safety. She described the criminal threats and the necessity of her disappearance, providing enough information to reassure her family without revealing her exact whereabouts. Her friend delivered the letter after Emily had successfully disappeared, ensuring her family understood her reasons and knew she was alive, albeit far from their reach."
+  },
+  "26": {
+   "surface": "Emily's family received a letter from her, even though she had been declared dead. The letter was postmarked from a place that doesn't exist on any map. How could this be possible?",
+   "bottom": "Emily was a key witness in a high-profile criminal case, which put her life in imminent danger. To protect her, the government placed her in a secret witness protection program, relocating her to a hidden, uncharted location that doesn't appear on any map. This place is a government-designated safe zone, created specifically for high-risk individuals like Emily. Despite being officially declared dead to ensure her safety, Emily found a way to send a letter to her family through special channels provided by the program. These channels allow protected individuals to communicate with their loved ones without revealing their true location, maintaining the illusion of their demise while ensuring their safety and anonymity."
+  },
+  "30": {
+   "surface": "Sarah's family received a letter from her, detailing the circumstances of her death, even though she had been declared dead. How could Sarah write a letter from the afterlife?",
+   "bottom": "Sarah, caught in a perilous situation involving a criminal organization, decides to fake her own death to protect herself. She meticulously plans her disappearance, choosing a secluded location to hide and altering her appearance to avoid recognition. To make her fake death believable, Sarah plants convincing evidence of her demise and writes a letter to her family, pretending to communicate from the afterlife. In the letter, she fabricates a story about a tragic accident, providing specific details and evidence to make it plausible. Her aim is to ensure her family believes she is truly gone, preventing them from searching for her and inadvertently leading the dangerous individuals to her hiding place. The supernatural element comes into play as Sarah's meticulous planning and the eerie accuracy of her fabricated afterlife message leave her family with an unsettling feeling, blurring the lines between reality and the supernatural."
+  },
+  "32": {
+   "surface": "Years after Emily's funeral, her best friend Sarah received a handwritten letter from Emily, apologizing for not attending her own funeral. How could Emily have sent this letter?",
+   "bottom": "Emily was diagnosed with a terminal illness and knew she wouldn't live much longer. She had always been close to her best friend, Sarah, and they had made a promise to always be there for each other, even in death. Knowing she couldn't keep this promise, Emily decided to write a heartfelt letter to Sarah, apologizing for missing her own funeral and expressing her deep love and gratitude for their friendship. To ensure the letter reached Sarah long after her passing, Emily arranged for a trusted friend to deliver it years later, or she used a timed delivery service. When Sarah received the letter, she was initially shocked but soon realized it was Emily's way of keeping their promise and showing her enduring love from beyond the grave."
+  },
+  "33": {
+   "surface": "Emily showed up at her family's dinner, asking why everyone looked so down. The odd part? They had just attended her funeral. How could this happen?",
+   "bottom": "Emily suffered from a rare medical condition known as catalepsy, which induced a state of suspended animation that was mistaken for death by the medical team. Due to this condition, her vital signs were undetectable, leading to the erroneous declaration of her death. Emily was buried with a device designed to detect any signs of life, which was a precautionary measure due to her known medical history. When she regained consciousness, the device alerted the authorities, and she was exhumed just in time. However, the trauma of the experience, combined with the effects of catalepsy, caused her to suffer temporary amnesia, leaving her with no memory of the events leading to her burial. As a result, when Emily appeared at her family's dinner table, she was unaware of why they were mourning, and her presence was both shocking and miraculous to her grieving family."
+  },
+  "34": {
+   "surface": "Every night, a man is visited by the ghost of his wife, Emily, who never existed. Despite her comforting presence, she is not real. How can this be explained?",
+   "bottom": "The husband, plagued by profound loneliness and emotional distress due to an unfulfilled desire for companionship, subconsciously creates Emily as a figment of his imagination. This imaginary figure manifests as a 'ghost' who visits him every night, providing him with the comfort and emotional support he desperately craves. Emily's presence is a vivid hallucination, a product of the husband's mind, which has established a nightly routine to cope with his deep-seated grief and isolation. Though Emily never existed in reality, her ghostly visits are a psychological mechanism that helps the husband manage his emotional turmoil."
+  },
+  "36": {
+   "surface": "Emma was startled to find her own obituary in the newspaper. Driven by a mix of shock and curiosity, she attended the memorial service held in her honor. Yet, the real mystery was why her obituary was published in the first place. How could such a mistake happen, or was it a mistake at all?",
+   "bottom": "Emma, a woman with a mysterious past, discovers her own obituary in the newspaper, which shocks her to the core. Driven by a mix of shock and curiosity, she decides to attend the memorial service held in her honor. She is determined to uncover how such a grave mistake occurred and is intrigued to see who among her friends and family truly cared about her. At the memorial, she hides in the shadows, observing the reactions of her loved ones. As the service progresses, Emma realizes that the obituary was not a mistake; it was a premonition. A supernatural force had intervened, warning her of an impending danger. The force reveals itself to Emma, explaining that her death was supposed to happen in an accident, but the timeline had been altered to give her a chance to change her fate. As Emma grapples with this revelation, she understands that someone close to her had unknowingly set events in motion that would lead to her demise. With this knowledge, Emma decides to confront the situation, determined to rewrite her destiny and prevent her foretold death."
+  },
+  "37": {
+   "surface": "Emily, who was declared dead and buried, somehow managed to write a letter to her best friend from her own grave. How could this be possible?",
+   "bottom": "Emily, a young woman with a fascination for Victorian-era customs, had always been intrigued by the concept of suspended animation\u2014a state where the body slows down to the point of mimicking death. During a visit to a historical estate, Emily experienced an unexpected medical condition that triggered this state. Unfortunately, the medical professionals attending to her used outdated equipment, failing to detect the subtle signs of life. Mistakenly declared dead, Emily was buried with a pen and paper as per her eccentric last wishes, a request she had made to her family long before. Awakening in her coffin, she found herself in a terrifying predicament. With the pen and paper, she wrote a desperate letter to her best friend, hoping it would somehow reach the surface and alert someone to her plight. Tragically, her efforts were in vain, and she succumbed to her entombment before rescue could arrive."
+  },
+  "39": {
+   "surface": "Despite being buried in the cemetery, Sarah was seen every night watering the garden of her old house. How is this possible?",
+   "bottom": "Sarah and her identical twin sister, Emily, shared a deep bond and a love for gardening. Every night, Sarah would water the garden of their old house, a routine that brought her immense peace. Tragically, Sarah died in a car accident, and Emily was devastated by the loss. To cope with her grief and to honor Sarah's memory, Emily decided to continue Sarah's nightly routine. She wore a disguise and only watered the garden late at night when no one was around, ensuring she remained unnoticed. Despite Sarah being buried in the cemetery, the neighbors saw Emily every night, mistaking her for Sarah, thus creating the eerie illusion that Sarah was still tending to her beloved garden."
+  },
+  "40": {
+   "surface": "Emily's family received a letter from her, despite her being declared dead and buried. The letter came from an address that doesn't exist. How could this be possible?",
+   "bottom": "Emily, a woman entangled in a web of dangerous secrets, is mistakenly declared dead after a tragic accident. Unknown to everyone, she was alive and had been buried in a coffin designed with a hidden escape mechanism, a precaution she had arranged due to threats from a powerful criminal organization she once worked for. After escaping her premature burial, Emily goes into hiding to evade her pursuers. To communicate with her family and assure them of her safety, she sends a letter from a non-existent address. This address serves as a coded message, a signal they had pre-arranged, indicating she is safe but cannot reveal her true location for their protection and her own. The supernatural aspect is subtly woven in, as Emily's survival and escape seem almost miraculous, leaving her family and the authorities bewildered by the inexplicable events surrounding her supposed death and mysterious communication."
+  },
+  "41": {
+   "surface": "Emily's family was astounded to find her diary updating itself with future events long after her passing. How could this be happening?",
+   "bottom": "Emily, a young woman with a fascination for the mystical, owned a diary that was gifted to her by an enigmatic old woman in a quaint bookstore. Unbeknownst to Emily, the diary was enchanted and connected to a mystical oracle capable of predicting and recording future events. Tragically, Emily passed away in a sudden accident, leaving her family and friends in mourning. However, the diary continued to update itself with details of future events, astonishing those who discovered it. Emily's spirit, lingering in the afterlife, found solace in using the diary as a medium to communicate important future events to the living. Through the diary, she relayed messages to warn and protect her loved ones from impending dangers, ensuring her presence and love continued to guide them even after her death."
+  },
+  "42": {
+   "surface": "Sarah unexpectedly walked into her home one evening, only to find her family in tears, holding a memorial for her. How could this be possible when she was standing right there?",
+   "bottom": "Sarah had been in a state of suspended animation for a decade, preserved in a specialized facility designed to keep her alive. Due to a malfunction in the facility's equipment, she unexpectedly awoke and made her way back home. Her family, unaware of her miraculous preservation, was shocked to see her. However, shortly after her return, Sarah fell into a deep sleep, a side effect of the suspended animation. Her family, not understanding the situation, mistook her deep sleep for death and mourned her as if she had died again. This misunderstanding led to the eerie scene of Sarah returning home to find her family grieving her supposed recent death."
+  },
+  "44": {
+   "surface": "Sarah's family received letters from her long after she was declared dead and buried. How could this be happening?",
+   "bottom": "Sarah was a brilliant journalist who uncovered a dangerous criminal organization with ties to powerful figures. Realizing the imminent threat to her life, she orchestrated an elaborate plan to fake her own death. With the help of a trusted friend, she staged a fatal accident and was declared dead. She then relocated to a remote, undisclosed location, adopting a new identity. From there, she began sending letters to her family, using her friend as an intermediary to ensure her messages remained untraceable. These letters served both as a reassurance to her loved ones and a means to continue her investigative work in secrecy, as she gathered evidence to eventually expose the criminal network. Her supernatural ability to foresee danger allowed her to stay one step ahead of her pursuers, ensuring her safety and the success of her mission."
+  },
+  "45": {
+   "surface": "Detective James received a chilling phone call from a murder victim, detailing the crime scene before the body was even discovered. How could this be possible?",
+   "bottom": "The murder victim, an investigative journalist named Emily, had been working on a high-profile case involving a corrupt corporation. She discovered damning evidence and knew her life was in danger. Anticipating her potential murder, Emily used a scheduling app to record a detailed message describing the crime scene, including specific details like a hidden compartment and the peculiar smell of a rare cologne worn by one of the culprits. She set the message to be delivered to Detective James at a specific time, knowing it would be crucial for solving her murder. On the night of her death, Emily was indeed at the crime scene, where she observed the layout and the presence of individuals involved in the conspiracy. Her foresight and meticulous planning allowed her to reach out from beyond the grave, ensuring justice would be served."
+  },
+  "47": {
+   "surface": "Emma was declared dead by the hospital, yet she was seen chatting with her family in their living room the following day. How could this be explained?",
+   "bottom": "Emma was mistakenly declared dead due to a clerical error at the hospital. Her medical records were accidentally swapped with those of another patient who had the same last name and a similar first name. This mix-up occurred because a new intern, unfamiliar with the hospital's record system, accidentally entered the wrong patient ID, causing Emma's records to be incorrectly updated. Emma's family was initially shocked and confused upon receiving the news of her death. However, their confusion turned to relief and joy when Emma returned home the next day, alive and well. The mistake was discovered when a nurse, who knew Emma personally, noticed the discrepancy and reported it to the hospital administration, correcting the error and confirming that Emma had never actually died."
+  },
+  "48": {
+   "surface": "John has never left his hometown, yet he has been seen in two different countries at the same time. How could this be possible?",
+   "bottom": "John has an identical twin brother who lives in another country. They frequently have video calls, which create the illusion that John is physically present in both locations. Additionally, John's twin brother is often mistaken for him due to their striking resemblance and similar mannerisms. This combination of video calls and mistaken identity leads people to believe that John is seen in two different countries at the same time, despite never leaving his hometown."
+  },
+  "49": {
+   "surface": "Tom was reported to be at a distant location by several people, yet he insists he never left his locked room. How could this be true?",
+   "bottom": "Tom and his identical twin brother, Tim, have always enjoyed playing pranks on people due to their uncanny resemblance. One day, Tom decided to stay locked in his room to focus on a project. Meanwhile, Tim, who was unaware of Tom's plan, visited a distant location wearing clothes identical to Tom's. The witnesses, who had no knowledge of Tom's twin, saw Tim and naturally assumed it was Tom, leading to the confusion. This incident was further complicated by the fact that Tom and Tim often mimic each other's mannerisms for fun, making it even harder for people to distinguish between them. Hence, despite Tom never leaving his room, multiple witnesses reported seeing him elsewhere, not realizing they were actually seeing Tim."
+  },
+  "50": {
+   "surface": "Locked in a windowless room, Sarah astounded everyone by describing the bustling scene outside with perfect accuracy. How did she manage this feat?",
+   "bottom": "Sarah, an ingenious tech enthusiast, found herself in a peculiar situation where she needed to convince others that she could see outside a windowless room. She had previously installed a hidden camera outside the building that streamed a live video feed directly to a virtual reality headset she wore. This allowed her to accurately describe the scene outside in real-time, as if she were actually there. Additionally, her friend, who was in on the plan, stood outside and provided live audio updates through a hidden earpiece, ensuring that Sarah could seamlessly narrate the events occurring outside. This combination of technology and teamwork enabled Sarah to pull off the impressive feat of describing the outside world while locked in a windowless room."
+  },
+  "52": {
+   "surface": "Tom was shocked when he was arrested for trespassing in a country he had never visited. Despite having a solid alibi of never leaving his hometown, evidence suggested otherwise. How could this happen?",
+   "bottom": "Tom, a quiet man who has never left his hometown, becomes the unsuspecting victim of a sophisticated identity theft scheme. A local business where Tom frequently shops experiences a data breach, allowing a criminal organization to steal his personal information. This organization, known for exploiting stolen identities for illegal activities, creates a fake passport using Tom's name and photo. They use this passport to commit trespassing in a foreign country, leaving it behind at the scene to mislead authorities. The authorities, finding the passport with Tom's details, arrest him under the assumption that he is the perpetrator. Despite his protests and alibi of never having left his hometown, Tom finds himself entangled in a legal nightmare, struggling to prove his innocence against the evidence planted by the criminal organization."
+  },
+  "55": {
+   "surface": "Emma came home with a noticeable sunburn, yet she insists she never stepped outside. What could have happened?",
+   "bottom": "Emma spent the afternoon in a room designed with an unusual architectural feature: a skylight with a convex shape, acting like a magnifying glass. This skylight was made of a special material that intensified and focused the sunlight directly onto a particular spot in the room where Emma was seated. Unaware of the potential danger, Emma sat reading under the concentrated beam of sunlight for several hours. The intense focus of sunlight on her skin resulted in a sunburn, despite her never leaving the room. When she returned home later, her family was puzzled by her sunburn, given that she had been indoors the entire time."
+  },
+  "56": {
+   "surface": "Sarah found herself locked out of her own house without ever leaving the room she was in. How could this happen?",
+   "bottom": "Sarah had recently installed a state-of-the-art remote-controlled lock system in her house, allowing her to lock and unlock doors with ease from inside her room. One stormy evening, while Sarah was working from home, a sudden thunderstorm rolled in, causing a power surge that disrupted the electronic systems in her house. Unbeknownst to her, the surge caused the lock system to malfunction, inadvertently activating the deadbolt on her front door. This particular deadbolt was designed with a safety feature that could only be unlocked from the outside to prevent unauthorized remote access. As a result, despite being inside her house the entire time, Sarah found herself effectively locked out from accessing the rest of her home, as the malfunction had isolated her in the room where she was working."
+  },
+  "59": {
+   "surface": "Sarah was locked in a windowless room without any phone or internet, yet she could still tell her friend exactly what the weather was like outside. How did she manage to do this?",
+   "bottom": "Sarah was confined in a windowless room with no phone or internet access, yet she managed to accurately describe the weather outside to her friend. This was because Sarah had a weather-themed calendar in the room, which provided daily weather predictions. Additionally, Sarah had a habit of listening to the weather forecast every morning before being locked in the room, and she remembered it well. Furthermore, there was a small ventilation duct in the room that allowed sounds from outside, like rain or wind, to be faintly heard. This combination of the calendar, her memory of the forecast, and the subtle auditory cues from the ventilation duct enabled Sarah to describe the weather conditions outside with surprising accuracy."
+  },
+  "60": {
+   "surface": "Sarah was seen actively participating in a meeting across town while also being at home, never having left her house. How could she manage to be in two places at once?",
+   "bottom": "Sarah is an innovative technologist who has developed a highly realistic virtual reality setup combined with a sophisticated holographic projection system. This advanced technology allows her to project a lifelike, interactive presence in another location while she remains physically at home. The holographic projection is so convincing that it appears as though Sarah is in two places at once, engaging with people and environments in both her home and the remote location. This setup enables Sarah to manage her work and personal life seamlessly, giving her the ability to be virtually present wherever she is needed without ever leaving her home."
+  },
+  "61": {
+   "surface": "Sarah, without stepping outside her room, successfully delivered a package to a city far away. How could she achieve this feat?",
+   "bottom": "Sarah, a tech-savvy entrepreneur, has been developing innovative solutions for logistics. She owns a high-tech drone equipped with a sophisticated remote control system connected to the internet, allowing her to pilot it from anywhere. Her latest project involves using this drone to deliver packages to distant locations without the need for physical travel. One day, Sarah receives an urgent request to deliver a package to a city miles away. Despite being confined to her room due to a severe storm, she manages to complete the delivery successfully by using her drone. The drone, equipped with GPS navigation, flies autonomously to the destination, guided by Sarah's inputs from her computer. This breakthrough in remote delivery technology not only showcases Sarah's ingenuity but also opens up new possibilities for efficient logistics solutions in the future."
+  },
+  "63": {
+   "surface": "Sarah, who is completely blind, described the color of the sky to her friend with surprising accuracy. How could she do that?",
+   "bottom": "Sarah, who was born with sight but lost her vision in her teenage years due to a degenerative eye condition, often reminisces about her visual experiences. She has vivid memories of various colors and scenes from her past. One day, she has a dream where she regains her sight temporarily and sees the sky in all its vibrant hues. Upon waking, the dream leaves a strong impression on her mind, reinforcing her memories of the sky's color. Later, when her friend asks about the sky, Sarah accurately describes its color by relying on these vivid recollections from both her dream and her past experiences. Although she is now completely blind, her ability to recall and articulate her memories allows her to convey the sky's color as if she were seeing it anew."
+  },
+  "65": {
+   "surface": "A man who had been declared missing for ten years was found living in his own house the entire time. How did no one notice him?",
+   "bottom": "The man, facing a personal crisis and feeling threatened by a dangerous situation, decided to disappear from his previous life entirely. He meticulously planned his vanishing act by undergoing cosmetic surgery and acquiring false documentation to establish a new identity. To ensure no one recognized him, he altered his behavior and lifestyle significantly, adopting habits and routines that were starkly different from his past. Living under an assumed name, he returned to his own house, which he had discreetly purchased through a shell company. He cut off all contact with friends and family, disposed of personal belongings, and erased his digital footprints to make it seem as though he had vanished. For ten years, he lived quietly, blending into the neighborhood without arousing suspicion from neighbors or authorities. It wasn't until a chance encounter with an old acquaintance, who noticed something familiar about him, that his true identity was uncovered, revealing that the man who had been declared missing for a decade had been living in his own home the entire time."
+  },
+  "66": {
+   "surface": "Sarah spent an afternoon visiting five different countries, experiencing their unique sights, sounds, and even smells, all without ever leaving her room. How did she manage to do this?",
+   "bottom": "Sarah, an avid traveler who had been unable to travel due to global restrictions, discovered an advanced virtual reality system that promised to simulate the experience of visiting different countries. Intrigued, she decided to try it out one afternoon. The system was state-of-the-art, providing not only stunning visual and auditory elements but also incorporating tactile and olfactory feedback, making the experience incredibly immersive. As Sarah put on the VR headset, she found herself 'walking' through the bustling streets of Tokyo, 'smelling' the spices of an Indian market, 'feeling' the chill of the Swiss Alps, 'hearing' the vibrant sounds of a Brazilian carnival, and 'tasting' the rich flavors of Italian cuisine\u2014all from the comfort of her room. This innovative technology allowed her to feel as though she had traveled to five different countries without ever stepping outside, fulfilling her wanderlust in a way she never imagined possible."
+  },
+  "70": {
+   "surface": "Sarah found herself in a room with no windows or doors, yet she somehow managed to leave and return with a cup of coffee. How did she do it?",
+   "bottom": "Sarah was participating in an advanced virtual reality simulation designed to test problem-solving skills under extreme conditions. The simulation created a hyper-realistic environment where she felt entirely immersed in a room with no windows or doors. However, the simulation had a pause feature that allowed her to temporarily exit the virtual environment. During one of these pauses, Sarah left the simulation, got herself a cup of coffee, and then resumed the virtual experience. This allowed her to seemingly 'leave' and 'return' to the locked room with a cup of coffee, despite the room having no physical exits."
+  },
+  "72": {
+   "surface": "Jane sat alone in her room, lost in thought, when she discovered a handwritten note addressed to her. No one else was present. How did she receive the note?",
+   "bottom": "Jane was sitting alone in her room, pondering over her day, when she noticed a handwritten note that had seemingly appeared out of nowhere. In reality, the note was slipped under the door by her friend Sarah, who was coordinating a surprise party for Jane's upcoming birthday. Sarah, in a hurry to finalize the arrangements, didn't have time to enter the room and decided to quietly pass the note under the door to keep Jane informed about the next step in the surprise plan. The note was a crucial part of the elaborate plan to lead Jane to the location of the surprise party, ensuring everything remained a secret until the right moment."
+  },
+  "73": {
+   "surface": "In a town where everyone can read each other's minds, one man walks around with his thoughts completely hidden. Despite the strict laws against privacy, he faces no consequences. How does he manage this?",
+   "bottom": "In a peculiar town where every resident possesses the ability to read minds, the societal norm is complete transparency of thoughts, enforced by a strict law. The town's authorities use mind-reading as a primary tool for maintaining order and preventing crimes, with severe penalties like imprisonment and forced mind reprogramming for those who attempt to keep their thoughts private. However, one man, known as Mr. Smith, remains an enigma. Despite living among telepaths, his thoughts are entirely inaccessible. Unbeknownst to the townsfolk, Mr. Smith is not human but a highly advanced robot created by a reclusive inventor who feared the implications of a world where privacy no longer existed. This inventor designed Mr. Smith with a unique neural architecture devoid of human thoughts, allowing him to exist undetected in a community where mind-reading is the norm. While the townspeople are baffled by his mental privacy, they are unaware of his true nature, thus allowing him to live peacefully, free from the oppressive scrutiny of their telepathic society."
+  },
+  "74": {
+   "surface": "Every night, Emma found a mysterious letter from her future self, filled with warnings about events that never seemed to happen. What could explain this strange phenomenon?",
+   "bottom": "Emma was part of an advanced simulation designed to test and enhance her decision-making abilities for a critical mission in the real world. Each night, she received letters purportedly from her future self, warning her of fabricated events. These letters were crafted by the simulation to create realistic and emotionally charged scenarios, challenging Emma with ethical dilemmas and moral challenges. The simulation's purpose was to evaluate her responses under pressure, preparing her for high-stakes environments where quick, effective decisions were crucial. Although the events in the letters never occurred, they were instrumental in honing Emma's skills for her future mission."
+  },
+  "76": {
+   "surface": "Years after she disappeared, Emily suddenly showed up at her childhood home looking exactly as she did when she left, with no memory of the time that had passed. How is this possible?",
+   "bottom": "Emily, a young woman who vanished without a trace from her hometown years ago, suddenly reappears in her childhood home, unchanged and seemingly untouched by time. Unbeknownst to her family and friends, Emily had been abducted by aliens who kept her in a stasis chamber aboard their spacecraft. This chamber prevented her from aging and shielded her consciousness from the passage of time. The aliens, fascinated by human life, used advanced technology to manipulate Emily's perception, ensuring she remained unaware of her surroundings and the years that had passed. Eventually, due to a malfunction in their equipment, Emily was inadvertently returned to Earth, exactly as she had been when taken. Her sudden reappearance, unchanged and unaware of the years gone by, leaves her family and the community in shock, struggling to comprehend the supernatural circumstances surrounding her mysterious return."
+  },
+  "78": {
+   "surface": "Sarah was seen at a major public event, yet she also interacted with people at home at the same time. Everyone believed she never left her house. How did she manage this?",
+   "bottom": "Sarah, along with her identical twin sister, orchestrated a clever ruse to be in two places at once. Sarah had a pressing need to attend a significant public event that could not be missed, but she also needed to maintain the illusion of being at home to avoid suspicion from certain people who were monitoring her closely. Her identical twin, who had always been supportive, agreed to help by staying at home and taking on Sarah's persona. Meanwhile, Sarah attended the event. To reinforce the illusion, Sarah pre-recorded video calls and timed messages, which her twin played at strategic moments to communicate with people who might check on her. This technological trickery, combined with the twin's convincing impersonation, allowed Sarah to convince everyone she had never left her home, despite physically being at the event. The supernatural element of their identical appearances played a crucial role in the success of their plan, as no one suspected the existence of a twin, making the deception flawless."
+  },
+  "80": {
+   "surface": "In the dead of night, Sarah is startled awake by a phone call. The voice on the other end is unmistakably her own, urgently warning her about events that could unfold the next day. How can Sarah be receiving a call from herself, and what is she being warned about?",
+   "bottom": "Sarah is a participant in a groundbreaking time travel experiment conducted by a secretive research organization. The experiment allows participants to receive communications from their future selves, providing warnings about potential life-altering events. One night, Sarah receives a phone call from her future self, who warns her about a car accident that is set to occur the following day. This warning is crucial, as the accident could have severe consequences for her and her loved ones. The call also includes a secondary warning about a financial decision\u2014an investment opportunity that appears promising but is actually a scam. This dual warning prompts Sarah to alter her plans, avoiding the accident and scrutinizing the investment more closely. As a result, she avoids both the physical harm and the financial ruin that could have drastically changed her life. Her involvement in the experiment means she is constantly aware of potential future events, which significantly influences her present-day decisions and actions, making her more cautious and strategic in her life choices."
+  },
+  "83": {
+   "surface": "In a drought-stricken town that hadn't seen rain for years, a mysterious child appeared, capable of summoning powerful storms. Strangely, while the rain poured down, the child remained completely dry. How could this be?",
+   "bottom": "In a town plagued by an endless drought, a mysterious child appears, seemingly out of nowhere. This child, possessing an enigmatic aura, is actually a weather-controlling entity or spirit. The child has the innate ability to summon storms, a power that had been dormant for decades in this arid region. However, despite the torrential downpours and thunderous skies they conjure, the child remains completely dry. This is due to a protective aura that surrounds them, an invisible barrier that deflects the rain and keeps them untouched by the elements. The child's presence and abilities are tied to a mystical connection with the storms, creating a symbiotic relationship where the storms inherently respect the child's presence, avoiding them entirely. The townspeople, awed and bewildered by this phenomenon, are unaware of the child's true nature and origin, seeing only a miraculous end to their long-standing drought."
+  },
+  "85": {
+   "surface": "In a small town where everyone knows each other, a stranger appeared one day and vanished the next. The townspeople were left with vivid memories of events that never happened. What could explain this?",
+   "bottom": "In a small, close-knit town where everyone knows each other, a stranger mysteriously appeared one day and vanished the next, leaving behind memories of events that never happened. This stranger was, in fact, a time traveler from the future who had accidentally altered the timeline. During his brief stay, he interacted with a key individual in the town whose actions were pivotal to several future events. This interaction created a ripple effect that implanted false memories in the minds of the townspeople. The stranger emitted a temporal aura that altered the brainwaves of those nearby, leading to the creation of vivid but false memories of significant and emotionally impactful events, such as weddings, births, and major community gatherings. These events never actually occurred, but the memories felt real to the townspeople. The next day, the stranger vanished, leaving the town bewildered and haunted by memories of a past that never was."
+  },
+  "87": {
+   "surface": "Sarah and John, complete strangers, both vividly recall growing up together in a small village and facing life\u2019s challenges side by side. Yet, they have never met before in this lifetime. How can this be explained?",
+   "bottom": "Sarah and John, strangers in their current lives, both decided to undergo a past life regression therapy session out of curiosity. During the session, they experienced vivid and identical memories of a past life where they were siblings living in a small village. In this past life, they faced numerous challenges together, such as scarce resources, harsh weather conditions, and social conflicts. The intensity and clarity of these shared memories created an inexplicable bond and familiarity between them in the present. Despite never having met before, the shared experience of their past life brought them an unshakeable sense of connection and understanding, making them feel as though they had known each other for a lifetime."
+  },
+  "91": {
+   "surface": "Emma received a mysterious letter that seemed to be from herself, but from the future. The letter warned her about a significant event that could change her life. How could this be possible, and what event might the letter be referring to?",
+   "bottom": "Emma, a talented and ambitious young woman, receives an unexpected letter in the mail. The letter, written in her own handwriting, claims to be from her future self. Initially skeptical, Emma struggles to accept the possibility of time travel or future communication. However, the letter's detailed description of her life and personal experiences convinces her of its authenticity. The message warns Emma of a car accident that would drastically alter her career path, leading her to abandon her current profession. Despite her disbelief, the specificity of the warning prompts Emma to take precautions. She changes her daily routine, choosing alternative routes and times for her commute. This decision inadvertently saves her from the accident. Though she avoids the crash, the experience prompts Emma to reevaluate her life choices, igniting a passion for a new career path she had never considered. Ultimately, Emma achieves greater success and fulfillment in her newfound profession. Unknown to her, the future version of Emma had experienced the accident and its consequences, finding a way to send the warning back in time to alter her past self's fate."
+  },
+  "92": {
+   "surface": "In a peculiar town, all the clocks stopped at once, yet life went on as usual. Strangely, the librarian hasn't aged a day in decades. What could be the reason behind this anomaly?",
+   "bottom": "In a quaint town, an impending disaster loomed, prompting a group of well-meaning but inexperienced spellcasters to cast a protective spell. However, the spell was miscast, trapping the town in a time loop that only affected its physical clocks, causing them all to stop simultaneously. While time continued to pass for the residents, the librarian remained unchanged due to a magical artifact in their possession. This artifact, an heirloom passed down through generations, was designed to protect its holder from temporal disturbances. As a result, the librarian's biological clock was frozen, halting their aging process and granting them immunity to the spell's effects. Additionally, the artifact allowed the librarian to perceive and manipulate minor temporal anomalies, giving them a unique awareness of the town's altered timeline. Despite the peculiar circumstances, the town continued its daily life, unaware of the librarian's secret and the artifact's powerful influence."
+  },
+  "96": {
+   "surface": "In the heart of a bustling city, a woman suddenly vanished into thin air on a crowded street, yet her shadow remained perfectly visible. What could explain this bizarre occurrence?",
+   "bottom": "In a bustling city, a high-tech company was secretly testing advanced holographic and cloaking technologies. They projected a lifelike hologram of a woman onto the street as part of a field test. However, an unexpected interference from a nearby electronic device caused the hologram to malfunction, making the woman vanish suddenly. The shadow, which was part of a separate projection system designed to enhance realism, remained because it was not affected by the interference. Meanwhile, a second test involved a real woman using a prototype cloaking device. The device successfully bent light around her, rendering her invisible, but due to a software bug, it did not account for her shadow, which was cast by a different light source. The simultaneous occurrence of these events led to the mysterious sight of a woman disappearing into thin air, leaving only her shadow behind."
+  },
+  "98": {
+   "surface": "Emma's family received a handwritten letter from her, dated a week after her funeral. How could this be possible if she was declared dead and buried?",
+   "bottom": "Emma, aware of the dangerous individuals pursuing her, decides to fake her death to ensure her safety. She meticulously plans her disappearance, staging an accident that results in her being declared dead and buried. To provide her family with some reassurance and to let them know she is still alive, Emma writes a letter dated a week after her supposed funeral. She entrusts a trusted intermediary with the task of mailing the letter from a different location to avoid revealing her whereabouts. Despite the supernatural aspect of her family receiving a letter from someone they believed to be dead, the truth lies in Emma's desperate attempt to protect herself and communicate her survival to her loved ones."
+  }
+ },
+ "items": [
+  {
+   "id": 1,
+   "case": 42,
+   "question": "Q: Did Sarah's family start the memorial before they knew that Sarah had died?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 2,
+   "case": 42,
+   "question": "Q: Did Sarah's family members believe she had died based on the information they received, even if it turned out to be false?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 3,
+   "case": 42,
+   "question": "Q: Did Sarah's family members mistakenly believe they were preparing a memorial for a distant relative who had died?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 4,
+   "case": 42,
+   "question": "Q: Did Sarah's family start the memorial before they received any information about Sarah's whereabouts?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 5,
+   "case": 41,
+   "question": "Q: Did Emily have any siblings or close relatives who might have had access to her diary and the means to update it?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 6,
+   "case": 41,
+   "question": "Q: Is Emily still alive?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 7,
+   "case": 41,
+   "question": "Q: Was Emily's diary kept in a location where it could have been accessed by someone who had the opportunity to modify it, such as a family member or friend?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 8,
+   "case": 41,
+   "question": "Q: Did Emily have any known connections to any individuals or groups who might have had the technical expertise to create the illusion of diary updates using a combination of physical and psychological methods?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 9,
+   "case": 91,
+   "question": "Q: Are there any unusual items or objects mentioned in the letter that Emma might have recently acquired or encountered?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 10,
+   "case": 91,
+   "question": "Q: Has Emma received any other letters from the future or similar mysterious notes?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 11,
+   "case": 91,
+   "question": "Q: Does the letter include any dates or times that suggest when the significant event might happen?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 12,
+   "case": 91,
+   "question": "Q: Does the letter suggest that the significant event involves a critical moment in Emma's career or education?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 13,
+   "case": 9,
+   "question": "Q: Was the man able to contact someone after he was declared dead but before his body was discovered?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 14,
+   "case": 9,
+   "question": "Q: Did the man's body show any signs of recent activity that could have suggested he was not buried properly?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 15,
+   "case": 9,
+   "question": "Q: Was the burial site located in an area where it would be difficult to miss the man's body?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 16,
+   "case": 9,
+   "question": "Q: Was the man's death initially declared during a time when there was a high volume of cases, leading to potential oversights or mistakes?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 17,
+   "case": 65,
+   "question": "Q: Did the man have any neighbors close by who could have seen or heard something unusual about the house during those ten years?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 18,
+   "case": 65,
+   "question": "Q: Did he have any means to communicate secretly with someone outside, such as through a hidden phone or encrypted messages?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 19,
+   "case": 65,
+   "question": "Q: Did he take any steps to prevent being found, such as moving frequently or changing addresses?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 20,
+   "case": 65,
+   "question": "Q: Did the man regularly remove trash from the house or leave it outside, which could have given away his presence?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 21,
+   "case": 50,
+   "question": "Q: Did the third party describing the scene to Sarah have any means of observing the outside scene indirectly (e.g., through a camera feed)?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 22,
+   "case": 50,
+   "question": "Q: Did the third party describing the scene to Sarah have any difficulty in accurately conveying the details of the scene they observed?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 23,
+   "case": 50,
+   "question": "Q: Was the third party describing the scene to Sarah completely relying on their own memory and observations without any external aids?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 24,
+   "case": 50,
+   "question": "Q: Was Sarah given any specific instructions or information about what to expect when describing the scene?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 25,
+   "case": 1,
+   "question": "Q: Was there any sign of a recent illness or unusual behavior from Emma before she was found dead?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 26,
+   "case": 1,
+   "question": "Q: Did the medical examiner find any signs of a heart condition or stroke during the autopsy?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 27,
+   "case": 1,
+   "question": "Q: Did Emma have any recent interactions with family members or friends that seemed unusual or concerning?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 28,
+   "case": 1,
+   "question": "Q: Did Emma have any routine medical check-ups recently that might indicate a potential cause of sudden death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 29,
+   "case": 70,
+   "question": "Q: Did Sarah leave and return through a hidden door or entrance that was disguised as a normal part of the room, such as a bookcase or filing cabinet?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 30,
+   "case": 70,
+   "question": "Q: Did Sarah leave and return using a hidden door or entrance disguised as part of the room's decoration, such as a tapestry or mural?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 31,
+   "case": 70,
+   "question": "Q: Did Sarah leave the room through a door that was hidden behind a false panel or wall near the entrance of the room?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 32,
+   "case": 70,
+   "question": "Q: Did Sarah leave and return using a door that was previously closed?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 33,
+   "case": 15,
+   "question": "Q: Was Sarah found with any personal items that were out of place or missing, suggesting she may have left in a hurry?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 34,
+   "case": 15,
+   "question": "Q: Did Sarah have any known respiratory issues that could have led to her death suddenly?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 35,
+   "case": 15,
+   "question": "Q: Was Sarah found with any items that appeared to be recently used, such as a cup with warm water or a half-empty glass of water, suggesting she may have been awake and active shortly before her death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 36,
+   "case": 15,
+   "question": "Q: Was Sarah found with any prescription medication or substances that could indicate an accidental overdose?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 37,
+   "case": 78,
+   "question": "Q: Did the person helping Sarah use a device with a camera and microphone to watch the public event and speak to Sarah at home?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 38,
+   "case": 78,
+   "question": "Q: Did Sarah have a dedicated person at home who was relaying messages and interacting on her behalf during the public event?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 39,
+   "case": 78,
+   "question": "Q: Did Sarah use a second device to attend the public event and a different device to interact with people at home?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 40,
+   "case": 78,
+   "question": "Q: Did Sarah use any technology to appear at home while actually being elsewhere?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 41,
+   "case": 73,
+   "question": "Q: Does the man have a way to encode his thoughts in a language or code that others cannot understand?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 42,
+   "case": 73,
+   "question": "Q: Can the man enter a state of altered consciousness where his thoughts are not accessible to others' mind-reading abilities?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 43,
+   "case": 73,
+   "question": "Q: Does the man have a unique mental ability that allows him to project his thoughts into a different frequency or dimension, rendering them invisible to others' mind-reading abilities?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 44,
+   "case": 73,
+   "question": "Q: Does the man have a special ally or entity that helps him keep his thoughts hidden from others?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 45,
+   "case": 10,
+   "question": "Q: Was the man's body subjected to any cooling treatments or other procedures that could have slowed down his metabolism and led to a false declaration of death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 46,
+   "case": 10,
+   "question": "Q: Did the man have any known allergies or reactions to medications that could have affected his vital signs and led to a false declaration of death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 47,
+   "case": 10,
+   "question": "Q: Was the man actually declared dead by a medical professional before this event?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 48,
+   "case": 10,
+   "question": "Q: Were these neurological conditions related to a history of anoxia or hypoxia that could have led to a false declaration of death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 49,
+   "case": 55,
+   "question": "Q: Could it be possible that Emma was in a room with a skylight on a day with the sun shining brightly through the skylight for an extended period?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 50,
+   "case": 55,
+   "question": "Q: Could it be possible that Emma was near a glass door or a skylight that was exposed to intense sunlight during a specific time of the day, such as midday?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 51,
+   "case": 55,
+   "question": "Q: Could it be possible that Emma was in a room with a skylight on a particularly sunny day when the sun was directly overhead or at a low angle?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 52,
+   "case": 55,
+   "question": "Q: Could it be possible that Emma was near a glass door or a skylight that was exposed to intense sunlight during a recent sunny day in the late afternoon when the sun is still casting strong shadows?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 53,
+   "case": 56,
+   "question": "Q: Is it possible that the room has a door or entrance that leads directly to the exterior of the house?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 54,
+   "case": 56,
+   "question": "Q: Could the room have a door that leads to a balcony or a rooftop terrace that is not connected to the main living spaces of the house?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 55,
+   "case": 56,
+   "question": "Q: Could the room be part of a swimming pool house or other small structure within the yard that has an external exit?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 56,
+   "case": 56,
+   "question": "Q: Is it possible that the room has a door or entrance that leads to a crawlspace or utility area with an external exit?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 57,
+   "case": 72,
+   "question": "Q: Was the note found near the doorknob of her room?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 58,
+   "case": 72,
+   "question": "Q: Was the note found near the window sill of her room?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 59,
+   "case": 72,
+   "question": "Q: Was the note found in a bag or backpack that belonged to Jane?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 60,
+   "case": 72,
+   "question": "Q: Was the note found on a floor or carpet in her room?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 61,
+   "case": 45,
+   "question": "Q: Was the mobile phone in a room with multiple speakers or microphones that could enhance the clarity of the victim's voice during the call?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 62,
+   "case": 45,
+   "question": "Q: Could the victim have been wearing a hands-free device while at the crime scene?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 63,
+   "case": 45,
+   "question": "Q: Was the victim able to make the call from a mobile phone that was still within the house or building where the crime took place?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 64,
+   "case": 45,
+   "question": "Q: Was the victim able to make the phone call from the location where the murder took place?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 65,
+   "case": 48,
+   "question": "Q: Has John ever had any experience with advanced video production techniques that could allow him to appear in multiple locations simultaneously?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 66,
+   "case": 48,
+   "question": "Q: Could there be any social media posts or news articles indicating that John's sibling was mistaken for him in both countries?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 67,
+   "case": 48,
+   "question": "Q: Has John ever had any experience with advanced projection technologies that could allow him to appear in multiple places simultaneously?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 68,
+   "case": 48,
+   "question": "Q: Could John have used a combination of video feeds, synchronization technology, and advanced video production techniques to create the illusion of being in both countries at the same time?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 69,
+   "case": 92,
+   "question": "Q: Could the protection from aging be due to a device that manipulates the local spacetime around the town?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 70,
+   "case": 92,
+   "question": "Q: Could the protective spell specifically target mechanical devices like clocks while leaving biological processes unaffected?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 71,
+   "case": 92,
+   "question": "Q: Are the clocks in the town synchronized with a time reference point that remains constant over time?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 72,
+   "case": 92,
+   "question": "Q: Is the town located inside a large underground facility?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 73,
+   "case": 76,
+   "question": "Q: Did Emily have any amnesia or memory loss before she returned to her childhood home?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 74,
+   "case": 76,
+   "question": "Q: Did Emily's disappearance last for more than a year?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 75,
+   "case": 76,
+   "question": "Q: Did Emily's kidnapper leave any clues or messages for her family or friends at her childhood home before her return?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 76,
+   "case": 76,
+   "question": "Q: Did Emily's kidnapper ensure that she would be recognized by people at her childhood home upon her return?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 77,
+   "case": 37,
+   "question": "Q: Did the letter indicate that Emily was aware of her impending burial and wrote the letter while still alive?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 78,
+   "case": 37,
+   "question": "Q: Was there any legal proceeding or inquest related to Emily's death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 79,
+   "case": 37,
+   "question": "Q: Was there any record or documentation of Emily writing the letter from her grave?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 80,
+   "case": 37,
+   "question": "Q: Did the letter mention anything about Emily's burial or the circumstances leading up to it?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 81,
+   "case": 30,
+   "question": "Q: Was there any mention in the letter of Sarah experiencing a near-death experience or any other event that could explain how she might have been able to write the letter from what seemed like the afterlife?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 82,
+   "case": 30,
+   "question": "Q: Was the letter delivered through an unexpected or unusual method that suggests it came from an extraordinary source?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 83,
+   "case": 30,
+   "question": "Q: Did the letter include any instructions or requests that Sarah would not have made in her usual style, suggesting it might not be from her?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 84,
+   "case": 30,
+   "question": "Q: Did the letter mention anything about Sarah's death or the circumstances surrounding it?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 85,
+   "case": 21,
+   "question": "Q: Was the car stopped at a police checkpoint when the man was declared dead?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 86,
+   "case": 21,
+   "question": "Q: Was the car being used in a taxi service when the man was declared dead?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 87,
+   "case": 21,
+   "question": "Q: Was the man's body found in possession of the car keys when he was declared dead?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 88,
+   "case": 21,
+   "question": "Q: Did the man receive the speeding ticket before he was declared dead?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 89,
+   "case": 32,
+   "question": "Q: Could Emily have left the letter in a location that required Sarah to solve a riddle or puzzle to access it?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 90,
+   "case": 32,
+   "question": "Q: Could Emily have used a time-travel device to send the letter?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 91,
+   "case": 32,
+   "question": "Q: Could the trusted person have been someone Emily spoke to on the phone or via video call in the last moments of her life, who then delivered the letter to Sarah?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 92,
+   "case": 32,
+   "question": "Q: Could Emily have included a physical object or a photograph in her belongings that would point Sarah to the location of the letter?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 93,
+   "case": 96,
+   "question": "Q: Was the woman's shadow cast on a reflective surface, like a puddle or a wet area on the street, which might explain its visibility while she was gone?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 94,
+   "case": 96,
+   "question": "Q: Could the light source from the vehicle have been strong enough to create a clear shadow that remained visible even when the woman was no longer in the direct path of the light?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 95,
+   "case": 96,
+   "question": "Q: Could the shadow have been caused by a light source reflecting off a nearby surface in a way that made it seem like the woman was still there?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 96,
+   "case": 96,
+   "question": "Q: Is the woman still alive?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 97,
+   "case": 80,
+   "question": "Q: Is the specific individual involved in the warning a friend or acquaintance of Sarah?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 98,
+   "case": 80,
+   "question": "Q: Does the call provide specific details about the events that are likely to happen the next day?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 99,
+   "case": 80,
+   "question": "Q: Is the warning related to an event that has not yet occurred but will happen the next day?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 100,
+   "case": 80,
+   "question": "Q: Is the warning about a personal safety issue that Sarah needs to be cautious about?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 101,
+   "case": 49,
+   "question": "Q: Were there any security cameras or other surveillance systems that could have recorded Tom leaving his room?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 102,
+   "case": 49,
+   "question": "Q: Did anyone witness Tom leaving his locked room?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 103,
+   "case": 49,
+   "question": "Q: Could it be that Tom was using a combination of multiple methods, such as a hidden passage and misdirection, to make it seem like he was elsewhere?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 104,
+   "case": 49,
+   "question": "Q: Were there any reports of a power outage or other disruptions that could have affected security measures or surveillance in the building?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 105,
+   "case": 83,
+   "question": "Q: Can the child create a barrier around themselves to protect from the rain?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 106,
+   "case": 83,
+   "question": "Q: Can the barrier protect others besides the child, or is it solely focused on protecting the child?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 107,
+   "case": 83,
+   "question": "Q: Does the barrier created by the child have any visible signs or is it completely invisible?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 108,
+   "case": 83,
+   "question": "Q: Does the barrier have any limitations, such as size or shape, that affect its effectiveness in keeping the child dry?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 109,
+   "case": 26,
+   "question": "Q: Is it possible that the non-existent place is a result of a prank or a practical joke played on Emily's family?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 110,
+   "case": 26,
+   "question": "Q: Is it possible that the letter was sent from a real place using a pseudonym or a fake name for the location?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 111,
+   "case": 26,
+   "question": "Q: Is it possible that the non-existent place is a reference to a place in a cultural or folk tradition that Emily or her family might have learned about through ancient texts or artifacts?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 112,
+   "case": 26,
+   "question": "Q: Could the non-existent place be a result of a creative or symbolic representation, such as a fictional location in a personal story or a metaphorical reference?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 113,
+   "case": 87,
+   "question": "Q: Did Sarah and John grow up in the same village but were unaware of each other due to social stratification or isolation?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 114,
+   "case": 87,
+   "question": "Q: Did Sarah and John grow up in the same village but were from different eras, experiencing similar events through historical coincidence?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 115,
+   "case": 87,
+   "question": "Q: Did Sarah and John grow up in different households but were both raised by their grandparents?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 116,
+   "case": 87,
+   "question": "Q: Did Sarah and John grow up in different households but were both involved in the same hobby or interest group, such as music or theater?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 117,
+   "case": 33,
+   "question": "Q: Did the people at the dinner understand that they had made a mistake after Emily explained?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 118,
+   "case": 33,
+   "question": "Q: Was Emily alive during the event described?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 119,
+   "case": 33,
+   "question": "Q: Did the people at the dinner postpone the planned funeral after seeing Emily?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 120,
+   "case": 33,
+   "question": "Q: Did the people at the dinner inform Emily about the funeral before she arrived?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 121,
+   "case": 8,
+   "question": "Q: Was the man alive during his own trial?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 122,
+   "case": 8,
+   "question": "Q: Was the execution date set after the trial but before the man's death?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 123,
+   "case": 8,
+   "question": "Q: Did the man testify in his own defense before he was actually executed?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 124,
+   "case": 8,
+   "question": "Q: Was the man who testified in his own defense related to the actual murderer in a way that would make him appear as a victim of the crime?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 125,
+   "case": 47,
+   "question": "Q: Did Emma have any siblings or close relatives who might have been mistaken for her?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 126,
+   "case": 47,
+   "question": "Q: Did the hospital staff make an error in the documentation process, such as a typo or mislabeling, that led to the incorrect declaration of death?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 127,
+   "case": 47,
+   "question": "Q: Did Emma have a condition that caused temporary loss of consciousness but did not result in actual death?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 128,
+   "case": 47,
+   "question": "Q: Did Emma meet her family in a different part of the country or world on the same day she was declared dead?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 129,
+   "case": 59,
+   "question": "Q: Was Sarah able to use the combination of weather sounds and any other environmental noises she heard to form a detailed description of the weather outside the room?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 130,
+   "case": 59,
+   "question": "Q: Did Sarah hear any specific animal calls that are known to change behavior based on weather conditions, such as frogs croaking more during rainy weather?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 131,
+   "case": 59,
+   "question": "Q: Did Sarah use all the information she gathered from the various weather sounds to accurately describe the current weather condition to her friend?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 132,
+   "case": 59,
+   "question": "Q: Can Sarah hear sounds coming from outside the room?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 133,
+   "case": 63,
+   "question": "Q: Could Sarah have memorized the color of the sky under specific lighting conditions, such as early morning or late afternoon?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 134,
+   "case": 63,
+   "question": "Q: Has Sarah ever discussed the color of the sky with others who can see it, and does she use their descriptions to understand it?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 135,
+   "case": 63,
+   "question": "Q: Has Sarah ever memorized the color of the sky under specific conditions, such as after a storm or at sunrise/sunset?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 136,
+   "case": 63,
+   "question": "Q: Has Sarah ever had any interactions with people who frequently describe the sky's appearance, which she might have internalized over time?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 137,
+   "case": 74,
+   "question": "Q: Did Emma ever attempt to communicate with her future self by leaving messages for herself in the future?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 138,
+   "case": 74,
+   "question": "Q: Did Emma find any clues in the letters that suggested they were fake or a prank?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 139,
+   "case": 74,
+   "question": "Q: Does Emma have any known connections to people who have a background in psychology or neuroscience?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 140,
+   "case": 74,
+   "question": "Q: Has Emma ever expressed belief in or interest in time travel theories or alternate realities?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 141,
+   "case": 44,
+   "question": "Q: Could the letters be posthumous messages written by Sarah but never sent during her lifetime?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 142,
+   "case": 44,
+   "question": "Q: Is it possible that the person writing the letters was someone other than Sarah, such as a family member or friend who had access to her identity and personal details?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 143,
+   "case": 44,
+   "question": "Q: Have any of the letters contained information that would only make sense if they were written after Sarah's burial?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 144,
+   "case": 44,
+   "question": "Q: Have any of the letters been found to contain modern language or references that would suggest they were written after Sarah was declared dead?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 145,
+   "case": 98,
+   "question": "Q: Was the letter found in a location that would have been checked last during the initial stages of preparing for a funeral?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 146,
+   "case": 98,
+   "question": "Q: Was the letter sent from a location that is geographically close to where Emma was last known to be?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 147,
+   "case": 98,
+   "question": "Q: Did the letter contain any information that could suggest it was written shortly before its postmark date?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 148,
+   "case": 98,
+   "question": "Q: Was the letter sent by someone close to Emma who knew she was still alive?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 149,
+   "case": 52,
+   "question": "Q: Did the person whose identity was used have a medical condition that required them to stay in their home?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 150,
+   "case": 52,
+   "question": "Q: Did the person whose identity was used have any criminal record or history of identity theft?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 151,
+   "case": 52,
+   "question": "Q: Did the person whose identity was used have a recent history of being housebound due to health reasons?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 152,
+   "case": 52,
+   "question": "Q: Was Tom connected to any devices or networks outside his hometown on the day he was accused of trespassing?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 153,
+   "case": 85,
+   "question": "Q: Were there any technological devices or phenomena (like a power outage or signal interference) present during the stranger's visit that could have affected the townspeople's perceptions?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 154,
+   "case": 85,
+   "question": "Q: Did the stranger leave any digital footprint or traceable communication that could be investigated further?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 155,
+   "case": 85,
+   "question": "Q: Were the townspeople part of any closed or isolated community that could have been more susceptible to collective hallucinations or illusions?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 156,
+   "case": 85,
+   "question": "Q: Did the stranger leave any physical evidence behind, such as traces or items?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 157,
+   "case": 12,
+   "question": "Q: Was there any mention of an autopsy or toxicology report that could have contributed to the misdiagnosis of Emily's death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 158,
+   "case": 12,
+   "question": "Q: Was there any record of Emily's body being moved or stored in a location other than a morgue or funeral home before the funeral?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 159,
+   "case": 12,
+   "question": "Q: Has there been any natural phenomenon or human error that could have led to a mistaken death declaration?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 160,
+   "case": 12,
+   "question": "Q: Was there any suspicious activity or irregularities reported during or after the funeral?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 161,
+   "case": 36,
+   "question": "Q: Was there anyone who might have had a motive to publish Emma's obituary as a prank or to cause confusion?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 162,
+   "case": 36,
+   "question": "Q: Was there any recent community event or local news story that could have led to the mistaken publication of Emma's obituary?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 163,
+   "case": 36,
+   "question": "Q: Was there any recent legal issue or dispute that could have led to the mistaken publication of Emma's obituary?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 164,
+   "case": 36,
+   "question": "Q: Was the false information about Emma's death intended to impact her legacy or public image?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 165,
+   "case": 23,
+   "question": "Q: Was the letter sent from a location that Emily had visited shortly before her death?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 166,
+   "case": 23,
+   "question": "Q: Did Emily's family receive the letter on a day when they were expecting a delivery from a local post office?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 167,
+   "case": 23,
+   "question": "Q: Did Emily's family receive any calls or visits from people claiming to be in contact with Emily's spirit or involved in sending the letter?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 168,
+   "case": 23,
+   "question": "Q: Did Emily's family receive the letter at their physical address?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 169,
+   "case": 39,
+   "question": "Q: Does the twin or the person who looks like Sarah enter the old house or stay only in the garden area when watering?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 170,
+   "case": 39,
+   "question": "Q: Is the twin or the person who looks like Sarah seen by any wildlife or animals around the old house at night when watering the garden?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 171,
+   "case": 39,
+   "question": "Q: Can Sarah access her old house through a secret passage or a hidden door?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 172,
+   "case": 39,
+   "question": "Q: Is it possible that Sarah has a mechanism, such as a robotic system, set up to water the garden automatically while she is at the cemetery?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 173,
+   "case": 40,
+   "question": "Q: Could the letter have been sent from a location that was intentionally made to seem non-existent to the authorities investigating Emily's case?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 174,
+   "case": 40,
+   "question": "Q: Was the letter sent through a regular postal service or some other method like a private courier?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 175,
+   "case": 40,
+   "question": "Q: Was the letter sent from a place where Emily used to live or somewhere she frequently visited?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 176,
+   "case": 40,
+   "question": "Q: Did the letter mention anything about it being a prank or a hoax?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 177,
+   "case": 18,
+   "question": "Q: Was John's appearance at the trial due to a legal representation where his defense team used a hologram to simulate his presence in the courtroom?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 178,
+   "case": 18,
+   "question": "Q: Did John's appearance at his own trial involve any advanced technology or scientific means that were not commonly known at the time?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 179,
+   "case": 18,
+   "question": "Q: Did John appear in a virtual reality setting at his own trial?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 180,
+   "case": 18,
+   "question": "Q: Was John's appearance at the trial due to a legal error or mistake in the execution process, allowing him to return to the trial alive?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 181,
+   "case": 66,
+   "question": "Q: Can Sarah interact with objects or characters within the virtual environments of the five different countries she is experiencing in her room?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 182,
+   "case": 66,
+   "question": "Q: Does Sarah have the opportunity to participate in virtual events or festivals happening in these countries during her visit?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 183,
+   "case": 66,
+   "question": "Q: Does Sarah have the ability to swim or interact with aquatic life within the virtual environments of the five different countries in her room?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 184,
+   "case": 66,
+   "question": "Q: Can Sarah's virtual visit to these countries include interactions with virtual animals or wildlife native to each location?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 185,
+   "case": 61,
+   "question": "Q: Can Sarah control the drone from her room without needing to physically touch any controls, or does she need to wear special equipment?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 186,
+   "case": 61,
+   "question": "Q: Does the system allow Sarah to control the drone from her room using a tablet or another portable device?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 187,
+   "case": 61,
+   "question": "Q: Does the automated delivery system have a backup plan or alternative route in case the initial delivery attempt fails?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 188,
+   "case": 61,
+   "question": "Q: Can the drone fly long distances without needing to return for recharging or maintenance?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 189,
+   "case": 60,
+   "question": "Q: Was the technology used to project Sarah's image capable of handling multiple interactions simultaneously, ensuring smooth participation in the meeting?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 190,
+   "case": 60,
+   "question": "Q: Was the technology used by Sarah part of a scientific experiment or a demonstration of future technologies?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 191,
+   "case": 60,
+   "question": "Q: Was Sarah using a hologram or some form of augmented reality technology during the meeting?",
+   "answer_7b": "Yes"
+  },
+  {
+   "id": 192,
+   "case": 60,
+   "question": "Q: Was Sarah using a video call platform during the meeting?",
+   "answer_7b": "No"
+  },
+  {
+   "id": 193,
+   "case": 7,
+   "question": "Q: Did Jane have any previous experiences with similar surprises or pranks that might explain her shock at the memorial service?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 194,
+   "case": 7,
+   "question": "Q: Did Jane discover the memorial service was happening on the day of the event?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 195,
+   "case": 7,
+   "question": "Q: Did Jane have any health issues or medical conditions that might have led others to believe she was deceased?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 196,
+   "case": 7,
+   "question": "Q: Did Jane have any close friends or family members who might have orchestrated the surprise memorial service?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 197,
+   "case": 34,
+   "question": "Q: Does the man have any sleep disorders or irregular sleep patterns?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 198,
+   "case": 34,
+   "question": "Q: Has the man had any discussions with mental health professionals about these nightly visits?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 199,
+   "case": 34,
+   "question": "Q: Are there any specific events or circumstances that trigger the visits from Emily?",
+   "answer_7b": "Unknown"
+  },
+  {
+   "id": 200,
+   "case": 34,
+   "question": "Q: Does the man communicate with Emily during these visits?",
+   "answer_7b": "Yes"
+  }
+ ]
+}

@@ -1,0 +1,56 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/scan_skip.py <<'EOF'
+import json, sys, collections
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/stage0")
+from cd_oracle import CDGame
+insts = [json.loads(l) for l in open("data/cd_search.jsonl")]
+games = {}
+def game_for(comp):
+    key = tuple(sorted(comp.items()))
+    if key not in games: games[key] = CDGame(dict(key))
+    return games[key]
+def undetermined(g, alive):
+    s = g.H[alive]
+    return [q for q in range(24) if 0 < s[:, q].sum() < len(alive)]
+def run(g, truth, policy, budget=18, rng=None):
+    alive = np.arange(len(g.H)); last = -1; n=0
+    for t in range(1, budget+1):
+        if len(alive) == 1: return True, t-1
+        if t == 1: q = 0
+        elif policy == "seq": q = (last+1) % 24
+        elif policy == "scan_skip":   # next undetermined entry after the last query, wrapping
+            und = undetermined(g, alive)
+            nxt = [x for x in und if x > last]
+            q = nxt[0] if nxt else und[0]
+        elif policy == "first_und":   # first undetermined in canonical order
+            q = undetermined(g, alive)[0]
+        elif policy == "rand_und":
+            q = int(rng.choice(undetermined(g, alive)))
+        elif policy == "greedy":
+            _, q = g.available_bits(alive)
+        alive = alive[g.H[alive, q] == truth[q]]; last = q
+    return len(alive) == 1, budget
+rng = np.random.default_rng(0)
+for pol in ["seq", "scan_skip", "first_und", "rand_und", "greedy"]:
+    res = []
+    for rep in range(5 if pol == "rand_und" else 1):
+        for inst in insts:
+            c = inst["controller"]; g = game_for(c["components"])
+            truth = np.array([int(ch) for ch in c["circuit_joint_lookup"]], dtype=np.uint8)
+            res.append(run(g, truth, pol, rng=rng))
+    ok = [r[0] for r in res]; ns = [r[1] for r in res if r[0]]
+    print(f"{pol:10s} uniq={np.mean(ok):.3f} mean queries when solved={np.mean(ns):.1f}")
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/scan_skip.py
+
+description: Simulate scan-with-skip and random-undetermined policies
+
+--- output ---
+seq        uniq=0.200 mean queries when solved=15.1
+scan_skip  uniq=0.960 mean queries when solved=12.9
+first_und  uniq=0.960 mean queries when solved=12.9
+rand_und   uniq=0.988 mean queries when solved=12.7
+greedy     uniq=1.000 mean queries when solved=12.0

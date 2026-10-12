@@ -1,0 +1,97 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && cat > $S/proto/open_entries.py <<'EOF'
+"""Prototype B: positive list of still-unknown outputs, no ranking."""
+from harness_lib import determined
+
+NAME = "open_entries"
+PARENT = "enum15"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine all three truth tables; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    fixed = {q for q, _ in determined(view)}
+    unknown = [view.fmt(q) for q in range(view.c << view.k) if q not in fixed]
+    return (f"{n} circuit configurations are still possible. Outputs still unknown: "
+            + ", ".join(unknown) + ". Every other output is already fixed by your answers, so "
+            "asking it gives no information. Choose your next query from the unknown outputs.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    return (f"{lead} In the required order (A, then B, then C; inputs 000 to 111 within each) "
+            f"it is: <guess>{bits}</guess>\nSubmit exactly this string.")
+EOF
+cat > $S/proto/copy_open.py <<'EOF'
+"""Prototype C: open list + copyable directive."""
+from harness_lib import best_query, determined
+
+NAME = "copy_open"
+PARENT = "oracle_hint"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine all three truth tables; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    fixed = {q for q, _ in determined(view)}
+    unknown = [view.fmt(q) for q in range(view.c << view.k) if q not in fixed]
+    q = best_query(view)
+    ones = int(view.H[view.alive, q].sum())
+    return (f"{n} circuit configurations are still possible. Outputs still unknown: "
+            + ", ".join(unknown) + ". Every other output is already fixed by your answers. "
+            f"Most informative next query: {_qtag(view, q)} ({n - ones} of the {n} give 0, "
+            f"{ones} give 1). Reply with exactly this query and nothing else.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    return (f"{lead} In the required order (A, then B, then C; inputs 000 to 111 within each) "
+            f"it is: <guess>{bits}</guess>\nSubmit exactly this string.")
+EOF
+cd $S && for h in open_entries copy_open; do for p in 1.0 0.5 0.0; do python3 proto/copier_mock.py proto/$h.py $p; done; done
+
+description: Write prototypes B and C and run the copier mock
+timeout: 600000
+
+--- output ---
+open_entries   p=1.0 uniq=0.200 exact=0.400 max_msg_chars=503 mean_total_harness_chars=7039
+open_entries   p=0.5 uniq=0.200 exact=0.400 max_msg_chars=503 mean_total_harness_chars=7039
+open_entries   p=0.0 uniq=0.200 exact=0.400 max_msg_chars=503 mean_total_harness_chars=7039
+copy_open      p=1.0 uniq=1.000 exact=1.000 max_msg_chars=562 mean_total_harness_chars=6446
+copy_open      p=0.5 uniq=0.940 exact=0.960 max_msg_chars=562 mean_total_harness_chars=7030
+copy_open      p=0.0 uniq=0.200 exact=0.400 max_msg_chars=562 mean_total_harness_chars=7909
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

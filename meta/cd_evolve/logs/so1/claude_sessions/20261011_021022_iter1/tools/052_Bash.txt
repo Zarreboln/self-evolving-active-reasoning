@@ -1,0 +1,32 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; for f in veto_determined veto_only answer_grid; do for pol in sequential greedy; do echo "== $f $pol"; tools/run_mock.sh agents/$f.py $pol 5 2>&1 | tail -3; done; done
+
+description: Run official mock smoke tests for all candidates
+
+--- output ---
+== veto_determined sequential
+----------------------------------------------------------------------------------------------------------------------
+veto_determined    5       0.0     [0.0,0.0]    20.0   60.0   85.8  0.521   40.0   23.3  34.4   0.0 100.0   8.80    301
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/veto_determined__sequential.jsonl --key <k>
+== veto_determined greedy
+----------------------------------------------------------------------------------------------------------------------
+veto_determined    5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/veto_determined__greedy.jsonl --key <k>
+== veto_only sequential
+----------------------------------------------------------------------------------------------------------------------
+veto_only         5       0.0     [0.0,0.0]     0.0    0.0   53.3  0.319   62.2   14.4  62.2   0.0 100.0 185.20    382
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/veto_only__sequential.jsonl --key <k>
+== veto_only greedy
+----------------------------------------------------------------------------------------------------------------------
+veto_only         5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/veto_only__greedy.jsonl --key <k>
+== answer_grid sequential
+----------------------------------------------------------------------------------------------------------------------
+answer_grid       5       0.0     [0.0,0.0]     0.0    6.7   66.7  0.521   40.0   23.3  34.4   0.0 100.0   8.80    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/answer_grid__sequential.jsonl --key <k>
+== answer_grid greedy
+----------------------------------------------------------------------------------------------------------------------
+answer_grid       5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/answer_grid__greedy.jsonl --key <k>

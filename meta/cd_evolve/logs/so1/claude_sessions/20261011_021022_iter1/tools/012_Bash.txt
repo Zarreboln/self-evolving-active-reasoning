@@ -1,0 +1,117 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; sed -n 520,760p evolve.py; ls .claude; ls .claude/*; 
+
+description: Read rest of evolve.py and list skill dir
+
+--- output ---
+        if s["err"] > 0.05:
+            log(f"  {c['name']}: {100*s['err']:.0f}% errored episodes -> invalid")
+            append_summary(summary_row(iteration, c, s, best_before, regime, status="too_many_errors"))
+            continue
+        fr = frontier()
+        inc = fr["candidates"].get((fr.get("_best") or {}).get("agent")) if fr.get("_best") else None
+        s_star = max([e["uniq"] for e in fr["candidates"].values()] + [0.0])
+        ok, why, dS, dC = admissible(s, inc, s_star, delta)
+        row = summary_row(iteration, c, s, best_before, regime,
+                          timing={"propose": round(t_prop), "bench": round(time.time() - t1)})
+        row.update({"admissible": ok, "selection": why, "delta_S": round(dS, 4), "delta_C": round(dC, 4),
+                    "noise_delta": delta})
+        if ok:
+            update_frontier(c["name"], s, iteration)
+        else:
+            fr["candidates"][c["name"]] = {"uniq": s["uniq"], "exact": s["exact"], "eff": s["eff"],
+                                           "cost": (s["tok_in"] or 0) + (s["tok_out"] or 0),
+                                           "iteration": iteration, "admissible": False}
+            (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
+        append_summary(row)
+        log("  " + "\n  ".join(txt.strip().splitlines()[-2:]))
+        log(f"  selection[{c['name']}]: {'ADMISSIBLE' if ok else 'not admissible'} -- {why}")
+    best_after = (frontier().get("_best") or {})
+    log(f"  iteration {iteration} done in {time.time()-t_iter:.0f}s; frontier now "
+        f"{best_after.get('agent')} @ {100*best_after.get('uniq', 0):.1f}%")
+    return True
+
+
+def finalize(args):
+    frozen = RUN / "finalized.json"
+    fr = frontier()
+    if not fr.get("_best"):
+        sys.exit("no frontier yet")
+    if frozen.exists() and json.loads(frozen.read_text()).get("status") == "complete":
+        log("already finalized"); return
+    ranked = sorted(fr["candidates"].items(), key=lambda kv: (kv[1]["uniq"], kv[1]["exact"]), reverse=True)
+    chosen = [n for n, _ in ranked if n not in BASELINES][:3]
+    systems = sorted(set(["bare", "enum15"]) | set(chosen) | {fr["_best"]["agent"]})
+    frozen.write_text(json.dumps({"status": "in_progress", "systems": systems,
+                                  "selected_before_test": fr["_best"]["agent"],
+                                  "started": datetime.now().isoformat()}, indent=1))
+    log(f"FINALIZE (held-out x{HELDOUT_SEEDS} seeds): {systems}")
+    hold_dir = ROOT / "results/cd_heldout" / RUN.name
+    hold_dir.mkdir(parents=True, exist_ok=True)
+    for name in systems:
+        out = hold_dir / f"{name}.jsonl"
+        benchmark(name, "heldout", HELDOUT_SEEDS, out)
+    r = sh([sys.executable, str(ROOT / "runner/cd_score.py")] + [str(hold_dir / f"{n}.jsonl") for n in systems]
+           + ["--split", "heldout", "--split-file", str(SPLIT_FILE), "--vs", str(hold_dir / "enum15.jsonl"),
+              "--out", str(hold_dir / "scores.json")])
+    print(r.stdout)
+    (hold_dir / "table.txt").write_text(r.stdout)
+    frozen.write_text(json.dumps({**json.loads(frozen.read_text()), "status": "complete",
+                                  "completed": datetime.now().isoformat()}, indent=1))
+    log("finalized; this run name refuses further evolution")
+
+
+def main():
+    global RUN
+    p = argparse.ArgumentParser()
+    p.add_argument("--run-name", required=True)
+    p.add_argument("--regime", choices=["open", "state_only"], default=None)
+    p.add_argument("--iterations", type=int, default=1)
+    p.add_argument("--propose-timeout", type=int, default=2400)
+    p.add_argument("--baselines", default="bare,enum15",
+                   help="seed harnesses to evaluate on the search split first")
+    p.add_argument("--test", action="store_true", help="freeze and evaluate on held-out once")
+    p.add_argument("--split-file", default=str(ROOT / "splits/cd_split.json"))
+    p.add_argument("--endpoint-file", default="serve_7b.endpoint",
+                   help="endpoint file under ~/results/ar_harness written by serve_7b.sbatch")
+    p.add_argument("--remote-runner", default="runner/cd_harness_run.py")
+    p.add_argument("--delta", type=float, default=None, help="noise band override (uniq@end fraction)")
+    p.add_argument("--beta0", type=float, default=0.1)
+    p.add_argument("--beta1", type=float, default=2.0)
+    p.add_argument("--critic", choices=["llm", "regex", "off"], default="llm")
+    p.add_argument("--local-mock", default=None, help="CPU test: benchmark with this scripted policy")
+    p.add_argument("--stub-proposer", action="store_true", help="CPU test: no claude call")
+    args = p.parse_args()
+    global LOCAL_MOCK, STUB_PROPOSER, SPLIT_FILE, DELTA_OVERRIDE, BETA0, BETA1, CRITIC_MODE
+    global ENDPOINT_FILE, REMOTE_RUNNER
+    LOCAL_MOCK, STUB_PROPOSER = args.local_mock, args.stub_proposer
+    ENDPOINT_FILE, REMOTE_RUNNER = args.endpoint_file, args.remote_runner
+    SPLIT_FILE, DELTA_OVERRIDE, BETA0, BETA1, CRITIC_MODE = (Path(args.split_file).resolve(), args.delta,
+                                                            args.beta0, args.beta1, args.critic)
+    RUN = WS / "logs" / args.run_name
+    for d in ("reports", "traces", "scores", "claude_sessions"):
+        (RUN / d).mkdir(parents=True, exist_ok=True)
+    if args.test:
+        finalize(args); return
+    frozen = RUN / "finalized.json"
+    if frozen.exists() and json.loads(frozen.read_text()).get("status") == "complete":
+        sys.exit(f"run {args.run_name} is finalized; use a new --run-name")
+    regime = args.regime or (read_summary() or [{}])[-1].get("regime") or "open"
+    (RUN / "REGIME").write_text(regime)
+    phase_baselines([b for b in args.baselines.split(",") if b])
+    start = max([r.get("iteration", 0) for r in read_summary()] + [0]) + 1
+    fails = 0
+    for i in range(start, start + args.iterations):
+        ok = iterate(i, regime, args)
+        fails = 0 if ok else fails + 1
+        if fails >= 2:
+            log("two consecutive proposer failures; stopping"); break
+    log(f"done. finalize with: python evolve.py --run-name {args.run_name} --test")
+
+
+if __name__ == "__main__":
+    main()
+skills
+meta-harness-cd

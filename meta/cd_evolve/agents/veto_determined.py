@@ -1,0 +1,101 @@
+"""Iteration 1, exploitation of enum15: keep its text, add a veto at decision time.
+
+enum15 names the outputs that are already determined ("do not ask these
+again"). In the so1 traces the 7B model still asks such an output 56% of the
+time when it is the next one in its canonical scan (87% under bare), and when
+it does skip one it lands on another determined output almost twice as often
+as on an undetermined one. open1's open_entries showed that a positive list
+of the undetermined outputs does not change this at all (87%): the model
+scans, it does not pick from lists. So the information has to meet the model at the
+moment it commits to a query.
+
+The per-turn text is enum15's, unchanged. What is new is filter_action: when
+the model's reply asks an output on which every remaining configuration
+agrees (a repeat is one such case), or contains no parsable query, the reply
+is not passed to the environment. The model is told the output is already
+determined and to what value, is shown the outputs that are not determined
+yet in canonical order, and replies again (at most twice per turn; no query
+is spent). Nothing is ranked or recommended: the list is the complement of
+enum15's determined list. Once a single configuration remains every reply is
+accepted. Rejected exchanges are removed from the context once the turn is
+settled, so later turns look exactly like enum15's.
+
+The final hint presents the configurations still consistent with the answers
+(when at most 15 remain), written in the required <guess> order; with one
+left that is the answer, which the model cannot assemble from 24 separate
+bits on its own (enum15: 6% exact at 38% uniq@end).
+"""
+
+from harness_lib import count_line, determined, determined_text, enumeration_text
+
+NAME = "veto_determined"
+PARENT = "enum15"
+LIST_CAP = 15
+LABELS = "ABCDEFGH"
+
+
+def init_state(view):
+    return {"vetoes": [], "n_veto": 0, "n_format": 0}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def filter_action(view, state, text, q):
+    """Send the reply back if it asks a determined output or contains no query."""
+    if len(view.alive) <= 1:
+        return None
+    fixed = dict(determined(view))
+    asked = dict(view.history)
+    if q is None:
+        state["n_format"] += 1
+        msg = ("Your reply contains no query in the required format, and the circuits are not "
+               f"pinned down yet: {len(view.alive)} configurations are still possible. ")
+    elif q in asked:
+        state["n_veto"] += 1
+        msg = (f"You already asked {view.fmt(q)} and the answer was {asked[q]}; "
+               "asking it again would waste one of your queries. ")
+    elif q in fixed:
+        state["n_veto"] += 1
+        msg = (f"{view.fmt(q)} is already determined: every circuit configuration consistent "
+               f"with the inventory and your answers so far gives {view.fmt(q)} = {fixed[q]}, "
+               "so asking it would waste one of your queries. ")
+    else:
+        return None
+    still = [view.fmt(x) for x in range(view.c << view.k) if x not in fixed]
+    msg += ("Outputs not determined yet: " + ", ".join(still) + ". Reply with one query for an "
+            "output that is not determined yet, in the format <query>X(a, b, c)</query>.")
+    state["vetoes"].append(msg)
+    return msg
+
+
+def compose_messages(view, state, msgs):
+    """Drop settled rejections: each re-ask message and the reply it rejected."""
+    vetoes = set(state["vetoes"])
+    if not vetoes:
+        return msgs
+    last = len(msgs) - 1
+    drop = set()
+    for i in range(1, last):
+        if msgs[i]["role"] == "user" and msgs[i]["content"] in vetoes:
+            drop.add(i)
+            if msgs[i - 1]["role"] == "assistant":
+                drop.add(i - 1)
+    return [m for i, m in enumerate(msgs) if i not in drop]
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    if n > LIST_CAP:
+        return ""
+    tables = sorted("".join(str(int(b)) for b in row) for row in view.H[view.alive].tolist())
+    order = (", then ".join(LABELS[:view.c]) + f"; inputs {'0' * view.k} to {'1' * view.k} "
+             "within each circuit")
+    if n == 1:
+        return ("Exactly one configuration of the circuits is consistent with all your answers. "
+                f"Its outputs in the required order ({order}): <guess>{tables[0]}</guess>")
+    return (f"{n} configurations of the circuits are still consistent with all your answers. "
+            f"Their outputs in the required order ({order}): "
+            + ", ".join(f"<guess>{t}</guess>" for t in tables) + ".")

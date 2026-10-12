@@ -1,0 +1,6 @@
+Read: ../../../../.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/MEMORY.md
+
+
+--- output ---
+1	- [CD context budget and mock limits](cd-evolve-context-and-mocks.md) — ~0.55 tok/char for harness text, 11,088-token prompt cap; follow mock ignores <query> tags
+2	

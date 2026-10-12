@@ -1,0 +1,24 @@
+Write: ../../../../.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mocks.md
+
+content:
+---
+name: cd-evolve-context-and-mocks
+description: "Measured token cost of CD harness text, the context window per run, and blind spots of the scripted mocks, for budgeting and prototyping harness candidates"
+metadata:
+  type: project
+---
+
+Measured 2026-10-10, not recorded in the workspace:
+
+- Context window depends on the run's server. open1 ran with 12,288 tokens, so the prompt cap was 11,088 (1,200 reserved for output). so1 (state_only, `--remote-runner runner/cd_harness_run_v2.py`, v2 split of 100 instances x 2 seeds) runs with 16,384 tokens, so the prompt cap is 15,184 (from the enum15 overflow error in episode 115/0).
+- Fitting logged `in_tokens` with the system prompt pinned at 700 tokens: harness-appended text costs ~0.55 tokens/char (entry lists like `A(0,0,1), ` cost more because Qwen tokenizes each digit and comma); model replies plus env lines cost ~0.40 tokens/char (fit error 2.8%).
+- The `follow` mock only reads `Most informative next query: X(a,b,c)` and ignores `<query>` tags in harness text.
+- The `sequential` mock rebuilds history from ANY `X(a,b,c) = v` pattern in user messages and asks `len(history) % 24`. A re-ask that states a determined value in that form ("gives A(1,1,1) = 1") shifts its count; once compose drops the re-ask, it repeats one query forever (veto_only showed alive_end ~185, rep 62%). That is a mock artifact, not a harness bug.
+
+**Why:** overflow crashes count as failures, and the stock mocks cannot show whether directive or veto plumbing works.
+**How to apply:** estimate each candidate's per-episode token load against that run's cap. To test copy, veto or re-ask mechanics, write a scratch client in the scratchpad: pointer-based scan, react to the re-ask's list with probabilities, copy a `<guess>` from the final message. Drive it through `cd_harness_run.run_episode` on `data/cd_search_v2.jsonl`. Never put it in `runner/`, which is off limits. See [[cd-evolve-eval-order]].
+
+
+
+--- output ---
+The file /Users/zarreboln/.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mocks.md has been updated successfully.

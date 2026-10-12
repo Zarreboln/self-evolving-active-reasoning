@@ -1,0 +1,23 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+import json
+for l in open('logs/mock/veto_only__sequential.jsonl'):
+    r=json.loads(l)
+    for x in r['rows'][6:14]:
+        print(x['turn'], x.get('query'), x.get('n_before'), x.get('n_after'), 'REP' if x.get('repeat') else '', [y['msg'][:60]+' -> '+y['model_text'][-25:] for y in x.get('reasks',[])], '|', (x.get('model_text') or '')[-25:])
+    break
+EOF
+
+description: Show the turns where the mock repeats under veto_only
+
+--- output ---
+7 6 40 14  [] | <query>A(1, 1, 0)</query>
+8 8 14 7  ['A(1,1,1) is already determined: every circuit configuration  -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+9 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+10 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+11 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+12 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+13 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>
+14 8 7 7 REP ['You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>', 'You already asked B(0,0,0) and the answer was 1; asking it a -> <query>B(0, 0, 0)</query>'] | <query>B(0, 0, 0)</query>

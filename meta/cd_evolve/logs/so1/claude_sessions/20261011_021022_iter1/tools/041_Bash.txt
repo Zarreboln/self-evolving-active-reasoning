@@ -1,0 +1,35 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; for h in veto_determined veto_only; do for cfg in "--p_list 1.0 --p_ign 0.0" "--p_list 0.0 --p_ign 0.0" "--p_list 0.3 --p_ign 0.4 --verbose 300"; do python3 drive.py proto/$h.py $cfg --seeds 2; done; done; python3 drive.py proto/answer_grid.py --verbose 300; python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/bare.py --verbose 300
+
+description: Run all three prototypes against the scanner mock
+
+--- output ---
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 1.0 --p_ign 0.0
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 0.0 --p_ign 0.0
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 0.3 --p_ign 0.4 --verbose 300
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 1.0 --p_ign 0.0
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 0.0 --p_ign 0.0
+usage: drive.py [-h] [--limit LIMIT] [--seeds SEEDS] [--p_list P_LIST]
+                [--p_ign P_IGN] [--verbose VERBOSE] [--dump DUMP]
+                harness
+drive.py: error: unrecognized arguments: --p_list 0.3 --p_ign 0.4 --verbose 300
+answer_grid.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.390 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=20222 max=20503 tok_in=72406
+bare.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.030 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=9715 max=9719 tok_in=38214
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

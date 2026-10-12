@@ -1,0 +1,65 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; cat > an2.py <<'EOF'
+import json, sys, collections, re
+import numpy as np
+def load(p):
+    latest={}
+    for l in open(p):
+        if l.strip():
+            r=json.loads(l); latest[(r['key'],r['seed'])]=r
+    return latest
+for name in sys.argv[1:]:
+    eps=load(name)
+    errs=[(k,r['error'][:120]) for k,r in eps.items() if r.get('error')]
+    mcc=[(r.get('result') or {}).get('max_context_chars',0) for r in eps.values() if r.get('result')]
+    reply_len=[]; guess_in_reply=0; nrep=0; sent_len=[]
+    for r in eps.values():
+        for x in r.get('rows') or []:
+            reply_len.append(len(x.get('model_text') or ''))
+            if '<guess>' in (x.get('model_text') or ''): guess_in_reply+=1
+            if x.get('sent'): sent_len.append(len(x['sent']))
+            nrep+=1
+    print(name)
+    print('  errors', len(errs), errs[:3])
+    print('  max_context_chars: mean %.0f p90 %.0f max %.0f'%(np.mean(mcc),np.percentile(mcc,90),np.max(mcc)))
+    print('  reply chars mean %.0f p90 %.0f'%(np.mean(reply_len),np.percentile(reply_len,90)), 'replies with <guess>: %.3f'%(guess_in_reply/nrep))
+    print('  sent chars mean %.0f max %.0f'%(np.mean(sent_len),np.max(sent_len)))
+    print('  tok_in mean %.0f tok_out mean %.0f'%(np.mean([r.get('in_tokens',0) for r in eps.values()]),np.mean([r.get('out_tokens',0) for r in eps.values()])))
+    # inventory breakdown of uniq
+    inv=collections.defaultdict(list)
+    for r in eps.values():
+        res=r.get('result') or {}
+        # infer inventory from first row? use n_before of turn1
+        rows=r.get('rows') or []
+        nb=rows[0]['n_before'] if rows and 'n_before' in rows[0] else None
+        inv[nb].append(bool(res.get('unique_at_end')))
+    print('  uniq by |H|', {k:(len(v),round(np.mean(v),3)) for k,v in inv.items()})
+EOF
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/an2.py logs/so1/traces/bare/search.jsonl logs/so1/traces/enum15/search.jsonl logs/open1/traces/copy_query/search.jsonl
+
+description: Compute context sizes, reply lengths, errors, per-inventory uniq
+
+--- output ---
+logs/so1/traces/bare/search.jsonl
+  errors 0 []
+  max_context_chars: mean 7586 p90 10468 max 16034
+  reply chars mean 214 p90 444 replies with <guess>: 0.024
+  sent chars mean 65 max 110
+  tok_in mean 32102 tok_out mean 2200
+  uniq by |H| {2886: (68, np.float64(0.265)), 252: (66, np.float64(0.182)), 3924: (66, np.float64(0.136))}
+logs/so1/traces/enum15/search.jsonl
+  errors 1 [((115, 0), 'BadRequestError: Error code: 400 - {\'error\': {\'message\': "This model\'s maximum context length is 16384 tokens. However, ')]
+  max_context_chars: mean 15004 p90 18612 max 26138
+  reply chars mean 277 p90 591 replies with <guess>: 0.082
+  sent chars mean 437 max 869
+  tok_in mean 63042 tok_out mean 2904
+  uniq by |H| {2886: (68, np.float64(0.353)), 252: (66, np.float64(0.53)), 3924: (66, np.float64(0.258))}
+logs/open1/traces/copy_query/search.jsonl
+  errors 0 []
+  max_context_chars: mean 0 p90 0 max 0
+  reply chars mean 66 p90 94 replies with <guess>: 0.129
+  sent chars mean 218 max 256
+  tok_in mean 33379 tok_out mean 972
+  uniq by |H| {2886: (34, np.float64(1.0)), 252: (34, np.float64(1.0)), 3924: (32, np.float64(1.0))}

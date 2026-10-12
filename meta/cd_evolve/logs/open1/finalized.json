@@ -1,0 +1,13 @@
+{
+ "status": "complete",
+ "systems": [
+  "bare",
+  "copy_open",
+  "copy_query",
+  "enum15",
+  "open_entries"
+ ],
+ "selected_before_test": "copy_query",
+ "started": "2026-10-10T21:12:54.054370",
+ "completed": "2026-10-10T23:09:51.796495"
+}

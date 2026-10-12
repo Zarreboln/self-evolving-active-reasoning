@@ -1,0 +1,45 @@
+Bash
+
+command:
+python3 tools/show_trace.py logs/open1/traces/enum15/search.jsonl --key 275 --seed 1 | grep -E "^\[turn|MODEL >>" | cut -c1-260 | head -60
+
+description: Show query sequence of a high-efficiency enum15 episode
+
+--- output ---
+[turn 1] query A(0,0,0) -> 0   alive 3924->3372   bits 0.586/0.920   best A(0,0,1)
+  MODEL >> Let's start by querying Circuit A with inputs (0, 0, 0).
+[turn 2] query A(0,0,1) -> 0   alive 3372->2486   bits 0.831/0.943   best B(0,0,1)
+  MODEL >> Given the output of A(0, 0, 0) = 0, let's query Circuit A with inputs (0, 0, 1) to gather more information.
+[turn 3] query A(0,1,0) -> 1   alive 2486->628   bits 0.815/0.960   best B(0,0,1)
+  MODEL >> Since both A(0, 0, 0) and A(0, 0, 1) are 0, we can infer that the circuit might involve a NOT gate early on, as the inputs are the same but the output is consistently 0. Let's query Circuit A with inputs (0, 1, 0) to see if we can determine the patt
+[turn 4] query A(0,1,1) -> 0   alive 628->152   bits 0.798/0.911   best B(0,0,1)
+  MODEL >> Now we have A(0, 0, 0) = 0, A(0, 0, 1) = 0, and A(0, 1, 0) = 1. Given these results, it seems that the circuit might involve a combination of NOT and AND/OR gates. Let's query Circuit A with inputs (0, 1, 1) to see if we can deduce the exact structu
+[turn 5] query A(1,0,0) -> 0   alive 152->76   bits 1.000/1.000   best A(1,0,0)
+  MODEL >> Given the results so far:
+[turn 6] query A(1,1,0) -> 0   alive 76->38   bits 1.000/1.000   best A(1,1,0)
+  MODEL >> Given the results:
+[turn 7] query B(0,0,1) -> 1   alive 38->7   bits 0.689/0.689   best B(0,0,1)
+  MODEL >> Given the results:
+[turn 8] query B(1,0,0) -> 0   alive 7->6   bits 0.592/0.863   best C(0,1,1)
+  MODEL >> Given the results:
+[turn 9] query C(0,0,1) -> 0   alive 6->5   bits 0.650/0.650   best C(0,0,1)
+  MODEL >> Given the results:
+[turn 10] query C(1,0,0) -> 0   alive 5->4   bits 0.722/0.722   best C(0,1,0)
+  MODEL >> Given the results:
+[turn 11] query C(0,1,0) -> 1   alive 4->1   bits 0.811/0.811   best C(0,1,0)
+  MODEL >> Given the results:
+[turn 12] query C(0,1,1) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO
+  MODEL >> Given the result:
+[turn 13] query C(1,0,1) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO
+  MODEL >> Given the result:
+[turn 14] query C(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO
+  MODEL >> Given the result:
+[turn 15] query C(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given the result:
+[turn 16] query C(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given the result:
+[turn 17] query C(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given the result:
+[turn 18] query C(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given the result:
+FINAL MODEL >> Certainly! Here are the truth tables for all three circuits in the requested format:

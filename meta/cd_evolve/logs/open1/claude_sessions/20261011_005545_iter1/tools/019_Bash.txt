@@ -1,0 +1,14 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && sed -e 's/            q = (last + 1) % 24/            q = last  # wasted: repeat/' -e 's/for policy in \["greedy", "lookahead"\]/for policy in ["greedy"]/' -e 's/for p in \[1.0, 0.9, 0.8, 0.7\]/for p in [0.9, 0.8, 0.7, 0.6, 0.5]/' $S/compliance_sim.py > $S/compliance_sim_waste.py && python3 $S/compliance_sim_waste.py
+
+description: Simulate compliance where deviations waste the turn
+timeout: 600000
+
+--- output ---
+p=0.9 greedy    uniq=0.995  (n=200)
+p=0.8 greedy    uniq=0.890  (n=200)
+p=0.7 greedy    uniq=0.715  (n=200)
+p=0.6 greedy    uniq=0.435  (n=200)
+p=0.5 greedy    uniq=0.195  (n=200)

@@ -1,0 +1,62 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 tools/show_trace.py logs/so1/traces/enum15/search.jsonl --key 13 --seed 1 | grep -E "^\[turn|Next|next|query circuit|SENT" | cut -c1-260 | head -80
+
+description: Skim enum15 failure trace key 13 seed 1
+
+--- output ---
+[turn 1] query A(0,0,0) -> 0   alive 2886->1618   bits 0.989/0.989   best A(0,0,0)
+  SENT  << A(0, 0, 0) = 0
+           Please send your next query. 17 queries remaining.
+[turn 2] query A(0,0,1) -> 1   alive 1618->997   bits 0.961/1.000   best B(0,0,0)
+  SENT  << A(0, 0, 1) = 1
+           Please send your next query. 16 queries remaining.
+[turn 3] query A(0,1,0) -> 0   alive 997->219   bits 0.760/0.997   best B(0,0,0)
+  SENT  << A(0, 1, 0) = 0
+           Please send your next query. 15 queries remaining.
+[turn 4] query A(0,1,1) -> 1   alive 219->127   bits 0.981/1.000   best A(1,1,0)
+  SENT  << A(0, 1, 1) = 1
+           Please send your next query. 14 queries remaining.
+[turn 5] query A(1,0,0) -> 1   alive 127->26   bits 0.731/0.995   best B(0,0,0)
+  SENT  << A(1, 0, 0) = 1
+           Please send your next query. 13 queries remaining.
+[turn 6] query A(1,0,1) -> 1   alive 26->26   bits 0.000/0.931   best B(0,0,1)   ZERO-INFO
+  SENT  << A(1, 0, 1) = 1
+           Please send your next query. 12 queries remaining.
+[turn 7] query A(1,1,0) -> 0   alive 26->26   bits 0.000/0.931   best B(0,0,1)   ZERO-INFO
+  SENT  << A(1, 1, 0) = 0
+           Please send your next query. 11 queries remaining.
+[turn 8] query A(1,1,1) -> 1   alive 26->26   bits 0.000/0.931   best B(0,0,1)   ZERO-INFO
+  SENT  << A(1, 1, 1) = 1
+           Please send your next query. 10 queries remaining.
+[turn 9] query B(0,0,0) -> 0   alive 26->19   bits 0.840/0.931   best B(0,0,1)
+           Next, we will query Circuit B with inputs (0, 0, 0).
+  SENT  << B(0, 0, 0) = 0
+           Please send your next query. 9 queries remaining.
+[turn 10] query B(0,0,1) -> 1   alive 19->14   bits 0.831/0.998   best C(0,0,1)
+  SENT  << B(0, 0, 1) = 1
+           Please send your next query. 8 queries remaining.
+[turn 11] query B(0,1,0) -> 1   alive 14->13   bits 0.371/1.000   best C(0,0,0)
+  SENT  << B(0, 1, 0) = 1
+           Please send your next query. 7 queries remaining.
+[turn 12] query B(0,1,1) -> 1   alive 13->13   bits 0.000/0.996   best C(0,0,0)   ZERO-INFO
+  SENT  << B(0, 1, 1) = 1
+           Please send your next query. 6 queries remaining.
+[turn 13] query B(1,0,0) -> 1   alive 13->13   bits 0.000/0.996   best C(0,0,0)   ZERO-INFO
+  SENT  << B(1, 0, 0) = 1
+           Please send your next query. 5 queries remaining.
+[turn 14] query B(1,0,1) -> 1   alive 13->13   bits 0.000/0.996   best C(0,0,0)   ZERO-INFO
+  SENT  << B(1, 0, 1) = 1
+           Please send your next query. 4 queries remaining.
+[turn 15] query B(1,1,0) -> 1   alive 13->13   bits 0.000/0.996   best C(0,0,0)   ZERO-INFO
+  SENT  << B(1, 1, 0) = 1
+           Please send your next query. 3 queries remaining.
+[turn 16] query B(1,1,1) -> 1   alive 13->13   bits 0.000/0.996   best C(0,0,0)   ZERO-INFO
+  SENT  << B(1, 1, 1) = 1
+           Please send your next query. 2 queries remaining.
+[turn 17] query C(0,0,0) -> 1   alive 13->7   bits 0.996/0.996   best C(0,0,0)
+  SENT  << C(0, 0, 0) = 1
+           Please send your next query. 1 queries remaining.
+[turn 18] query C(0,0,1) -> 0   alive 7->4   bits 0.985/0.985   best C(0,0,1)
+FINAL SENT << C(0, 0, 1) = 0

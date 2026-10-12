@@ -1,0 +1,64 @@
+Write: agents/open_entries.py
+
+content:
+"""Iteration 1, exploitation of enum15: flip its negative list into a positive one.
+
+enum15 tells the model which outputs are already determined ("do not ask
+these again") and, below 16 configurations, lists the joint 24-bit tables.
+The traces show the model copies short lists into its reasoning and then
+keeps scanning entries in canonical order; it does not cross-check its
+planned query against a list of forbidden ones (76% zero-information queries
+once two configurations are left), and it misreads the joint tables as
+per-circuit tables. Here the same information is given as its complement:
+the outputs that are still unknown, in canonical order and in query format,
+so the model's scanning habit picks from entries that are all informative.
+On the search split a canonical scan restricted to undetermined entries
+reaches 96% uniq@end (blind scan: 20%). No query is ranked or recommended
+before the feasible set collapses, and the joint tables are dropped.
+
+After the collapse the message says so and asks for a fixed harmless query;
+the final hint hands over the remaining configuration as a ready <guess>
+string (same as the other iteration-1 candidates)."""
+
+from harness_lib import determined
+
+NAME = "open_entries"
+PARENT = "enum15"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    """Query index -> '<query>B(1, 0, 0)</query>', the reply format of the system prompt."""
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine all three truth tables; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    fixed = {q for q, _ in determined(view)}
+    unknown = [view.fmt(q) for q in range(view.c << view.k) if q not in fixed]
+    return (f"{n} circuit configurations are still possible. Outputs still unknown: "
+            + ", ".join(unknown) + ". Every other output is already fixed by your answers, so "
+            "asking it gives no information. Choose your next query from the unknown outputs.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    return (f"{lead} In the required order (A, then B, then C; inputs 000 to 111 within each) "
+            f"it is: <guess>{bits}</guess>\nSubmit exactly this string.")
+
+
+
+--- output ---
+File created successfully at: /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/open_entries.py (file state is current in your context — no need to Read it back)

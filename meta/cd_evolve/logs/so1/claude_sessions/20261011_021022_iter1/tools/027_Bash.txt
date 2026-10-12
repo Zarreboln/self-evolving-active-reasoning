@@ -1,0 +1,17 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+import json
+with open('logs/so1/traces/enum15/search.jsonl') as f:
+    r=json.loads(f.readline())
+print(sorted(r.keys())); print(sorted(r['result'].keys())); print(sorted(r['rows'][0].keys())); print(r['meta'])
+EOF
+
+description: Inspect trace record fields from v2 runner
+
+--- output ---
+['condition', 'error', 'final_sent', 'final_text', 'harness_state', 'in_tokens', 'key', 'meta', 'out_tokens', 'result', 'rows', 'seed']
+['correct', 'guess_bits', 'max_context_chars', 'n_alive_end', 'n_calls', 'n_illegal', 'n_queries', 'n_reasks', 'parsed_guess', 'truth_bits', 'unique_at_end']
+['answer', 'best_query', 'bits_available', 'bits_chosen', 'circuit', 'efficiency', 'model_text', 'n_after', 'n_before', 'query', 'reasks', 'repeat', 'row', 'sent', 'turn', 'zero_info']
+{'harness_sha': 'ebf9a7a50415', 'harness_file': '/orcd/home/002/ziningl/code/ar_harness/meta/cd_evolve/agents/enum15.py', 'system_sha': '5af13da08bc7', 'model': 'Qwen/Qwen2.5-7B-Instruct', 'temperature': 0.7, 'budget': 18, 'started': 1791682450.8463235, 'elapsed_s': 89.86}

@@ -1,0 +1,18 @@
+Bash
+
+command:
+python3 -c "
+import json; d = json.load(open('logs/open1/pending_eval.json'))
+print(d['iteration'], d['regime'], [c['name'] for c in d['candidates']])
+import os
+for c in d['candidates']: assert os.path.exists(c['file']), c['file']
+print('ok')" && rm -rf /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/* && ls -la /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/
+
+description: Validate pending_eval.json and delete scratch files
+
+--- output ---
+1 open ['copy_query', 'open_entries', 'copy_open']
+ok
+total 0
+drwx------@ 2 zarreboln  wheel   64 Oct 10 20:55 .
+drwx------@ 4 zarreboln  wheel  128 Oct 10 20:41 ..

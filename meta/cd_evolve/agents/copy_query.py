@@ -1,0 +1,57 @@
+"""Iteration 1, exploration: hand the model its next action and nothing else.
+
+In the seed traces the 7B model loses uniq@end by asking outputs that are
+already determined (29% of enum15 queries, 76% once only two configurations
+are left), not by choosing badly among informative ones: on the search split
+a canonical scan that merely skips determined entries reaches 96% uniq@end.
+enum15 gives it a negative list ("do not ask these again") plus joint tables
+to reason over, and it obeys neither. Here the whole message is one copyable
+action: the max-entropy query, written as the exact <query> tag it has to
+send, with the count and the split as the only justification, and an
+instruction to reply with that tag alone (short replies also keep the
+episode far from the 12k context limit that crashed two enum15 episodes).
+
+Once the feasible set is a single configuration the message says so and asks
+for a fixed harmless query. The final hint hands over that configuration as a
+ready <guess> string: the model lists the right 24 values but concatenates
+them in the wrong order (4 exact out of 53 uniq episodes under enum15)."""
+
+from harness_lib import best_query
+
+NAME = "copy_query"
+PARENT = "oracle_hint"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    """Query index -> '<query>B(1, 0, 0)</query>', the reply format of the system prompt."""
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine every truth table; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    q = best_query(view)
+    ones = int(view.H[view.alive, q].sum())
+    return (f"{n} circuit configurations are still possible. Most informative next query: "
+            f"{_qtag(view, q)} ({n - ones} of the {n} give 0, {ones} give 1). "
+            "Reply with exactly this query and nothing else.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    order = ", then ".join(LABELS[:view.c])
+    rows = f"inputs {'0' * view.k} to {'1' * view.k} within each"
+    return (f"{lead} In the required order ({order}; {rows}) it is: "
+            f"<guess>{bits}</guess>\nSubmit exactly this string.")

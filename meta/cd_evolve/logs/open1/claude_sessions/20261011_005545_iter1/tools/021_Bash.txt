@@ -1,0 +1,198 @@
+Bash
+
+command: sed -n 150,240p evolve.py && sed -n 255,355p evolve.py
+description: Read validation, mock check, and iterate functions
+
+--- output ---
+    return data, r.stdout
+
+
+# ------------------------------------------------------------------ validation
+
+def mock_check(name):
+    for pol in ("sequential", "greedy"):
+        out = RUN / "mock" / f"{name}__{pol}.jsonl"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        if out.exists():
+            out.unlink()
+        r = sh([sys.executable, str(ROOT / "runner/cd_harness_run.py"), "--harness",
+                str(AGENTS / f"{name}.py"), "--mock", pol, "--split", "search", "--limit", "6",
+                "--seeds", "1", "--out", str(out)], timeout=300)
+        if r.returncode != 0:
+            return f"mock {pol}: {r.stderr[-800:]}"
+        errs = [json.loads(l).get("error") for l in out.open() if l.strip()]
+        if any(errs):
+            return f"mock {pol}: episode error {next(e for e in errs if e)}"
+    return None
+
+
+def validate(cand, regime):
+    name = cand["name"]
+    path = AGENTS / f"{name}.py"
+    if not path.exists():
+        return f"{path} missing"
+    if f"{name}.py" in SEED_FILES:
+        return "name collides with a seed harness"
+    src = path.read_text()
+    if not re.search(r"^NAME\s*=\s*['\"]%s['\"]" % re.escape(name), src, re.M):
+        return "NAME constant must equal the file stem"
+    if re.search(r"^\s*from\s+agents\.|^\s*import\s+agents\.", src, re.M):
+        return "imports another candidate"
+    if regime == "state_only":
+        hit = [w for w in STATE_ONLY_FORBIDDEN if w in src]
+        if hit:
+            return f"state_only regime forbids {hit}"
+    return mock_check(name)
+
+
+# --------------------------------------------------------------- bookkeeping
+
+def read_summary():
+    f = RUN / "evolution_summary.jsonl"
+    return [json.loads(l) for l in f.open() if l.strip()] if f.exists() else []
+
+
+def frontier():
+    f = RUN / "frontier_val.json"
+    return json.loads(f.read_text()) if f.exists() else {"_best": None, "candidates": {}}
+
+
+def update_frontier(name, s, iteration):
+    fr = frontier()
+    entry = {"uniq": s["uniq"], "uniq_ci": s["uniq_ci"], "exact": s["exact"], "eff": s["eff"],
+             "repeat": s["repeat"], "illegal": s["illegal"], "oracle": s["oracle"],
+             "n": s["n"], "iteration": iteration}
+    fr["candidates"][name] = entry
+    best = fr.get("_best")
+    key = lambda e: (round(e["uniq"], 6), round(e["exact"], 6))
+    if best is None or key(entry) > key(fr["candidates"][best["agent"]]):
+        fr["_best"] = {"agent": name, **entry}
+    (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
+    return fr
+
+
+def append_summary(row):
+    with (RUN / "evolution_summary.jsonl").open("a") as f:
+        f.write(json.dumps(row) + "\n")
+
+
+def summary_row(iteration, cand, s, best_before, regime, status="ok", timing=None):
+    row = {"iteration": iteration, "system": cand["name"], "regime": regime, "status": status,
+           "parent": cand.get("parent"), "axis": cand.get("axis"),
+           "hypothesis": cand.get("hypothesis", ""), "mechanism": cand.get("mechanism", ""),
+           "prediction": cand.get("prediction", "")}
+    if s:
+        row.update({k: (round(s[k], 4) if isinstance(s[k], float) else s[k]) for k in
+                    ("n", "uniq", "exact", "eff", "zero", "oracle", "repeat", "illegal", "parsed",
+                     "alive_end", "tok_out")})
+        row["uniq_ci"] = [round(x, 4) for x in s["uniq_ci"]]
+        d = s["uniq"] - (best_before or 0.0)
+        row["delta_uniq"] = round(d, 4)
+        row["outcome"] = f"uniq {100*s['uniq']:.1f}% ({100*d:+.1f}) exact {100*s['exact']:.1f}%"
+    else:
+        row["outcome"] = status
+    if timing:
+        row["timing_s"] = timing
+    return row
+
+            f"- Write pending_eval.json to: `logs/{RUN.name}/pending_eval.json`\n")
+
+
+def propose(iteration, regime, timeout):
+    if STUB_PROPOSER:   # loop plumbing test: three renamed copies of seed harnesses
+        cands = []
+        for src in ("enum15", "facts", "oracle_hint"):
+            name = f"stub{iteration}_{src}"
+            body = (AGENTS / f"{src}.py").read_text().replace(f'NAME = "{src}"', f'NAME = "{name}"')
+            (AGENTS / f"{name}.py").write_text(body)
+            cands.append({"name": name, "file": f"agents/{name}.py", "parent": src,
+                          "hypothesis": "stub", "axis": "stub", "mechanism": "copy of " + src})
+        (RUN / "pending_eval.json").write_text(json.dumps({"iteration": iteration, "candidates": cands}))
+        return cands
+    os.environ.pop("CLAUDECODE", None)
+    saved = os.environ.pop("ANTHROPIC_API_KEY", None)
+    pending = RUN / "pending_eval.json"
+    if pending.exists():
+        pending.unlink()
+    res = claude_wrapper.run(
+        prompt=render_task_prompt(iteration, regime), model="opus",
+        allowed_tools=PROPOSER_TOOLS, skills=[str(WS / ".claude/skills/meta-harness-cd")],
+        cwd=str(WS), log_dir=str(RUN / "claude_sessions"), name=f"iter{iteration}",
+        timeout_seconds=timeout, effort="max")
+    if saved:
+        os.environ["ANTHROPIC_API_KEY"] = saved
+    if res.exit_code != 0:
+        log(f"  proposer exit={res.exit_code} {res.stderr[:300] if res.stderr else ''}")
+    try:
+        res.show()
+    except Exception:
+        pass
+    if not pending.exists():
+        return None
+    return json.loads(pending.read_text()).get("candidates", [])
+
+
+# ------------------------------------------------------------------- phases
+
+def phase_baselines(names):
+    fr = frontier()
+    for b in names:
+        if b in fr["candidates"]:
+            continue
+        log(f"baseline {b}")
+        out = RUN / "traces" / b / "search.jsonl"
+        benchmark(b, "search", SEARCH_SEEDS, out)
+        s, txt = score(out, "search")
+        s = s[next(iter(s))]
+        update_frontier(b, s, 0)
+        append_summary(summary_row(0, {"name": b, "parent": None, "axis": "seed"}, s, None,
+                                   "seed", status="seed"))
+        log("  " + txt.strip().splitlines()[-1])
+
+
+def iterate(iteration, regime, args):
+    t_iter = time.time()
+    best_before = (frontier().get("_best") or {}).get("uniq")
+    log(f"=== iteration {iteration} regime={regime} frontier={best_before}")
+    t0 = time.time()
+    cands = propose(iteration, regime, args.propose_timeout)
+    t_prop = time.time() - t0
+    if not cands:
+        log("  proposer produced no candidates")
+        append_summary({"iteration": iteration, "system": None, "regime": regime,
+                        "status": "proposer_failed", "timing_s": {"propose": round(t_prop)}})
+        return False
+    log(f"  proposed {len(cands)} in {t_prop:.0f}s: " + ", ".join(c["name"] for c in cands))
+    for c in cands:
+        err = validate(c, regime)
+        if err:
+            log(f"  INVALID {c['name']}: {err[:300]}")
+            append_summary(summary_row(iteration, c, None, best_before, regime,
+                                       status=f"invalid: {err[:200]}"))
+            continue
+        t1 = time.time()
+        out = RUN / "traces" / c["name"] / "search.jsonl"
+        try:
+            benchmark(c["name"], "search", SEARCH_SEEDS, out)
+            s, txt = score(out, "search", vs=RUN / "traces/bare/search.jsonl")
+            s = s[next(iter(s))]
+        except Exception as e:
+            log(f"  benchmark failed for {c['name']}: {e}")
+            append_summary(summary_row(iteration, c, None, best_before, regime,
+                                       status=f"benchmark_failed: {str(e)[:200]}"))
+            continue
+        if s["err"] > 0.05:
+            log(f"  {c['name']}: {100*s['err']:.0f}% errored episodes -> invalid")
+            append_summary(summary_row(iteration, c, s, best_before, regime, status="too_many_errors"))
+            continue
+        update_frontier(c["name"], s, iteration)
+        append_summary(summary_row(iteration, c, s, best_before, regime,
+                                   timing={"propose": round(t_prop), "bench": round(time.time() - t1)}))
+        log("  " + "\n  ".join(txt.strip().splitlines()[-2:]))
+    best_after = (frontier().get("_best") or {})
+    log(f"  iteration {iteration} done in {time.time()-t_iter:.0f}s; frontier now "
+        f"{best_after.get('agent')} @ {100*best_after.get('uniq', 0):.1f}%")
+    return True
+
+
+def finalize(args):

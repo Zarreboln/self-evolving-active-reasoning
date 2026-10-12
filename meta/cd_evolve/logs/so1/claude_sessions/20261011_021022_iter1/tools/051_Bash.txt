@@ -1,0 +1,43 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/proto; python3 - <<'EOF'
+for name in ['veto_determined','veto_only']:
+    p=f'{name}.py'; s=open(p).read()
+    a='''        msg = (f"You already asked {view.fmt(q)} and the answer was {asked[q]}; "
+               "asking it again cannot tell you anything new. ")'''
+    b='''        msg = (f"You already asked {view.fmt(q)} and the answer was {asked[q]}; "
+               "asking it again would waste one of your queries. ")'''
+    assert a in s; s=s.replace(a,b)
+    a='''               f"with the inventory and your answers so far gives {view.fmt(q)} = {fixed[q]}, "
+               "so this query cannot tell you anything new. ")'''
+    b='''               f"with the inventory and your answers so far gives {view.fmt(q)} = {fixed[q]}, "
+               "so asking it would waste one of your queries. ")'''
+    assert a in s; s=s.replace(a,b)
+    open(p,'w').write(s)
+p='answer_grid.py'; s=open(p).read()
+a='''    return (count_line(view) + " Your truth tables so far (value = determined by the inventory "
+            "and your answers, ? = not determined yet; asking an output that already has a value "
+            "tells you nothing new):\\n" + "\\n".join(rows))'''
+b='''    return (count_line(view) + " Your truth tables so far (value = determined by the inventory "
+            "and your answers, ? = not determined yet; asking an output that already has a value "
+            "wastes a query):\\n" + "\\n".join(rows))'''
+assert a in s; s=s.replace(a,b); open(p,'w').write(s)
+EOF
+cp veto_determined.py veto_only.py answer_grid.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/; cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; for f in veto_determined veto_only answer_grid; do python3 - "$f" <<'EOF'
+import re, sys
+sys.path.insert(0,'.')
+import evolve
+name=sys.argv[1]
+src=open(f'agents/{name}.py').read()
+print(name, 'static:', [w for w in evolve.STATE_ONLY_FORBIDDEN if w in src], 'critic_regex:', evolve.critic_regex(src),
+      'NAME ok:', bool(re.search(r"^NAME\s*=\s*['\"]%s['\"]" % re.escape(name), src, re.M)))
+EOF
+done
+
+description: Finalize wording, copy to agents, run static and regex checks
+
+--- output ---
+veto_determined static: [] critic_regex: [] NAME ok: True
+veto_only static: [] critic_regex: [] NAME ok: True
+answer_grid static: [] critic_regex: [] NAME ok: True

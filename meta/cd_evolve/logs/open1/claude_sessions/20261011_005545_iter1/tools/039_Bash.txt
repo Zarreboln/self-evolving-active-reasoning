@@ -1,0 +1,15 @@
+Bash
+
+command:
+python3 -c "import transformers; print('transformers', transformers.__version__)" 2>&1 | tail -1; python3 -c "import tokenizers; print('tokenizers', tokenizers.__version__)" 2>&1 | tail -1; python3 -c "import tiktoken; print('tiktoken ok')" 2>&1 | tail -1; ls ~/.cache/huggingface/hub 2>/dev/null | head
+
+description: Check for locally available tokenizer libraries
+
+--- output ---
+ModuleNotFoundError: No module named 'transformers'
+ModuleNotFoundError: No module named 'tokenizers'
+ModuleNotFoundError: No module named 'tiktoken'
+CACHEDIR.TAG
+datasets--ling1996--GeoReasoner_SFT
+models--facebook--dinov3-vitl16-pretrain-lvd1689m
+models--vislang--locore_dinov2_base

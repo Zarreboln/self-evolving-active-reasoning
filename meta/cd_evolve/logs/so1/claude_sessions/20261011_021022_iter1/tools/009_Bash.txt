@@ -1,0 +1,340 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness; cat mt_puzzles/cd_instruction.txt; echo; echo ----; cat mt_puzzles/cd_last_turn_prompt.txt; echo; echo ----; cat runner/cd_mock.py; echo ----; cat runner/cd_score.py
+
+description: Read system prompt, final prompt, mock, and scorer
+
+--- output ---
+**Welcome to the Circuit Deduction Challenge!**
+
+**Your Inventory:** You have a total of {components}. These are distributed across {num_circuits} circuits, labeled {circuit_labels}.
+
+**Your Goal:** Deduce the logical structure of each circuit.
+
+**The Setup:**
+* Each circuit accepts {num_inputs} binary inputs (0 or 1) and produces a single binary output (0 or 1).
+* All circuits are built by creating layers of logic. You begin with the {num_inputs} initial inputs. At each step either (a) an AND or OR gate takes two currently available signals and combines them into one new signal or (b) a NOT gate takes any one available signal and transforms it into one new signal. This process continues, using the available gates for that circuit, reducing the number of signals until only the single, final output of the circuit remains.
+* No circuit will always output 0 or always output 1, regardless of input.
+* All circuit components are being used and are distributed without replacement across {num_circuits} circuits.
+
+**Your Tools:** You have {num_questions_per_episode} queries to figure all the circuits out. Each query is a call to a circuit with specific inputs.
+At each turn of the conversation with me, you must make only 1 query. Hence, there will be {num_questions_per_episode} turns of the conversation before you have to make your final guess.
+
+**How to Play:**
+1. At each turn, you must query one circuit (any circuit with any input of your choice)
+2. Use the following format for your query:
+
+    `<query>Circuit_Label_1(input1_1, ..., input1_{num_inputs})</query>`
+
+    For example, to query circuit A with inputs 1, 0, 1 (if num_inputs=3):
+    `<query>A(1, 0, 1)</query>`
+3. You must make only 1 query at each turn
+
+**Think Strategically:**
+* Reason about the behavior of each circuit based on the available components.
+* Plan your {num_questions_per_episode} queries carefully to maximize information gained.
+
+**Final Submission:**
+After your {num_questions_per_episode} queries, provide the truth tables for all circuits ({circuit_labels_str}) in this format:
+
+`<guess>XXXXXXXXXXXXXXXX</guess>`
+
+Where:
+* Each 'X' is either 0 or 1, representing the circuit's output.
+* The sequence of outputs follows this order (each circuit's outputs are grouped together):
+
+{truth_table_description}
+
+Please start with your first query. Plan your steps before making the queries
+----
+Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+----
+"""Scripted stand-ins for the task model, so the whole harness pipeline can be
+exercised on a laptop with no GPU and so every harness gets a floor/ceiling
+reading from policies whose behaviour is known exactly.
+
+The mock is stateless across calls: it rebuilds its own query/answer history
+from the message list it is handed, exactly as a real model would have to.
+
+    sequential  sweep A(0,0,0), A(0,0,1), ...; final guess = observed bits, rest 0
+    random      uniform random entry, repeats allowed; naive final guess
+    greedy      max-entropy query over the feasible set (the oracle policy);
+                final guess = a remaining hypothesis  -> ceiling
+    follow      copies a "Most informative next query: X(a,b,c)" hint when one
+                is present, else sequential; at the end copies the first
+                enumerated configuration if the harness listed any, else naive
+    flaky       sequential, but every 5th turn replies without a query
+                (exercises the illegal-format path)
+"""
+
+import re
+from types import SimpleNamespace
+
+import numpy as np
+
+LABELS = "ABCDEFGH"
+QUERY_RE = re.compile(r"<query>\s*([A-H])\s*\(([^)]*)\)\s*</query>", re.I)
+ANSWER_RE = re.compile(r"^\s*[A-H]\([01],\s*[01],\s*[01]\)\s*=\s*([01])", re.M)
+HINT_RE = re.compile(r"Most informative next query:\s*([A-H])\(([01]),([01]),([01])\)")
+ENUM_RE = re.compile(r"joint truth tables\):\s*([01]{24}(?:,\s*[01]{24})*)")
+FINAL_MARK = "truth tables for all circuits"
+
+
+def _q_of(lb, bits, k):
+    return LABELS.index(lb.upper()) * (1 << k) + int("".join(bits), 2)
+
+
+def _fmt(q, k):
+    lb = LABELS[q // (1 << k)]
+    row = q % (1 << k)
+    return f"<query>{lb}({', '.join(str((row >> (k - 1 - i)) & 1) for i in range(k))})</query>"
+
+
+OBS_RE = re.compile(r"\b([A-H])\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)\s*=\s*([01])\b")
+
+
+def rebuild_history(messages, k):
+    """[(q, bit)] from every observation line 'X(a, b, c) = b' in the user
+    turns, in order of first appearance. Works whether the history is the raw
+    transcript or a harness-compressed ledger."""
+    hist, seen = [], set()
+    for m in messages:
+        if m["role"] != "user":
+            continue
+        for lb, a, b, c, bit in OBS_RE.findall(m["content"] or ""):
+            q = _q_of(lb, [a, b, c], k)
+            if q not in seen:
+                seen.add(q)
+                hist.append((q, int(bit)))
+    return hist
+
+
+class MockClient:
+    """Duck-types the slice of openai.AsyncOpenAI that the runner uses."""
+
+    def __init__(self, policy, game, c, k, seed=0):
+        self.policy, self.game, self.c, self.k = policy, game, c, k
+        self.rng = np.random.default_rng(seed)
+        self.n_cells = c * (1 << k)
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    async def _create(self, model=None, messages=None, **kw):
+        txt = self._reply(messages)
+        usage = SimpleNamespace(completion_tokens=max(1, len(txt) // 4),
+                                prompt_tokens=sum(len(m["content"]) for m in messages) // 4)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=txt))],
+                               usage=usage)
+
+    def _reply(self, messages):
+        hist = rebuild_history(messages, self.k)
+        last_user = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else ""
+        if FINAL_MARK in last_user:
+            return self._final(hist, last_user)
+        n_turn = sum(1 for m in messages if m["role"] == "assistant")
+        p = self.policy
+        if p == "flaky" and n_turn % 5 == 2:
+            return "Let me think about the circuits before querying again."
+        if p in ("sequential", "flaky"):
+            q = len(hist) % self.n_cells
+        elif p == "random":
+            q = int(self.rng.integers(self.n_cells))
+        elif p == "greedy":
+            alive = self.game.feasible(hist)
+            _, q = self.game.available_bits(alive)
+            if q is None:
+                q = hist[-1][0] if hist else 0
+        elif p == "follow":
+            hm = HINT_RE.search(last_user)
+            q = _q_of(hm.group(1), hm.groups()[1:], self.k) if hm else len(hist) % self.n_cells
+        else:
+            raise ValueError(p)
+        return f"Querying now. {_fmt(q, self.k)}"
+
+    def _final(self, hist, last_user):
+        if self.policy == "greedy":
+            alive = self.game.feasible(hist)
+            bits = self.game.H[alive[0]]
+        elif self.policy == "follow" and (em := ENUM_RE.search(last_user)):
+            bits = [int(ch) for ch in em.group(1).split(",")[0].strip()]
+        else:
+            bits = [0] * self.n_cells
+            for q, b in hist:
+                bits[q] = b
+        return "<guess>" + "".join(str(int(b)) for b in bits) + "</guess>"
+----
+"""Score CircuitDecoding episode logs written by runner/cd_harness_run.py.
+
+    python runner/cd_score.py results/cd/*/search.jsonl --split search
+    python runner/cd_score.py results/cd/enum15/search.jsonl --vs results/cd/bare/search.jsonl --out score.json
+
+Episode-level metrics (one row per harness):
+    uniq@end   feasible set collapsed to one hypothesis after the budget (primary;
+               measures information gathering, immune to final-guess luck)
+    exact      final guess == truth (secondary)
+    ckt / bit  circuit-wise and bit-wise accuracy of the final guess
+    parsed     final guess was in the required format
+    alive_end  mean |feasible set| after the budget
+Turn-level metrics (over legal turns while >1 hypothesis remained):
+    eff        ex-ante efficiency = expected bits of the chosen query / best available
+    zero%      queries whose answer was already determined (0 bits)
+    oracle%    queries equal to the max-entropy query
+    repeat%    queries identical to an earlier query
+    illegal%   turns with no parsable query (over all turns)
+95% bootstrap CIs on uniq@end and exact; paired bootstrap on the delta vs --vs.
+"""
+
+import argparse
+import json
+import statistics as st
+import sys
+from collections import defaultdict
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def load(path, split=None, split_file=ROOT / "splits/cd_split.json"):
+    latest = {}
+    for line in Path(path).open():
+        line = line.strip()
+        if not line:
+            continue
+        r = json.loads(line)
+        latest[(r["condition"], r["key"], r["seed"])] = r  # last write wins (retries)
+    if split and split != "all":
+        keep = set(json.loads(Path(split_file).read_text())[split])
+        latest = {k: v for k, v in latest.items() if k[1] in keep}
+    return latest
+
+
+def episode_metrics(r):
+    res = r.get("result") or {}
+    g, t = res.get("guess_bits"), res.get("truth_bits")
+    m = {"err": bool(r.get("error")), "uniq": bool(res.get("unique_at_end")),
+         "exact": bool(res.get("correct")), "parsed": bool(res.get("parsed_guess")),
+         "alive_end": res.get("n_alive_end"), "tok_out": r.get("out_tokens", 0),
+         "tok_in": r.get("in_tokens", 0)}
+    if g and t and len(g) == len(t):
+        k = len(t) // 3
+        m["bit"] = sum(x == y for x, y in zip(g, t)) / len(t)
+        m["ckt"] = sum(g[i * k:(i + 1) * k] == t[i * k:(i + 1) * k] for i in range(3)) / 3
+    return m
+
+
+def turn_metrics(rows):
+    out = defaultdict(list)
+    for q in rows:
+        out["illegal"].append(bool(q.get("illegal")))
+        if q.get("illegal") or q.get("n_before", 0) <= 1:
+            continue
+        if q.get("efficiency") is not None:
+            out["eff"].append(q["efficiency"])
+        out["zero"].append(bool(q.get("zero_info")))
+        out["repeat"].append(bool(q.get("repeat")))
+        if q.get("best_query") is not None:
+            out["oracle"].append(q["query"] == q["best_query"])
+    return out
+
+
+def boot_ci(vals, n_boot=2000, seed=0):
+    a = np.asarray(vals, dtype=float)
+    if len(a) == 0:
+        return (float("nan"), float("nan"))
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(a), size=(n_boot, len(a)))
+    means = a[idx].mean(axis=1)
+    return (float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5)))
+
+
+def paired_delta(a_by_key, b_by_key, field, n_boot=2000, seed=0):
+    keys = sorted(set(a_by_key) & set(b_by_key))
+    if not keys:
+        return None
+    d = np.array([float(a_by_key[k][field]) - float(b_by_key[k][field]) for k in keys])
+    rng = np.random.default_rng(seed)
+    idx = rng.integers(0, len(d), size=(n_boot, len(d)))
+    means = d[idx].mean(axis=1)
+    return {"n_pairs": len(keys), "delta": float(d.mean()),
+            "ci": [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]}
+
+
+def summarize(latest):
+    eps = {k[1:]: episode_metrics(v) for k, v in latest.items()}
+    turns = defaultdict(list)
+    for v in latest.values():
+        for kk, vv in turn_metrics(v.get("rows") or []).items():
+            turns[kk] += vv
+    n = len(eps)
+    mean = lambda f: (st.mean(x[f] for x in eps.values() if x.get(f) is not None)
+                      if any(x.get(f) is not None for x in eps.values()) else float("nan"))
+    tmean = lambda f: st.mean(turns[f]) if turns[f] else float("nan")
+    s = {"n": n, "err": mean("err"), "uniq": mean("uniq"), "exact": mean("exact"),
+         "ckt": mean("ckt"), "bit": mean("bit"), "parsed": mean("parsed"),
+         "alive_end": mean("alive_end"), "eff": tmean("eff"), "zero": tmean("zero"),
+         "oracle": tmean("oracle"), "repeat": tmean("repeat"), "illegal": tmean("illegal"),
+         "tok_out": mean("tok_out"), "tok_in": mean("tok_in"),
+         "uniq_ci": boot_ci([x["uniq"] for x in eps.values()]),
+         "exact_ci": boot_ci([x["exact"] for x in eps.values()])}
+    return s, eps
+
+
+HDR = (f"{'harness':<14}{'n':>5}{'uniq@end':>10}{'  95% CI':>14}{'exact':>8}{'ckt':>7}{'bit':>7}"
+       f"{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill%':>6}{'prs%':>6}{'alive':>7}{'tok':>7}")
+
+
+def fmt_row(name, s):
+    pc = lambda v: "  n/a" if v != v else f"{100 * v:.1f}"
+    return (f"{name:<14}{s['n']:>5}{pc(s['uniq']):>10}"
+            f"{'[' + pc(s['uniq_ci'][0]) + ',' + pc(s['uniq_ci'][1]) + ']':>14}"
+            f"{pc(s['exact']):>8}{pc(s['ckt']):>7}{pc(s['bit']):>7}"
+            f"{s['eff']:>7.3f}{pc(s['zero']):>7}{pc(s['oracle']):>7}{pc(s['repeat']):>6}"
+            f"{pc(s['illegal']):>6}{pc(s['parsed']):>6}{s['alive_end']:>7.2f}{s['tok_out']:>7.0f}")
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("files", nargs="+")
+    p.add_argument("--split", default="all", choices=["all", "search", "heldout"])
+    p.add_argument("--split-file", default=str(ROOT / "splits/cd_split.json"))
+    p.add_argument("--vs", default=None, help="baseline jsonl for a paired delta")
+    p.add_argument("--out", default=None, help="write the (single-file) summary JSON here")
+    a = p.parse_args()
+
+    base = None
+    if a.vs:
+        _, base = summarize(load(a.vs, a.split, a.split_file))
+    print(HDR)
+    print("-" * len(HDR))
+    summaries = {}
+    for f in a.files:
+        latest = load(f, a.split, a.split_file)
+        if not latest:
+            print(f"{Path(f).parent.name + '/' + Path(f).name:<14} (no episodes in split {a.split})")
+            continue
+        conds = sorted({k[0] for k in latest})
+        for c in conds:
+            sub = {k: v for k, v in latest.items() if k[0] == c}
+            s, eps = summarize(sub)
+            if base:
+                s["vs"] = {fld: paired_delta(eps, base, fld) for fld in ("uniq", "exact")}
+            summaries[c] = s
+            print(fmt_row(c, s))
+            if base and s["vs"]["uniq"]:
+                d = s["vs"]
+                vs_name = Path(a.vs).stem if Path(a.vs).stem not in ("search", "heldout") else Path(a.vs).parent.name
+                print(f"{'':<14}  vs {vs_name}: uniq {100*d['uniq']['delta']:+.1f} "
+                      f"[{100*d['uniq']['ci'][0]:+.1f},{100*d['uniq']['ci'][1]:+.1f}]  "
+                      f"exact {100*d['exact']['delta']:+.1f} "
+                      f"[{100*d['exact']['ci'][0]:+.1f},{100*d['exact']['ci'][1]:+.1f}]  "
+                      f"(n={d['uniq']['n_pairs']} paired)")
+    if a.out:
+        Path(a.out).write_text(json.dumps(summaries, indent=1))
+        print(f"-> {a.out}")
+
+
+if __name__ == "__main__":
+    main()
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

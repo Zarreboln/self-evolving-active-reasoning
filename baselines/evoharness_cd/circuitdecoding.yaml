@@ -1,0 +1,28 @@
+# python -m evoharness eval --config configs/eval/circuitdecoding.yaml policy.model=<served name> \
+#     policy.base_url=http://host:port/v1 harness.mode=inline|always_on|env_only split=all|search|heldout
+env: circuitdecoding
+split: all                   # all = 300 released instances; search / heldout follow ar_harness/splits/cd_split_v2.json
+out_dir: results/circuitdecoding_all
+max_steps: 19                # 18 queries + the final guess
+workers: 32
+
+policy:
+  model: Qwen/Qwen2.5-7B-Instruct
+  base_url: http://localhost:8000/v1
+  temperature: 0.7           # ar_harness runs use temperature 0.7, max 1200 output tokens
+  top_p: null
+  max_tokens: 1200
+
+harness:
+  mode: inline               # inline (EvoHarness-Base) | always_on (panels only) | env_only (ReAct)
+  recall_top_k: 3
+  charge_meta_actions: false # meta-actions do not spend queries (as in the reported ALFWorld numbers)
+  max_meta_actions: 18
+
+bank:
+  path: null                 # no experience bank unless given
+  mode: frozen
+
+env_options:
+  split_file: null           # defaults to ar_harness/splits/cd_split_v2.json
+  data_path: null            # defaults to ar_harness/mt_puzzles/cd_test.jsonl

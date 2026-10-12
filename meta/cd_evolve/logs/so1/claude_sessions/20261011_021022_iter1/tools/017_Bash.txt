@@ -1,0 +1,243 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 tools/show_trace.py logs/open1/traces/open_entries/search.jsonl --list | sort -t= -k6 | head -5; python3 tools/show_trace.py logs/open1/traces/open_entries/search.jsonl --worst 1 | cut -c1-700 | head -230
+
+description: Inspect worst open_entries trace from open1
+
+--- output ---
+key=153  seed=0 uniq=1 exact=1 alive_end=1     eff=0.315 zero=10 repeat=1  illegal=0  err=False
+key=153  seed=1 uniq=1 exact=1 alive_end=1     eff=0.315 zero=10 repeat=1  illegal=0  err=False
+key=244  seed=0 uniq=1 exact=1 alive_end=1     eff=0.364 zero=5  repeat=1  illegal=0  err=False
+key=244  seed=1 uniq=1 exact=1 alive_end=1     eff=0.364 zero=5  repeat=5  illegal=0  err=False
+key=115  seed=0 uniq=1 exact=1 alive_end=1     eff=0.498 zero=5  repeat=4  illegal=0  err=False
+key=115  seed=0 uniq=1 exact=1 alive_end=1     eff=0.498 zero=5  repeat=4  illegal=0  err=False
+====================================================================================================
+[turn 1] query A(0,0,0) -> 0   alive 252->252   bits 0.000/0.719   best A(0,0,1)   ZERO-INFO
+  MODEL >> Let's start by querying circuit A with inputs (0, 0, 0).
+           
+           ```xml
+           <query>A(0, 0, 0)</query>
+           ```
+  SENT  << A(0, 0, 0) = 0
+           Please send your next query. 17 queries remaining.
+           252 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 2] query A(0,0,1) -> 0   alive 252->202   bits 0.719/0.719   best A(0,0,1)
+  MODEL >> Thank you for the response. Let's query circuit A with inputs (0, 0, 1) next.
+           
+           ```xml
+           <query>A(0, 0, 1)</query>
+           ```
+  SENT  << A(0, 0, 1) = 0
+           Please send your next query. 16 queries remaining.
+           202 circuit configurations are still possible. Outputs still unknown: A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 3] query A(0,1,0) -> 0   alive 202->164   bits 0.698/0.807   best A(0,1,1)
+  MODEL >> Next, let's query circuit A with inputs (0, 1, 0).
+           
+           ```xml
+           <query>A(0, 1, 0)</query>
+           ```
+  SENT  << A(0, 1, 0) = 0
+           Please send your next query. 15 queries remaining.
+           164 circuit configurations are still possible. Outputs still unknown: A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 4] query A(0,1,1) -> 0   alive 164->50   bits 0.887/0.887   best A(0,1,1)
+  MODEL >> Next, let's query circuit A with inputs (0, 1, 1).
+           
+           ```xml
+           <query>A(0, 1, 1)</query>
+           ```
+  SENT  << A(0, 1, 1) = 0
+           Please send your next query. 14 queries remaining.
+           50 circuit configurations are still possible. Outputs still unknown: A(1,0,1), A(1,1,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 5] query A(1,0,0) -> 0   alive 50->50   bits 0.000/0.855   best B(0,0,1)   ZERO-INFO
+  MODEL >> Next, let's query circuit A with inputs (1, 0, 0).
+           
+           ```xml
+           <query>A(1, 0, 0)</query>
+           ```
+  SENT  << A(1, 0, 0) = 0
+           Please send your next query. 13 queries remaining.
+           50 circuit configurations are still possible. Outputs still unknown: A(1,0,1), A(1,1,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 6] query A(1,0,1) -> 0   alive 50->12   bits 0.795/0.855   best B(0,0,1)
+  MODEL >> Next, let's query circuit A with inputs (1, 0, 1).
+           
+           ```xml
+           <query>A(1, 0, 1)</query>
+           ```
+  SENT  << A(1, 0, 1) = 0
+           Please send your next query. 12 queries remaining.
+           12 circuit configurations are still possible. Outputs still unknown: B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 7] query A(1,1,0) -> 0   alive 12->12   bits 0.000/0.980   best B(0,0,1)   ZERO-INFO
+  MODEL >> Next, let's query circuit A with inputs (1, 1, 0).
+           
+           ```xml
+           <query>A(1, 1, 0)</query>
+           ```
+  SENT  << A(1, 1, 0) = 0
+           Please send your next query. 11 queries remaining.
+           12 circuit configurations are still possible. Outputs still unknown: B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 8] query A(1,1,1) -> 1   alive 12->12   bits 0.000/0.980   best B(0,0,1)   ZERO-INFO
+  MODEL >> Next, let's query circuit A with inputs (1, 1, 1).
+           
+           ```xml
+           <query>A(1, 1, 1)</query>
+           ```
+  SENT  << A(1, 1, 1) = 1
+           Please send your next query. 10 queries remaining.
+           12 circuit configurations are still possible. Outputs still unknown: B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 9] query B(0,0,0) -> 0   alive 12->12   bits 0.000/0.980   best B(0,0,1)   ZERO-INFO
+  MODEL >> Given that A(1, 1, 1) = 1, we can infer more about the structure of circuit A. Since all other inputs for A resulted in 0, it suggests that A might be an OR gate configuration where the final output is only 1 when all inputs are 1.
+           
+           Next, let's query circuit B with inputs (0, 0, 0).
+           
+           ```xml
+           <query>B(0, 0, 0)</query>
+           ```
+  SENT  << B(0, 0, 0) = 0
+           Please send your next query. 9 queries remaining.
+           12 circuit configurations are still possible. Outputs still unknown: B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 10] query B(0,0,1) -> 1   alive 12->7   bits 0.980/0.980   best B(0,0,1)
+  MODEL >> Next, let's query circuit B with inputs (0, 0, 1).
+           
+           ```xml
+           <query>B(0, 0, 1)</query>
+           ```
+  SENT  << B(0, 0, 1) = 1
+           Please send your next query. 8 queries remaining.
+           7 circuit configurations are still possible. Outputs still unknown: B(0,1,0), B(1,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0). Every other output is already fixed by your answers, so asking it gives no information. Choose your next query from the unknown outputs.
+----------------------------------------------------------------------------------------------------
+[turn 11] query B(0,1,0) -> 0   alive 7->1   bits 0.592/0.863   best C(0,0,1)
+  MODEL >> Given that B(0, 0, 1) = 1, this suggests that B might involve an OR operation between the second and third inputs, as well as possibly including the first input in some way. 
+           
+           Next, let's query circuit B with inputs (0, 1, 0).
+           
+           ```xml
+           <query>B(0, 1, 0)</query>
+           ```
+  SENT  << B(0, 1, 0) = 0
+           Please send your next query. 7 queries remaining.
+           Your answers now determine every truth table; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+----------------------------------------------------------------------------------------------------
+[turn 12] query A(0,0,0) -> 0   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given that we have determined the behavior of circuits A and B through our queries, we can now deduce the behavior of circuit C by elimination. Here are the truth tables for circuits A and B based on the queries:
+           
+           - **Circuit A:**
+             - A(0, 0, 0) = 0
+             - A(0, 0, 1) = 0
+             - A(0, 1, 0) = 0
+             - A(0, 1, 1) = 0
+             - A(1, 0, 0) = 0
+             - A(1, 0, 1) = 0
+             - A(1, 1, 0) = 0
+             - A(1, 1, 1) = 1
+           
+             This matches the behavior of an OR gate where the output is 1 only when all inputs are 1. Therefore, circuit A is an OR gate with the final output inverted (since the output is 0 for all cases except when all inputs are 1).
+           
+           - **Circuit B:**
+             - B(0, 0, 0) = 0
+             - B(0, 0, 1) = 1
+             - B(0, 1, 0) = 0
+             - B(0, 1, 1) = 1
+             - B(1, 0, 0) = 0
+             - B(1, 0, 1) = 1
+             - B(1, 1, 0) = 0
+             - B(1, 1, 1) = 1
+           
+             This matches the behavior of an XOR gate. Therefore, circuit B is an XOR gate.
+           
+           Now, we need to determine the behavior of circuit C. Since we have 3 AND gates and 3 OR gates, and we've already used up the OR gates for circuits A and B, circuit C must use the AND gates.
+           
+           Since we have 18 queries and we've used 7, we have 11 queries left. However, since the truth tables for circuits A and B are fully determined, we can directly infer the truth table for circuit C.
+           
+           Here is the final truth table for circuit C:
+           
+           - **Circuit C:**
+             - C(0, 0, 0) = 1
+             - C(0, 0, 1) = 0
+             - C(0, 1, 0) = 0
+             - C(0, 1, 1) = 0
+             - C(1, 0, 0) = 0
+             - C(1, 0, 1) = 0
+             - C(1, 1, 0) = 0
+             - C(1, 1, 1) = 1
+           
+           Therefore, the final answer is:
+           
+           ```xml
+           <guess>000000010000000100000001</guess>
+           ```
+  SENT  << A(0, 0, 0) = 0
+           Please send your next query. 6 queries remaining.
+           Your answers now determine every truth table; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+----------------------------------------------------------------------------------------------------
+[turn 13] query A(0,0,0) -> 0   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> It seems there was a misunderstanding. Given the constraints and the information gathered, we should finalize the truth tables for all circuits based on the available information. Since we have already determined the behavior of circuits A and B, and we know the remaining components are AND gates, we can infer the behavior of circuit C.
+           
+           Here are the truth tables for circuits A and B based on the queries:
+           
+           - **Circuit A:**
+             - A(0, 0, 0) = 0
+             - A(0, 0, 1) = 0
+             - A(0, 1, 0) = 0
+             - A(0, 1, 1) = 0
+             - A(1, 0, 0) = 0
+             - A(1, 0, 1) = 0
+             - A(1, 1, 0) = 0
+             - A(1, 1, 1) = 1
+           
+             This matches the behavior of an OR gate where the output is 1 only when all inputs are 1.
+           
+           - **Circuit B:**
+             - B(0, 0, 0) = 0
+             - B(0, 0, 1) = 1
+             - B(0, 1, 0) = 0
+             - B(0, 1, 1) = 1
+             - B(1, 0, 0) = 0
+             - B(1, 0, 1) = 1
+             - B(1, 1, 0) = 0
+             - B(1, 1, 1) = 1
+           
+             This matches the behavior of an XOR gate.
+           
+           Since we have 3 AND gates left and we know the remaining circuits must use these, circuit C must be an AND gate. The behavior of an AND gate is straightforward:
+           
+           - **Circuit C:**
+             - C(0, 0, 0) = 0
+             - C(0, 0, 1) = 0
+             - C(0, 1, 0) = 0
+             - C(0, 1, 1) = 0
+             - C(1, 0, 0) = 0
+             - C(1, 0, 1) = 0
+             - C(1, 1, 0) = 0
+             - C(1, 1, 1) = 1
+           
+           Therefore, the final answer is:
+           
+           ```xml
+           <guess>000000010000000100000001</guess>
+           ```
+           
+           This completes the deduction of the truth tables for all circuits.
+  SENT  << A(0, 0, 0) = 0
+           Please send your next query. 5 queries remaining.
+           Your answers now determine every truth table; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+----------------------------------------------------------------------------------------------------
+[turn 14] query B(0,1,0) -> 0   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  MODEL >> Given that we have already determined the behavior of circuits A and B, and we have 5 queries remaining, we can proceed to query circuit B with inputs (0, 1, 0) to confirm its behavior.
+           
+           ```xml
+           <query>B(0, 1, 0)</query>
+           ```
+  SENT  << B(0, 1, 0) = 0
+           Please send your next query. 4 queries remaining.
+           Your answers now determine every truth table; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+----------------------------------------------------------------------------------------------------

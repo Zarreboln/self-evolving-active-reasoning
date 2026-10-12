@@ -1,0 +1,27 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness; grep -n "def load_instances" -A 25 stage0/cd_oracle.py
+
+description: Read load_instances in cd_oracle
+
+--- output ---
+208:def load_instances(path):
+209-    out = []
+210-    for line in open(path):
+211-        c = json.loads(line)["controller"]
+212-        out.append({
+213-            "components": c["components"],
+214-            "truth": np.array([int(ch) for ch in c["circuit_joint_lookup"]],
+215-                              dtype=np.uint8),
+216-            "circuits": c["circuits"],
+217-        })
+218-    return out
+219-
+220-
+221-if __name__ == "__main__":
+222-    p = Path(__file__).resolve().parent.parent / "mt_puzzles/cd_test.jsonl"
+223-    for inst in load_instances(p)[:1]:
+224-        g = CDGame(inst["components"])
+225-        print(inst["components"], "-> |H| =", len(g.H))
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

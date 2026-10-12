@@ -1,0 +1,113 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; python3 - <<'EOF'
+import asyncio, sys, numpy as np
+sys.argv=['x']
+import importlib.util
+spec=importlib.util.spec_from_file_location('drive','drive.py'); d=importlib.util.module_from_spec(spec); spec.loader.exec_module(d)
+R=d.R
+from cd_oracle import CDGame
+h=R.load_harness('proto/veto_determined.py')
+ROOT=d.ROOT
+tmpl=open(ROOT+"/mt_puzzles/cd_instruction.txt").read(); lp=open(ROOT+"/mt_puzzles/cd_last_turn_prompt.txt").read()
+insts=R.load_instances(ROOT+"/meta/cd_evolve/data/cd_search_v2.jsonl")
+inst=insts[40]; g=CDGame(inst['components'])
+cl=d.Scanner(np.random.default_rng(3),0.3,0.4,0)
+res=asyncio.run(R.run_episode(cl,"m",g,inst,R.fill_instruction(tmpl,inst['components'],3,3,18),lp,0,18,0.7,1200,3,3,h))
+print(res[0])
+# show the composed message list at a few calls: role + first 140 chars
+for ci in [5,6,7,8, len(cl.seen_msgs)-1]:
+    ms=cl.seen_msgs[ci]
+    print(f'--- call {ci}: {len(ms)} msgs')
+    for m in ms[1:]:
+        print('   ',m['role'][:4], m['content'][:150].replace('\n',' | '))
+EOF
+
+description: Inspect composed contexts around vetoes in one episode
+
+--- output ---
+{'correct': True, 'unique_at_end': True, 'guess_bits': [0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1], 'truth_bits': [0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1], 'n_alive_end': 1, 'parsed_guess': True, 'n_queries': 18, 'n_illegal': 0, 'n_calls': 26, 'n_reasks': 7, 'max_context_chars': 11139}
+--- call 5: 8 msgs
+    user Please start with your first query.
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Please send your next query. 17 queries remaining. | 252 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 0, 1)</query>
+    user A(0, 0, 1) = 0 | Please send your next query. 16 queries remaining. | 202 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 0)</query>
+    user A(0, 1, 0) = 0 | Please send your next query. 15 queries remaining. | 164 circuit configurations remain consistent with every answer given so far. Already
+--- call 6: 10 msgs
+    user Please start with your first query.
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Please send your next query. 17 queries remaining. | 252 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 0, 1)</query>
+    user A(0, 0, 1) = 0 | Please send your next query. 16 queries remaining. | 202 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 0)</query>
+    user A(0, 1, 0) = 0 | Please send your next query. 15 queries remaining. | 164 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 1)</query>
+    user A(0, 1, 1) = 1 | Please send your next query. 14 queries remaining. | 114 circuit configurations remain consistent with every answer given so far. Already
+--- call 7: 12 msgs
+    user Please start with your first query.
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Please send your next query. 17 queries remaining. | 252 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 0, 1)</query>
+    user A(0, 0, 1) = 0 | Please send your next query. 16 queries remaining. | 202 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 0)</query>
+    user A(0, 1, 0) = 0 | Please send your next query. 15 queries remaining. | 164 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 1)</query>
+    user A(0, 1, 1) = 1 | Please send your next query. 14 queries remaining. | 114 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(1, 0, 0)</query>
+    user A(1, 0, 0) = 0 | Please send your next query. 13 queries remaining. | 76 circuit configurations remain consistent with every answer given so far. Already 
+--- call 8: 14 msgs
+    user Please start with your first query.
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Please send your next query. 17 queries remaining. | 252 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 0, 1)</query>
+    user A(0, 0, 1) = 0 | Please send your next query. 16 queries remaining. | 202 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 0)</query>
+    user A(0, 1, 0) = 0 | Please send your next query. 15 queries remaining. | 164 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 1)</query>
+    user A(0, 1, 1) = 1 | Please send your next query. 14 queries remaining. | 114 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(1, 0, 0)</query>
+    user A(1, 0, 0) = 0 | Please send your next query. 13 queries remaining. | 76 circuit configurations remain consistent with every answer given so far. Already 
+    assi Next. <query>A(1, 0, 1)</query>
+    user A(1, 0, 1) = 1 | Please send your next query. 12 queries remaining. | 38 circuit configurations remain consistent with every answer given so far. Already 
+--- call 25: 38 msgs
+    user Please start with your first query.
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Please send your next query. 17 queries remaining. | 252 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 0, 1)</query>
+    user A(0, 0, 1) = 0 | Please send your next query. 16 queries remaining. | 202 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 0)</query>
+    user A(0, 1, 0) = 0 | Please send your next query. 15 queries remaining. | 164 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(0, 1, 1)</query>
+    user A(0, 1, 1) = 1 | Please send your next query. 14 queries remaining. | 114 circuit configurations remain consistent with every answer given so far. Already
+    assi Next. <query>A(1, 0, 0)</query>
+    user A(1, 0, 0) = 0 | Please send your next query. 13 queries remaining. | 76 circuit configurations remain consistent with every answer given so far. Already 
+    assi Next. <query>A(1, 0, 1)</query>
+    user A(1, 0, 1) = 1 | Please send your next query. 12 queries remaining. | 38 circuit configurations remain consistent with every answer given so far. Already 
+    assi Next. <query>B(0, 0, 1)</query>
+    user B(0, 0, 1) = 0 | Please send your next query. 11 queries remaining. | 31 circuit configurations remain consistent with every answer given so far. Already 
+    assi Next. <query>B(0, 1, 0)</query>
+    user B(0, 1, 0) = 0 | Please send your next query. 10 queries remaining. | 25 circuit configurations remain consistent with every answer given so far. Already 
+    assi Next. <query>B(0, 1, 1)</query>
+    user B(0, 1, 1) = 0 | Please send your next query. 9 queries remaining. | 7 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>B(1, 0, 1)</query>
+    user B(1, 0, 1) = 1 | Please send your next query. 8 queries remaining. | 6 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>C(0, 0, 1)</query>
+    user C(0, 0, 1) = 0 | Please send your next query. 7 queries remaining. | 5 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>C(0, 1, 0)</query>
+    user C(0, 1, 0) = 0 | Please send your next query. 6 queries remaining. | 4 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>C(0, 1, 1)</query>
+    user C(0, 1, 1) = 1 | Please send your next query. 5 queries remaining. | 3 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>C(1, 0, 0)</query>
+    user C(1, 0, 0) = 0 | Please send your next query. 4 queries remaining. | 2 circuit configurations remain consistent with every answer given so far. Already de
+    assi Next. <query>C(1, 0, 1)</query>
+    user C(1, 0, 1) = 1 | Please send your next query. 3 queries remaining. | 1 circuit configuration remains consistent with every answer given so far. Already de
+    assi Next. <query>C(1, 1, 0)</query>
+    user C(1, 1, 0) = 0 | Please send your next query. 2 queries remaining. | 1 circuit configuration remains consistent with every answer given so far. Already de
+    assi Next. <query>C(1, 1, 1)</query>
+    user C(1, 1, 1) = 1 | Please send your next query. 1 queries remaining. | 1 circuit configuration remains consistent with every answer given so far. Already de
+    assi Next. <query>A(0, 0, 0)</query>
+    user A(0, 0, 0) = 0 | Exactly one configuration of the circuits is consistent with all your answers. Its outputs in the required order (A, then B, then C; in
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

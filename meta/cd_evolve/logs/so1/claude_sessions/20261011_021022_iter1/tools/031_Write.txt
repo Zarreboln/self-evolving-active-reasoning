@@ -1,0 +1,141 @@
+Write: ../../../../../../private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/drive.py
+
+content:
+"""Scratch driver: run a harness file through the real runner's run_episode with a
+scripted 'scanner' model that reacts to vetoes, on the 100 v2 search instances.
+
+scanner: proposes the canonical entry after its own last proposal (the 7B habit).
+After a re-ask that lists open outputs it picks, with prob p_list, the first listed
+output; with prob p_ign it ignores the re-ask and repeats its proposal; otherwise it
+continues its scan. With prob p_skip it skips a determined entry on its own when the
+harness text names it (models enum15's partial effect) -- off by default.
+Final: copies the first <guess>...</guess> in the last user message if any, else naive.
+"""
+import argparse, asyncio, json, re, sys
+from types import SimpleNamespace
+import numpy as np
+
+ROOT = "/Users/zarreboln/Desktop/ar_harness"
+sys.path.insert(0, ROOT + "/runner")
+sys.path.insert(0, ROOT + "/stage0")
+sys.path.insert(0, ROOT + "/meta/cd_evolve")
+import cd_harness_run as R
+from cd_oracle import CDGame
+
+QRE = re.compile(r"<query>\s*([A-H])\s*\(([^)]*)\)\s*</query>")
+OBS = re.compile(r"\b([A-H])\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)\s*=\s*([01])\b")
+LIST = re.compile(r"not fixed yet: ([^.]*)\.")
+GUESS = re.compile(r"<guess>([01]+)</guess>")
+
+
+def qidx(lb, bits):
+    return "ABC".index(lb) * 8 + int("".join(bits), 2)
+
+
+class Scanner:
+    def __init__(self, rng, p_list, p_ign, verbose_chars):
+        self.rng, self.p_list, self.p_ign, self.vc = rng, p_list, p_ign, verbose_chars
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+        self.seen_msgs = []
+
+    async def _create(self, model=None, messages=None, **kw):
+        self.seen_msgs.append(messages)
+        txt = self._reply(messages)
+        usage = SimpleNamespace(completion_tokens=max(1, len(txt) // 4),
+                                prompt_tokens=sum(len(m["content"]) for m in messages) // 3)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=txt))], usage=usage)
+
+    def _reply(self, messages):
+        last = messages[-1]["content"]
+        if "truth tables for all circuits" in last:
+            g = GUESS.search(last)
+            if g:
+                return f"<guess>{g.group(1)}</guess>"
+            bits = [0] * 24
+            for m in messages:
+                if m["role"] == "user":
+                    for lb, a, b, c, v in OBS.findall(m["content"]):
+                        bits[qidx(lb, [a, b, c])] = int(v)
+            return "<guess>" + "".join(map(str, bits)) + "</guess>"
+        # own last proposal = last <query> in the assistant messages it can see
+        lastq = None
+        for m in messages:
+            if m["role"] == "assistant":
+                mm = QRE.findall(m["content"])
+                if mm:
+                    lb, args = mm[-1]
+                    lastq = qidx(lb, re.findall(r"[01]", args))
+        lm = LIST.search(last)
+        pad = "x" * self.vc
+        if lm:  # a re-ask with a list
+            r = self.rng.random()
+            if r < self.p_ign and lastq is not None:
+                q = lastq
+            elif r < self.p_ign + self.p_list:
+                first = lm.group(1).split(",")[0].strip()
+                mm = re.match(r"([A-H])\(([01]),([01]),([01])\)", first)
+                q = qidx(mm.group(1), mm.groups()[1:])
+            else:
+                q = ((lastq if lastq is not None else -1) + 1) % 24
+        else:
+            q = ((lastq if lastq is not None else -1) + 1) % 24
+        row = q % 8
+        return f"{pad}Next. <query>{'ABC'[q // 8]}({(row >> 2) & 1}, {(row >> 1) & 1}, {row & 1})</query>"
+
+
+async def main(a):
+    harness = R.load_harness(a.harness)
+    tmpl = open(ROOT + "/mt_puzzles/cd_instruction.txt").read()
+    last_prompt = open(ROOT + "/mt_puzzles/cd_last_turn_prompt.txt").read()
+    insts = R.load_instances(ROOT + "/meta/cd_evolve/data/cd_search_v2.jsonl")[: a.limit]
+    games = {}
+    out = []
+    for i, inst in enumerate(insts):
+        key = tuple(sorted(inst["components"].items()))
+        if key not in games:
+            games[key] = CDGame(dict(key))
+        game = games[key]
+        system = R.fill_instruction(tmpl, inst["components"], 3, 3, 18)
+        for seed in range(a.seeds):
+            cl = Scanner(np.random.default_rng(1000 * i + seed), a.p_list, a.p_ign, a.verbose)
+            res, rows, tok, err, fsent, ftext, state = await R.run_episode(
+                cl, "m", game, inst, system, last_prompt, seed, 18, 0.7, 1200, 3, 3, harness)
+            out.append({"key": i, "seed": seed, "error": err, "result": res, "rows": rows, "tok": tok,
+                        "final_sent": fsent, "final_text": ftext, "state": state,
+                        "max_chars": max(sum(len(m["content"]) for m in ms) for ms in cl.seen_msgs)})
+    errs = [o for o in out if o["error"]]
+    ok = [o for o in out if not o["error"]]
+    uniq = np.mean([o["result"]["unique_at_end"] for o in ok])
+    exact = np.mean([o["result"]["correct"] for o in ok])
+    legal = [x for o in ok for x in o["rows"] if not x.get("illegal") and x["n_before"] > 1]
+    zero = np.mean([x["zero_info"] for x in legal])
+    reasks = np.mean([o["result"]["n_reasks"] for o in ok])
+    calls = np.mean([o["result"]["n_calls"] for o in ok])
+    ill = np.mean([o["result"]["n_illegal"] for o in ok])
+    print(f"{a.harness.split('/')[-1]} p_list={a.p_list} p_ign={a.p_ign}: n={len(out)} err={len(errs)} "
+          f"uniq={uniq:.3f} exact={exact:.3f} zero={zero:.3f} reasks/ep={reasks:.2f} calls/ep={calls:.1f} "
+          f"ill/ep={ill:.2f} max_chars mean={np.mean([o['max_chars'] for o in ok]):.0f} "
+          f"max={max(o['max_chars'] for o in ok)} tok_in={np.mean([o['tok']['in'] for o in ok]):.0f}")
+    if errs:
+        print("ERR", errs[0]["error"])
+    if a.dump:
+        with open(a.dump, "w") as f:
+            for o in out:
+                f.write(json.dumps(o, default=str) + "\n")
+
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser()
+    p.add_argument("harness")
+    p.add_argument("--limit", type=int, default=100)
+    p.add_argument("--seeds", type=int, default=1)
+    p.add_argument("--p_list", type=float, default=0.5)
+    p.add_argument("--p_ign", type=float, default=0.0)
+    p.add_argument("--verbose", type=int, default=0, help="pad replies with N chars")
+    p.add_argument("--dump", default=None)
+    asyncio.run(main(p.parse_args()))
+
+
+
+--- output ---
+File created successfully at: /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/drive.py (file state is current in your context — no need to Read it back)

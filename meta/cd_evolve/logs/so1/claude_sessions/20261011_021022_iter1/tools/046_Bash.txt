@@ -1,0 +1,32 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+import json, numpy as np
+def load(p):
+    latest={}
+    for l in open(p):
+        if l.strip():
+            r=json.loads(l); latest[(r['key'],r['seed'])]=r
+    return latest
+for name in ['bare','enum15']:
+    eps=load(f'logs/so1/traces/{name}/search.jsonl')
+    u=[r for r in eps.values() if (r.get('result') or {}).get('unique_at_end')]
+    ex=[r for r in u if r['result']['correct']]
+    # does final guess agree with own observations?
+    agree=0; n=0
+    for r in eps.values():
+        res=r.get('result') or {}
+        g=res.get('guess_bits')
+        if not g: continue
+        n+=1
+        if all(g[x['query']]==x['answer'] for x in r['rows'] if not x.get('illegal')): agree+=1
+    first_uniq=[next((x['turn'] for x in r['rows'] if not x.get('illegal') and x['n_after']==1),None) for r in u]
+    print(name, 'uniq',len(u),'exact|uniq',len(ex), 'guess agrees w/ own obs', agree, '/', n, 'turn of collapse median', np.median([t for t in first_uniq if t]))
+EOF
+
+description: Compute final-guess statistics for the iter0 report
+
+--- output ---
+bare uniq 39 exact|uniq 0 guess agrees w/ own obs 7 / 174 turn of collapse median 15.0
+enum15 uniq 76 exact|uniq 5 guess agrees w/ own obs 25 / 194 turn of collapse median 15.0

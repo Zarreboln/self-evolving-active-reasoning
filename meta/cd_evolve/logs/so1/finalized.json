@@ -1,0 +1,13 @@
+{
+ "status": "complete",
+ "systems": [
+  "answer_grid",
+  "bare",
+  "enum15",
+  "veto_determined",
+  "veto_only"
+ ],
+ "selected_before_test": "veto_only",
+ "started": "2026-10-10T22:56:58.753769",
+ "completed": "2026-10-11T01:53:24.108595"
+}

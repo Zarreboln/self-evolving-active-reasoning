@@ -1,0 +1,139 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; cat logs/so1/REGIME; echo ----; cat logs/so1/evolution_summary.jsonl; echo ----; cat logs/so1/frontier_val.json; echo ----; cat logs/so1/evolve.log; echo ----; cat logs/so1/nohup.out; echo ----; cat logs/so1/scores/*.json
+
+description: Read run summary, frontier, logs, and scores
+
+--- output ---
+state_only----
+{"iteration": 0, "system": "bare", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 200, "uniq": 0.195, "exact": 0, "eff": 0.5501, "zero": 0.373, "oracle": 0.2514, "repeat": 0.0217, "illegal": 0.0039, "parsed": 0.87, "alive_end": 4.35, "tok_out": 2200.005, "uniq_ci": [0.14, 0.25], "delta_uniq": 0.195, "outcome": "uniq 19.5% (+19.5) exact 0.0%"}
+{"iteration": 0, "system": "enum15", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 200, "uniq": 0.38, "exact": 0.06, "eff": 0.6042, "zero": 0.3126, "oracle": 0.2731, "repeat": 0.044, "illegal": 0.0028, "parsed": 0.97, "alive_end": 2.9648, "tok_out": 2903.9, "uniq_ci": [0.31, 0.45], "delta_uniq": 0.38, "outcome": "uniq 38.0% (+38.0) exact 6.0%"}
+----
+{
+ "_best": {
+  "agent": "enum15",
+  "uniq": 0.38,
+  "uniq_ci": [
+   0.31,
+   0.45
+  ],
+  "exact": 0.06,
+  "eff": 0.6042264193296433,
+  "repeat": 0.04398216939078752,
+  "illegal": 0.0027785495971103086,
+  "oracle": 0.2731054977711738,
+  "cost": 65946.375,
+  "n": 200,
+  "iteration": 0
+ },
+ "candidates": {
+  "bare": {
+   "uniq": 0.195,
+   "uniq_ci": [
+    0.14,
+    0.25
+   ],
+   "exact": 0,
+   "eff": 0.5501394589209037,
+   "repeat": 0.02167003756139844,
+   "illegal": 0.0038888888888888888,
+   "oracle": 0.2513724357122219,
+   "cost": 34302.385,
+   "n": 200,
+   "iteration": 0
+  },
+  "enum15": {
+   "uniq": 0.38,
+   "uniq_ci": [
+    0.31,
+    0.45
+   ],
+   "exact": 0.06,
+   "eff": 0.6042264193296433,
+   "repeat": 0.04398216939078752,
+   "illegal": 0.0027785495971103086,
+   "oracle": 0.2731054977711738,
+   "cost": 65946.375,
+   "n": 200,
+   "iteration": 0
+  }
+ }
+}----
+2026-10-10T21:22:42 baseline bare
+2026-10-10T21:22:42 waiting for the task-model server: serve7b starting (no endpoint yet)
+2026-10-10T21:23:44 waiting for the task-model server: serve7b starting (no endpoint yet)
+2026-10-10T21:24:45 waiting for the task-model server: serve7b starting (no endpoint yet)
+2026-10-10T21:34:00   benchmark bare/search: 487s  done in 483s -> /home/ziningl/results/ar_harness/cd_evolve/so1/bare/search.jsonl
+2026-10-10T21:34:00   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/scores/bare.search.json
+2026-10-10T21:34:00 baseline enum15
+2026-10-10T21:47:56   benchmark enum15/search: 828s  done in 824s -> /home/ziningl/results/ar_harness/cd_evolve/so1/enum15/search.jsonl
+2026-10-10T21:47:56   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/scores/enum15.search.json
+2026-10-10T21:47:56 === iteration 1 regime=state_only frontier=0.38
+----
+[21:22:42] baseline bare
+[21:22:42] waiting for the task-model server: serve7b starting (no endpoint yet)
+[21:23:44] waiting for the task-model server: serve7b starting (no endpoint yet)
+[21:24:45] waiting for the task-model server: serve7b starting (no endpoint yet)
+[21:34:00]   benchmark bare/search: 487s  done in 483s -> /home/ziningl/results/ar_harness/cd_evolve/so1/bare/search.jsonl
+[21:34:00]   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/scores/bare.search.json
+[21:34:00] baseline enum15
+[21:47:56]   benchmark enum15/search: 828s  done in 824s -> /home/ziningl/results/ar_harness/cd_evolve/so1/enum15/search.jsonl
+[21:47:56]   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/scores/enum15.search.json
+[21:47:56] === iteration 1 regime=state_only frontier=0.38
+  [1] Bash(cat /Users/zarreboln/.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mo)
+  [2] Bash(cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; cat logs/so1/REGIME; echo ----; cat logs/so1/evolution_summary.js)
+----
+{
+ "bare": {
+  "n": 200,
+  "err": 0,
+  "uniq": 0.195,
+  "exact": 0,
+  "ckt": 0.1264367816091954,
+  "bit": 0.6716954022988506,
+  "parsed": 0.87,
+  "alive_end": 4.35,
+  "eff": 0.5501394589209037,
+  "zero": 0.3730135798902051,
+  "oracle": 0.2513724357122219,
+  "repeat": 0.02167003756139844,
+  "illegal": 0.0038888888888888888,
+  "tok_out": 2200.005,
+  "tok_in": 32102.38,
+  "uniq_ci": [
+   0.14,
+   0.25
+  ],
+  "exact_ci": [
+   0.0,
+   0.0
+  ]
+ }
+}{
+ "enum15": {
+  "n": 200,
+  "err": 0.005,
+  "uniq": 0.38,
+  "exact": 0.06,
+  "ckt": 0.2542955326460481,
+  "bit": 0.7124140893470791,
+  "parsed": 0.97,
+  "alive_end": 2.9648241206030153,
+  "eff": 0.6042264193296433,
+  "zero": 0.312630014858841,
+  "oracle": 0.2731054977711738,
+  "repeat": 0.04398216939078752,
+  "illegal": 0.0027785495971103086,
+  "tok_out": 2903.9,
+  "tok_in": 63042.475,
+  "uniq_ci": [
+   0.31,
+   0.45
+  ],
+  "exact_ci": [
+   0.03,
+   0.095
+  ]
+ }
+}

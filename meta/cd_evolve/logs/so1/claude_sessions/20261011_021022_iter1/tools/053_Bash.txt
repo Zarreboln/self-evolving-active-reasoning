@@ -1,0 +1,28 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 tools/show_trace.py logs/mock/veto_only__sequential.jsonl --list; python3 - <<'EOF'
+import json
+for l in open('logs/mock/veto_only__sequential.jsonl'):
+    r=json.loads(l)
+    for x in r['rows'][:6]:
+        print(x['turn'], x.get('query'), x.get('n_before'), x.get('n_after'), [y['msg'][:70] for y in x.get('reasks',[])], '|', (x.get('model_text') or '')[:40])
+    print(r['result']['n_reasks'], r['result']['max_context_chars'])
+    break
+EOF
+
+description: Inspect the veto_only sequential mock trace
+
+--- output ---
+key=1    seed=0 uniq=0 exact=0 alive_end=7     eff=0.427 zero=10 repeat=10 illegal=0  err=False
+key=3    seed=0 uniq=0 exact=0 alive_end=55    eff=0.334 zero=10 repeat=10 illegal=0  err=False
+key=9    seed=0 uniq=0 exact=0 alive_end=700   eff=0.177 zero=14 repeat=14 illegal=0  err=False
+key=12   seed=0 uniq=0 exact=0 alive_end=19    eff=0.409 zero=10 repeat=10 illegal=0  err=False
+key=14   seed=0 uniq=0 exact=0 alive_end=145   eff=0.250 zero=12 repeat=12 illegal=0  err=False
+1 0 2886 1618 [] | Querying now. <query>A(0, 0, 0)</query>
+2 1 1618 621 [] | Querying now. <query>A(0, 0, 1)</query>
+3 2 621 402 [] | Querying now. <query>A(0, 1, 0)</query>
+4 3 402 143 [] | Querying now. <query>A(0, 1, 1)</query>
+5 4 143 55 [] | Querying now. <query>A(1, 0, 0)</query>
+6 5 55 40 [] | Querying now. <query>A(1, 0, 1)</query>
+21 4884

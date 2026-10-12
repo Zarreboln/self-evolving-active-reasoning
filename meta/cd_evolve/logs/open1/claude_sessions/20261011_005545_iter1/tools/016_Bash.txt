@@ -1,0 +1,51 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/oracle_stats.py <<'EOF'
+import json, sys, collections, time
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/stage0")
+from cd_oracle import CDGame
+insts = [json.loads(l) for l in open("data/cd_search.jsonl")]
+games = {}
+def game_for(comp):
+    key = tuple(sorted(comp.items()))
+    if key not in games: games[key] = CDGame(dict(key))
+    return games[key]
+
+def greedy_run(g, truth, first=None, budget=18):
+    alive = np.arange(len(g.H))
+    for t in range(1, budget+1):
+        if len(alive) == 1: return t-1
+        if t == 1 and first is not None: q = first
+        else: _, q = g.available_bits(alive)
+        alive = alive[g.H[alive, q] == truth[q]]
+    return None if len(alive) > 1 else budget
+
+res = collections.defaultdict(list)
+for inst in insts:
+    c = inst["controller"]
+    g = game_for(c["components"])
+    truth = np.array([int(ch) for ch in c["circuit_joint_lookup"]], dtype=np.uint8)
+    n1 = greedy_run(g, truth)
+    n2 = greedy_run(g, truth, first=0)
+    res[tuple(sorted(c["components"].items()))].append((n1, n2))
+for k, v in res.items():
+    g = games[k]
+    a = np.array(v, dtype=float)
+    _, q0 = g.available_bits(np.arange(len(g.H)))
+    print(k, "|H|=", len(g.H), "greedy first q:", q0, "n=", len(v),
+          "greedy mean/max:", a[:,0].mean().round(2), a[:,0].max(), " A000-first mean/max:", a[:,1].mean().round(2), a[:,1].max())
+    print("   dist A000-first:", sorted(collections.Counter(a[:,1].astype(int)).items()))
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/oracle_stats.py
+
+description: Compute greedy oracle query counts on search instances
+
+--- output ---
+(('AND', 1), ('NOT', 2), ('OR', 5)) |H|= 2886 greedy first q: 0 n= 17 greedy mean/max: 12.29 16.0  A000-first mean/max: 12.29 16.0
+   dist A000-first: [(np.int64(10), 2), (np.int64(11), 2), (np.int64(12), 7), (np.int64(13), 3), (np.int64(14), 2), (np.int64(16), 1)]
+(('AND', 3), ('NOT', 0), ('OR', 3)) |H|= 252 greedy first q: 1 n= 17 greedy mean/max: 9.65 13.0  A000-first mean/max: 10.65 14.0
+   dist A000-first: [(np.int64(6), 1), (np.int64(7), 1), (np.int64(9), 3), (np.int64(10), 3), (np.int64(11), 2), (np.int64(12), 3), (np.int64(13), 3), (np.int64(14), 1)]
+(('AND', 3), ('NOT', 1), ('OR', 3)) |H|= 3924 greedy first q: 1 n= 16 greedy mean/max: 12.81 15.0  A000-first mean/max: 13.19 16.0
+   dist A000-first: [(np.int64(9), 1), (np.int64(11), 1), (np.int64(12), 4), (np.int64(13), 2), (np.int64(14), 4), (np.int64(15), 3), (np.int64(16), 1)]

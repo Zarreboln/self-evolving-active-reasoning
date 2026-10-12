@@ -1,0 +1,71 @@
+Bash
+
+command:
+python3 tools/show_trace.py logs/mock/copy_open__greedy.jsonl --list | head -3 && python3 tools/show_trace.py logs/mock/copy_open__greedy.jsonl --key 1 | grep -E "^\[turn|SENT|FINAL SENT|^ {11}|^ {14}" | head -60
+
+description: Show rendered copy_open messages from greedy mock
+
+--- output ---
+key=1    seed=0 uniq=1 exact=1 alive_end=1     eff=1.000 zero=0  repeat=6  illegal=0  err=False
+key=3    seed=0 uniq=1 exact=1 alive_end=1     eff=1.000 zero=0  repeat=6  illegal=0  err=False
+key=9    seed=0 uniq=1 exact=1 alive_end=1     eff=1.000 zero=0  repeat=5  illegal=0  err=False
+[turn 1] query A(0,0,0) -> 0   alive 2886->1618   bits 0.989/0.989   best A(0,0,0)
+  SENT  << A(0, 0, 0) = 0
+           Please send your next query. 17 queries remaining.
+           1618 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), B(0,0,0), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), B(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>B(0, 0, 0)</query> (812 of the 1618 give 0, 806 give 1). Reply with exactly this query and nothing else.
+[turn 2] query B(0,0,0) -> 1   alive 1618->806   bits 1.000/1.000   best B(0,0,0)
+  SENT  << B(0, 0, 0) = 1
+           Please send your next query. 16 queries remaining.
+           806 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), B(0,0,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), B(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>B(0, 0, 1)</query> (384 of the 806 give 0, 422 give 1). Reply with exactly this query and nothing else.
+[turn 3] query B(0,0,1) -> 0   alive 806->384   bits 0.998/0.998   best B(0,0,1)
+  SENT  << B(0, 0, 1) = 0
+           Please send your next query. 15 queries remaining.
+           384 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), B(0,1,0), B(0,1,1), B(1,0,0), B(1,0,1), B(1,1,0), B(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>B(0, 1, 0)</query> (184 of the 384 give 0, 200 give 1). Reply with exactly this query and nothing else.
+[turn 4] query B(0,1,0) -> 0   alive 384->184   bits 0.999/0.999   best B(0,1,0)
+  SENT  << B(0, 1, 0) = 0
+           Please send your next query. 14 queries remaining.
+           184 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), B(1,0,0), B(1,0,1), B(1,1,0), B(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>B(1, 0, 1)</query> (92 of the 184 give 0, 92 give 1). Reply with exactly this query and nothing else.
+[turn 5] query B(1,0,1) -> 1   alive 184->92   bits 1.000/1.000   best B(1,0,1)
+  SENT  << B(1, 0, 1) = 1
+           Please send your next query. 13 queries remaining.
+           92 circuit configurations are still possible. Outputs still unknown: A(0,0,1), A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), B(1,1,0), B(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>A(0, 0, 1)</query> (44 of the 92 give 0, 48 give 1). Reply with exactly this query and nothing else.
+[turn 6] query A(0,0,1) -> 0   alive 92->44   bits 0.999/0.999   best A(0,0,1)
+  SENT  << A(0, 0, 1) = 0
+           Please send your next query. 12 queries remaining.
+           44 circuit configurations are still possible. Outputs still unknown: A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), C(0,0,0), C(0,0,1), C(0,1,0), C(0,1,1), C(1,0,0), C(1,0,1), C(1,1,0), C(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>C(0, 0, 1)</query> (20 of the 44 give 0, 24 give 1). Reply with exactly this query and nothing else.
+[turn 7] query C(0,0,1) -> 1   alive 44->24   bits 0.994/0.994   best C(0,0,1)
+  SENT  << C(0, 0, 1) = 1
+           Please send your next query. 11 queries remaining.
+           24 circuit configurations are still possible. Outputs still unknown: A(0,1,0), A(0,1,1), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), C(0,0,0), C(0,1,0), C(1,0,0), C(1,1,0). Every other output is already fixed by your answers. Most informative next query: <query>A(0, 1, 1)</query> (10 of the 24 give 0, 14 give 1). Reply with exactly this query and nothing else.
+[turn 8] query A(0,1,1) -> 0   alive 24->10   bits 0.980/0.980   best A(0,1,1)
+  SENT  << A(0, 1, 1) = 0
+           Please send your next query. 10 queries remaining.
+           10 circuit configurations are still possible. Outputs still unknown: A(0,1,0), A(1,0,0), A(1,0,1), A(1,1,0), A(1,1,1), C(0,0,0), C(0,1,0), C(1,0,0), C(1,1,0). Every other output is already fixed by your answers. Most informative next query: <query>A(1, 0, 0)</query> (5 of the 10 give 0, 5 give 1). Reply with exactly this query and nothing else.
+[turn 9] query A(1,0,0) -> 1   alive 10->5   bits 1.000/1.000   best A(1,0,0)
+  SENT  << A(1, 0, 0) = 1
+           Please send your next query. 9 queries remaining.
+           5 circuit configurations are still possible. Outputs still unknown: A(0,1,0), A(1,0,1), A(1,1,0), A(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>A(0, 1, 0)</query> (3 of the 5 give 0, 2 give 1). Reply with exactly this query and nothing else.
+[turn 10] query A(0,1,0) -> 0   alive 5->3   bits 0.971/0.971   best A(0,1,0)
+  SENT  << A(0, 1, 0) = 0
+           Please send your next query. 8 queries remaining.
+           3 circuit configurations are still possible. Outputs still unknown: A(1,0,1), A(1,1,0), A(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>A(1, 0, 1)</query> (2 of the 3 give 0, 1 give 1). Reply with exactly this query and nothing else.
+[turn 11] query A(1,0,1) -> 0   alive 3->2   bits 0.918/0.918   best A(1,0,1)
+  SENT  << A(1, 0, 1) = 0
+           Please send your next query. 7 queries remaining.
+           2 circuit configurations are still possible. Outputs still unknown: A(1,1,0), A(1,1,1). Every other output is already fixed by your answers. Most informative next query: <query>A(1, 1, 0)</query> (1 of the 2 give 0, 1 give 1). Reply with exactly this query and nothing else.
+[turn 12] query A(1,1,0) -> 1   alive 2->1   bits 1.000/1.000   best A(1,1,0)
+  SENT  << A(1, 1, 0) = 1
+           Please send your next query. 6 queries remaining.
+           Your answers now determine all three truth tables; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+[turn 13] query A(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  SENT  << A(1, 1, 0) = 1
+           Please send your next query. 5 queries remaining.
+           Your answers now determine all three truth tables; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+[turn 14] query A(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  SENT  << A(1, 1, 0) = 1
+           Please send your next query. 4 queries remaining.
+           Your answers now determine all three truth tables; no query can add information. Reply with only <query>A(0, 0, 0)</query>
+[turn 15] query A(1,1,0) -> 1   alive 1->1   bits 0.000/0.000   best -   ZERO-INFO   REPEAT
+  SENT  << A(1, 1, 0) = 1
+           Please send your next query. 3 queries remaining.
+           Your answers now determine all three truth tables; no query can add information. Reply with only <query>A(0, 0, 0)</query>

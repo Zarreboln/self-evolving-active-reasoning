@@ -1,0 +1,380 @@
+Bash
+
+command: cd /Users/zarreboln/Desktop/ar_harness && cat runner/cd_harness_run.py
+description: Read the harness runner source
+
+--- output ---
+"""CircuitDecoding runner with a pluggable harness and full raw traces.
+
+Successor to cd_runner_async.py (kept untouched: results/gate_cd.jsonl came
+from it). Three things changed on purpose:
+
+  1. The per-turn feedback is built by a HARNESS MODULE loaded from a file
+     (agents/<name>.py in meta/cd_evolve/), through a view that holds only
+     public information -- the hypothesis space H (implied by the inventory
+     the model is told), the feasible-set indices (implied by the model's own
+     query/answer history), the history itself and the model's transcript.
+     The truth table lives in this file's episode closure and is never passed
+     in, so a harness cannot read it even by mistake.
+       init_state(view) -> state           once per episode
+       build_feedback(view, state) -> str  appended after each answered query
+       final_hint(view, state) -> str      appended before the final-guess prompt
+  2. Every turn logs the text actually sent and the model's raw reply, so a
+     proposer can read what the model saw and did (Meta-Harness Table 3:
+     traces are what make the search work).
+  3. The model is told the answer to its LAST query together with the final
+     prompt. cd_runner_async.py never delivered the 18th answer.
+
+Metrics per answered turn are computed on the feasible set before the query
+(ex-ante), as before. `best_query` is the max-entropy query at that moment,
+so oracle-agreement is measurable for any harness.
+
+    python runner/cd_harness_run.py --harness meta/cd_evolve/agents/enum15.py \
+        --split search --seeds 2 --out results/cd/enum15/search.jsonl
+    python runner/cd_harness_run.py --harness ... --mock greedy    # no GPU: scripted model
+"""
+
+import argparse
+import asyncio
+import hashlib
+import importlib.util
+import json
+import re
+import sys
+import time
+from dataclasses import dataclass
+from pathlib import Path
+
+import numpy as np
+
+HERE = Path(__file__).resolve().parent
+ROOT = HERE.parent
+sys.path.insert(0, str(ROOT / "stage0"))
+sys.path.insert(0, str(HERE))
+from cd_oracle import CDGame, load_instances  # noqa: E402
+
+LABELS = "ABCDEFGH"
+QUERY_RE = re.compile(r"<query>\s*([A-H])\s*\(([^)]*)\)\s*</query>", re.I)
+LOOSE_RE = re.compile(r"\b([A-H])\s*\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)")
+GUESS_RE = re.compile(r"<guess>\s*([01\s]+)\s*</guess>", re.I)
+
+# Fixed task definition. These strings are the environment, not the harness.
+# Wording follows the Circuit Decoding transcript in the Multi-Turn Puzzles
+# paper appendix (arXiv 2508.10142):
+#     user:  A(0, 0, 0) = 1
+#            Please send your next query. 17 queries remaining.
+#     ...
+#     user:  C(0, 0, 0) = 0
+#            Please provide the truth tables for all circuits in the format requested.
+# i.e. every answer restates the query, counts down the budget, and the 18th
+# answer is delivered together with the final prompt (last_turn_prompt.txt as
+# shipped in the dataset). The official environment code is not released; what
+# it does with a reply that contains no query is unknown -- here such a turn is
+# re-asked once with ILLEGAL_MSG and counts against the 18.
+KICKOFF = "Please start with your first query."
+ENV_FEEDBACK = "{q} = {bit}\nPlease send your next query. {remaining} queries remaining."
+ENV_LAST = "{q} = {bit}"
+ILLEGAL_MSG = ("Your message did not contain a query in the required format. "
+               "Reply with exactly one <query>X(a, b, c)</query>.")
+
+
+def env_fmt(q, k):
+    """Query index -> 'A(0, 0, 1)' in the environment's spacing."""
+    lb = LABELS[q // (1 << k)]
+    row = q % (1 << k)
+    return f"{lb}({', '.join(str((row >> (k - 1 - i)) & 1) for i in range(k))})"
+
+
+def fill_instruction(tmpl, components, c, k, budget):
+    labels = list(LABELS[:c])
+    comp = ", ".join(f"{v} {g} gate{'s' if v != 1 else ''}"
+                     for g, v in sorted(components.items()) if v)
+    order = ", ".join(
+        f"{lb}({','.join(str((r >> (k - 1 - i)) & 1) for i in range(k))})"
+        for lb in labels for r in range(1 << k))
+    return (tmpl.replace("{components}", comp)
+                .replace("{num_circuits}", str(c))
+                .replace("{circuit_labels}", ", ".join(labels))
+                .replace("{circuit_labels_str}", ", ".join(labels))
+                .replace("{num_inputs}", str(k))
+                .replace("{num_questions_per_episode}", str(budget))
+                .replace("{truth_table_description}", order))
+
+
+def parse_query(text, c, k):
+    m = QUERY_RE.search(text)
+    if m:
+        lb, bits = m.group(1).upper(), re.findall(r"[01]", m.group(2))
+    else:
+        m = LOOSE_RE.search(text)
+        if not m:
+            return None
+        lb, bits = m.group(1).upper(), [m.group(2), m.group(3), m.group(4)]
+    if lb not in LABELS[:c] or len(bits) != k:
+        return None
+    return LABELS.index(lb) * (1 << k) + int("".join(bits), 2)
+
+
+def parse_guess(text, length):
+    m = GUESS_RE.search(text)
+    s = re.sub(r"\s", "", m.group(1)) if m else ""
+    if len(s) != length:
+        cand = re.findall(r"[01]{%d}" % length, re.sub(r"\s", "", text))
+        s = cand[-1] if cand else ""
+    return np.array([int(ch) for ch in s], dtype=np.uint8) if len(s) == length else None
+
+
+@dataclass
+class View:
+    """Everything a harness may know. No truth table, by construction."""
+    c: int
+    k: int
+    budget: int
+    turn: int                      # 0 before the first query; else the turn just answered
+    H: np.ndarray                  # hypothesis space from the inventory (public)
+    alive: np.ndarray              # feasible indices after the answer just given
+    game: CDGame                   # expected_bits / available_bits over H and alive only
+    history: list                  # [(q, bit)] answered so far, this turn included
+    transcript: list               # the model's raw replies so far
+    components: dict
+    last_q: int | None
+    last_bit: int | None
+    n_before: int
+    n_after: int
+    last_bits_expected: float      # ex-ante bits of the query just made
+    last_bits_available: float     # best any query could have had at that moment
+
+    def fmt(self, q):
+        lb = LABELS[q // (1 << self.k)]
+        row = q % (1 << self.k)
+        return f"{lb}({','.join(str((row >> (self.k - 1 - i)) & 1) for i in range(self.k))})"
+
+
+def load_harness(path):
+    path = Path(path).resolve()
+    if path.is_dir():
+        path = path / "harness.py"
+    for p in (path.parent, path.parent.parent):
+        if str(p) not in sys.path:
+            sys.path.insert(0, str(p))
+    spec = importlib.util.spec_from_file_location(f"harness_{path.stem}", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    for fn in ("init_state", "build_feedback"):
+        if not callable(getattr(mod, fn, None)):
+            raise SystemExit(f"{path}: missing {fn}()")
+    if not callable(getattr(mod, "final_hint", None)):
+        mod.final_hint = lambda view, state: ""
+    mod.__name_tag__ = getattr(mod, "NAME", path.stem)
+    mod.__sha__ = hashlib.sha1(path.read_bytes()).hexdigest()[:12]
+    mod.__file_path__ = str(path)
+    return mod
+
+
+async def run_episode(client, model, game, inst, system, last_prompt, seed,
+                      budget, temperature, max_tokens, c, k, harness):
+    msgs = [{"role": "system", "content": system}]
+    H = game.H
+    alive = np.arange(len(H))
+    truth = inst["truth"]          # stays here; never enters a View
+    history, transcript, rows = [], [], []
+    tok = {"in": 0, "out": 0}
+
+    async def ask(content):
+        msgs.append({"role": "user", "content": content})
+        r = await client.chat.completions.create(
+            model=model, messages=msgs, temperature=temperature,
+            seed=seed, max_tokens=max_tokens)
+        if getattr(r, "usage", None):
+            tok["out"] += r.usage.completion_tokens or 0
+            tok["in"] += getattr(r.usage, "prompt_tokens", 0) or 0
+        txt = r.choices[0].message.content or ""
+        msgs.append({"role": "assistant", "content": txt})
+        transcript.append(txt)
+        return txt
+
+    def view(turn, q, bit, n_before, exp, avail):
+        return View(c=c, k=k, budget=budget, turn=turn, H=H, alive=alive, game=game,
+                    history=list(history), transcript=list(transcript),
+                    components=dict(inst["components"]), last_q=q, last_bit=bit,
+                    n_before=n_before, n_after=int(len(alive)),
+                    last_bits_expected=exp, last_bits_available=avail)
+
+    v = view(0, None, None, int(len(alive)), 0.0, 0.0)
+    final_sent = final_text = None
+    try:
+        state = harness.init_state(v)
+        txt = await ask(KICKOFF)
+        last_bit = last_q = None
+        for t in range(1, budget + 1):
+            q = parse_query(txt, c, k)
+            if q is None:
+                rows.append({"turn": t, "illegal": True, "model_text": txt, "sent": ILLEGAL_MSG})
+                txt = await ask(ILLEGAL_MSG)
+                continue
+            avail, best_q = game.available_bits(alive)
+            chosen = game.expected_bits(q, alive)
+            bit = int(truth[q])
+            after = alive[H[alive, q] == bit]
+            n_before = int(len(alive))
+            row = {
+                "turn": t, "query": q, "circuit": q // (1 << k), "row": q % (1 << k),
+                "answer": bit, "n_before": n_before, "n_after": int(len(after)),
+                "bits_chosen": chosen, "bits_available": avail,
+                "best_query": None if best_q is None else int(best_q),
+                "efficiency": None if avail <= 0 else chosen / avail,
+                "zero_info": chosen < 1e-9,
+                "repeat": any(q == r.get("query") for r in rows),
+                "model_text": txt,
+            }
+            history.append((q, bit))
+            alive = after if len(after) else alive
+            v = view(t, q, bit, n_before, chosen, avail)
+            if t < budget:
+                extra = harness.build_feedback(v, state) or ""
+                sent = (ENV_FEEDBACK.format(q=env_fmt(q, k), bit=bit, remaining=budget - t)
+                        + (f"\n{extra}" if extra else ""))
+                row["sent"] = sent
+                rows.append(row)
+                txt = await ask(sent)
+            else:
+                rows.append(row)
+                last_bit, last_q = bit, q
+        extra = harness.final_hint(v, state) or ""
+        parts = ([ENV_LAST.format(q=env_fmt(last_q, k), bit=last_bit)] if last_bit is not None else []) \
+            + ([extra] if extra else []) + [last_prompt]
+        final_sent = "\n".join(parts)
+        final_text = await ask(final_sent)
+        guess = parse_guess(final_text, len(truth))
+    except Exception as e:  # logged, retried on the next run
+        return None, rows, tok, f"{type(e).__name__}: {str(e)[:300]}", final_sent, final_text, None
+
+    result = {"correct": guess is not None and bool((guess == truth).all()),
+              "unique_at_end": int(len(alive)) == 1,
+              "guess_bits": guess.tolist() if guess is not None else None,
+              "truth_bits": truth.tolist(),
+              "n_alive_end": int(len(alive)),
+              "parsed_guess": guess is not None,
+              "n_queries": len(history),
+              "n_illegal": sum(1 for r in rows if r.get("illegal"))}
+    try:
+        state_dump = json.loads(json.dumps(state, default=str))
+    except Exception:
+        state_dump = str(state)[:2000]
+    return result, rows, tok, None, final_sent, final_text, state_dump
+
+
+def select_keys(n_total, split, split_file):
+    if split == "all":
+        return list(range(n_total))
+    keys = json.loads(Path(split_file).read_text())[split]
+    return [i for i in keys if i < n_total]
+
+
+async def main_async(a):
+    harness = load_harness(a.harness)
+    cond = a.condition or harness.__name_tag__
+    tmpl = (ROOT / "mt_puzzles/cd_instruction.txt").read_text()
+    last_prompt = (ROOT / "mt_puzzles/cd_last_turn_prompt.txt").read_text()
+    insts = load_instances(a.data)
+    keys = select_keys(len(insts), a.split, a.split_file)
+    if a.limit:
+        keys = keys[: a.limit]
+
+    t = time.time()
+    games = {}
+    for i in keys:
+        key = tuple(sorted(insts[i]["components"].items()))
+        if key not in games:
+            games[key] = CDGame(dict(key))
+    print(f"harness={cond} sha={harness.__sha__} split={a.split} n={len(keys)} "
+          f"seeds={a.seeds}; stage0 ready in {time.time()-t:.1f}s "
+          f"|H|={sorted(len(g.H) for g in games.values())}", flush=True)
+
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    done = set()
+    if out.exists():
+        for line in out.open():
+            try:
+                r = json.loads(line)
+                if not r.get("error"):
+                    done.add((r["condition"], r["key"], r["seed"]))
+            except Exception:
+                pass
+    todo = [(i, s) for i in keys for s in range(a.seeds) if (cond, i, s) not in done]
+    print(f"resuming past {len(done)}; to run {len(todo)} at concurrency {a.concurrency}", flush=True)
+    if not todo:
+        return
+
+    if a.mock:
+        from cd_mock import MockClient
+        make_client = lambda game, seed: MockClient(a.mock, game, a.circuits, a.inputs, seed=seed)
+    else:
+        from openai import AsyncOpenAI
+        shared = AsyncOpenAI(base_url=a.base_url, api_key="EMPTY", max_retries=3, timeout=900.0)
+        make_client = lambda game, seed: shared
+
+    sem, lock = asyncio.Semaphore(a.concurrency), asyncio.Lock()
+    fh, t0, cnt = out.open("a"), time.time(), {"n": 0, "err": 0}
+    system_sha = hashlib.sha1(tmpl.encode()).hexdigest()[:12]
+
+    async def one(i, seed):
+        inst = insts[i]
+        game = games[tuple(sorted(inst["components"].items()))]
+        system = fill_instruction(tmpl, inst["components"], a.circuits, a.inputs, a.budget)
+        client = make_client(game, seed)
+        t1 = time.time()
+        async with sem:
+            res, rows, tok, err, fsent, ftext, state = await run_episode(
+                client, a.model, game, inst, system, last_prompt, seed, a.budget,
+                a.temperature, a.max_tokens, a.circuits, a.inputs, harness)
+        rec = {"condition": cond, "key": i, "seed": seed, "error": err, "result": res,
+               "out_tokens": tok["out"], "in_tokens": tok["in"], "rows": rows,
+               "final_sent": fsent, "final_text": ftext, "harness_state": state,
+               "meta": {"harness_sha": harness.__sha__, "harness_file": harness.__file_path__,
+                        "system_sha": system_sha, "model": a.mock and f"mock:{a.mock}" or a.model,
+                        "temperature": a.temperature, "budget": a.budget,
+                        "started": t1, "elapsed_s": round(time.time() - t1, 2)}}
+        async with lock:
+            fh.write(json.dumps(rec) + "\n")
+            fh.flush()
+            cnt["n"] += 1
+            cnt["err"] += bool(err)
+            n = cnt["n"]
+            if n % 25 == 0 or n == len(todo):
+                el = time.time() - t0
+                print(f"  {n}/{len(todo)}  {el:.0f}s  {el/n:.2f}s/ep  err={cnt['err']}  "
+                      f"eta {(len(todo)-n)*el/n/60:.1f}min", flush=True)
+
+    await asyncio.gather(*(one(*x) for x in todo))
+    fh.close()
+    print(f"done in {time.time()-t0:.0f}s -> {out}", flush=True)
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--harness", required=True, help="agents/<name>.py (or a dir with harness.py)")
+    p.add_argument("--condition", default=None, help="label in the log; default = harness NAME")
+    p.add_argument("--out", required=True)
+    p.add_argument("--data", default=str(ROOT / "mt_puzzles/cd_test.jsonl"))
+    p.add_argument("--split", default="search", choices=["search", "heldout", "all"])
+    p.add_argument("--split-file", default=str(ROOT / "splits/cd_split.json"))
+    p.add_argument("--limit", type=int, default=0, help="first N keys of the split (smoke tests)")
+    p.add_argument("--seeds", type=int, default=1)
+    p.add_argument("--base-url", default="http://127.0.0.1:8000/v1")
+    p.add_argument("--model", default="Qwen/Qwen2.5-7B-Instruct")
+    p.add_argument("--mock", default=None,
+                   choices=[None, "sequential", "random", "greedy", "follow", "flaky"])
+    p.add_argument("--budget", type=int, default=18)
+    p.add_argument("--circuits", type=int, default=3)
+    p.add_argument("--inputs", type=int, default=3)
+    p.add_argument("--temperature", type=float, default=0.7)
+    p.add_argument("--max-tokens", type=int, default=1200)
+    p.add_argument("--concurrency", type=int, default=32)
+    asyncio.run(main_async(p.parse_args()))
+
+
+if __name__ == "__main__":
+    main()
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

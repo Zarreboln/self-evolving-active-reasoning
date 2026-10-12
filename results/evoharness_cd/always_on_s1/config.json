@@ -1,0 +1,45 @@
+{
+  "fingerprint": "09cead0869f91ca1",
+  "env": "circuitdecoding",
+  "policy": {
+    "model": "Qwen/Qwen2.5-7B-Instruct",
+    "base_url": "http://node3600:8611/v1",
+    "api_key": null,
+    "temperature": 0.7,
+    "top_p": null,
+    "max_tokens": 1200,
+    "enable_thinking": null,
+    "timeout": 300.0,
+    "retries": 4
+  },
+  "out_dir": "/home/ziningl/results/ar_harness/evoharness_cd/always_on_s1",
+  "split": "all",
+  "max_steps": 19,
+  "harness": {
+    "mode": "always_on",
+    "belief": true,
+    "plan": true,
+    "experience": true,
+    "recall_top_k": 3,
+    "charge_meta_actions": false,
+    "max_meta_actions": 18
+  },
+  "bank": {
+    "path": null,
+    "mode": "frozen",
+    "consolidate_every": 1,
+    "evolver": null,
+    "max_per_category": 80,
+    "delete_veto_usage": 3
+  },
+  "workers": 32,
+  "limit": null,
+  "task_ids": null,
+  "retries": 2,
+  "keep_trace": true,
+  "context": null,
+  "env_options": {
+    "split_file": null,
+    "data_path": null
+  }
+}

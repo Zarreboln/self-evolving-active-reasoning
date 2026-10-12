@@ -1,0 +1,54 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+p='agents/veto_determined.py'; s=open(p).read()
+a='''time when it is the next one in its canonical scan (87% under bare), and when
+it does skip one it lands on another determined output almost twice as often
+as on an undetermined one. open1's open_entries showed that a positive list of the
+undetermined outputs does not change this at all (87%): the model scans, it
+does not pick from lists.'''
+b='''time when it is the next one in its canonical scan (87% under bare), and when
+it does skip one it lands on another determined output almost twice as often
+as on an undetermined one. open1's open_entries showed that a positive list
+of the undetermined outputs does not change this at all (87%): the model
+scans, it does not pick from lists.'''
+assert a in s; s=s.replace(a,b); open(p,'w').write(s)
+p='agents/answer_grid.py'; s=open(p).read()
+a='''effect at all (13%). But a skip lands on another determined output almost
+twice as often as on an undetermined one, the joint tables get misread as single
+circuits, and the model keeps "filling in the truth table" of a circuit whose
+eight outputs are all listed.'''
+b='''effect at all (13%). But a skip lands on another determined output almost
+twice as often as on an undetermined one, the joint tables get misread as
+single circuits, and the model keeps "filling in the truth table" of a
+circuit whose eight outputs are all listed.'''
+assert a in s; s=s.replace(a,b); open(p,'w').write(s)
+EOF
+for f in veto_determined veto_only answer_grid; do python3 - "$f" <<'EOF'
+import re, sys
+sys.path.insert(0,'.')
+import evolve
+name=sys.argv[1]
+src=open(f'agents/{name}.py').read()
+print(name, 'static:', [w for w in evolve.STATE_ONLY_FORBIDDEN if w in src], 'critic_regex:', evolve.critic_regex(src), 'max line', max(len(l) for l in src.splitlines()))
+EOF
+for pol in sequential greedy; do tools/run_mock.sh agents/$f.py $pol 5 2>&1 | sed -n 3p; done; done
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; for f in veto_determined veto_only answer_grid; do python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/$f.py --p_list 0.3 --p_ign 0.4 --seeds 2 --verbose 300; done
+
+description: Reflow docstrings, rerun static checks, mocks, scanner drive
+
+--- output ---
+veto_determined static: [] critic_regex: [] max line 97
+veto_determined    5       0.0     [0.0,0.0]    20.0   60.0   85.8  0.521   40.0   23.3  34.4   0.0 100.0   8.80    301
+veto_determined    5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+veto_only static: [] critic_regex: [] max line 97
+veto_only         5       0.0     [0.0,0.0]     0.0    0.0   53.3  0.319   62.2   14.4  62.2   0.0 100.0 185.20    382
+veto_only         5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+answer_grid static: [] critic_regex: [] max line 98
+answer_grid       5       0.0     [0.0,0.0]     0.0    6.7   66.7  0.521   40.0   23.3  34.4   0.0 100.0   8.80    171
+answer_grid       5     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+veto_determined.py p_list=0.3 p_ign=0.4: n=200 err=0 uniq=0.925 exact=0.960 zero=0.084 reasks/ep=5.79 calls/ep=24.8 ill/ep=0.00 max_chars mean=16276 max=18989 tok_in=72194
+veto_only.py p_list=0.3 p_ign=0.4: n=200 err=0 uniq=0.925 exact=0.960 zero=0.084 reasks/ep=5.79 calls/ep=24.8 ill/ep=0.00 max_chars mean=9895 max=10017 tok_in=49882
+answer_grid.py p_list=0.3 p_ign=0.4: n=200 err=0 uniq=0.180 exact=0.390 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=10039 max=10264 tok_in=41677
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

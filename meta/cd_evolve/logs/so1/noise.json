@@ -1,0 +1,7 @@
+{
+ "delta": 0.08,
+ "se": 0.0283,
+ "n": 200,
+ "S_bare": 0.195,
+ "method": "bootstrap over bare search episodes, z=2, sqrt2 for a difference"
+}

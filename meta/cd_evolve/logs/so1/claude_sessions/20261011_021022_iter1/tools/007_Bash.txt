@@ -1,0 +1,99 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; ls -la logs/open1/traces/* logs/so1/traces/* logs/dry2 logs/mock; ls -la ../../runner | head -50
+
+description: List traces and runner directory
+
+--- output ---
+logs/dry2:
+total 48
+drwxr-xr-x@ 13 zarreboln  staff   416 Oct 10 21:11 .
+drwxr-xr-x@  7 zarreboln  staff   224 Oct 10 21:22 ..
+-rw-r--r--@  1 zarreboln  staff     4 Oct 10 21:11 REGIME
+drwxr-xr-x@  2 zarreboln  staff    64 Oct 10 21:11 claude_sessions
+-rw-r--r--@  1 zarreboln  staff  2383 Oct 10 21:11 evolution_summary.jsonl
+-rw-r--r--@  1 zarreboln  staff  2061 Oct 10 21:11 evolve.log
+-rw-r--r--@  1 zarreboln  staff  1303 Oct 10 21:11 frontier_val.json
+drwxr-xr-x@  8 zarreboln  staff   256 Oct 10 21:11 mock
+-rw-r--r--@  1 zarreboln  staff   142 Oct 10 21:11 noise.json
+-rw-r--r--@  1 zarreboln  staff   495 Oct 10 21:11 pending_eval.json
+drwxr-xr-x@  2 zarreboln  staff    64 Oct 10 21:11 reports
+drwxr-xr-x@  6 zarreboln  staff   192 Oct 10 21:11 scores
+drwxr-xr-x@  6 zarreboln  staff   192 Oct 10 21:11 traces
+
+logs/mock:
+total 744
+drwxr-xr-x@ 8 zarreboln  staff    256 Oct 10 20:54 .
+drwxr-xr-x@ 7 zarreboln  staff    224 Oct 10 21:22 ..
+-rw-r--r--@ 1 zarreboln  staff  63834 Oct 10 20:54 copy_open__greedy.jsonl
+-rw-r--r--@ 1 zarreboln  staff  71283 Oct 10 20:54 copy_open__sequential.jsonl
+-rw-r--r--@ 1 zarreboln  staff  51773 Oct 10 20:54 copy_query__greedy.jsonl
+-rw-r--r--@ 1 zarreboln  staff  53993 Oct 10 20:54 copy_query__sequential.jsonl
+-rw-r--r--@ 1 zarreboln  staff  60845 Oct 10 20:54 open_entries__greedy.jsonl
+-rw-r--r--@ 1 zarreboln  staff  67068 Oct 10 20:54 open_entries__sequential.jsonl
+
+logs/open1/traces/bare:
+total 2288
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 20:34 .
+drwxr-xr-x@ 7 zarreboln  staff      224 Oct 10 21:07 ..
+-rw-rw-r--@ 1 zarreboln  staff  1169954 Oct 10 20:34 search.jsonl
+
+logs/open1/traces/copy_open:
+total 2632
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 21:07 .
+drwxr-xr-x@ 7 zarreboln  staff      224 Oct 10 21:07 ..
+-rw-rw-r--@ 1 zarreboln  staff  1346513 Oct 10 21:07 search.jsonl
+
+logs/open1/traces/copy_query:
+total 2120
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 20:58 .
+drwxr-xr-x@ 7 zarreboln  staff      224 Oct 10 21:07 ..
+-rw-rw-r--@ 1 zarreboln  staff  1082833 Oct 10 20:58 search.jsonl
+
+logs/open1/traces/enum15:
+total 3760
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 20:41 .
+drwxr-xr-x@ 7 zarreboln  staff      224 Oct 10 21:07 ..
+-rw-rw-r--@ 1 zarreboln  staff  1923182 Oct 10 20:41 search.jsonl
+
+logs/open1/traces/open_entries:
+total 3256
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 21:03 .
+drwxr-xr-x@ 7 zarreboln  staff      224 Oct 10 21:07 ..
+-rw-rw-r--@ 1 zarreboln  staff  1663835 Oct 10 21:03 search.jsonl
+
+logs/so1/traces/bare:
+total 4768
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 21:34 .
+drwxr-xr-x@ 4 zarreboln  staff      128 Oct 10 21:47 ..
+-rw-rw-r--@ 1 zarreboln  staff  2437579 Oct 10 21:33 search.jsonl
+
+logs/so1/traces/enum15:
+total 7632
+drwxr-xr-x@ 3 zarreboln  staff       96 Oct 10 21:47 .
+drwxr-xr-x@ 4 zarreboln  staff      128 Oct 10 21:47 ..
+-rw-rw-r--@ 1 zarreboln  staff  3905987 Oct 10 21:47 search.jsonl
+total 304
+drwxr-xr-x@ 22 zarreboln  staff    704 Oct 10 20:05 .
+drwxr-xr-x@ 23 zarreboln  staff    736 Oct 10 20:52 ..
+drwxr-xr-x@  7 zarreboln  staff    224 Oct 10 21:08 __pycache__
+-rw-r--r--@  1 zarreboln  staff   3651 Oct  7 14:44 calibrate_t3_proxy.py
+-rw-r--r--@  1 zarreboln  staff  20403 Oct 10 21:06 cd_harness_run.py
+-rw-r--r--@  1 zarreboln  staff   2320 Oct 10 20:06 cd_ladder_plot.py
+-rw-r--r--@  1 zarreboln  staff   3129 Oct 10 21:09 cd_make_split.py
+-rw-r--r--@  1 zarreboln  staff   4786 Oct 10 21:08 cd_mock.py
+-rw-r--r--@  1 zarreboln  staff  12408 Oct  6 23:52 cd_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   7484 Oct 10 21:11 cd_score.py
+-rw-r--r--@  1 zarreboln  staff   3514 Oct  7 00:20 cd_summarize.py
+-rw-r--r--@  1 zarreboln  staff   1934 Oct  6 12:07 check_context.py
+-rw-r--r--@  1 zarreboln  staff   3185 Oct  6 22:57 diagnose.py
+-rw-r--r--@  1 zarreboln  staff   8678 Oct  6 10:42 gn_runner.py
+-rw-r--r--@  1 zarreboln  staff  10861 Oct  6 22:50 gn_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   4972 Oct  6 11:58 run_arbench_gn.py
+-rw-r--r--@  1 zarreboln  staff   4993 Oct  7 15:40 run_arbench_sp.py
+-rw-r--r--@  1 zarreboln  staff   5291 Oct  6 22:10 score_arbench_log.py
+-rw-r--r--@  1 zarreboln  staff   8848 Oct 10 21:30 sp_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   1759 Oct  7 15:47 sp_summarize.py
+-rw-r--r--@  1 zarreboln  staff   2793 Oct  6 22:56 summarize.py
+-rw-r--r--@  1 zarreboln  staff   5463 Oct 10 21:30 turtle_judge_eval.py

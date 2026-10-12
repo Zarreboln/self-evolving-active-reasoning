@@ -1,0 +1,360 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; cat logs/open1/evolution_summary.jsonl; echo ----; cat logs/open1/frontier_val.json; echo ----; cat logs/open1/evolve.log; echo ----; cat logs/open1/finalized.json logs/open1/finalize.nohup; echo ----; cat logs/open1/reports/iter0.md; echo ----; cat logs/open1/pending_eval.json; echo ----; cat logs/open1/scores/*.json
+
+description: Read the open1 run summary, reports, and scores
+
+--- output ---
+{"iteration": 0, "system": "bare", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 100, "uniq": 0.26, "exact": 0, "eff": 0.5583, "zero": 0.3691, "oracle": 0.2729, "repeat": 0.018, "illegal": 0.0028, "parsed": 0.86, "alive_end": 3.96, "tok_out": 2084.11, "uniq_ci": [0.18, 0.35], "delta_uniq": 0.26, "outcome": "uniq 26.0% (+26.0) exact 0.0%"}
+{"iteration": 0, "system": "enum15", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 100, "uniq": 0.53, "exact": 0.05, "eff": 0.6287, "zero": 0.2911, "oracle": 0.3063, "repeat": 0.0347, "illegal": 0.0022, "parsed": 0.97, "alive_end": 2.2755, "tok_out": 2878.83, "uniq_ci": [0.43, 0.63], "delta_uniq": 0.53, "outcome": "uniq 53.0% (+53.0) exact 5.0%"}
+{"iteration": 1, "system": "copy_query", "regime": "open", "status": "ok", "parent": "oracle_hint", "axis": "exploration", "hypothesis": "If the whole message is one copyable action (the max-entropy query as the exact <query> tag to send, and nothing else), the model copies it on most turns. Then orcl% rises from 31% (enum15) to >= 75%, zero% falls below 10%, and uniq@end rises from 53% to >= 80%. With the <guess> string handed over at the end, exact lands within ~10 points of uniq@end. Falsified if orcl% < 60% or uniq@end <= 63% (top of enum15's CI).", "mechanism": "Each turn the message is only the count, the max-entropy query as a ready-to-send <query> tag with its 0/1 split, and 'reply with exactly this query'. After the set collapses, a fixed harmless query is requested. The final hint hands over the remaining configuration as a <guess> string.", "prediction": "uniq@end 85-95%, exact 80%+. In the CPU simulation greedy stays >= 98% for copy rates >= 0.7 when misses are scan moves, but drops to ~72% at 0.7 when misses are wasted turns. Since this candidate offers no fallback, its uniq@end measures how the model misses.", "n": 100, "uniq": 1, "exact": 0.81, "eff": 0.9621, "zero": 0.0283, "oracle": 0.9451, "repeat": 0, "illegal": 0.0833, "parsed": 0.98, "alive_end": 1, "tok_out": 972.39, "uniq_ci": [1.0, 1.0], "delta_uniq": 0.47, "outcome": "uniq 100.0% (+47.0) exact 81.0%", "timing_s": {"propose": 866, "bench": 184}}
+{"iteration": 1, "system": "open_entries", "regime": "open", "status": "ok", "parent": "enum15", "axis": "exploitation", "hypothesis": "What costs uniq@end is querying already-determined outputs, not choosing badly among informative ones. Replace enum15's negative 'do not ask these again' list and joint tables with the positive list of still-unknown outputs, with no ranking. Then zero% drops from 29% to <= 12% and uniq@end rises to >= 70%, while orcl% stays near enum15's ~31%: the model still picks by scanning, but now over informative entries only. Falsified if zero% stays above 20%.", "mechanism": "Each turn shows the count plus the still-undetermined outputs in canonical order and query format, i.e. the complement of enum15's determined list. Joint tables are dropped and nothing is recommended before the collapse. Same post-collapse request and final <guess> hint as copy_query.", "prediction": "uniq@end 70-85%. On CPU, a canonical scan restricted to undetermined entries reaches 96% (blind scan: 20%), but the model will not always pick from the list. eff ~0.70, exact close to uniq@end.", "n": 100, "uniq": 0.32, "exact": 0.47, "eff": 0.5774, "zero": 0.346, "oracle": 0.2997, "repeat": 0.0065, "illegal": 0.0033, "parsed": 0.94, "alive_end": 3.5657, "tok_out": 1726.07, "uniq_ci": [0.24, 0.41], "delta_uniq": -0.21, "outcome": "uniq 32.0% (-21.0) exact 47.0%", "timing_s": {"propose": 866, "bench": 253}}
+{"iteration": 1, "system": "copy_open", "regime": "open", "status": "ok", "parent": "oracle_hint", "axis": "exploitation", "hypothesis": "Putting the unknown-output list right before the copyable directive makes the turns where the model does not copy informative instead of wasted. Then zero% is no higher than copy_query's and uniq@end is at least copy_query's. If the list instead pulls the model away from the directive, orcl% will be clearly below copy_query's (> 10 points).", "mechanism": "Each turn shows open_entries' list of undetermined outputs, then copy_query's ready-to-send max-entropy <query> tag with its split and 'reply with exactly this query'. Same post-collapse request and final <guess> hint.", "prediction": "uniq@end 90-95%, >= copy_query; orcl% within 10 points of copy_query; zero% lowest of the three. In the CPU simulation it holds 100% down to a copy rate of 0.5 when misses scan the listed entries.", "n": 100, "uniq": 0.99, "exact": 0.74, "eff": 0.9621, "zero": 0.0283, "oracle": 0.9451, "repeat": 0, "illegal": 0.0862, "parsed": 0.97, "alive_end": 1, "tok_out": 1230.76, "uniq_ci": [0.97, 1.0], "delta_uniq": 0.46, "outcome": "uniq 99.0% (+46.0) exact 74.0%", "timing_s": {"propose": 866, "bench": 260}}
+----
+{
+ "_best": {
+  "agent": "copy_query",
+  "uniq": 1,
+  "uniq_ci": [
+   1.0,
+   1.0
+  ],
+  "exact": 0.81,
+  "eff": 0.9620520713063087,
+  "repeat": 0,
+  "illegal": 0.08333333333333333,
+  "oracle": 0.9450915141430949,
+  "n": 100,
+  "iteration": 1
+ },
+ "candidates": {
+  "bare": {
+   "uniq": 0.26,
+   "uniq_ci": [
+    0.18,
+    0.35
+   ],
+   "exact": 0,
+   "eff": 0.5583296643008447,
+   "repeat": 0.017960602549246814,
+   "illegal": 0.002777777777777778,
+   "oracle": 0.2728852838933951,
+   "n": 100,
+   "iteration": 0
+  },
+  "enum15": {
+   "uniq": 0.53,
+   "uniq_ci": [
+    0.43,
+    0.63
+   ],
+   "exact": 0.05,
+   "eff": 0.6286569838963698,
+   "repeat": 0.034713763702801465,
+   "illegal": 0.002224694104560623,
+   "oracle": 0.30633373934226554,
+   "n": 100,
+   "iteration": 0
+  },
+  "copy_query": {
+   "uniq": 1,
+   "uniq_ci": [
+    1.0,
+    1.0
+   ],
+   "exact": 0.81,
+   "eff": 0.9620520713063087,
+   "repeat": 0,
+   "illegal": 0.08333333333333333,
+   "oracle": 0.9450915141430949,
+   "n": 100,
+   "iteration": 1
+  },
+  "open_entries": {
+   "uniq": 0.32,
+   "uniq_ci": [
+    0.24,
+    0.41
+   ],
+   "exact": 0.47,
+   "eff": 0.5774339878311957,
+   "repeat": 0.0064516129032258064,
+   "illegal": 0.0033333333333333335,
+   "oracle": 0.29970674486803517,
+   "n": 100,
+   "iteration": 1
+  },
+  "copy_open": {
+   "uniq": 0.99,
+   "uniq_ci": [
+    0.97,
+    1.0
+   ],
+   "exact": 0.74,
+   "eff": 0.9620520713063087,
+   "repeat": 0,
+   "illegal": 0.08615897720956087,
+   "oracle": 0.9450915141430949,
+   "n": 100,
+   "iteration": 1
+  }
+ }
+}----
+2026-10-10T20:30:52 baseline bare
+2026-10-10T20:34:51   benchmark bare/search: 233s  done in 229s -> /home/ziningl/results/ar_harness/cd_evolve/open1/bare/search.jsonl
+2026-10-10T20:34:51   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/scores/bare.search.json
+2026-10-10T20:34:51 baseline enum15
+2026-10-10T20:41:19   benchmark enum15/search: 382s  done in 378s -> /home/ziningl/results/ar_harness/cd_evolve/open1/enum15/search.jsonl
+2026-10-10T20:41:19   -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/scores/enum15.search.json
+2026-10-10T20:41:19 === iteration 1 regime=open frontier=0.53
+2026-10-10T20:55:45   proposed 3 in 866s: copy_query, open_entries, copy_open
+2026-10-10T20:58:50   benchmark copy_query/search: 178s  done in 173s -> /home/ziningl/results/ar_harness/cd_evolve/open1/copy_query/search.jsonl
+2026-10-10T20:58:50                   vs bare: uniq +74.0 [+65.0,+82.0]  exact +81.0 [+73.0,+88.0]  (n=100 paired)
+  -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/scores/copy_query.search.json
+2026-10-10T21:03:03   benchmark open_entries/search: 248s  done in 243s -> /home/ziningl/results/ar_harness/cd_evolve/open1/open_entries/search.jsonl
+2026-10-10T21:03:03                   vs bare: uniq +6.0 [-3.0,+15.0]  exact +47.0 [+38.0,+57.0]  (n=100 paired)
+  -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/scores/open_entries.search.json
+2026-10-10T21:07:23   benchmark copy_open/search: 254s  done in 250s -> /home/ziningl/results/ar_harness/cd_evolve/open1/copy_open/search.jsonl
+2026-10-10T21:07:24                   vs bare: uniq +73.0 [+64.0,+81.0]  exact +74.0 [+65.0,+83.0]  (n=100 paired)
+  -> /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/open1/scores/copy_open.search.json
+2026-10-10T21:07:24   iteration 1 done in 1565s; frontier now copy_query @ 100.0%
+2026-10-10T21:07:24 done. finalize with: python evolve.py --run-name open1 --test
+2026-10-10T21:12:54 FINALIZE (held-out x3 seeds): ['bare', 'copy_open', 'copy_query', 'enum15', 'open_entries']
+2026-10-10T21:34:38   benchmark bare/heldout: 1297s  done in 1293s -> /home/ziningl/results/ar_harness/cd_evolve/open1/bare/heldout.jsonl
+----
+{
+ "status": "in_progress",
+ "systems": [
+  "bare",
+  "copy_open",
+  "copy_query",
+  "enum15",
+  "open_entries"
+ ],
+ "selected_before_test": "copy_query",
+ "started": "2026-10-10T21:12:54.054370"
+}[21:12:54] FINALIZE (held-out x3 seeds): ['bare', 'copy_open', 'copy_query', 'enum15', 'open_entries']
+[21:34:38]   benchmark bare/heldout: 1297s  done in 1293s -> /home/ziningl/results/ar_harness/cd_evolve/open1/bare/heldout.jsonl
+----
+# Iteration 0 (seeds): bare vs enum15, search split, 100 episodes each
+
+**What changed.** `bare` appends nothing. `enum15` appends the count of remaining configurations, the list of determined outputs ("do not ask these again"), and the joint 24-bit tables once there are 15 or fewer.
+
+**What moved (bare -> enum15).** uniq@end 26% -> 53% (CI 43-63), exact 0% -> 5%, eff 0.558 -> 0.629, zero% 36.9 -> 29.1, rep% 1.8 -> 3.5, ill% 0.3 -> 0.2, parsed 86% -> 97%. 2 enum15 episodes crashed (context overflow, both counted as failures), 0 for bare. Mean cumulative input tokens went from 31k to 63k.
+
+**What the traces show.**
+- Both open with A(0,0,0) every time (the harness cannot speak before query 1). After that, bare goes to the next entry in canonical order 92% of the time; enum15 does so 73% of the time.
+- enum15: the model copies the determined list into its reasoning ("We know B(0,0,0)=0, B(1,1,1)=1") and sometimes skips those entries (key 275/1). But it does not reliably obey the negative instruction: with exactly 2 configurations left, 76% of its queries are zero-info (key 1/0: from turn 11 on it scans C(0,0,0)..C(1,0,1), all listed as determined, while B(1,0,0) would have decided between the two). With 6-15 left, 47% are zero-info.
+- The joint enumeration gets misread: in key 1/0 the model treats each 24-bit joint table as one circuit's truth table.
+- Final step: only 4 of the 53 uniq episodes are exact. The model lists all 24 values correctly, then concatenates them in the wrong order (key 140/1). enum15 stops listing configurations once only one is left, so there is nothing to copy. Only 4/53 guesses even agree with the model's own observations.
+- Both crashes (keys 12/0, 79/1): from turn 11-13 on, the model put a `<guess>` into every reply (~1,600-1,850 chars each), on top of ~600-char harness messages, so the prompt for query 18 went past 11,088 tokens (12,288 minus the 1,200 reserved for output).
+
+**CPU check of what limits uniq@end (search split, first query fixed to A(0,0,0)).** Canonical scan: 20%. Canonical scan that skips determined entries: 96%. Random undetermined entry: 98.8%. Max-entropy greedy: 100% (mean 12.0 queries, max 16). Under a directive that is copied with probability p, greedy stays at 98-100% for p >= 0.7 when the misses are scan moves, but drops to 89% / 72% / 44% at p = 0.8 / 0.7 / 0.6 when the misses are wasted turns. A 1-step lookahead recommender gains <= 1 point over greedy at every p.
+
+**Takeaway.** The 7B model's choice among informative entries is good enough; what costs uniq@end is asking entries that are already determined. A short positive list it can copy from (or a single copyable action) should fix that, while a negative list and joint tables it has to reason over do not. The final answer should be handed over as a ready `<guess>` string, because the model cannot assemble 24 bits.
+----
+{"iteration": 1, "regime": "open",
+ "candidates": [
+   {"name": "copy_query", "file": "agents/copy_query.py", "parent": "oracle_hint",
+    "hypothesis": "If the whole message is one copyable action (the max-entropy query as the exact <query> tag to send, and nothing else), the model copies it on most turns. Then orcl% rises from 31% (enum15) to >= 75%, zero% falls below 10%, and uniq@end rises from 53% to >= 80%. With the <guess> string handed over at the end, exact lands within ~10 points of uniq@end. Falsified if orcl% < 60% or uniq@end <= 63% (top of enum15's CI).",
+    "axis": "exploration",
+    "mechanism": "Each turn the message is only the count, the max-entropy query as a ready-to-send <query> tag with its 0/1 split, and 'reply with exactly this query'. After the set collapses, a fixed harmless query is requested. The final hint hands over the remaining configuration as a <guess> string.",
+    "prediction": "uniq@end 85-95%, exact 80%+. In the CPU simulation greedy stays >= 98% for copy rates >= 0.7 when misses are scan moves, but drops to ~72% at 0.7 when misses are wasted turns. Since this candidate offers no fallback, its uniq@end measures how the model misses."},
+   {"name": "open_entries", "file": "agents/open_entries.py", "parent": "enum15",
+    "hypothesis": "What costs uniq@end is querying already-determined outputs, not choosing badly among informative ones. Replace enum15's negative 'do not ask these again' list and joint tables with the positive list of still-unknown outputs, with no ranking. Then zero% drops from 29% to <= 12% and uniq@end rises to >= 70%, while orcl% stays near enum15's ~31%: the model still picks by scanning, but now over informative entries only. Falsified if zero% stays above 20%.",
+    "axis": "exploitation",
+    "mechanism": "Each turn shows the count plus the still-undetermined outputs in canonical order and query format, i.e. the complement of enum15's determined list. Joint tables are dropped and nothing is recommended before the collapse. Same post-collapse request and final <guess> hint as copy_query.",
+    "prediction": "uniq@end 70-85%. On CPU, a canonical scan restricted to undetermined entries reaches 96% (blind scan: 20%), but the model will not always pick from the list. eff ~0.70, exact close to uniq@end."},
+   {"name": "copy_open", "file": "agents/copy_open.py", "parent": "oracle_hint",
+    "hypothesis": "Putting the unknown-output list right before the copyable directive makes the turns where the model does not copy informative instead of wasted. Then zero% is no higher than copy_query's and uniq@end is at least copy_query's. If the list instead pulls the model away from the directive, orcl% will be clearly below copy_query's (> 10 points).",
+    "axis": "exploitation",
+    "mechanism": "Each turn shows open_entries' list of undetermined outputs, then copy_query's ready-to-send max-entropy <query> tag with its split and 'reply with exactly this query'. Same post-collapse request and final <guess> hint.",
+    "prediction": "uniq@end 90-95%, >= copy_query; orcl% within 10 points of copy_query; zero% lowest of the three. In the CPU simulation it holds 100% down to a copy rate of 0.5 when misses scan the listed entries."}
+ ]}
+----
+{
+ "bare": {
+  "n": 100,
+  "err": 0,
+  "uniq": 0.26,
+  "exact": 0,
+  "ckt": 0.10852713178294573,
+  "bit": 0.6821705426356589,
+  "parsed": 0.86,
+  "alive_end": 3.96,
+  "eff": 0.5583296643008447,
+  "zero": 0.3690614136732329,
+  "oracle": 0.2728852838933951,
+  "repeat": 0.017960602549246814,
+  "illegal": 0.002777777777777778,
+  "tok_out": 2084.11,
+  "tok_in": 31494.46,
+  "uniq_ci": [
+   0.18,
+   0.35
+  ],
+  "exact_ci": [
+   0.0,
+   0.0
+  ]
+ }
+}{
+ "copy_open": {
+  "n": 100,
+  "err": 0.01,
+  "uniq": 0.99,
+  "exact": 0.74,
+  "ckt": 0.7697594501718213,
+  "bit": 0.9050687285223368,
+  "parsed": 0.97,
+  "alive_end": 1,
+  "eff": 0.9620520713063087,
+  "zero": 0.028286189683860232,
+  "oracle": 0.9450915141430949,
+  "repeat": 0,
+  "illegal": 0.08615897720956087,
+  "tok_out": 1230.76,
+  "tok_in": 52781.09,
+  "uniq_ci": [
+   0.97,
+   1.0
+  ],
+  "exact_ci": [
+   0.65,
+   0.8202499999999986
+  ],
+  "vs": {
+   "uniq": {
+    "n_pairs": 100,
+    "delta": 0.73,
+    "ci": [
+     0.64,
+     0.81
+    ]
+   },
+   "exact": {
+    "n_pairs": 100,
+    "delta": 0.74,
+    "ci": [
+     0.65,
+     0.83
+    ]
+   }
+  }
+ }
+}{
+ "copy_query": {
+  "n": 100,
+  "err": 0,
+  "uniq": 1,
+  "exact": 0.81,
+  "ckt": 0.826530612244898,
+  "bit": 0.9285714285714286,
+  "parsed": 0.98,
+  "alive_end": 1,
+  "eff": 0.9620520713063087,
+  "zero": 0.028286189683860232,
+  "oracle": 0.9450915141430949,
+  "repeat": 0,
+  "illegal": 0.08333333333333333,
+  "tok_out": 972.39,
+  "tok_in": 33379.24,
+  "uniq_ci": [
+   1.0,
+   1.0
+  ],
+  "exact_ci": [
+   0.73,
+   0.88
+  ],
+  "vs": {
+   "uniq": {
+    "n_pairs": 100,
+    "delta": 0.74,
+    "ci": [
+     0.65,
+     0.82
+    ]
+   },
+   "exact": {
+    "n_pairs": 100,
+    "delta": 0.81,
+    "ci": [
+     0.73,
+     0.88
+    ]
+   }
+  }
+ }
+}{
+ "enum15": {
+  "n": 100,
+  "err": 0.02,
+  "uniq": 0.53,
+  "exact": 0.05,
+  "ckt": 0.24054982817869414,
+  "bit": 0.7143470790378007,
+  "parsed": 0.97,
+  "alive_end": 2.2755102040816326,
+  "eff": 0.6286569838963698,
+  "zero": 0.2911084043848965,
+  "oracle": 0.30633373934226554,
+  "repeat": 0.034713763702801465,
+  "illegal": 0.002224694104560623,
+  "tok_out": 2878.83,
+  "tok_in": 62985.29,
+  "uniq_ci": [
+   0.43,
+   0.63
+  ],
+  "exact_ci": [
+   0.01,
+   0.09
+  ]
+ }
+}{
+ "open_entries": {
+  "n": 100,
+  "err": 0.01,
+  "uniq": 0.32,
+  "exact": 0.47,
+  "ckt": 0.7624113475177304,
+  "bit": 0.9131205673758865,
+  "parsed": 0.94,
+  "alive_end": 3.5656565656565657,
+  "eff": 0.5774339878311957,
+  "zero": 0.3460410557184751,
+  "oracle": 0.29970674486803517,
+  "repeat": 0.0064516129032258064,
+  "illegal": 0.0033333333333333335,
+  "tok_out": 1726.07,
+  "tok_in": 56329.73,
+  "uniq_ci": [
+   0.24,
+   0.41
+  ],
+  "exact_ci": [
+   0.38,
+   0.57
+  ],
+  "vs": {
+   "uniq": {
+    "n_pairs": 100,
+    "delta": 0.06,
+    "ci": [
+     -0.03,
+     0.15
+    ]
+   },
+   "exact": {
+    "n_pairs": 100,
+    "delta": 0.47,
+    "ci": [
+     0.38,
+     0.57
+    ]
+   }
+  }
+ }
+}

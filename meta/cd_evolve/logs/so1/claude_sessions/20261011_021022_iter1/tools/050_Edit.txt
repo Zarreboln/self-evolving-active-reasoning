@@ -1,0 +1,12 @@
+Edit: logs/so1/reports/iter0.md
+
+replace_all: False
+old_string:
+The model decides "B could be a simple NOT gate", moves to C (all determined), then asks A(0,0,0) four times while every reply ends in a runaway `<guess>1111...`.
+
+new_string:
+The model decides "B could be a simple NOT gate" and moves to C (all determined). It then asks C(0,0,0) again and A(0,0,0) five times, and every reply from turn 13 on ends in a runaway `<guess>1111...`. That is 8 zero-info turns in a row.
+
+
+--- output ---
+The file /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/reports/iter0.md has been updated successfully. (file state is current in your context — no need to Read it back)

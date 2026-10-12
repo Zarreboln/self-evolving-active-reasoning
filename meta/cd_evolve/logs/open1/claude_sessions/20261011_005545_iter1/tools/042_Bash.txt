@@ -1,0 +1,15 @@
+Bash
+
+command:
+for n in copy_query open_entries copy_open; do echo "### $n / flaky"; tools/run_mock.sh agents/$n.py flaky 6 2>&1 | tail -2 | head -1; done
+
+description: Run flaky mock for illegal-turn handling
+timeout: 300000
+
+--- output ---
+### copy_query / flaky
+copy_query        6      16.7    [0.0,50.0]     0.0   33.3   73.6  0.653   26.5   33.7   0.0  22.2 100.0  11.00    196
+### open_entries / flaky
+open_entries      6      16.7    [0.0,50.0]     0.0   33.3   73.6  0.653   26.5   33.7   0.0  22.2 100.0  11.00    196
+### copy_open / flaky
+copy_open         6      16.7    [0.0,50.0]     0.0   33.3   73.6  0.653   26.5   33.7   0.0  22.2 100.0  11.00    196

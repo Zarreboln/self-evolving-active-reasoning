@@ -1,0 +1,98 @@
+Bash
+
+command:
+mkdir -p /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve && cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/analyze.py <<'EOF'
+import json, sys, collections
+from pathlib import Path
+import numpy as np
+
+def load(path):
+    latest = {}
+    for line in Path(path).open():
+        if line.strip():
+            r = json.loads(line)
+            latest[(r["key"], r["seed"])] = r
+    return latest
+
+for name in sys.argv[1:]:
+    eps = load(f"logs/open1/traces/{name}/search.jsonl")
+    n_scan = n_q = 0
+    n_scan_from_A0 = 0
+    zero_by_alive = collections.Counter()
+    q_by_alive = collections.Counter()
+    first_q = collections.Counter()
+    alive_end = collections.Counter()
+    turn_uniq = []
+    errs = 0
+    guess_in_alive = 0
+    guess_parsed = 0
+    n_ok = 0
+    out_tok = []
+    in_tok = []
+    for (k, s), r in eps.items():
+        if r.get("error"):
+            errs += 1
+            print("ERROR", k, s, r["error"][:200])
+            continue
+        n_ok += 1
+        rows = r["rows"]
+        prev = None
+        legal = [x for x in rows if not x.get("illegal")]
+        if legal: first_q[legal[0]["query"]] += 1
+        t_u = None
+        for x in legal:
+            if prev is not None:
+                n_q += 1
+                if x["query"] == prev + 1: n_scan += 1
+            prev = x["query"]
+            nb = x["n_before"]
+            b = "1" if nb == 1 else "2" if nb == 2 else "3-5" if nb <= 5 else "6-15" if nb <= 15 else "16-100" if nb <= 100 else ">100"
+            q_by_alive[b] += 1
+            if x["zero_info"]: zero_by_alive[b] += 1
+            if x["n_after"] == 1 and t_u is None: t_u = x["turn"]
+        turn_uniq.append(t_u)
+        res = r["result"]
+        alive_end[res["n_alive_end"]] += 1
+        out_tok.append(r["out_tokens"]); in_tok.append(r["in_tokens"])
+        if res["parsed_guess"]: guess_parsed += 1
+    print(f"== {name}: n_ok={n_ok} errs={errs}")
+    print(f"  scan-next fraction (q == prev+1): {n_scan}/{n_q} = {n_scan/max(1,n_q):.3f}")
+    print(f"  first query dist: {dict(first_q.most_common(5))}")
+    print(f"  alive_end dist: {sorted(alive_end.items())}")
+    tu = [t for t in turn_uniq if t is not None]
+    print(f"  reached uniq: {len(tu)}; mean turn reached: {np.mean(tu) if tu else float('nan'):.1f}")
+    for b in ["1","2","3-5","6-15","16-100",">100"]:
+        print(f"   alive_before {b:>7}: queries={q_by_alive[b]:4d} zero={zero_by_alive[b]:4d} ({zero_by_alive[b]/max(1,q_by_alive[b]):.2f})")
+    print(f"  out_tok mean {np.mean(out_tok):.0f}, in_tok mean {np.mean(in_tok):.0f}, max in {max(in_tok)}")
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/analyze.py bare enum15
+
+description: Analyze scanning, zero-info, and convergence patterns across traces
+
+--- output ---
+== bare: n_ok=100 errs=0
+  scan-next fraction (q == prev+1): 1556/1695 = 0.918
+  first query dist: {0: 100}
+  alive_end dist: [(1, 26), (2, 9), (3, 6), (4, 7), (5, 35), (6, 8), (7, 1), (9, 4), (10, 4)]
+  reached uniq: 26; mean turn reached: 15.3
+   alive_before       1: queries=  69 zero=  69 (1.00)
+   alive_before       2: queries=  25 zero=  16 (0.64)
+   alive_before     3-5: queries=  45 zero=  17 (0.38)
+   alive_before    6-15: queries= 482 zero= 291 (0.60)
+   alive_before  16-100: queries= 501 zero= 179 (0.36)
+   alive_before    >100: queries= 673 zero= 134 (0.20)
+  out_tok mean 2084, in_tok mean 31494, max in 53077
+ERROR 12 0 BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 12288 tokens. However, you requested 1200 output tokens and your prompt contains at least 11089 input t
+ERROR 79 1 BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 12288 tokens. However, you requested 1200 output tokens and your prompt contains at least 11089 input t
+== enum15: n_ok=98 errs=2
+  scan-next fraction (q == prev+1): 1210/1662 = 0.728
+  first query dist: {0: 98}
+  alive_end dist: [(1, 53), (2, 15), (3, 10), (4, 10), (5, 3), (6, 2), (8, 2), (9, 3)]
+  reached uniq: 53; mean turn reached: 15.1
+   alive_before       1: queries= 152 zero= 152 (1.00)
+   alive_before       2: queries=  68 zero=  52 (0.76)
+   alive_before     3-5: queries= 126 zero=  30 (0.24)
+   alive_before    6-15: queries= 351 zero= 165 (0.47)
+   alive_before  16-100: queries= 442 zero= 127 (0.29)
+   alive_before    >100: queries= 621 zero=  92 (0.15)
+  out_tok mean 2805, in_tok mean 62990, max in 97274

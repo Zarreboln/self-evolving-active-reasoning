@@ -1,0 +1,28 @@
+Bash
+
+command:
+python3 tools/show_trace.py logs/mock/copy_open__greedy.jsonl --key 1 | sed -n '/^FINAL SENT/,$p' && python3 - <<'EOF'
+import json
+for n in ["copy_query", "open_entries", "copy_open"]:
+    tot, mx = [], 0
+    for pol in ["sequential", "greedy"]:
+        for line in open(f"logs/mock/{n}__{pol}.jsonl"):
+            r = json.loads(line)
+            s = [len(x.get("sent") or "") for x in r["rows"]] + [len(r.get("final_sent") or "")]
+            tot.append(sum(s)); mx = max(mx, max(s))
+    print(f"{n:13s} harness+env chars per episode: mean {sum(tot)/len(tot):.0f}, max {max(tot)}; longest single message {mx} chars (~{mx//3} tokens upper bound)")
+EOF
+
+description: Show final message and measure text lengths
+
+--- output ---
+FINAL SENT << A(1, 1, 0) = 1
+              Your answers leave exactly one possible set of truth tables. In the required order (A, then B, then C; inputs 000 to 111 within each) it is: <guess>000010111000111101111111</guess>
+              Submit exactly this string.
+              Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+FINAL MODEL >> <guess>000010111000111101111111</guess>
+truth   000010111000111101111111
+guess   000010111000111101111111
+copy_query    harness+env chars per episode: mean 4365, max 4625; longest single message 375 chars (~125 tokens upper bound)
+open_entries  harness+env chars per episode: mean 6569, max 7455; longest single message 503 chars (~167 tokens upper bound)
+copy_open     harness+env chars per episode: mean 7283, max 8387; longest single message 560 chars (~186 tokens upper bound)

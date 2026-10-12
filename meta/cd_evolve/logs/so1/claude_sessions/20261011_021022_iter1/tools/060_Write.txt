@@ -1,0 +1,26 @@
+Write: logs/so1/pending_eval.json
+
+content:
+{"iteration": 1, "regime": "state_only",
+ "candidates": [
+   {"name": "veto_determined", "file": "agents/veto_determined.py", "parent": "enum15",
+    "hypothesis": "The 7B model loses uniq@end by walking its canonical scan into outputs that are already determined: under enum15 it asks the next scanned entry 56% of the time when that entry is determined (bare 87%), and a list it has to consult does not stop it (open1's positive list: 87%). A veto at the moment of commitment should stop it. Every reply that asks a determined output (repeats included) is sent back with that output's value and the list of undetermined outputs. Prediction: zero% of accepted queries falls from 31% to <= 10%, rep% from 4.4% to <= 1%, ill% stays <= 0.5%, and uniq@end rises from 38% to >= 70%. Falsified if zero% stays above 15% after up to two re-asks per turn (the model ignores the veto), or if uniq@end <= 50%.",
+    "axis": "exploitation",
+    "mechanism": "enum15's per-turn text unchanged, plus filter_action. Whenever the reply asks an output every remaining configuration agrees on, or has no parsable query, the model is re-asked (at most twice per turn, no query spent) with the output's determined value and the undetermined outputs in canonical order. Settled rejections are dropped from the context, and the final hint presents the remaining configuration(s) in <guess> form.",
+    "prediction": "uniq@end 75-90%. Replaying the scan habit through the real runner with a scripted veto-aware model gives 92-96%, whether the model picks the first listed output, keeps scanning, or ignores 40% of the vetoes. The real model adds runaway replies and some non-compliance. exact 60-85% (it only has to copy the presented <guess>). Tokens about +45% vs enum15 (~7 re-asks per episode at enum15's context length), which is inside the admissibility budget for any gain >= 0.17."},
+   {"name": "veto_only", "file": "agents/veto_only.py", "parent": "bare",
+    "hypothesis": "Once wasted proposals are vetoed, enum15's every-turn summary adds nothing to collapse; the state matters only at the moment the model is about to waste a query. With no per-turn text and the same veto, uniq@end should land within 9 points of veto_determined (and >= 65%), at >= 30% fewer tokens per episode than veto_determined and fewer than enum15. Falsified if veto_only is more than 9 points below veto_determined, which would mean the standing summary helps the model pick among undetermined outputs or accept the veto. More re-asks per episode than veto_determined are expected (bare asks a determined next entry 87% vs 56%) and are not the falsifier.",
+    "axis": "exploration",
+    "mechanism": "Nothing is appended on informative turns (as in bare). When the reply asks a determined output or a repeat, or has no query, it is sent back with the output's determined value and the list of undetermined outputs (at most twice per turn, no query spent). Settled rejections are dropped, and the final <guess> presentation is the same.",
+    "prediction": "uniq@end 70-90%. About 8-10 re-asks per episode, each at bare's context length, so ~55-60k tokens per episode vs enum15's 66k and veto_determined's ~95k (estimated from the so1 traces). If it ties veto_determined, it is the cheaper frontier. exact 60-85%."},
+   {"name": "answer_grid", "file": "agents/answer_grid.py", "parent": "enum15",
+    "hypothesis": "enum15's named determined list half-works: when the next scanned entry is listed, the model skips it 44% of the time (bare 13%), because it checks its planned query against named entries. It fails because a skip lands on another determined entry (28%) more often than on an undetermined one (15%). A per-circuit answer sheet that shows every output as its value or ? puts the planned query and the nearest ? in the same row. Prediction: when the next scanned entry is determined, the model asks it <= 40% of the time, and >= 60% of skips land on undetermined entries. zero% <= 22% (enum15 31%), uniq@end >= 48%. Falsified if zero% >= 28%.",
+    "axis": "exploitation",
+    "mechanism": "Each turn shows the count plus one row per circuit listing its 8 outputs in canonical order as value-or-?, with each circuit marked complete or given its number of undetermined outputs. The joint tables are dropped, compose_messages keeps only the newest copy of the sheet (one table in context instead of enum15's growing log), and the final <guess> presentation is the same.",
+    "prediction": "uniq@end 42-55%, because a presentation-only change cannot remove the scan. Tokens 35-40% below enum15 (a single current sheet). exact 35-50%."}
+ ]}
+
+
+
+--- output ---
+File created successfully at: /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/pending_eval.json (file state is current in your context — no need to Read it back)

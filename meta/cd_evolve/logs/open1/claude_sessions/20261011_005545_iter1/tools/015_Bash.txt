@@ -1,0 +1,20 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/final.py <<'EOF'
+import json, sys, re
+from pathlib import Path
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/stage0")
+from cd_oracle import CDGame
+insts = [json.loads(l) for l in open("data/cd_search.jsonl")]
+print("search instance keys sample:", list(insts[0].keys())[:10])
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/final.py; head -c 600 data/cd_search.jsonl
+
+description: Inspect the search instance data format
+
+--- output ---
+search instance keys sample: ['key', 'controller', 'user_simulator_cfg_str', 'orig_index']
+{"key": 201, "controller": {"truth_table_length": 24, "avg_reveals": 17.894040194040194, "num_circuits": 3, "num_inputs": 3, "components": {"AND": 1, "OR": 5, "NOT": 2}, "circuit_joint_lookup": "000010111000111101111111", "circuits": ["( x[0] & ( x[1] | ( not x[2] ) ) )", "( x[0] | ( not ( x[1] | x[2] ) ) )", "( x[1] | ( x[0] | x[2] ) )"]}, "user_simulator_cfg_str": "CircuitDecoderRuleBasedUserSimulator", "orig_index": 1}
+{"key": 203, "controller": {"truth_table_length": 24, "avg_reveals": 17.894040194040194, "num_circuits": 3, "num_inputs": 3, "components": {"AND": 1, "OR": 5, "NOT": 2}, "cir

@@ -1,0 +1,1 @@
+Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.

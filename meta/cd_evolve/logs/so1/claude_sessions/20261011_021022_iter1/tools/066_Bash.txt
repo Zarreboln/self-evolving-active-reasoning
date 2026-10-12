@@ -1,0 +1,42 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad && ls -R | head -30 && rm -rf an1.py an2.py an3.py sim.py drive.py cost.py grid_dump.jsonl proto mockv2 __pycache__ && ls -la
+
+description: List and delete scratch prototype files
+
+--- output ---
+__pycache__
+an1.py
+an2.py
+an3.py
+cost.py
+drive.py
+grid_dump.jsonl
+mockv2
+proto
+sim.py
+
+./__pycache__:
+drive.cpython-313.pyc
+
+./mockv2:
+answer_grid__flaky.jsonl
+answer_grid__greedy.jsonl
+answer_grid__sequential.jsonl
+veto_determined__flaky.jsonl
+veto_determined__greedy.jsonl
+veto_determined__sequential.jsonl
+veto_only__flaky.jsonl
+veto_only__greedy.jsonl
+veto_only__sequential.jsonl
+
+./proto:
+__pycache__
+answer_grid.py
+veto_determined.py
+veto_only.py
+total 0
+drwx------@ 2 zarreboln  wheel   64 Oct 10 22:10 .
+drwx------@ 4 zarreboln  wheel  128 Oct 10 21:48 ..
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

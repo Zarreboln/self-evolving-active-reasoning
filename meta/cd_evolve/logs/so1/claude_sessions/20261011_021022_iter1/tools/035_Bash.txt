@@ -1,0 +1,22 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; python3 - <<'EOF'
+p='drive.py'
+s=open(p).read()
+s=s.replace('''                first = lm.group(1).split(",")[0].strip()
+                mm = re.match(r"([A-H])\\(([01]),([01]),([01])\\)", first)
+                q = qidx(mm.group(1), mm.groups()[1:])''','''                mm = re.findall(r"([A-H])\\(([01]),([01]),([01])\\)", lm.group(1))[0]
+                q = qidx(mm[0], mm[1:])''')
+open(p,'w').write(s)
+EOF
+grep -n "findall(r\"(\[A-H\])" drive.py; for pl in 0.5 1.0; do python3 drive.py proto/veto_determined.py --p_list $pl --p_ign 0.0; done; python3 drive.py proto/veto_determined.py --p_list 0.3 --p_ign 0.4 --verbose 300
+
+description: Fix mock list parsing and rerun veto prototype
+
+--- output ---
+72:                mm = re.findall(r"([A-H])\(([01]),([01]),([01])\)", lm.group(1))[0]
+veto_determined.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.950 exact=0.970 zero=0.032 reasks/ep=4.03 calls/ep=23.0 ill/ep=0.00 max_chars mean=10879 max=13063 tok_in=47075
+veto_determined.py p_list=1.0 p_ign=0.0: n=100 err=0 uniq=0.960 exact=0.980 zero=0.000 reasks/ep=3.06 calls/ep=22.1 ill/ep=0.00 max_chars mean=10858 max=13063 tok_in=45207
+veto_determined.py p_list=0.3 p_ign=0.4: n=100 err=0 uniq=0.940 exact=0.960 zero=0.086 reasks/ep=5.75 calls/ep=24.8 ill/ep=0.00 max_chars mean=16277 max=18989 tok_in=71904
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

@@ -1,0 +1,42 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; ls .claude/skills/meta-harness-cd; python3 tools/show_trace.py logs/so1/traces/enum15/search.jsonl --list | head -30; python3 tools/show_trace.py logs/so1/traces/enum15/search.jsonl --list | wc -l
+
+description: List enum15 so1 episodes summary
+
+--- output ---
+SKILL.md
+key=1    seed=0 uniq=0 exact=0 alive_end=2     eff=0.538 zero=8  repeat=2  illegal=0  err=False
+key=1    seed=1 uniq=1 exact=0 alive_end=1     eff=0.890 zero=1  repeat=5  illegal=1  err=False
+key=2    seed=0 uniq=0 exact=0 alive_end=3     eff=0.409 zero=8  repeat=6  illegal=0  err=False
+key=2    seed=1 uniq=0 exact=0 alive_end=3     eff=0.409 zero=8  repeat=1  illegal=0  err=False
+key=3    seed=0 uniq=0 exact=0 alive_end=4     eff=0.550 zero=6  repeat=3  illegal=0  err=False
+key=3    seed=1 uniq=0 exact=0 alive_end=2     eff=0.606 zero=5  repeat=1  illegal=0  err=False
+key=9    seed=0 uniq=0 exact=0 alive_end=4     eff=0.719 zero=3  repeat=1  illegal=0  err=False
+key=9    seed=1 uniq=1 exact=0 alive_end=1     eff=0.874 zero=1  repeat=2  illegal=0  err=False
+key=10   seed=0 uniq=0 exact=0 alive_end=4     eff=0.657 zero=5  repeat=2  illegal=0  err=False
+key=10   seed=1 uniq=0 exact=0 alive_end=3     eff=0.671 zero=5  repeat=0  illegal=0  err=False
+key=12   seed=0 uniq=1 exact=1 alive_end=1     eff=0.947 zero=0  repeat=3  illegal=0  err=False
+key=12   seed=1 uniq=0 exact=0 alive_end=8     eff=0.578 zero=6  repeat=1  illegal=0  err=False
+key=13   seed=0 uniq=0 exact=0 alive_end=2     eff=0.530 zero=7  repeat=2  illegal=0  err=False
+key=13   seed=1 uniq=0 exact=0 alive_end=4     eff=0.475 zero=8  repeat=0  illegal=0  err=False
+key=14   seed=0 uniq=0 exact=0 alive_end=2     eff=0.491 zero=7  repeat=1  illegal=0  err=False
+key=14   seed=1 uniq=0 exact=0 alive_end=4     eff=0.581 zero=6  repeat=0  illegal=0  err=False
+key=15   seed=0 uniq=1 exact=0 alive_end=1     eff=0.710 zero=4  repeat=2  illegal=0  err=False
+key=15   seed=1 uniq=1 exact=0 alive_end=1     eff=0.785 zero=2  repeat=3  illegal=0  err=False
+key=18   seed=0 uniq=0 exact=0 alive_end=2     eff=0.673 zero=5  repeat=1  illegal=0  err=False
+key=18   seed=1 uniq=0 exact=0 alive_end=4     eff=0.620 zero=5  repeat=1  illegal=0  err=False
+key=21   seed=0 uniq=1 exact=0 alive_end=1     eff=0.744 zero=2  repeat=0  illegal=0  err=False
+key=21   seed=1 uniq=1 exact=0 alive_end=1     eff=0.650 zero=3  repeat=0  illegal=0  err=False
+key=23   seed=0 uniq=0 exact=1 alive_end=2     eff=0.484 zero=9  repeat=0  illegal=0  err=False
+key=23   seed=1 uniq=1 exact=0 alive_end=1     eff=0.746 zero=3  repeat=4  illegal=0  err=False
+key=28   seed=0 uniq=0 exact=0 alive_end=2     eff=0.621 zero=6  repeat=2  illegal=0  err=False
+key=28   seed=1 uniq=1 exact=0 alive_end=1     eff=0.699 zero=4  repeat=1  illegal=0  err=False
+key=35   seed=0 uniq=1 exact=0 alive_end=1     eff=0.753 zero=2  repeat=1  illegal=1  err=False
+key=35   seed=1 uniq=0 exact=0 alive_end=4     eff=0.601 zero=5  repeat=0  illegal=0  err=False
+key=38   seed=0 uniq=0 exact=1 alive_end=2     eff=0.618 zero=5  repeat=0  illegal=0  err=False
+key=38   seed=1 uniq=0 exact=0 alive_end=4     eff=0.562 zero=6  repeat=0  illegal=0  err=False
+Exception ignored on flushing sys.stdout:
+BrokenPipeError: [Errno 32] Broken pipe
+     200

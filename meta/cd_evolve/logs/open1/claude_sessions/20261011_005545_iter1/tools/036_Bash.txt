@@ -1,0 +1,33 @@
+Bash
+
+command:
+for n in copy_query open_entries copy_open; do for pol in sequential greedy; do echo "### $n / $pol"; tools/run_mock.sh agents/$n.py $pol 10 2>&1 | tail -3; done; done
+
+description: Run official mock smoke tests for all three candidates
+timeout: 600000
+
+--- output ---
+### copy_query / sequential
+----------------------------------------------------------------------------------------------------------------------
+copy_query       10      30.0    [0.0,60.0]    10.0   70.0   82.1  0.601   31.5   34.5   0.0   0.0 100.0   3.60    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/copy_query__sequential.jsonl --key <k>
+### copy_query / greedy
+----------------------------------------------------------------------------------------------------------------------
+copy_query       10     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/copy_query__greedy.jsonl --key <k>
+### open_entries / sequential
+----------------------------------------------------------------------------------------------------------------------
+open_entries     10      30.0    [0.0,60.0]    10.0   70.0   82.1  0.601   31.5   34.5   0.0   0.0 100.0   3.60    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/open_entries__sequential.jsonl --key <k>
+### open_entries / greedy
+----------------------------------------------------------------------------------------------------------------------
+open_entries     10     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/open_entries__greedy.jsonl --key <k>
+### copy_open / sequential
+----------------------------------------------------------------------------------------------------------------------
+copy_open        10      30.0    [0.0,60.0]    10.0   70.0   82.1  0.601   31.5   34.5   0.0   0.0 100.0   3.60    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/copy_open__sequential.jsonl --key <k>
+### copy_open / greedy
+----------------------------------------------------------------------------------------------------------------------
+copy_open        10     100.0 [100.0,100.0]   100.0  100.0  100.0  1.000    0.0  100.0   0.0   0.0 100.0   1.00    171
+trace: python3 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/tools/show_trace.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/mock/copy_open__greedy.jsonl --key <k>

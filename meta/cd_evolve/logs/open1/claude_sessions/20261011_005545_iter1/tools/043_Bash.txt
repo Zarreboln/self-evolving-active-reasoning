@@ -1,0 +1,45 @@
+Bash
+
+command:
+python3 - <<'EOF'
+from pathlib import Path
+for n in ["copy_query", "open_entries", "copy_open"]:
+    p = Path(f"agents/{n}.py")
+    s = p.read_text()
+    old_solved = ('        return ("Your answers now determine all three truth tables; no query can add information. "\n'
+                  '                f"Reply with only {_qtag(view, 0)}")')
+    new_solved = ('        return ("Your answers now determine every truth table; no query can add information. "\n'
+                  '                f"Reply with only {_qtag(view, 0)}")')
+    assert s.count(old_solved) == 1, n
+    s = s.replace(old_solved, new_solved)
+    old_final = ('    return (f"{lead} In the required order (A, then B, then C; inputs 000 to 111 within each) "\n'
+                 '            f"it is: <guess>{bits}</guess>\\nSubmit exactly this string.")')
+    new_final = ('    order = ", then ".join(LABELS[:view.c])\n'
+                 '    rows = f"inputs {\'0\' * view.k} to {\'1\' * view.k} within each"\n'
+                 '    return (f"{lead} In the required order ({order}; {rows}) it is: "\n'
+                 '            f"<guess>{bits}</guess>\\nSubmit exactly this string.")')
+    assert s.count(old_final) == 1, n
+    s = s.replace(old_final, new_final)
+    p.write_text(s)
+    print("updated", n)
+EOF
+sed -n '/^def final_hint/,$p' agents/copy_query.py; grep -n "every truth table" agents/*.py
+
+description: Generalize final-hint and post-solve wording in all three agents
+
+--- output ---
+updated copy_query
+updated open_entries
+updated copy_open
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    order = ", then ".join(LABELS[:view.c])
+    rows = f"inputs {'0' * view.k} to {'1' * view.k} within each"
+    return (f"{lead} In the required order ({order}; {rows}) it is: "
+            f"<guess>{bits}</guess>\nSubmit exactly this string.")
+agents/copy_open.py:39:        return ("Your answers now determine every truth table; no query can add information. "
+agents/copy_query.py:40:        return ("Your answers now determine every truth table; no query can add information. "
+agents/open_entries.py:41:        return ("Your answers now determine every truth table; no query can add information. "

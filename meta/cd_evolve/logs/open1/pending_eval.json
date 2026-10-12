@@ -1,0 +1,18 @@
+{"iteration": 1, "regime": "open",
+ "candidates": [
+   {"name": "copy_query", "file": "agents/copy_query.py", "parent": "oracle_hint",
+    "hypothesis": "If the whole message is one copyable action (the max-entropy query as the exact <query> tag to send, and nothing else), the model copies it on most turns. Then orcl% rises from 31% (enum15) to >= 75%, zero% falls below 10%, and uniq@end rises from 53% to >= 80%. With the <guess> string handed over at the end, exact lands within ~10 points of uniq@end. Falsified if orcl% < 60% or uniq@end <= 63% (top of enum15's CI).",
+    "axis": "exploration",
+    "mechanism": "Each turn the message is only the count, the max-entropy query as a ready-to-send <query> tag with its 0/1 split, and 'reply with exactly this query'. After the set collapses, a fixed harmless query is requested. The final hint hands over the remaining configuration as a <guess> string.",
+    "prediction": "uniq@end 85-95%, exact 80%+. In the CPU simulation greedy stays >= 98% for copy rates >= 0.7 when misses are scan moves, but drops to ~72% at 0.7 when misses are wasted turns. Since this candidate offers no fallback, its uniq@end measures how the model misses."},
+   {"name": "open_entries", "file": "agents/open_entries.py", "parent": "enum15",
+    "hypothesis": "What costs uniq@end is querying already-determined outputs, not choosing badly among informative ones. Replace enum15's negative 'do not ask these again' list and joint tables with the positive list of still-unknown outputs, with no ranking. Then zero% drops from 29% to <= 12% and uniq@end rises to >= 70%, while orcl% stays near enum15's ~31%: the model still picks by scanning, but now over informative entries only. Falsified if zero% stays above 20%.",
+    "axis": "exploitation",
+    "mechanism": "Each turn shows the count plus the still-undetermined outputs in canonical order and query format, i.e. the complement of enum15's determined list. Joint tables are dropped and nothing is recommended before the collapse. Same post-collapse request and final <guess> hint as copy_query.",
+    "prediction": "uniq@end 70-85%. On CPU, a canonical scan restricted to undetermined entries reaches 96% (blind scan: 20%), but the model will not always pick from the list. eff ~0.70, exact close to uniq@end."},
+   {"name": "copy_open", "file": "agents/copy_open.py", "parent": "oracle_hint",
+    "hypothesis": "Putting the unknown-output list right before the copyable directive makes the turns where the model does not copy informative instead of wasted. Then zero% is no higher than copy_query's and uniq@end is at least copy_query's. If the list instead pulls the model away from the directive, orcl% will be clearly below copy_query's (> 10 points).",
+    "axis": "exploitation",
+    "mechanism": "Each turn shows open_entries' list of undetermined outputs, then copy_query's ready-to-send max-entropy <query> tag with its split and 'reply with exactly this query'. Same post-collapse request and final <guess> hint.",
+    "prediction": "uniq@end 90-95%, >= copy_query; orcl% within 10 points of copy_query; zero% lowest of the three. In the CPU simulation it holds 100% down to a copy rate of 0.5 when misses scan the listed entries."}
+ ]}

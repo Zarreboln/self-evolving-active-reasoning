@@ -1,0 +1,22 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; mkdir -p /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/mockv2; for f in veto_determined veto_only answer_grid; do for pol in sequential greedy flaky; do out=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/mockv2/${f}__${pol}.jsonl; rm -f $out; python3 ../../runner/cd_harness_run.py --harness agents/$f.py --mock $pol --split search --limit 6 --split-file ../../splits/cd_split_v2.json --seeds 1 --out $out > /dev/null 2>&1 || echo "RUN FAILED $f $pol"; python3 -c "
+import json,sys
+rs=[json.loads(l) for l in open('$out')]
+errs=[r['error'] for r in rs if r.get('error')]
+print('$f','$pol','episodes',len(rs),'errors',len(errs), errs[:1], 'max_ctx', max((r['result'] or {}).get('max_context_chars',0) for r in rs if r.get('result')), 'reasks', sum((r['result'] or {}).get('n_reasks',0) for r in rs if r.get('result')))
+"; done; done
+
+description: Run evolve-style mock validation on v2 split incl. flaky policy
+
+--- output ---
+veto_determined sequential episodes 6 errors 0 [] max_ctx 13471 reasks 84
+veto_determined greedy episodes 6 errors 0 [] max_ctx 11393 reasks 0
+veto_determined flaky episodes 6 errors 0 [] max_ctx 12083 reasks 98
+veto_only sequential episodes 6 errors 0 [] max_ctx 4884 reasks 150
+veto_only greedy episodes 6 errors 0 [] max_ctx 4637 reasks 0
+veto_only flaky episodes 6 errors 0 [] max_ctx 5006 reasks 159
+answer_grid sequential episodes 6 errors 0 [] max_ctx 5172 reasks 0
+answer_grid greedy episodes 6 errors 0 [] max_ctx 4797 reasks 0
+answer_grid flaky episodes 6 errors 0 [] max_ctx 5502 reasks 0

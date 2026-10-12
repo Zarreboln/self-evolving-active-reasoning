@@ -1,0 +1,47 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; python3 - <<'EOF'
+p='proto/answer_grid.py'
+s=open(p).read()
+s=s.replace('''complete or with its number of undetermined outputs. The model's planned
+query is found in its row, and so is the nearest ? next to it. No query is
+ranked or recommended; the ? cells are exactly enum15's undetermined outputs.
+The joint tables are dropped.
+''','''complete or with its number of undetermined outputs. The model's planned
+query is found in its row, and so is the nearest ? next to it. No query is
+ranked or recommended; the ? cells are exactly enum15's undetermined outputs.
+The joint tables are dropped. The sheet is one object, always current:
+compose_messages strips earlier copies from older turns (their environment
+lines stay), so the context holds a single table instead of enum15's growing
+log of summaries.
+''')
+s=s.replace('''def final_hint(view, state):''','''def compose_messages(view, state, msgs):
+    """Keep the sheet only in the newest message: older turns keep their two environment lines."""
+    out = []
+    for i, m in enumerate(msgs):
+        lines = m["content"].split("\\n") if m["role"] == "user" else []
+        if 0 < i < len(msgs) - 1 and len(lines) > 2 and lines[1].startswith(ENV_NEXT):
+            m = {**m, "content": "\\n".join(lines[:2])}
+        out.append(m)
+    return out
+
+
+def final_hint(view, state):''')
+s=s.replace('''LIST_CAP = 15
+LABELS = "ABCDEFGH"
+''','''LIST_CAP = 15
+LABELS = "ABCDEFGH"
+ENV_NEXT = "Please send your next query."
+''')
+open(p,'w').write(s)
+EOF
+python3 drive.py proto/answer_grid.py --verbose 300 --dump /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/grid_dump.jsonl; python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/enum15.py --verbose 300; python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/bare.py --verbose 300
+
+description: Add single-sheet compose to answer_grid and rerun mock
+
+--- output ---
+answer_grid.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.390 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=10039 max=10264 tok_in=41716
+enum15.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.150 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=15873 max=19795 tok_in=54951
+bare.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.030 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=9715 max=9719 tok_in=38214
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

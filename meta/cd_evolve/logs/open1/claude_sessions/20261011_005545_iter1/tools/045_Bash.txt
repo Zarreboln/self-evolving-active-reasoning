@@ -1,0 +1,27 @@
+Bash
+
+command:
+python3 - <<'EOF'
+import re
+from pathlib import Path
+for name in ["copy_query", "open_entries", "copy_open"]:
+    src = Path(f"agents/{name}.py").read_text()
+    ok_name = bool(re.search(r"^NAME\s*=\s*['\"]%s['\"]" % re.escape(name), src, re.M))
+    bad_imp = bool(re.search(r"^\s*from\s+agents\.|^\s*import\s+agents\.", src, re.M))
+    seeds = {"bare.py","enum15.py","facts.py","oracle_hint.py","splits.py","symbolic.py","t3_gate.py"}
+    print(f"{name:13s} NAME ok={ok_name} agents-import={bad_imp} seed-collision={name+'.py' in seeds} PARENT={re.search(r'^PARENT = (.*)$', src, re.M).group(1)}")
+EOF
+rm -rf logs/mock/copy_query__flaky.jsonl logs/mock/open_entries__flaky.jsonl logs/mock/copy_open__flaky.jsonl; ls logs/mock/ | grep -E "copy_|open_" 
+
+description: Mirror evolve.py static checks on the candidates
+
+--- output ---
+copy_query    NAME ok=True agents-import=False seed-collision=False PARENT="oracle_hint"
+open_entries  NAME ok=True agents-import=False seed-collision=False PARENT="enum15"
+copy_open     NAME ok=True agents-import=False seed-collision=False PARENT="oracle_hint"
+copy_open__greedy.jsonl
+copy_open__sequential.jsonl
+copy_query__greedy.jsonl
+copy_query__sequential.jsonl
+open_entries__greedy.jsonl
+open_entries__sequential.jsonl

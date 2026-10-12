@@ -1,0 +1,49 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/calib.py <<'EOF'
+import json, sys
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/runner")
+import cd_harness_run as R
+tmpl = open("/Users/zarreboln/Desktop/ar_harness/mt_puzzles/cd_instruction.txt").read()
+insts = {json.loads(l)["orig_index"]: json.loads(l)["controller"]["components"] for l in open("data/cd_search.jsonl")}
+X, Y = [], []
+for name in ["bare", "enum15"]:
+    for line in open(f"logs/open1/traces/{name}/search.jsonl"):
+        r = json.loads(line)
+        if r.get("error"): continue
+        system = R.fill_instruction(tmpl, insts[r["key"]], 3, 3, 18)
+        # message stream: (kind, chars)
+        msgs = [("sys", len(system)), ("other", len(R.KICKOFF))]
+        prompts = []
+        for x in r["rows"]:
+            prompts.append(list(msgs))
+            msgs.append(("other", len(x.get("model_text") or "")))
+            sent = x.get("sent")
+            if sent:
+                env, _, extra = sent.partition("queries remaining.")
+                msgs.append(("other", len(env) + len("queries remaining.")))
+                if extra.strip(): msgs.append(("harness", len(extra)))
+        prompts.append(list(msgs))
+        fs = r.get("final_sent") or ""
+        msgs.append(("other", len(fs)))
+        feat = np.zeros(4)
+        for p in prompts:
+            for kind, c in p:
+                feat[["sys", "harness", "other"].index(kind)] += c
+            feat[3] += len(p)  # per-message overhead
+        X.append(feat); Y.append(r["in_tokens"])
+X, Y = np.array(X), np.array(Y, dtype=float)
+coef, *_ = np.linalg.lstsq(X, Y, rcond=None)
+pred = X @ coef
+print("tokens per char: sys %.3f  harness %.3f  other %.3f ; per-message overhead %.1f" % tuple(coef))
+print("R^2 = %.4f, median abs rel err = %.3f" % (1 - ((Y-pred)**2).sum()/((Y-Y.mean())**2).sum(), np.median(abs(Y-pred)/Y)))
+EOF
+python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/calib.py
+
+description: Regress logged prompt tokens on character counts by text type
+
+--- output ---
+tokens per char: sys 0.945  harness 0.805  other 0.451 ; per-message overhead -80.3
+R^2 = 0.9856, median abs rel err = 0.023

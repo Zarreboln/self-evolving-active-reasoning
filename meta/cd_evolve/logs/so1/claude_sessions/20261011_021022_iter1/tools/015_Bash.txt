@@ -1,0 +1,158 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 tools/show_trace.py logs/so1/traces/enum15/search.jsonl --key 2 --seed 0 | cut -c1-1500 | head -150
+
+description: Show enum15 trace key 2 seed 0
+
+--- output ---
+key=2    seed=0 uniq=0 exact=0 alive_end=3     eff=0.409 zero=8  repeat=6  illegal=0  err=False
+====================================================================================================
+[turn 1] query A(0,0,0) -> 1   alive 2886->1268   bits 0.989/0.989   best A(0,0,0)
+  MODEL >> Let's start by querying circuit A with inputs (0, 0, 0).
+           
+           ```plaintext
+           <query>A(0, 0, 0)</query>
+           ```
+  SENT  << A(0, 0, 0) = 1
+           Please send your next query. 17 queries remaining.
+           1268 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1.
+----------------------------------------------------------------------------------------------------
+[turn 2] query A(0,0,1) -> 0   alive 1268->614   bits 0.999/0.999   best A(0,0,1)
+  MODEL >> Given the output of A(0, 0, 0) = 1, let's query another set of inputs for circuit A to gather more information. We'll use inputs (0, 0, 1).
+           
+           ```plaintext
+           <query>A(0, 0, 1)</query>
+           ```
+  SENT  << A(0, 0, 1) = 0
+           Please send your next query. 16 queries remaining.
+           614 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0.
+----------------------------------------------------------------------------------------------------
+[turn 3] query A(0,1,0) -> 0   alive 614->292   bits 0.998/0.998   best A(0,1,0)
+  MODEL >> Now we know that A(0, 0, 0) = 1 and A(0, 0, 1) = 0. Let's query circuit A with inputs (0, 1, 0) to further refine the structure of circuit A.
+           
+           ```plaintext
+           <query>A(0, 1, 0)</query>
+           ```
+  SENT  << A(0, 1, 0) = 0
+           Please send your next query. 15 queries remaining.
+           292 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0.
+----------------------------------------------------------------------------------------------------
+[turn 4] query A(1,0,0) -> 1   alive 292->147   bits 1.000/1.000   best A(1,0,1)
+  MODEL >> We now have the following known values for circuit A:
+           - A(0, 0, 0) = 1
+           - A(0, 0, 1) = 0
+           - A(0, 1, 0) = 0
+           - A(0, 1, 1) = 0
+           
+           Next, let's query circuit A with inputs (1, 0, 0) to continue gathering information.
+           
+           ```plaintext
+           <query>A(1, 0, 0)</query>
+           ```
+  SENT  << A(1, 0, 0) = 1
+           Please send your next query. 14 queries remaining.
+           147 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1.
+----------------------------------------------------------------------------------------------------
+[turn 5] query A(1,0,1) -> 1   alive 147->146   bits 0.059/0.998   best B(0,0,1)
+  MODEL >> We now have the following known values for circuit A:
+           - A(0, 0, 0) = 1
+           - A(0, 0, 1) = 0
+           - A(0, 1, 0) = 0
+           - A(0, 1, 1) = 0
+           - A(1, 0, 0) = 1
+           
+           Next, let's query circuit A with inputs (1, 0, 1) to further understand its structure.
+           
+           ```plaintext
+           <query>A(1, 0, 1)</query>
+           ```
+  SENT  << A(1, 0, 1) = 1
+           Please send your next query. 13 queries remaining.
+           146 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1, A(1,0,1)=1.
+----------------------------------------------------------------------------------------------------
+[turn 6] query A(1,1,0) -> 1   alive 146->145   bits 0.059/0.999   best B(0,0,1)
+  MODEL >> We now have the following known values for circuit A:
+           - A(0, 0, 0) = 1
+           - A(0, 0, 1) = 0
+           - A(0, 1, 0) = 0
+           - A(0, 1, 1) = 0
+           - A(1, 0, 0) = 1
+           - A(1, 0, 1) = 1
+           
+           Next, let's query circuit A with inputs (1, 1, 0) to continue gathering information.
+           
+           ```plaintext
+           <query>A(1, 1, 0)</query>
+           ```
+  SENT  << A(1, 1, 0) = 1
+           Please send your next query. 12 queries remaining.
+           145 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1, A(1,0,1)=1, A(1,1,0)=1, A(1,1,1)=1.
+----------------------------------------------------------------------------------------------------
+[turn 7] query B(0,0,0) -> 0   alive 145->91   bits 0.953/0.999   best B(0,0,1)
+  MODEL >> We now have the following known values for circuit A:
+           - A(0, 0, 0) = 1
+           - A(0, 0, 1) = 0
+           - A(0, 1, 0) = 0
+           - A(0, 1, 1) = 0
+           - A(1, 0, 0) = 1
+           - A(1, 0, 1) = 1
+           - A(1, 1, 0) = 1
+           - A(1, 1, 1) = 1
+           
+           Based on these results, circuit A appears to always output 1 regardless of its inputs. Given that it uses 1 AND gate, 2 NOT gates, and 5 OR gates, and considering that no circuit will always output 0 or 1 regardless of input, we can infer that circuit A must be using a combination of these gates in a way that ensures it outputs 1.
+           
+           Since A outputs 1 for all inputs, it likely has a structure where it always outputs 1, possibly through a series of OR gates or a combination of gates that effectively short-circuit to always produce 1. 
+           
+           Next, let's query circuit B with inputs (0, 0, 0) to start gathering information about it.
+           
+           ```plaintext
+           <query>B(0, 0, 0)</query>
+           ```
+  SENT  << B(0, 0, 0) = 0
+           Please send your next query. 11 queries remaining.
+           91 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1, A(1,0,1)=1, A(1,1,0)=1, A(1,1,1)=1, B(0,0,0)=0.
+----------------------------------------------------------------------------------------------------
+[turn 8] query B(0,0,1) -> 1   alive 91->47   bits 0.999/0.999   best B(0,0,1)
+  MODEL >> We now have the following known values:
+           - A(0, 0, 0) = 1
+           - A(0, 0, 1) = 0
+           - A(0, 1, 0) = 0
+           - A(0, 1, 1) = 0
+           - A(1, 0, 0) = 1
+           - A(1, 0, 1) = 1
+           - A(1, 1, 0) = 1
+           - A(1, 1, 1) = 1
+           - B(0, 0, 0) = 0
+           
+           Next, let's query circuit B with inputs (0, 0, 1) to gather more information about its structure.
+           
+           ```plaintext
+           <query>B(0, 0, 1)</query>
+           ```
+  SENT  << B(0, 0, 1) = 1
+           Please send your next query. 10 queries remaining.
+           47 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1, A(1,0,1)=1, A(1,1,0)=1, A(1,1,1)=1, B(0,0,0)=0, B(0,0,1)=1.
+----------------------------------------------------------------------------------------------------
+[turn 9] query B(0,1,0) -> 1   alive 47->34   bits 0.851/0.992   best C(0,1,1)
+  MODEL >> We now have the following known values for circuit B:
+           - B(0, 0, 0) = 0
+           - B(0, 0, 1) = 1
+           
+           Next, let's query circuit B with inputs (0, 1, 0) to further understand its structure.
+           
+           ```plaintext
+           <query>B(0, 1, 0)</query>
+           ```
+  SENT  << B(0, 1, 0) = 1
+           Please send your next query. 9 queries remaining.
+           34 circuit configurations remain consistent with every answer given so far. Already determined outputs (do not ask these again): A(0,0,0)=1, A(0,0,1)=0, A(0,1,0)=0, A(0,1,1)=0, A(1,0,0)=1, A(1,0,1)=1, A(1,1,0)=1, A(1,1,1)=1, B(0,0,0)=0, B(0,0,1)=1, B(0,1,0)=1, B(0,1,1)=1.
+----------------------------------------------------------------------------------------------------
+[turn 10] query B(1,0,0) -> 0   alive 34->3   bits 0.431/0.990   best C(0,1,1)
+  MODEL >> We now have the following known values for circuit B:
+           - B(0, 0, 0) = 0
+           - B(0, 0, 1) = 1
+           - B(0, 1, 0) = 1
+           - B(0, 1, 1) = 1
+           
+           Next, let's query circuit B with inputs (1, 0, 0) to continue gathering information.

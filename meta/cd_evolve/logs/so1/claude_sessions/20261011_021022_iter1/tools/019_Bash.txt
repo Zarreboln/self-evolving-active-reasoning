@@ -1,0 +1,95 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; cat > sim.py <<'EOF'
+import json, sys
+import numpy as np
+sys.path.insert(0, '/Users/zarreboln/Desktop/ar_harness/stage0')
+from cd_oracle import CDGame
+insts=[json.loads(l) for l in open('/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/data/cd_search_v2.jsonl')]
+games={}
+def game(c):
+    k=tuple(sorted(c.items()))
+    if k not in games: games[k]=CDGame(dict(k))
+    return games[k]
+def det(H, alive, q):
+    col=H[alive,q]; return col.min()==col.max()
+def run(policy, rng, budget=18):
+    res=[]
+    for inst in insts:
+        g=game(inst['controller']['components']); H=g.H
+        truth=np.array([int(ch) for ch in inst['controller']['circuit_joint_lookup']],dtype=np.uint8)
+        alive=np.arange(len(H)); hist=[]; ptr=0  # ptr = last proposed index
+        state={'ptr':-1}
+        for t in range(budget):
+            if len(alive)==1: break
+            q=policy(H, alive, hist, state, rng)
+            hist.append(q)
+            alive=alive[H[alive,q]==truth[q]]
+        res.append(len(alive)==1)
+    return np.mean(res)
+
+def scan(H,alive,hist,st,rng):
+    st['ptr']=(st['ptr']+1)%24; return st['ptr']
+def scan_skip(H,alive,hist,st,rng):
+    for _ in range(24):
+        st['ptr']=(st['ptr']+1)%24
+        if not det(H,alive,st['ptr']): return st['ptr']
+    return st['ptr']
+def make_veto(nveto, p_list, p_comply=1.0):
+    # model proposes next in scan; if determined, vetoed: with prob p_comply it re-picks
+    # (with prob p_list: first open entry in canonical order; else continues scan); else proposes something determined again
+    def pol(H,alive,hist,st,rng):
+        st['ptr']=(st['ptr']+1)%24; q=st['ptr']
+        v=0
+        while det(H,alive,q) and v<nveto:
+            v+=1
+            if rng.random()<p_comply:
+                opens=[x for x in range(24) if not det(H,alive,x)]
+                if rng.random()<p_list and opens:
+                    q=opens[0]; st['ptr']=q
+                else:
+                    st['ptr']=(st['ptr']+1)%24; q=st['ptr']
+            else:
+                pass  # model insists / picks another determined: keep q determined
+        return q
+    return pol
+def rand_open(H,alive,hist,st,rng):
+    opens=[x for x in range(24) if not det(H,alive,x)]
+    return int(rng.choice(opens)) if opens else 0
+rng=np.random.default_rng(0)
+print('scan', run(scan,rng))
+print('scan_skip_det', run(scan_skip,rng))
+print('rand_open', np.mean([run(rand_open,np.random.default_rng(s)) for s in range(3)]))
+for nv in (1,2):
+    for pl in (0.0,0.5,1.0):
+        for pc in (1.0,0.8,0.6):
+            print(f'veto n={nv} p_list={pl} p_comply={pc}', np.mean([run(make_veto(nv,pl,pc),np.random.default_rng(s)) for s in range(3)]))
+EOF
+python3 sim.py
+
+description: Simulate scan/veto policies on search instances
+
+--- output ---
+scan 0.18
+scan_skip_det 0.96
+rand_open 0.9933333333333333
+veto n=1 p_list=0.0 p_comply=1.0 0.87
+veto n=1 p_list=0.0 p_comply=0.8 0.8099999999999999
+veto n=1 p_list=0.0 p_comply=0.6 0.73
+veto n=1 p_list=0.5 p_comply=1.0 0.9366666666666666
+veto n=1 p_list=0.5 p_comply=0.8 0.8733333333333334
+veto n=1 p_list=0.5 p_comply=0.6 0.8133333333333335
+veto n=1 p_list=1.0 p_comply=1.0 0.96
+veto n=1 p_list=1.0 p_comply=0.8 0.94
+veto n=1 p_list=1.0 p_comply=0.6 0.8566666666666666
+veto n=2 p_list=0.0 p_comply=1.0 0.93
+veto n=2 p_list=0.0 p_comply=0.8 0.9066666666666667
+veto n=2 p_list=0.0 p_comply=0.6 0.8666666666666667
+veto n=2 p_list=0.5 p_comply=1.0 0.9566666666666667
+veto n=2 p_list=0.5 p_comply=0.8 0.9366666666666666
+veto n=2 p_list=0.5 p_comply=0.6 0.9033333333333333
+veto n=2 p_list=1.0 p_comply=1.0 0.96
+veto n=2 p_list=1.0 p_comply=0.8 0.9566666666666667
+veto n=2 p_list=1.0 p_comply=0.6 0.93
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

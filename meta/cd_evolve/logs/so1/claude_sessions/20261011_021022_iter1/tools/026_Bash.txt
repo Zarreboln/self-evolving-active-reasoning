@@ -1,0 +1,13 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness; find . -name "cd_harness_run_v2*" -o -name "cd_split_v2*" -o -name "*serve_7b_pre*" 2>/dev/null | head; python3 -c "
+import json;d=json.load(open('splits/cd_split_v2.json'));print({k:(v if not isinstance(v,(list,dict)) else len(v)) for k,v in d.items()}); print(d.get('search_by_inventory',{}).keys())"
+
+description: Look for v2 runner and v2 split locally
+
+--- output ---
+./splits/cd_split_v2.json
+{'seed': 20261010, 'extends': 'splits/cd_split.json', 'n_search': 100, 'n_heldout': 200, 'search': 100, 'heldout': 200, 'search_by_inventory': 3}
+dict_keys(['{"AND": 1, "NOT": 2, "OR": 5}', '{"AND": 3, "NOT": 0, "OR": 3}', '{"AND": 3, "NOT": 1, "OR": 3}'])
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

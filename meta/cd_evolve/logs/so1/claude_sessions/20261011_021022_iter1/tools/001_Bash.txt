@@ -1,0 +1,85 @@
+Bash
+
+command:
+cat /Users/zarreboln/.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mocks.md; echo ----; ls -la /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; echo ----; ls -la /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/*
+
+description: Read memory file and list workspace and run directory
+
+--- output ---
+---
+name: cd-evolve-context-and-mocks
+description: "Measured token cost of CD harness text and limits of the scripted mocks, for budgeting and prototyping harness candidates"
+metadata:
+  node_type: memory
+  type: project
+  originSessionId: e3ab8c0a-064b-4b20-befc-e87eb5ce7441
+  modified: 2026-10-11T00:55:28.434Z
+---
+
+Measured 2026-10-10 (iteration 1 of run open1), not recorded in the workspace:
+
+- The prompt limit is 11,088 tokens (12,288 context minus 1,200 reserved output). Fitting the logged `in_tokens` of the bare/enum15 traces with the system prompt pinned at 700 tokens: harness-appended text costs ~0.55 tokens/char (entry lists like `A(0,0,1), ` cost more because Qwen tokenizes each digit and comma), and model replies plus env lines cost ~0.40 tokens/char (fit error 2.8%).
+- The scripted `follow` mock only reads `Most informative next query: X(a,b,c)`. It ignores `<query>` tags in harness text, so directive-style candidates need a scratch copier mock (an async client that copies the tag with probability p, else falls back to scanning) driven through `cd_harness_run.run_episode`.
+
+**Why:** the enum15 context-overflow crashes count as failures, and the stock mocks cannot show whether a directive candidate's plumbing (copy, then final `<guess>` copy) works.
+**How to apply:** estimate each candidate's per-episode token load before submitting. Build the copier mock in the scratchpad, not in `runner/`, which is off limits. See [[cd-evolve-iter1-design]] for what the copier mock showed.
+----
+total 144
+drwxr-xr-x@ 14 zarreboln  staff    448 Oct 10 20:31 .
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 19:49 ..
+drwxr-xr-x@  3 zarreboln  staff     96 Oct 10 19:57 .claude
+drwxr-xr-x@  2 zarreboln  staff     64 Oct 10 19:59 .empty_plugins
+drwxr-xr-x@  5 zarreboln  staff    160 Oct 10 21:12 __pycache__
+drwxr-xr-x@ 13 zarreboln  staff    416 Oct 10 21:11 agents
+-rw-r--r--@  1 zarreboln  staff  23580 Oct 10 19:52 claude_wrapper.py
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 21:09 data
+-rw-r--r--@  1 zarreboln  staff   5628 Oct 10 20:29 domain_spec.md
+-rw-r--r--@  1 zarreboln  staff  30176 Oct 10 21:22 evolve.py
+-rw-r--r--@  1 zarreboln  staff   3113 Oct 10 19:49 harness_lib.py
+drwxr-xr-x@  7 zarreboln  staff    224 Oct 10 21:22 logs
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 19:53 tools
+-rwxr-xr-x@  1 zarreboln  staff   1054 Oct 10 19:52 tunnel.sh
+----
+-rw-r--r--@ 1 zarreboln  staff   10 Oct 10 21:22 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/REGIME
+-rw-r--r--@ 1 zarreboln  staff  851 Oct 10 21:47 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/evolution_summary.jsonl
+-rw-r--r--@ 1 zarreboln  staff  896 Oct 10 21:47 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/evolve.log
+-rw-r--r--@ 1 zarreboln  staff  869 Oct 10 21:47 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/frontier_val.json
+-rw-r--r--@ 1 zarreboln  staff  939 Oct 10 21:48 /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/nohup.out
+
+/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1:
+total 40
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 21:34 .
+drwxr-xr-x@  7 zarreboln  staff  224 Oct 10 21:22 ..
+-rw-r--r--@  1 zarreboln  staff   10 Oct 10 21:22 REGIME
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 21:22 claude_sessions
+-rw-r--r--@  1 zarreboln  staff  851 Oct 10 21:47 evolution_summary.jsonl
+-rw-r--r--@  1 zarreboln  staff  896 Oct 10 21:47 evolve.log
+-rw-r--r--@  1 zarreboln  staff  869 Oct 10 21:47 frontier_val.json
+-rw-r--r--@  1 zarreboln  staff  939 Oct 10 21:48 nohup.out
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 21:22 reports
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 21:47 scores
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 21:47 traces
+
+/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/claude_sessions:
+total 0
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 21:22 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 21:34 ..
+
+/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/reports:
+total 0
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 21:22 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 21:34 ..
+
+/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/scores:
+total 16
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 21:47 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 21:34 ..
+-rw-r--r--@  1 zarreboln  staff  446 Oct 10 21:34 bare.search.json
+-rw-r--r--@  1 zarreboln  staff  469 Oct 10 21:47 enum15.search.json
+
+/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/traces:
+total 0
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 21:47 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 21:34 ..
+drwxr-xr-x@  3 zarreboln  staff   96 Oct 10 21:34 bare
+drwxr-xr-x@  3 zarreboln  staff   96 Oct 10 21:47 enum15

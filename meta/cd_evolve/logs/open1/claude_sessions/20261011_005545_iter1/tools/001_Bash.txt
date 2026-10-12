@@ -1,0 +1,105 @@
+Bash
+
+command:
+ls -la && echo "---" && ls -la logs/open1/ && echo "---" && cat logs/open1/evolution_summary.jsonl && echo "---" && cat logs/open1/frontier_val.json && echo "---" && ls -la logs/open1/reports/ logs/open1/scores/ logs/open1/traces/ 2>&1
+
+description: List workspace and run directory contents
+
+--- output ---
+total 120
+drwxr-xr-x@ 14 zarreboln  staff    448 Oct 10 20:31 .
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 19:49 ..
+drwxr-xr-x@  3 zarreboln  staff     96 Oct 10 19:57 .claude
+drwxr-xr-x@  2 zarreboln  staff     64 Oct 10 19:59 .empty_plugins
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 19:59 __pycache__
+drwxr-xr-x@  9 zarreboln  staff    288 Oct 10 20:30 agents
+-rw-r--r--@  1 zarreboln  staff  23580 Oct 10 19:52 claude_wrapper.py
+drwxr-xr-x@  3 zarreboln  staff     96 Oct 10 19:49 data
+-rw-r--r--@  1 zarreboln  staff   5628 Oct 10 20:29 domain_spec.md
+-rw-r--r--@  1 zarreboln  staff  19116 Oct 10 19:59 evolve.py
+-rw-r--r--@  1 zarreboln  staff   3113 Oct 10 19:49 harness_lib.py
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 20:30 logs
+drwxr-xr-x@  4 zarreboln  staff    128 Oct 10 19:53 tools
+-rwxr-xr-x@  1 zarreboln  staff   1054 Oct 10 19:52 tunnel.sh
+---
+total 40
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 20:34 .
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:30 ..
+-rw-r--r--@  1 zarreboln  staff    4 Oct 10 20:30 REGIME
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 20:30 claude_sessions
+-rw-r--r--@  1 zarreboln  staff  850 Oct 10 20:41 evolution_summary.jsonl
+-rw-r--r--@  1 zarreboln  staff  628 Oct 10 20:41 evolve.log
+-rw-r--r--@  1 zarreboln  staff  805 Oct 10 20:41 frontier_val.json
+-rw-r--r--@  1 zarreboln  staff  830 Oct 10 20:41 nohup.out
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 20:30 reports
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:41 scores
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:41 traces
+---
+{"iteration": 0, "system": "bare", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 100, "uniq": 0.26, "exact": 0, "eff": 0.5583, "zero": 0.3691, "oracle": 0.2729, "repeat": 0.018, "illegal": 0.0028, "parsed": 0.86, "alive_end": 3.96, "tok_out": 2084.11, "uniq_ci": [0.18, 0.35], "delta_uniq": 0.26, "outcome": "uniq 26.0% (+26.0) exact 0.0%"}
+{"iteration": 0, "system": "enum15", "regime": "seed", "status": "seed", "parent": null, "axis": "seed", "hypothesis": "", "mechanism": "", "prediction": "", "n": 100, "uniq": 0.53, "exact": 0.05, "eff": 0.6287, "zero": 0.2911, "oracle": 0.3063, "repeat": 0.0347, "illegal": 0.0022, "parsed": 0.97, "alive_end": 2.2755, "tok_out": 2878.83, "uniq_ci": [0.43, 0.63], "delta_uniq": 0.53, "outcome": "uniq 53.0% (+53.0) exact 5.0%"}
+---
+{
+ "_best": {
+  "agent": "enum15",
+  "uniq": 0.53,
+  "uniq_ci": [
+   0.43,
+   0.63
+  ],
+  "exact": 0.05,
+  "eff": 0.6286569838963698,
+  "repeat": 0.034713763702801465,
+  "illegal": 0.002224694104560623,
+  "oracle": 0.30633373934226554,
+  "n": 100,
+  "iteration": 0
+ },
+ "candidates": {
+  "bare": {
+   "uniq": 0.26,
+   "uniq_ci": [
+    0.18,
+    0.35
+   ],
+   "exact": 0,
+   "eff": 0.5583296643008447,
+   "repeat": 0.017960602549246814,
+   "illegal": 0.002777777777777778,
+   "oracle": 0.2728852838933951,
+   "n": 100,
+   "iteration": 0
+  },
+  "enum15": {
+   "uniq": 0.53,
+   "uniq_ci": [
+    0.43,
+    0.63
+   ],
+   "exact": 0.05,
+   "eff": 0.6286569838963698,
+   "repeat": 0.034713763702801465,
+   "illegal": 0.002224694104560623,
+   "oracle": 0.30633373934226554,
+   "n": 100,
+   "iteration": 0
+  }
+ }
+}---
+logs/open1/reports/:
+total 0
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 20:30 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 20:34 ..
+
+logs/open1/scores/:
+total 16
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:41 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 20:34 ..
+-rw-r--r--@  1 zarreboln  staff  445 Oct 10 20:34 bare.search.json
+-rw-r--r--@  1 zarreboln  staff  470 Oct 10 20:41 enum15.search.json
+
+logs/open1/traces/:
+total 0
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:41 .
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 20:34 ..
+drwxr-xr-x@  3 zarreboln  staff   96 Oct 10 20:34 bare
+drwxr-xr-x@  3 zarreboln  staff   96 Oct 10 20:41 enum15

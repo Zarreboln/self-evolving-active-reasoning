@@ -1,0 +1,79 @@
+# meta/journal.md — 全过程流水账（append-only）
+
+规则：每一步都记（时间、做了什么、看到什么、为什么）。结果表只进 experiments.md；这里是过程。
+
+## 2026-10-10
+
+- 19:1x 用 Reading 2 四个 probe 审论文，产出计划（见会话）。结论：Probe 4 为主轴——harness 能外置"代码算得出的状态"，固定小模型只会"查表"程度地用它；SP 里状态要靠模型判断，harness 质量坍缩为判官质量。
+- 19:40 Engaging 解封（ControlMaster pid 99313 复活）。login008。无作业。login 节点上没有残留下载进程。
+  - 405B 三个下载（bf16→/orcd/scratch/orcd/012/ziningl/models/Llama-3.1-405B-Instruct，FP8/INT4→/orcd/pool/007/ziningl/models/...）日志停在 10-09 12:40–13:35，"Fetching N files" 早期就卡住；进程已不在。未确认已落盘字节数（待查）。
+  - Qwen2.5-7B-Instruct 与 Qwen2.5-72B-Instruct-AWQ 在 POOL hf_cache（72B 快照 698703ea，已在 2×L40S 服务成功过）。
+  - GPU 分区：mit_normal_gpu 6h 上限：53×l40s:4、13×h200:8、1×h100:4；mit_preemptable 2 天：a100/h100/h200 若干。
+- 19:5x 用户：「解封了直接开始干」→ 开始 Phase A（纯 CPU）：harness 接口 + 原始轨迹日志 + 50/250 切分 + 评分 + 种子 harness。
+  - 已建 candidates/cd/{_common.py, bare, enum15, symbolic, facts, splits, oracle_hint, t3_gate}/harness.py。接口：init_state(view) / build_feedback(view, state) / final_hint(view, state)；view 里只有 H、alive、history、game（无 truth）。
+  - 接口与旧 runner 的两处差别（有意）：① 第 18 个答案随最后的猜测提示一起发给模型（旧 runner 从不告诉模型第 18 个答案）；② 每轮记录发出的文本与模型原文。
+- 19:5x 用户：「记录所有中间过程 记得把meta-harness代码拿下来再开始干」→ 本文件开始；先核 Meta-Harness 代码来源，再继续。
+- 19:45 405B 三个变体重新用 sbatch 在 mit_data_transfer(dtn001)续传（jobs 25534538 fp8 / 25534542 int4 / 25534545 bf16，各 4 workers）。此前只落了 2.7–5.1 GB。pool 剩 962G（1T 配额），scratch 248T。
+- 19:5x 官方代码 stanford-iris-lab/meta-harness（10-02 发布，1647★）clone 到 meta_harness_official/。读完 ONBOARDING.md、text_classification/meta_harness.py、两份 SKILL.md、claude_wrapper.py。要点：proposer = 每轮一个全新 `claude -p --model opus --effort max` 会话（允许 Read/Glob/Grep/Agent/Write/Edit/Bash），技能提示词注入；proposer 不跑评测；每轮必须出 3 个候选（TB2 是 1 个）；反调参、反过拟合规则；强制先在轨迹上原型；pending_eval.json 合同；evolution_summary.jsonl + frontier_val.json + reports/ 是 proposer 能看的历史；held-out 只在冻结后一次性评。
+- 19:5x 本机 `claude -p "..." --model opus` 走订阅验证可用（1.8s；opus 别名解析到 claude-opus-5-5）。
+- 19:48 Phase A 代码：runner/cd_harness_run.py（harness 可插拔、每轮记 sent+model_text、第 18 个答案随最终提示发出、best_query 记录以算 oracle 一致率）、runner/cd_mock.py（sequential/random/greedy/follow/flaky 五种脚本策略）、runner/cd_make_split.py（seed 20261010，search 50=17/17/16 按库存分层，heldout 250；search 实例副本写到 meta/cd_evolve/data/cd_search.jsonl 供 proposer 原型用）、runner/cd_score.py（uniq@end/exact 的 bootstrap 95% CI，--vs 配对差）。候选按官方布局放 meta/cd_evolve/agents/<name>.py，公共函数 meta/cd_evolve/harness_lib.py。
+- 19:51 CPU 自测矩阵（7 harness × 4 脚本策略 × search 50，6s）：greedy 策略下所有 harness uniq@end 100%/eff 1.000（harness 不影响 oracle，合理）；sequential 20%/eff 0.535（合成参考 19.3%/0.540，吻合）；follow 只在 oracle_hint 下起飞（100%，oracle 一致率 94.5%，首轮无提示）；flaky 非法轮 22.2%。结果在 results/cd_mock/。
+- 19:51 老 CD 作业计时：600 局 1484s（1×L40S，并发 32）→ 2.5 s/局。
+- 19:52 代码同步到 Engaging（runner/stage0/splits/meta/cd_evolve/engaging/mt_puzzles），远端 mock 冒烟通过；提交 cd_ladder（25535085：7 harness × 300 × 2 seeds，一个 L40S，预计 ~3h）与 serve7b（25535086：给进化循环用的 7B 服务，6h）。两者排队中（Priority）。
+- 19:56 写 meta/cd_evolve/.claude/skills/meta-harness-cd/SKILL.md（proposer 先验：任务/接口/两种 regime/指标/反调参/反过拟合/四步流程/pending_eval 合同）、domain_spec.md（按官方 ONBOARDING 要求，标明 confirmed/default/unknown）、evolve.py（外循环：propose→validate(import+mock+regime 静态检查)→benchmark(远端 srun --overlap)→score→frontier/summary；--test 冻结后一次性 held-out）。
+- 19:58 cd_ladder（25535085）与 serve7b（25535086）同时在 node3102 起来；vLLM 170s 就绪；bare 开跑 3.9 s/局（并发 48，比 10-07 的 2.5 s/局慢——上下文长了，第 18 答案+原文日志不影响服务端，可能是节点差异）；endpoint node3102:8448。
+- 20:00 proposer 管道验证：claude_wrapper.run 走订阅、技能经 --append-system-prompt 注入、会话落盘 logs/wrapper_test/<ts>_plumbing/{meta.json,events.jsonl,response.md}，一次空跑 5s、cache 写入 21.6k token。CLI 2.1.295 支持 wrapper 用到的全部旗标（--effort 取值 low/medium/high/xhigh/max）。
+- 20:00 evolve.py 纯 CPU 干跑（--stub-proposer --local-mock follow）：baselines→3 个 stub 候选→validate→mock benchmark→frontier（stub1_oracle_hint 100%）→--test 冻结后 held-out×3 seeds（750 局配对 bootstrap）→再跑被拒。全链路通。
+- 20:03 下载：bf16 在 scratch 已 676G/812G；FP8/INT4 在 pool 卡在 4.3G/5.1G 不动（疑似 10-09 被杀进程留下的 .lock）。排查中。
+- 20:02 srun --overlap 进 serve7b 作业验证通过（node3102，/health OK）。
+- 20:02 **启动真实第一轮**：`evolve.py --run-name open1 --regime open --iterations 1 --baselines bare,enum15`（nohup，日志 meta/cd_evolve/logs/open1/{evolve.log,nohup.out}；proposer 会话落 logs/open1/claude_sessions/）。先跑 bare/enum15 在 search 50×2 seeds 上的基线，再由全新 claude -p 会话提 3 个候选。目的：按 ONBOARDING 的建议先量一轮的质量与成本再定预算。
+- 20:04 FP8/INT4 下载从 pool 改到 scratch 重提（25535610 fp8 / 25535611 int4）；pool 上 4–5 GB 残片删除；bf16 已 879G、"Fetching 584 files 22%"（写入字节数超过权重总量，可能含预分配，等完成再核）。
+- 20:05 文档：experiments.md 追加 10-09（判官校准表、CD H100 重算表、T3 代理）与 10-10（切分/自测/作业/首轮）两节；RELATED_WORK.md §5 新增 5.1（方法模板：Meta-Harness/DGM/HyperAgents/SkillOpt/ADAS/ALMA + 程序/图/OS 抽象对照）与 5.2（Snell/MAST/MoreAgents/开放式/2609.01615）。
+- 20:06 为网格实验排了 Qwen2.5-32B-Instruct-AWQ 下载（dlhf 25535665，进 POOL hf_cache；72B-AWQ 已在）。写 runner/cd_ladder_plot.py（uniq@end 带 CI + eff 带 random-fresh/sequential 参考线），用 mock 分数试过出图。
+- 20:06 校正：上面 19:48–20:06 的时间戳按 Engaging 作业日志重排过（我之前估快了约 15 分钟）。
+- 20:16 open1 基线完成：bare uniq@end 32%（search 50×2）、enum15 32%/exact 7%；proposer 会话 20:16 起，20:28–20:29 写出 3 个候选（directive：把摘要换成一条可直接照抄的动作；escalate：directive + 偏离反馈；openlist：enum15 的无排序条目列表）。
+- 20:30 **协议纠错**：核对 MTP 论文附录的 CD 对话样例，官方环境每轮回 `A(0, 0, 0) = 1` + `Please send your next query. 17 queries remaining.`，第 18 个答案和最终提示一起发。我们之前用的 "The output of that query is 0. Please make your next query." 是我自己编的。改 runner 为官方措辞（含剩余次数倒计时），mock 解析同步改，CPU 自测矩阵重跑通过（oracle 100%/1.000，sequential 20%/0.535）。官方未发布环境代码，模型不出查询时怎么处理仍未知（我们：重问一次、计入 18 次）。
+- 20:31 为保证口径一致：杀掉 open1（proposer 候选文件移到 results/oldenv/agents_open1/ 留档，日志移到 results/oldenv/open1_logs/），取消 cd_ladder 25535085（远端结果改名 cd_ladder_oldenv_2029）。serve7b 不动。新代码 rsync 到 Engaging、远端冒烟确认新话术，重提 cd_ladder 25537086，重启 open1（20:33）。
+- 20:34 教训：两个并行 Bash 调用共用一个 shell 的 cwd，一个 cd 把另一个的相对路径带偏了——journal 一次追加落空、experiments.md 写到了错误目录（已纠正）。以后写文件一律绝对路径。
+- 20:33 重提的 cd_ladder 25537086 落到 node3006，vLLM 在 init_device（torch.accelerator.set_device_index）就挂，81 秒失败；判断是该节点 GPU 状态问题（同一脚本在 node3102 正常）。日志留作 vllm_25537086_failed_node3006.log。排除 node3006 重提为 25537286。
+- 20:45 三个 405B 下载 20:07 同时死于 scratch "Disk quota exceeded"（per-user 约 1T；df 看不出来，`quota`/`lfs quota` 都没有 scratch 的条目）。bf16 目录 939G 里有 181G 是 `original/`（PyTorch 原版 checkpoint，vLLM 不用），hf download 默认也拉。处理：删 original/ 与 FP8 残片（scratch 1017G→799G）；bf16 残片用 rsync --remove-source-files 搬去 pool（mvbf16 25537655，边搬边释放）；INT4 优先续传（25537656，dl_405b.sbatch 已加 --exclude "original/*"）；FP8 等空间腾出再提。
+- 20:45 **用户定：SP/DC 判官 = Llama-3.1-405B-Instruct-AWQ-INT4**（论文判官的 4-bit 版）。写 engaging/judge405.sbatch（2×H200 TP=2，起来先跑 TurtleBench 150 校准，再发布 serve_judge.endpoint 持续服务）；Engaging 上 clone 了 mazzzystar/TurtleBench。runner/sp_runner_async.py 加独立判官端点（答题者+要点判官走 405B，提问器走 7B）。
+- 20:45 用户给出定位：**模型只是提问器，研究对象是 harness 自进化能否解决主动推理**。据此提出：撤掉"查询必须模型写"等约束（只留"读不到真值"+"环境固定"）；CD 主实验改为从零（不给 harness_lib、接口不暴露假设空间）看 proposer 能否自己发明信念跟踪；AR-Bench 三任务为主结果、对手是其五个手写方法；记录机制发现轨迹。CD 从零方案待用户点头。
+- 20:41 **官方话术下的基线（search 50×2 seeds，7B）**：bare uniq@end 26% [18,35]、exact 0、eff 0.558、rep 1.8%、ill 0.3%；enum15 uniq@end **53%** [43,63]、exact 5%、eff 0.629、rep 3.5%、ill 0.2%、parsed 97%。同一切分旧话术：bare 29%、enum15 32%（rep 8.1%、ill 1.7%）。**结论要改**：此前"外置信念让 uniq@end 反降、重复和非法上升"相当一部分是我自拟环境话术造成的（官方每轮复述查询并倒计时）；在官方协议下手写 harness 把 uniq@end 翻倍，但 eff 0.629 仍只是 random-fresh 水平，离 oracle 很远。阶梯作业（300×2）会给出完整读数。
+- 20:50 用户问通用 harness 进化框架。核实（gh api）：RRSI google-research/rrsi 1437★（arXiv 2609.24972，Google Cloud AI Research，Yoonho Lee 合著，PDF+txt 已入 papers/）、OpenEvolve 7518★、ShinkaEvolve 1440★、DSPy 38.6k★、GEPA 6.9k★、TextGrad 3.8k★、microsoft/Trace 763★、SuperagenticAI/metaharness 173★、harness-forge 80★、WHALE 59★。arXiv export API 这会儿连不上（SSL/代理），GEPA/Trace/Shinka 的 arXiv 号未核，只引仓库名。
+- 20:52 按用户要求 clone RRSI 到 rrsi_official/（HEAD be50316，4 commits，Apache-2.0，核心约 3.1k 行）。已读 domain.py（Domain 抽象：evolve_ids/heldout_ids/smoke_ids/run/score/guards/critic_patterns/briefs）、selection.py（噪声底线 S* − δ、成本规则 ΔC ≤ β0+β1ΔS、小增益时 w_s·ΔS − w_c·ΔC + w_n·ν > 0、guards、argmax）、critic.py（正则黑名单 + LLM 审查，六类拒绝：泄漏/退化/判官作弊/未声明捆绑/运行时记忆泄漏/无界循环）。
+- 20:55 RRSI 细读：rrsi.json（TB2 实例）δ=0.017、β0=0.1、β1=44.5、w_s=0、w_c=15、w_n=0.5、T=20 轮、k=2 trials、每轮 m=2 候选、编辑预算 b_t 余弦退火 1–4、停滞窗 w=3、修复轮 5、缺失>20% 判无效；calibrate.py 用 bootstrap（或重复基线评测）估 δ=z·sd_null（z=2）；llm.py 直接走 AnthropicVertex（不是 LiteLLM），critic/proposer/analyst 都要 API——移植到我们这里 critic 的 LLM 审查可包成无工具的 `claude -p`。
+- 20:55 open1 第一轮 proposer（20:41 起）已写出 copy_query.py、open_entries.py，第三个未出，pending_eval.json 未写。
+- 21:00 读完 RRSI 论文方法/结果两节（txt 含 NUL 字节，grep 要加 -a），条目写入 RELATED_WORK §5.1。
+- 21:03 **open1 第一轮结果（official 话术，search 50×2）**：proposer 会话 866s、订阅计价 $3.90、输出 81.8k token、cache 读 12.9M；候选 copy_query（只给一条可抄的最优查询）uniq@end 比 bare +74 [+65,+82]（≈100%）、exact +81（≈81%）；open_entries（"还能问这些"正面名单）uniq +6 [−3,+15]（噪声内）、exact +47 [+38,+57]（终猜前贴候选表）。第三个候选评测中/未出。决策级提示让 7B 当抄写员就能到顶，印证 open regime 的平凡吸引子；状态级改写对信息收集无效、对终答有效。
+- 21:05 阶梯：bare 600 局 1115s（1.86 s/局）；enum15 跑到 125/600 时 err=7（待查：可能上下文超限或超时）。INT4 205G/219G 接近完成；judge405 作业已挂依赖（afterok:25537656）自动起。
+- 21:05 用户：先考虑单任务（多任务骨架以后再说）。单任务升级顺序：runner 钩子（打回重问、重写上下文；查询仍须模型写）→ evolve.py 接 RRSI 选择规则与 critic → search 扩到 100 题。
+- 21:07 open1 第一轮结束（1565s）：第三候选 copy_open 也评完；frontier = copy_query @ uniq@end 100%。
+- 21:08 阶梯 enum15 的 400 错误 = 上下文超限（max-model-len 12288，prompt 已 11089 token + 1200 输出）；7B 很啰嗦（该局输出 6081 token），enum15 文本逐轮累加。serve_7b/cd_ladder/cd_grid 三个 sbatch 的 max-model-len 改为 16384（只影响以后的作业；当前阶梯与 serve7b 仍 12288）。错误局在 cd_score 里按 err% 计、不进指标——偏向删掉最长的局，要写明。
+- 21:09 INT4 下载 20:45 已完成（47 shards，205G）；judge405 提交为 25539120（2×H200，排队中）。
+- 21:11 runner 新钩子通过 mock 验证：filter_action（打回重问，每轮 ≤2 次，不耗环境预算，计 n_reasks/n_calls）、compose_messages（重写上下文；不变量：system 不动、每条观测 "X(a, b, c) = b" 必须仍在、末尾是 user 轮；违反即 HarnessViolation 记错不重试）。mock 的历史重建改为直接从观测行解析（压缩后的账本也能读）。为不在运行中的阶梯作业脚下换代码，新 runner 暂不同步到 Engaging，等阶梯结束。
+- 21:11 search 切分 v2：splits/cd_split_v2.json（100 题 = 34/33/33，含 v1 的 50；held-out 200），工作区副本 data/cd_search_v2.jsonl。runner/cd_score.py 加 --split-file。
+- 21:12 evolve.py 接入 RRSI 选择侧：noise_delta()（bare 基线 bootstrap，δ=2·√2·se，缓存 noise.json）；admissible()：S′ ≥ S* − δ，增益 > δ 时 ΔC ≤ β0+β1·ΔS（0.1 + 2.0·ΔS，C=每局 in+out token），带内只有省 ≥5% token 才收；不可接纳的候选记入 frontier_val.json 但不成为 incumbent。critic：正则预检（truth/实例文件/文件与网络 IO/动态执行/import 白名单）+ LLM 审查（claude -p，RRSI 六类改写成我们的五类，含 regime 违规），拒绝原因写入 evolution_summary。SKILL.md 补：钩子说明、"查询必须模型写"、选择规则、critic、16k 上下文、v2 数据文件。
+- 21:12 干跑验证：v2 切分下 δ=0.078（n=200）；admissible() 行为正确（带内只收省 token、超带按成本预算）。critic 正则 `\btruth\b` 误伤（harness 文本里"joint truth tables"是任务词汇），改成只拦代码级访问（truth_bits / ["truth"] / inst[...] / 实例文件字段 / IO / 动态执行 / import 白名单）。LLM critic 实测：copy_query 在 open 下 accept（16s），在 state_only 下 reject 且理由准确（best_query 推荐 + 分裂计数）。
+- 21:13 启动 open1 冻结终评（`evolve.py --run-name open1 --test`）：bare/enum15/copy_query/copy_open/open_entries 在 v1 held-out 250 × 3 seeds 上跑（约 3750 局，走 serve7b），结果到 results/cd_heldout/open1/。
+- 21:16 判官作业卡在 QOSMaxGRESPerUser：mit_normal_gpu 每用户 2 张卡（阶梯 + serve7b 已占满）；mit_preemptable 每用户 4 张、上限 2 天、可被抢占。判官改投 mit_preemptable（24h）：校准只要几分钟，之后的 SP 运行本身支持 JSONL 断点续跑，被抢占可接受。
+- 21:21 judge405（25539226，mit_preemptable node5100）vLLM 在 CUDA graph 捕获阶段挂：TP=2 在 H200 上触发 FlashInfer trtllm_mnnvl all-reduce 的 JIT，nvcc 13.4 与其 CCCL 头不兼容（和老脚本里 sampler 的坑同源；L40S 上 72B TP=2 不走这条路所以没撞）。权重 47 shards 加载正常。加 --disable-custom-all-reduce（回落 NCCL）重提。
+- 21:22 judge405 重提为 25539697（mit_preemptable，--disable-custom-all-reduce），已在 node5100 运行。第二个 7B 服务投 mit_preemptable（25539716，endpoint 文件 serve_7b_pre.endpoint，文件内含 jobid），给进化循环用；带钩子的新 runner 以 runner/cd_harness_run_v2.py 的名字放到 Engaging（阶梯作业用的旧文件不动）。evolve.py 加 --endpoint-file / --remote-runner。
+- 21:23 启动 **so1**（regime state_only，v2 切分 100×2，critic llm，基线 bare/enum15，先跑 1 轮）：等 serve_7b_pre 起来后自动开始。
+- 21:24 校正：21:08–21:23 的时间戳按循环日志重排过（我的估计又快了约 20 分钟；以后直接取 `date`）。
+- 21:27 judge405 第二次（25539697）同样死在 FlashInfer trtllm_mnnvl JIT，--disable-custom-all-reduce 没绕开。改用 --pipeline-parallel-size 2（PP 只用点对点通信，不需要 all-reduce 核）+ --dtype float16，重提。备选：升级/卸载 conda_env 里的 flashinfer-python。
+- 21:29 judge405 PP=2（25539762，node5100:9194）起来：加载 160s，校准首跑 141/150 无法解析——原因是 checkpoint 的 generation_config 只列 <|end_of_text|>，模型输出 "Incorrectassistant\n\n## Step 1…"，而解析器要求标签后有词边界。改：解析只要前导边界（\b(Incorrect|Correct|Unknown)），Llama 判官请求加 stop_token_ids；SP runner 同步。重跑：**82.0%**（0 条无法解析），与官方 405B 82.7% 持平。结果 ~/results/ar_harness/judge/turtle150_405b_int4.json。
+- 21:36 SP bare（7B 提问 + 405B-INT4 答题/判官）200 局 7 分钟跑完：f1_char 0.621 / f1_word 0.244；答题分布 no/yes/unknown = 48/29/23%。结果 results/sp405/。ssh 里 `nohup srun … &` 会把 ssh 会话挂住直到 srun 结束（stdin 没重定向），下次用 `setsid … < /dev/null`。
+- 22:55 **so1 第一轮**：veto_only 97.5%（exact 83.5%），veto_determined 93.5%，answer_grid 86.5%（低于底线被拒）；critic 全过；proposer 22 分钟 $6.69。机制：filter_action 只在模型问已确定/重复/无查询时打回，附"未定输出"清单；compose_messages 删掉已结案的打回对话；final_hint 把剩余配置写成 <guess> 串。state_only 规则下合法（集合成员，无信息量计算）。
+- 22:57 so1 冻结并启动 held-out 终评（v2 held-out 200 × 3 seeds × 5 系统，走 serve_7b_pre）。open1 终评 4/5 系统完成。阶梯跑到 splits：12k 上下文下 61% 局超限（err=259/425），该 harness 要用 16k 重跑。
+- 22:58 bf16 残片已全部搬到 pool（758G），mvbf16 作业以 exit 1 结束（rsync 尾部告警），导致 afterok 依赖的 FP8 下载被取消；scratch 只剩 INT4，重提 FP8 下载。
+- 23:10 open1 终评完成（750 局/系统）：bare 22.5、enum15 35.1、copy_query 99.7（exact 80.4）、copy_open 99.7（68.4）、open_entries 34.5（42.3）。enum15 的 search 53% 是小样本偏高。
+- 00:28 阶梯完成（7 harness × 600 局，近 4 小时）。splits 58.7%、oracle_hint 20.7%、enum15 3.2% 的局因 12k 上下文超限出错；这三行用 16k 重跑（cd_ladder16k，sbatch 加 LADDER_DIR/HARNESSES 覆盖）。cd_score 表加 err% 列并写明口径。结果 results/cd_ladder/，图 results/cd_ladder/ladder_12k.png。
+- 01:0x so1 终评完成（600 局/系统）：veto_only 96.7% [95.2,98.0]、exact 86.2%、token≈bare；veto_determined 95.3%；answer_grid 90.0%；enum15 37.7%；bare 25.2%。两条 regime 的 held-out 都落地：decide 级 copy_query 99.7%/80.4，state 级 veto_only 96.7%/86.2。
+- 03:20 阶梯 16k 重跑完成：enum15 41.8、splits 53.7（仍 10% 超限，输出 4.3k tok/局）、oracle_hint 96.5（exact 6.8）。合并图 results/cd_ladder/ladder.png。
+- 03:22 FP8 下载已于 23:08 完成（454G，scratch）；三变体现状：INT4 205G + FP8 454G 在 scratch，bf16 残片 758G 在 pool（未完成，缺约 54G，需要时再续）。mit_normal_gpu 的 serve7b 到 6h 上限已结束；preemptable 上的 judge405 与 serve7b 还在（24h 上限，已用 6h）。
+- 03:5x 用户问"从零发明信念跟踪"有无文献。arXiv export API 之前报 Error 是我 zsh 里 `set -- $pair` 不分词导致 id 为空，不是代理；改用 ${pair% *} 拆分后正常。下载并读了 9 篇（WorldCoder 2402.12275、CWM-GGP 2510.04542、PatchWorld 2605.30880、LATM 2305.17126、Hypothesis Search 2309.05660、Text2World 2502.13092、EvoHarness-RL 2608.05446、Belief Divergence 2607.04528、BB-WM 2609.00455、Bayesian-Agent 2606.08348），写入 RELATED_WORK §5.3/§5.4。
+- 04:1x 用户要把 EvoHarness-RL 当 baseline 跑。官方代码 github.com/EvoHarnessRL/EvoHarness-RL（10-10 推送）clone 到 evoharness_rl_official/。计划：只跑 EvoHarness-Base（推理时 BPE 脚手架，不训练，和我们"权重固定"口径一致）；要给 CD 写一个 environment adapter（Belief/Progress/Experience 的落地）；EvoHarness-RL（SFT+GRPO 改权重）不在同一口径，只在有余力时作附加臂。
+- 04:4x 为 EvoHarness-RL 写了 CircuitDecoding 适配器（evoharness_rl_official/evoharness/envs/circuitdecoding/：env.py 官方话术环境 + belief.py 把我们的可行集跟踪包成他们的 Belief（track [remaining]/track [A]，always_on 面板=enum15 内容）+ prompts.py 三种模式的提示词 + domain.py（accumulated 上下文，和 MTP 协议一致）+ configs/eval/circuitdecoding.yaml），注册进 envs/__init__.py；runner/cd_score_evoharness.py 回放他们的轨迹算 uniq@end/eff 等。CPU 脚本策略冒烟：env_only 顺序扫失败、always_on 抄面板表成功、inline track 一次后成功。
+- 04:4x 部署到 Engaging（rsync 不含 training/，pip install -e 进 conda_env），在 serve_7b_pre（25539716）作业里 srun 跑 6 个 run：{env_only, always_on, inline} × 2 次，各 300 题，温度 0.7、1200 token、32 workers，meta-action 不计预算（上限 18）。输出 ~/results/ar_harness/evoharness_cd/<mode>_s<seed>/。
+- 07:36 EvoHarness 六个 run 跑完（约 1h8m），结果同步到 results/evoharness_cd/。ReAct 26–29%；always_on 71–75%（exact 62–65）；inline 30–32%（track 0.08 次/局）。写入 experiments.md。

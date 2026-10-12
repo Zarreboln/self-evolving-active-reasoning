@@ -1,0 +1,20 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 -c "
+import json; d=json.load(open('logs/so1/pending_eval.json')); print(d['iteration'], d['regime'], [(c['name'], c['parent'], c['axis']) for c in d['candidates']])
+import os; [print(c['file'], os.path.exists(c['file'])) for c in d['candidates']]"; ls logs/mock/ | grep -E "veto|grid"
+
+description: Validate pending_eval.json and list mock outputs
+
+--- output ---
+1 state_only [('veto_determined', 'enum15', 'exploitation'), ('veto_only', 'bare', 'exploration'), ('answer_grid', 'enum15', 'exploitation')]
+agents/veto_determined.py True
+agents/veto_only.py True
+agents/answer_grid.py True
+answer_grid__greedy.jsonl
+answer_grid__sequential.jsonl
+veto_determined__greedy.jsonl
+veto_determined__sequential.jsonl
+veto_only__greedy.jsonl
+veto_only__sequential.jsonl

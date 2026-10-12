@@ -1,0 +1,56 @@
+Bash
+
+command:
+python3 - <<'EOF'
+import json
+for line in open("logs/open1/traces/enum15/search.jsonl"):
+    r = json.loads(line)
+    if r.get("error"):
+        print("key", r["key"], "seed", r["seed"], "turns logged:", len(r["rows"]))
+        for x in r["rows"]:
+            t = x.get("model_text") or ""
+            print(f"  turn {x['turn']}: reply chars={len(t):5d} sent chars={len(x.get('sent') or ''):5d} guess_tag={'<guess>' in t} n_before={x.get('n_before')}")
+        print("  error:", r["error"][:300])
+EOF
+
+description: Inspect reply and message lengths in crashed episodes
+
+--- output ---
+key 12 seed 0 turns logged: 17
+  turn 1: reply chars=  100 sent chars=  208 guess_tag=False n_before=2886
+  turn 2: reply chars=  151 sent chars=  219 guess_tag=False n_before=1268
+  turn 3: reply chars=  183 sent chars=  231 guess_tag=False n_before=654
+  turn 4: reply chars=  185 sent chars=  242 guess_tag=False n_before=332
+  turn 5: reply chars=  296 sent chars=  254 guess_tag=False n_before=92
+  turn 6: reply chars=  149 sent chars=  266 guess_tag=False n_before=78
+  turn 7: reply chars=  164 sent chars=  290 guess_tag=False n_before=52
+  turn 8: reply chars=  451 sent chars=  314 guess_tag=False n_before=26
+  turn 9: reply chars=  142 sent chars=  819 guess_tag=False n_before=19
+  turn 10: reply chars= 1048 sent chars=  660 guess_tag=False n_before=14
+  turn 11: reply chars= 1527 sent chars=  660 guess_tag=True n_before=7
+  turn 12: reply chars= 1570 sent chars=  660 guess_tag=True n_before=7
+  turn 13: reply chars=  403 sent chars=  658 guess_tag=False n_before=7
+  turn 14: reply chars= 1589 sent chars=  658 guess_tag=True n_before=6
+  turn 15: reply chars= 1589 sent chars=  658 guess_tag=True n_before=6
+  turn 16: reply chars= 1589 sent chars=  658 guess_tag=True n_before=6
+  turn 17: reply chars= 1589 sent chars=  658 guess_tag=True n_before=6
+  error: BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 12288 tokens. However, you requested 1200 output tokens and your prompt contains at least 11089 input tokens, for a total of at least 12289 tokens. Please reduce the length of the input prompt or the num
+key 79 seed 1 turns logged: 17
+  turn 1: reply chars=   94 sent chars=  208 guess_tag=False n_before=2886
+  turn 2: reply chars=  145 sent chars=  219 guess_tag=False n_before=1618
+  turn 3: reply chars=  213 sent chars=  231 guess_tag=False n_before=621
+  turn 4: reply chars=  155 sent chars=  242 guess_tag=False n_before=219
+  turn 5: reply chars=  145 sent chars=  266 guess_tag=False n_before=92
+  turn 6: reply chars=  160 sent chars=  290 guess_tag=False n_before=52
+  turn 7: reply chars=  406 sent chars=  314 guess_tag=False n_before=26
+  turn 8: reply chars=  152 sent chars=  820 guess_tag=False n_before=19
+  turn 9: reply chars=  345 sent chars=  672 guess_tag=False n_before=14
+  turn 10: reply chars=  152 sent chars=  606 guess_tag=False n_before=7
+  turn 11: reply chars=  148 sent chars=  578 guess_tag=False n_before=4
+  turn 12: reply chars=  143 sent chars=  578 guess_tag=False n_before=2
+  turn 13: reply chars= 1850 sent chars=  578 guess_tag=True n_before=2
+  turn 14: reply chars= 1853 sent chars=  578 guess_tag=True n_before=2
+  turn 15: reply chars= 1853 sent chars=  578 guess_tag=True n_before=2
+  turn 16: reply chars= 1853 sent chars=  578 guess_tag=True n_before=2
+  turn 17: reply chars= 1853 sent chars=  578 guess_tag=True n_before=2
+  error: BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 12288 tokens. However, you requested 1200 output tokens and your prompt contains at least 11089 input tokens, for a total of at least 12289 tokens. Please reduce the length of the input prompt or the num

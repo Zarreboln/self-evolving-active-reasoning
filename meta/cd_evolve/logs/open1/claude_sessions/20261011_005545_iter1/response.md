@@ -1,0 +1,26 @@
+I'll start by exploring the workspace to understand the current state.Status: I've read the runner, oracle, scoring, and seed agents. Next I'm examining raw traces of `bare` and `enum15` to see what the 7B model actually does.Status: validation rules understood (NAME = file stem, 6-instance mock smoke test, no cross-candidate imports). Now gathering final-guess statistics for the iteration-0 report.Let me verify the crash cause I stated in the report against the two errored episodes.The crash cause was slightly different than I wrote: repeated mid-length replies containing `<guess>`, not one 1200-token run-on. Fixing the report.Plumbing works end to end: with deviations as scans, A holds 100% at p=0.7; messages ≤256 chars (~1.1k tokens per episode total). Now prototypes B and C.The mock's open-list regex stopped at the first `(` — a bug in my scratch mock, not the harness. Fixing and rerunning.Names are free. Writing the final agent files with docstrings in the seed style.All six mock runs complete without errors (the scripted policies ignore the text, so these only confirm the code runs and what it emits). Let me read the rendered messages verbatim.Messages render as intended; the post-solve turns keep replies short. Checking the final message and per-episode token budget.Qwen tokenizes digits and punctuation individually, so chars/3 underestimates entry lists like `A(0,0,1), `. Let me check whether a real tokenizer is available for an exact count.No tokenizer locally. I'll calibrate a chars→tokens ratio from the logged `in_tokens` of the real enum15/bare episodes, separating harness text (entry lists) from prose.The system-prompt and per-message terms are collinear there; refitting with the system prompt pinned at the stated ~700 tokens and 5 tokens of chat-template overhead per message.Those on-disk changes are my own script's edits. Re-validating the final files: the required mock runs (sequential 5, greedy 5), plus my copier mock and the rendered final message.All pass. Let me mirror `evolve.py`'s static checks (NAME regex, no `agents.` imports) exactly, then clean up scratch files.Everything validates. Writing `pending_eval.json`.Iteration 1 is ready for `evolve.py` to benchmark. I wrote three new harnesses, `logs/open1/pending_eval.json`, and the missing iteration-0 report (`logs/open1/reports/iter0.md`).
+
+**What the enum15 traces show**
+- **Scanning in order is not the real problem; asking outputs that are already known is.** The 7B goes to the next entry in canonical order 92% of the time under bare and 73% under enum15. On CPU, that same scan reaches 96% uniq@end if it just skips outputs that are already determined, against 20% without skipping. The max-entropy oracle gets 100%.
+- **The model ignores the negative list.** It doesn't check its planned query against the "do not ask these again" list. With 2 configurations left, 76% of its queries carried no information. It also read the 24-bit joint tables as if each were one circuit's truth table.
+- **The final guess fails on assembly, not knowledge.** Only 4 of the 53 uniq episodes were exact. The model lists all 24 values correctly, then concatenates them in the wrong order.
+- **Both enum15 crashes were context overflows,** caused by repeated long replies containing a `<guess>` plus ~600-character harness messages. Crashed episodes count as failures.
+
+**The three candidates** form a 2×2 test of two mechanisms. All three hand over the final answer as a ready-made `<guess>` string, so exact should track uniq@end.
+
+| Candidate | What the model sees each turn | Predicted uniq@end |
+|---|---|---|
+| `copy_query` (exploration) | Only the max-entropy query, written as the exact `<query>` tag to send, plus "reply with exactly this query" | 85–95% |
+| `open_entries` (exploitation of enum15) | The list of still-unknown outputs instead of enum15's "do not ask" list; nothing is recommended | 70–85% |
+| `copy_open` (exploitation) | The unknown list followed by the copyable directive | 90–95% |
+
+- **Why the fallback list matters:** if the model ignores the directive, `copy_open` should push it onto an informative entry. In simulation, wasted misses drop uniq@end to 72% at a 70% copy rate, while misses that scan over unknown entries keep it at 98–100%.
+- **The `orcl%` metric gives the real copy rate directly,** because the directive is the same query `orcl%` scores against.
+- **Checks:** all three pass the sequential, greedy and flaky mock runs and `evolve.py`'s static checks. The stock mocks don't read the harness text, so I also ran a scratch mock that copies the directive with a set probability; it confirmed the copy-then-`<guess>` path works end to end.
+- **Context:** fitting the logged token counts puts the worst case at ~8k prompt tokens per episode, under the 11,088 limit.
+
+The real uncertainty is how the 7B misses when it doesn't copy, which no mock can tell us. The benchmark will show that.
+
+I also saved one memory note: the token-cost calibration, and the fact that the stock `follow` mock ignores `<query>`-tag directives.
+
+CANDIDATES: copy_query, open_entries, copy_open

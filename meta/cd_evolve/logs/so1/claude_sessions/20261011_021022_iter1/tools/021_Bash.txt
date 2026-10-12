@@ -1,0 +1,15 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+import json
+for l in open('logs/so1/traces/enum15/search.jsonl'):
+    r=json.loads(l)
+    if r.get('error'): print(r['key'],r['seed'],r['error']); print(len(r.get('rows') or []))
+EOF
+
+description: Show the enum15 errored episode message
+
+--- output ---
+115 0 BadRequestError: Error code: 400 - {'error': {'message': "This model's maximum context length is 16384 tokens. However, you requested 1200 output tokens and your prompt contains at least 15185 input tokens, for a total of at least 16385 tokens. Please reduce the length of the input prompt or the number of requested 
+17

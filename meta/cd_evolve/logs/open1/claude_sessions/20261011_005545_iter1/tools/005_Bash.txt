@@ -1,0 +1,72 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness && ls -la && ls -la runner/ mt_puzzles/ 2>&1 | head -80
+
+description: List parent directory, runner, and mt_puzzles
+
+--- output ---
+total 1368
+drwxr-xr-x@ 22 zarreboln  staff     704 Oct 10 19:49 .
+drwx------@ 33 zarreboln  staff    1056 Oct 10 19:27 ..
+drwxr-xr-x@ 11 zarreboln  staff     352 Oct  6 10:29 AR-Bench
+-rw-r--r--@  1 zarreboln  staff   14486 Oct 10 20:04 RELATED_WORK.md
+-rw-r--r--@  1 zarreboln  staff  319666 Oct  6 23:30 briefing.html
+-rw-r--r--@  1 zarreboln  staff  313387 Oct  6 23:34 briefing.md
+drwxr-xr-x@ 14 zarreboln  staff     448 Oct 10 20:06 engaging
+-rw-r--r--@  1 zarreboln  staff   13991 Oct 10 20:31 experiments.md
+-rw-r--r--@  1 zarreboln  staff    1787 Oct  6 12:31 fetch_all_data.sh
+drwxr-xr-x@  4 zarreboln  staff     128 Oct  6 23:30 figs_bg
+drwxr-xr-x@  7 zarreboln  staff     224 Oct  9 12:56 h100
+drwxr-xr-x@ 17 zarreboln  staff     544 Oct  6 22:30 mastermind
+drwxr-xr-x@  4 zarreboln  staff     128 Oct 10 19:49 meta
+drwxr-xr-x@ 12 zarreboln  staff     384 Oct 10 19:44 meta_harness_official
+drwxr-xr-x@  8 zarreboln  staff     256 Oct 10 19:12 meta_harness_repo
+drwxr-xr-x@ 13 zarreboln  staff     416 Oct  6 11:31 mt_puzzles
+drwxr-xr-x@ 50 zarreboln  staff    1600 Oct 10 19:27 papers
+-rw-r--r--@  1 zarreboln  staff   21936 Oct  6 22:39 papers_task_problem_method_exp.md
+drwxr-xr-x@ 13 zarreboln  staff     416 Oct 10 20:30 results
+drwxr-xr-x@ 22 zarreboln  staff     704 Oct 10 20:05 runner
+drwxr-xr-x@  3 zarreboln  staff      96 Oct 10 19:49 splits
+drwxr-xr-x@ 10 zarreboln  staff     320 Oct  7 14:59 stage0
+mt_puzzles/:
+total 23360
+drwxr-xr-x@ 13 zarreboln  staff      416 Oct  6 11:31 .
+drwxr-xr-x@ 22 zarreboln  staff      704 Oct 10 19:49 ..
+-rw-r--r--@  1 zarreboln  staff     2383 Oct  6 11:18 cd_instruction.txt
+-rw-r--r--@  1 zarreboln  staff      138 Oct  6 11:18 cd_last_turn_prompt.txt
+-rw-r--r--@  1 zarreboln  staff   120199 Oct  6 11:18 cd_test.jsonl
+-rw-r--r--@  1 zarreboln  staff     2181 Oct  6 11:31 mr_instruction.txt
+-rw-r--r--@  1 zarreboln  staff  4754499 Oct  6 11:31 mr_test.jsonl
+-rw-r--r--@  1 zarreboln  staff      942 Oct  6 11:31 tq_instruction.txt
+-rw-r--r--@  1 zarreboln  staff  4254823 Oct  6 11:31 tq_test.jsonl
+-rw-r--r--@  1 zarreboln  staff      515 Oct  6 11:31 wc_instruction.txt
+-rw-r--r--@  1 zarreboln  staff  2592093 Oct  6 11:31 wc_test.jsonl
+-rw-r--r--@  1 zarreboln  staff     1019 Oct  6 11:31 wg_instruction.txt
+-rw-r--r--@  1 zarreboln  staff   208699 Oct  6 11:31 wg_test.jsonl
+
+runner/:
+total 296
+drwxr-xr-x@ 22 zarreboln  staff    704 Oct 10 20:05 .
+drwxr-xr-x@ 22 zarreboln  staff    704 Oct 10 19:49 ..
+drwxr-xr-x@  6 zarreboln  staff    192 Oct 10 20:29 __pycache__
+-rw-r--r--@  1 zarreboln  staff   3651 Oct  7 14:44 calibrate_t3_proxy.py
+-rw-r--r--@  1 zarreboln  staff  16656 Oct 10 20:29 cd_harness_run.py
+-rw-r--r--@  1 zarreboln  staff   2320 Oct 10 20:06 cd_ladder_plot.py
+-rw-r--r--@  1 zarreboln  staff   2448 Oct 10 19:49 cd_make_split.py
+-rw-r--r--@  1 zarreboln  staff   4828 Oct 10 20:29 cd_mock.py
+-rw-r--r--@  1 zarreboln  staff  12408 Oct  6 23:52 cd_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   7377 Oct 10 20:01 cd_score.py
+-rw-r--r--@  1 zarreboln  staff   3514 Oct  7 00:20 cd_summarize.py
+-rw-r--r--@  1 zarreboln  staff   1934 Oct  6 12:07 check_context.py
+-rw-r--r--@  1 zarreboln  staff   3185 Oct  6 22:57 diagnose.py
+-rw-r--r--@  1 zarreboln  staff   8678 Oct  6 10:42 gn_runner.py
+-rw-r--r--@  1 zarreboln  staff  10861 Oct  6 22:50 gn_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   4972 Oct  6 11:58 run_arbench_gn.py
+-rw-r--r--@  1 zarreboln  staff   4993 Oct  7 15:40 run_arbench_sp.py
+-rw-r--r--@  1 zarreboln  staff   5291 Oct  6 22:10 score_arbench_log.py
+-rw-r--r--@  1 zarreboln  staff   7803 Oct  7 15:47 sp_runner_async.py
+-rw-r--r--@  1 zarreboln  staff   1759 Oct  7 15:47 sp_summarize.py
+-rw-r--r--@  1 zarreboln  staff   2793 Oct  6 22:56 summarize.py
+-rw-r--r--@  1 zarreboln  staff   4809 Oct  9 12:55 turtle_judge_eval.py
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

@@ -1,0 +1,90 @@
+Bash
+
+command:
+cat > /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/compliance_sim.py <<'EOF'
+"""Simulate uniq@end under imperfect compliance: each turn after the first, the
+model copies the recommended query with prob p, else does its habitual move
+(next entry in scan order after its last query). First query always A(0,0,0)."""
+import json, sys, collections
+import numpy as np
+sys.path.insert(0, "/Users/zarreboln/Desktop/ar_harness/stage0")
+from cd_oracle import CDGame
+insts = [json.loads(l) for l in open("data/cd_search.jsonl")]
+games = {}
+def game_for(comp):
+    key = tuple(sorted(comp.items()))
+    if key not in games: games[key] = CDGame(dict(key))
+    return games[key]
+
+def ent_vec(H, alive):
+    p = H[alive].mean(0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        e = np.where((p > 0) & (p < 1), -(p*np.log2(p)+(1-p)*np.log2(1-p)), 0.0)
+    return e
+
+def greedy_q(g, alive):
+    e = ent_vec(g.H, alive)
+    return int(e.argmax()) if e.max() > 0 else None
+
+def greedy_depth(g, alive, cache):
+    key = alive.tobytes()
+    if key in cache: return cache[key]
+    # expected number of greedy queries to reach |alive|=1 (averaged over truths in alive, uniform)
+    if len(alive) <= 1: return 0.0
+    q = greedy_q(g, alive)
+    a0 = alive[g.H[alive, q] == 0]; a1 = alive[g.H[alive, q] == 1]
+    d = 1 + (len(a0)*greedy_depth(g, a0, cache) + len(a1)*greedy_depth(g, a1, cache)) / len(alive)
+    cache[key] = d
+    return d
+
+def lookahead_q(g, alive, cache):
+    if len(alive) <= 1: return None
+    e = ent_vec(g.H, alive)
+    best, bq = None, None
+    for q in np.flatnonzero(e > 0):
+        a0 = alive[g.H[alive, q] == 0]; a1 = alive[g.H[alive, q] == 1]
+        d = (len(a0)*greedy_depth(g, a0, cache) + len(a1)*greedy_depth(g, a1, cache)) / len(alive)
+        key = (d, -e[q])
+        if best is None or key < best: best, bq = key, int(q)
+    return bq
+
+def run(g, truth, policy, p, rng, cache, budget=18):
+    alive = np.arange(len(g.H)); last = None
+    for t in range(1, budget+1):
+        if len(alive) == 1: break
+        if t == 1: q = 0
+        elif rng.random() < p:
+            q = greedy_q(g, alive) if policy == "greedy" else lookahead_q(g, alive, cache)
+        else:
+            q = (last + 1) % 24
+        alive = alive[g.H[alive, q] == truth[q]]
+        last = q
+    return len(alive) == 1
+
+rng = np.random.default_rng(0)
+caches = collections.defaultdict(dict)
+for p in [1.0, 0.9, 0.8, 0.7]:
+    for policy in ["greedy", "lookahead"]:
+        ok = []
+        for rep in range(4 if p < 1 else 1):
+            for inst in insts:
+                c = inst["controller"]; g = game_for(c["components"])
+                truth = np.array([int(ch) for ch in c["circuit_joint_lookup"]], dtype=np.uint8)
+                ok.append(run(g, truth, policy, p, rng, caches[id(g)]))
+        print(f"p={p:.1f} {policy:9s} uniq={np.mean(ok):.3f}  (n={len(ok)})", flush=True)
+EOF
+time python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad/compliance_sim.py
+
+description: Simulate uniq@end under imperfect compliance for greedy vs lookahead
+timeout: 600000
+
+--- output ---
+p=1.0 greedy    uniq=1.000  (n=50)
+p=1.0 lookahead uniq=1.000  (n=50)
+p=0.9 greedy    uniq=1.000  (n=200)
+p=0.9 lookahead uniq=1.000  (n=200)
+p=0.8 greedy    uniq=1.000  (n=200)
+p=0.8 lookahead uniq=1.000  (n=200)
+p=0.7 greedy    uniq=0.980  (n=200)
+p=0.7 lookahead uniq=0.990  (n=200)
+python3   4.82s user 0.14s system 72% cpu 6.836 total

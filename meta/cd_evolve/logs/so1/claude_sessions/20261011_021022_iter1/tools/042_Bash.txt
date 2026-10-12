@@ -1,0 +1,16 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; for h in veto_determined veto_only; do python3 drive.py proto/$h.py --p_list 1.0 --p_ign 0.0 --seeds 2 --verbose 300; python3 drive.py proto/$h.py --p_list 0.0 --p_ign 0.0 --seeds 2 --verbose 300; python3 drive.py proto/$h.py --p_list 0.3 --p_ign 0.4 --seeds 2 --verbose 300; done; python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/enum15.py --verbose 300
+
+description: Rerun veto prototypes with correct arguments
+
+--- output ---
+veto_determined.py p_list=1.0 p_ign=0.0: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=16334 max=19167 tok_in=71688
+veto_determined.py p_list=0.0 p_ign=0.0: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=16334 max=19167 tok_in=71688
+veto_determined.py p_list=0.3 p_ign=0.4: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=16334 max=19167 tok_in=71688
+veto_only.py p_list=1.0 p_ign=0.0: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=9893 max=9976 tok_in=49315
+veto_only.py p_list=0.0 p_ign=0.0: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=9893 max=9976 tok_in=49315
+veto_only.py p_list=0.3 p_ign=0.4: n=200 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=9893 max=9976 tok_in=49315
+enum15.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.150 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=15873 max=19795 tok_in=54951
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

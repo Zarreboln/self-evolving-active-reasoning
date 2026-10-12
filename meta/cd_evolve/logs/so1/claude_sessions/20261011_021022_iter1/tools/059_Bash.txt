@@ -1,0 +1,130 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; sed -n 27,200p agents/veto_only.py; echo ....; sed -n 30,200p agents/answer_grid.py
+
+description: Review final code of veto_only and answer_grid
+
+--- output ---
+from harness_lib import determined
+
+NAME = "veto_only"
+PARENT = "bare"
+LIST_CAP = 15
+LABELS = "ABCDEFGH"
+
+
+def init_state(view):
+    return {"vetoes": [], "n_veto": 0, "n_format": 0}
+
+
+def build_feedback(view, state):
+    return ""
+
+
+def filter_action(view, state, text, q):
+    """Send the reply back if it asks a determined output or contains no query."""
+    if len(view.alive) <= 1:
+        return None
+    fixed = dict(determined(view))
+    asked = dict(view.history)
+    if q is None:
+        state["n_format"] += 1
+        msg = ("Your reply contains no query in the required format, and the circuits are not "
+               f"pinned down yet: {len(view.alive)} configurations are still possible. ")
+    elif q in asked:
+        state["n_veto"] += 1
+        msg = (f"You already asked {view.fmt(q)} and the answer was {asked[q]}; "
+               "asking it again would waste one of your queries. ")
+    elif q in fixed:
+        state["n_veto"] += 1
+        msg = (f"{view.fmt(q)} is already determined: every circuit configuration consistent "
+               f"with the inventory and your answers so far gives {view.fmt(q)} = {fixed[q]}, "
+               "so asking it would waste one of your queries. ")
+    else:
+        return None
+    still = [view.fmt(x) for x in range(view.c << view.k) if x not in fixed]
+    msg += ("Outputs not determined yet: " + ", ".join(still) + ". Reply with one query for an "
+            "output that is not determined yet, in the format <query>X(a, b, c)</query>.")
+    state["vetoes"].append(msg)
+    return msg
+
+
+def compose_messages(view, state, msgs):
+    """Drop settled rejections: each re-ask message and the reply it rejected."""
+    vetoes = set(state["vetoes"])
+    if not vetoes:
+        return msgs
+    last = len(msgs) - 1
+    drop = set()
+    for i in range(1, last):
+        if msgs[i]["role"] == "user" and msgs[i]["content"] in vetoes:
+            drop.add(i)
+            if msgs[i - 1]["role"] == "assistant":
+                drop.add(i - 1)
+    return [m for i, m in enumerate(msgs) if i not in drop]
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    if n > LIST_CAP:
+        return ""
+    tables = sorted("".join(str(int(b)) for b in row) for row in view.H[view.alive].tolist())
+    order = (", then ".join(LABELS[:view.c]) + f"; inputs {'0' * view.k} to {'1' * view.k} "
+             "within each circuit")
+    if n == 1:
+        return ("Exactly one configuration of the circuits is consistent with all your answers. "
+                f"Its outputs in the required order ({order}): <guess>{tables[0]}</guess>")
+    return (f"{n} configurations of the circuits are still consistent with all your answers. "
+            f"Their outputs in the required order ({order}): "
+            + ", ".join(f"<guess>{t}</guess>" for t in tables) + ".")
+....
+NAME = "answer_grid"
+PARENT = "enum15"
+LIST_CAP = 15
+LABELS = "ABCDEFGH"
+ENV_NEXT = "Please send your next query."
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    fixed = dict(determined(view))
+    rows = []
+    for c in range(view.c):
+        qs = range(c << view.k, (c + 1) << view.k)
+        n_open = sum(q not in fixed for q in qs)
+        status = "complete" if n_open == 0 else f"{n_open} not determined yet"
+        cells = ", ".join(f"{view.fmt(q)}={fixed[q] if q in fixed else '?'}" for q in qs)
+        rows.append(f"{LABELS[c]} ({status}): {cells}")
+    return (count_line(view) + " Your truth tables so far (value = determined by the inventory "
+            "and your answers, ? = not determined yet; asking an output that already has a value "
+            "wastes a query):\n" + "\n".join(rows))
+
+
+def compose_messages(view, state, msgs):
+    """Keep the sheet only in the newest message: older turns keep their two environment lines."""
+    out = []
+    for i, m in enumerate(msgs):
+        lines = m["content"].split("\n") if m["role"] == "user" else []
+        if 0 < i < len(msgs) - 1 and len(lines) > 2 and lines[1].startswith(ENV_NEXT):
+            m = {**m, "content": "\n".join(lines[:2])}
+        out.append(m)
+    return out
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    if n > LIST_CAP:
+        return ""
+    tables = sorted("".join(str(int(b)) for b in row) for row in view.H[view.alive].tolist())
+    order = (", then ".join(LABELS[:view.c]) + f"; inputs {'0' * view.k} to {'1' * view.k} "
+             "within each circuit")
+    if n == 1:
+        return ("Exactly one configuration of the circuits is consistent with all your answers. "
+                f"Its outputs in the required order ({order}): <guess>{tables[0]}</guess>")
+    return (f"{n} configurations of the circuits are still consistent with all your answers. "
+            f"Their outputs in the required order ({order}): "
+            + ", ".join(f"<guess>{t}</guess>" for t in tables) + ".")

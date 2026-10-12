@@ -1,0 +1,17 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && cd $S && sed -i '' 's/UNK = re.compile(r"Outputs still unknown:\\s\*(\[^.(\]\*)")/UNK = re.compile(r"Outputs still unknown:\\s*(.*?)\\.(?:\\s|$)")/' proto/copier_mock.py && grep -n "UNK = " proto/copier_mock.py && for h in open_entries copy_open; do for p in 1.0 0.5 0.0; do python3 proto/copier_mock.py proto/$h.py $p; done; done
+
+description: Fix mock regex and rerun B and C prototypes
+timeout: 600000
+
+--- output ---
+15:UNK = re.compile(r"Outputs still unknown:\s*(.*?)\.(?:\s|$)")
+open_entries   p=1.0 uniq=0.960 exact=0.980 max_msg_chars=503 mean_total_harness_chars=6076
+open_entries   p=0.5 uniq=0.960 exact=0.980 max_msg_chars=503 mean_total_harness_chars=6076
+open_entries   p=0.0 uniq=0.960 exact=0.980 max_msg_chars=503 mean_total_harness_chars=6076
+copy_open      p=1.0 uniq=1.000 exact=1.000 max_msg_chars=562 mean_total_harness_chars=6446
+copy_open      p=0.5 uniq=1.000 exact=1.000 max_msg_chars=562 mean_total_harness_chars=6576
+copy_open      p=0.0 uniq=0.960 exact=0.980 max_msg_chars=562 mean_total_harness_chars=6718
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

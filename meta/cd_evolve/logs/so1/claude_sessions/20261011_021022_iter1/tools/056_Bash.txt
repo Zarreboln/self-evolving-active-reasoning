@@ -1,0 +1,38 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; cat > cost.py <<'EOF'
+import json, sys, numpy as np
+SYS_CHARS = 2600   # filled system prompt, approx
+TPC_IN = 0.45      # tokens per char, mixed context (memory: 0.55 harness text, 0.40 replies/env)
+def load(p):
+    latest={}
+    for l in open(p):
+        if l.strip():
+            r=json.loads(l); latest[(r['key'],r['seed'])]=r
+    return latest
+for name, base_cost, r_per_zero in [('enum15', 65946, 1.3), ('bare', 34302, 1.3), ('bare', 34302, 1.6)]:
+    eps=load(f'/Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/logs/so1/traces/{name}/search.jsonl')
+    extra=[]; nre=[]
+    for r in eps.values():
+        ctx = SYS_CHARS + 40
+        e = 0.0; n = 0
+        for x in r.get('rows') or []:
+            reply = len(x.get('model_text') or '')
+            if not x.get('illegal') and x.get('zero_info') and x['n_before'] > 1:
+                # one re-ask = context + rejected reply + veto msg (~450 chars) in, ~reply/2 out
+                e += r_per_zero * ((ctx + reply + 450) * TPC_IN + 0.3 * reply)
+                n += r_per_zero
+            ctx += reply + len(x.get('sent') or '')
+        extra.append(e); nre.append(n)
+    print(f"{name} r/zero={r_per_zero}: re-asks/ep {np.mean(nre):.1f}  extra tokens/ep {np.mean(extra):.0f}  -> cost {base_cost+np.mean(extra):.0f} ({(base_cost+np.mean(extra))/65946-1:+.0%} vs enum15)")
+EOF
+python3 cost.py
+
+description: Estimate veto token overhead from real traces
+
+--- output ---
+enum15 r/zero=1.3: re-asks/ep 6.8  extra tokens/ep 28868  -> cost 94814 (+44% vs enum15)
+bare r/zero=1.3: re-asks/ep 8.4  extra tokens/ep 21491  -> cost 55793 (-15% vs enum15)
+bare r/zero=1.6: re-asks/ep 10.3  extra tokens/ep 26450  -> cost 60752 (-8% vs enum15)
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

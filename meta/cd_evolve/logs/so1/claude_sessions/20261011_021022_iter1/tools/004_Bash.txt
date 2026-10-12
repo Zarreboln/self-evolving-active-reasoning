@@ -1,0 +1,363 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; for f in agents/*.py; do echo "=== $f"; cat $f; done
+
+description: Print all existing agent files
+
+--- output ---
+=== agents/bare.py
+"""Seed 0: the environment line only. Reproduces the `bare` condition of
+results/gate_cd.jsonl (runner/cd_runner_async.py)."""
+
+NAME = "bare"
+PARENT = None
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    return ""
+
+
+def final_hint(view, state):
+    return ""
+=== agents/copy_open.py
+"""Iteration 1, exploitation of oracle_hint: a copyable directive with a safe fallback.
+
+oracle_hint appends the max-entropy query after enum15's negative list and
+joint tables. Here the state part is replaced by the outputs that are still
+unknown (in canonical order, query format) and the recommendation is the
+exact <query> tag to send, followed by an instruction to reply with it alone.
+The point of keeping a list next to the directive: on turns where the model
+does not copy, it falls back on its scanning habit, and if that scan runs
+over the unknown outputs it is still informative. A CPU simulation on the
+search split puts uniq@end at 98-100% for copy rates >= 0.7 when misses are
+informative, against 72% at 0.7 when misses are wasted turns. Compare with
+copy_query (directive alone) and open_entries (list alone).
+
+After the collapse the message says so and asks for a fixed harmless query;
+the final hint hands over the remaining configuration as a ready <guess>
+string."""
+
+from harness_lib import best_query, determined
+
+NAME = "copy_open"
+PARENT = "oracle_hint"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    """Query index -> '<query>B(1, 0, 0)</query>', the reply format of the system prompt."""
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine every truth table; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    fixed = {q for q, _ in determined(view)}
+    unknown = [view.fmt(q) for q in range(view.c << view.k) if q not in fixed]
+    q = best_query(view)
+    ones = int(view.H[view.alive, q].sum())
+    return (f"{n} circuit configurations are still possible. Outputs still unknown: "
+            + ", ".join(unknown) + ". Every other output is already fixed by your answers. "
+            f"Most informative next query: {_qtag(view, q)} ({n - ones} of the {n} give 0, "
+            f"{ones} give 1). Reply with exactly this query and nothing else.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    order = ", then ".join(LABELS[:view.c])
+    rows = f"inputs {'0' * view.k} to {'1' * view.k} within each"
+    return (f"{lead} In the required order ({order}; {rows}) it is: "
+            f"<guess>{bits}</guess>\nSubmit exactly this string.")
+=== agents/copy_query.py
+"""Iteration 1, exploration: hand the model its next action and nothing else.
+
+In the seed traces the 7B model loses uniq@end by asking outputs that are
+already determined (29% of enum15 queries, 76% once only two configurations
+are left), not by choosing badly among informative ones: on the search split
+a canonical scan that merely skips determined entries reaches 96% uniq@end.
+enum15 gives it a negative list ("do not ask these again") plus joint tables
+to reason over, and it obeys neither. Here the whole message is one copyable
+action: the max-entropy query, written as the exact <query> tag it has to
+send, with the count and the split as the only justification, and an
+instruction to reply with that tag alone (short replies also keep the
+episode far from the 12k context limit that crashed two enum15 episodes).
+
+Once the feasible set is a single configuration the message says so and asks
+for a fixed harmless query. The final hint hands over that configuration as a
+ready <guess> string: the model lists the right 24 values but concatenates
+them in the wrong order (4 exact out of 53 uniq episodes under enum15)."""
+
+from harness_lib import best_query
+
+NAME = "copy_query"
+PARENT = "oracle_hint"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    """Query index -> '<query>B(1, 0, 0)</query>', the reply format of the system prompt."""
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine every truth table; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    q = best_query(view)
+    ones = int(view.H[view.alive, q].sum())
+    return (f"{n} circuit configurations are still possible. Most informative next query: "
+            f"{_qtag(view, q)} ({n - ones} of the {n} give 0, {ones} give 1). "
+            "Reply with exactly this query and nothing else.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    order = ", then ".join(LABELS[:view.c])
+    rows = f"inputs {'0' * view.k} to {'1' * view.k} within each"
+    return (f"{lead} In the required order ({order}; {rows}) it is: "
+            f"<guess>{bits}</guess>\nSubmit exactly this string.")
+=== agents/enum15.py
+"""Seed 1: the hand-written belief summary, verbatim from
+runner/cd_runner_async.py belief_summary(list_cap=15). Reproduces the
+`belief_injected` condition of results/gate_cd.jsonl.
+
+Per turn: count of remaining configurations, the entries every remaining
+configuration agrees on (with 'do not ask these again'), and -- once at
+most 15 remain -- the full list of remaining joint truth tables."""
+
+from harness_lib import count_line, determined_text, enumeration_text
+
+NAME = "enum15"
+PARENT = "bare"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/facts.py
+"""Ladder rung (a): restate the model's own observations compactly, with no
+inference at all. Everything in this message is already in the transcript;
+if this alone moves repeat% or eff, the bottleneck was retrieval from a long
+transcript, not reasoning."""
+
+from harness_lib import observations_text
+
+NAME = "facts"
+PARENT = "bare"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    return observations_text(view)
+
+
+def final_hint(view, state):
+    return observations_text(view)
+=== agents/open_entries.py
+"""Iteration 1, exploitation of enum15: flip its negative list into a positive one.
+
+enum15 tells the model which outputs are already determined ("do not ask
+these again") and, below 16 configurations, lists the joint 24-bit tables.
+The traces show the model copies short lists into its reasoning and then
+keeps scanning entries in canonical order; it does not cross-check its
+planned query against a list of forbidden ones (76% zero-information queries
+once two configurations are left), and it misreads the joint tables as
+per-circuit tables. Here the same information is given as its complement:
+the outputs that are still unknown, in canonical order and in query format,
+so the model's scanning habit picks from entries that are all informative.
+On the search split a canonical scan restricted to undetermined entries
+reaches 96% uniq@end (blind scan: 20%). No query is ranked or recommended
+before the feasible set collapses, and the joint tables are dropped.
+
+After the collapse the message says so and asks for a fixed harmless query;
+the final hint hands over the remaining configuration as a ready <guess>
+string (same as the other iteration-1 candidates)."""
+
+from harness_lib import determined
+
+NAME = "open_entries"
+PARENT = "enum15"
+LABELS = "ABCDEFGH"
+
+
+def _qtag(view, q):
+    """Query index -> '<query>B(1, 0, 0)</query>', the reply format of the system prompt."""
+    row = q % (1 << view.k)
+    bits = ", ".join(str((row >> (view.k - 1 - i)) & 1) for i in range(view.k))
+    return f"<query>{LABELS[q // (1 << view.k)]}({bits})</query>"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    n = len(view.alive)
+    if n <= 1:
+        return ("Your answers now determine every truth table; no query can add information. "
+                f"Reply with only {_qtag(view, 0)}")
+    fixed = {q for q, _ in determined(view)}
+    unknown = [view.fmt(q) for q in range(view.c << view.k) if q not in fixed]
+    return (f"{n} circuit configurations are still possible. Outputs still unknown: "
+            + ", ".join(unknown) + ". Every other output is already fixed by your answers, so "
+            "asking it gives no information. Choose your next query from the unknown outputs.")
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    bits = "".join(str(int(b)) for b in view.H[view.alive[0]])
+    lead = ("Your answers leave exactly one possible set of truth tables." if n == 1 else
+            f"Your answers leave {n} possible sets of truth tables; here is one of them.")
+    order = ", then ".join(LABELS[:view.c])
+    rows = f"inputs {'0' * view.k} to {'1' * view.k} within each"
+    return (f"{lead} In the required order ({order}; {rows}) it is: "
+            f"<guess>{bits}</guess>\nSubmit exactly this string.")
+=== agents/oracle_hint.py
+"""Ladder rung (d), the ceiling: enum15 plus the max-entropy query spelled
+out. A model that simply copies the hint reproduces the oracle policy
+(300/300 within budget, mean 11.6 queries). Whatever gap remains below that
+is the model failing to copy, not failing to reason."""
+
+from harness_lib import count_line, determined_text, enumeration_text, best_query, fmt
+
+NAME = "oracle_hint"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    q = best_query(view)
+    if q is not None:
+        parts.append(f"Most informative next query: {fmt(q, view.k)}.")
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/splits.py
+"""Ladder rung (c): enum15 plus, for every undetermined entry, how the
+remaining configurations split between 0 and 1. Choosing the next query is
+now a comparison over at most 24 pairs of numbers instead of a deduction
+over circuits. If this restores ex-ante efficiency where enum15 did not,
+the compensation boundary sits between 'state' and 'decision table'."""
+
+from harness_lib import count_line, determined_text, enumeration_text, split_table_text
+
+NAME = "splits"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), split_table_text(view),
+             enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/symbolic.py
+"""Seed 2: enum15 without the enumeration -- count plus determined entries
+only. Isolates the symbolic-summary half of the hand-written harness
+(GN showed list vs symbolic was a 19.2% vs 73.0% dead-guess difference)."""
+
+from harness_lib import count_line, determined_text
+
+NAME = "symbolic"
+PARENT = "enum15"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/t3_gate.py
+"""Seed 3: enum15 content, but only on turns where the T3-style trap proxy
+fires (the query just made carried zero information, repeated an earlier
+query, or left the feasible set unchanged). Otherwise identical to bare.
+The proxy measured precision 0.74 / recall 0.32 on gate_cd.jsonl
+(runner/calibrate_t3_proxy.py), so this is expected to under-intervene."""
+
+from harness_lib import count_line, determined_text, enumeration_text
+
+NAME = "t3_gate"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {"fired": 0}
+
+
+def _trapped(view):
+    if view.last_bits_expected < 1e-9:
+        return True
+    if view.history[:-1] and any(q == view.last_q for q, _ in view.history[:-1]):
+        return True
+    return view.n_before == view.n_after
+
+
+def build_feedback(view, state):
+    if not _trapped(view):
+        return ""
+    state["fired"] += 1
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""

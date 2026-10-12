@@ -1,0 +1,15 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+p='logs/so1/reports/iter0.md'
+s=open(p).read()
+s=s.replace("A CPU replay of the scan habit gives 93-96% uniq@end with a 2-re-ask veto, even when the model ignores 40% of the vetoes.","A CPU replay of the scan habit gives 92-96% uniq@end with a 2-re-ask veto, even when the model ignores 40% of the vetoes.")
+open(p,'w').write(s)
+EOF
+grep -c "92-96%" logs/so1/reports/iter0.md
+
+description: Correct the simulation range in the iter0 report
+
+--- output ---
+1

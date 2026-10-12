@@ -1,0 +1,112 @@
+"""Scripted stand-ins for the task model, so the whole harness pipeline can be
+exercised on a laptop with no GPU and so every harness gets a floor/ceiling
+reading from policies whose behaviour is known exactly.
+
+The mock is stateless across calls: it rebuilds its own query/answer history
+from the message list it is handed, exactly as a real model would have to.
+
+    sequential  sweep A(0,0,0), A(0,0,1), ...; final guess = observed bits, rest 0
+    random      uniform random entry, repeats allowed; naive final guess
+    greedy      max-entropy query over the feasible set (the oracle policy);
+                final guess = a remaining hypothesis  -> ceiling
+    follow      copies a "Most informative next query: X(a,b,c)" hint when one
+                is present, else sequential; at the end copies the first
+                enumerated configuration if the harness listed any, else naive
+    flaky       sequential, but every 5th turn replies without a query
+                (exercises the illegal-format path)
+"""
+
+import re
+from types import SimpleNamespace
+
+import numpy as np
+
+LABELS = "ABCDEFGH"
+QUERY_RE = re.compile(r"<query>\s*([A-H])\s*\(([^)]*)\)\s*</query>", re.I)
+ANSWER_RE = re.compile(r"^\s*[A-H]\([01],\s*[01],\s*[01]\)\s*=\s*([01])", re.M)
+HINT_RE = re.compile(r"Most informative next query:\s*([A-H])\(([01]),([01]),([01])\)")
+ENUM_RE = re.compile(r"joint truth tables\):\s*([01]{24}(?:,\s*[01]{24})*)")
+FINAL_MARK = "truth tables for all circuits"
+
+
+def _q_of(lb, bits, k):
+    return LABELS.index(lb.upper()) * (1 << k) + int("".join(bits), 2)
+
+
+def _fmt(q, k):
+    lb = LABELS[q // (1 << k)]
+    row = q % (1 << k)
+    return f"<query>{lb}({', '.join(str((row >> (k - 1 - i)) & 1) for i in range(k))})</query>"
+
+
+OBS_RE = re.compile(r"\b([A-H])\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)\s*=\s*([01])\b")
+
+
+def rebuild_history(messages, k):
+    """[(q, bit)] from every observation line 'X(a, b, c) = b' in the user
+    turns, in order of first appearance. Works whether the history is the raw
+    transcript or a harness-compressed ledger."""
+    hist, seen = [], set()
+    for m in messages:
+        if m["role"] != "user":
+            continue
+        for lb, a, b, c, bit in OBS_RE.findall(m["content"] or ""):
+            q = _q_of(lb, [a, b, c], k)
+            if q not in seen:
+                seen.add(q)
+                hist.append((q, int(bit)))
+    return hist
+
+
+class MockClient:
+    """Duck-types the slice of openai.AsyncOpenAI that the runner uses."""
+
+    def __init__(self, policy, game, c, k, seed=0):
+        self.policy, self.game, self.c, self.k = policy, game, c, k
+        self.rng = np.random.default_rng(seed)
+        self.n_cells = c * (1 << k)
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
+
+    async def _create(self, model=None, messages=None, **kw):
+        txt = self._reply(messages)
+        usage = SimpleNamespace(completion_tokens=max(1, len(txt) // 4),
+                                prompt_tokens=sum(len(m["content"]) for m in messages) // 4)
+        return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=txt))],
+                               usage=usage)
+
+    def _reply(self, messages):
+        hist = rebuild_history(messages, self.k)
+        last_user = messages[-1]["content"] if messages and messages[-1]["role"] == "user" else ""
+        if FINAL_MARK in last_user:
+            return self._final(hist, last_user)
+        n_turn = sum(1 for m in messages if m["role"] == "assistant")
+        p = self.policy
+        if p == "flaky" and n_turn % 5 == 2:
+            return "Let me think about the circuits before querying again."
+        if p in ("sequential", "flaky"):
+            q = len(hist) % self.n_cells
+        elif p == "random":
+            q = int(self.rng.integers(self.n_cells))
+        elif p == "greedy":
+            alive = self.game.feasible(hist)
+            _, q = self.game.available_bits(alive)
+            if q is None:
+                q = hist[-1][0] if hist else 0
+        elif p == "follow":
+            hm = HINT_RE.search(last_user)
+            q = _q_of(hm.group(1), hm.groups()[1:], self.k) if hm else len(hist) % self.n_cells
+        else:
+            raise ValueError(p)
+        return f"Querying now. {_fmt(q, self.k)}"
+
+    def _final(self, hist, last_user):
+        if self.policy == "greedy":
+            alive = self.game.feasible(hist)
+            bits = self.game.H[alive[0]]
+        elif self.policy == "follow" and (em := ENUM_RE.search(last_user)):
+            bits = [int(ch) for ch in em.group(1).split(",")[0].strip()]
+        else:
+            bits = [0] * self.n_cells
+            for q, b in hist:
+                bits[q] = b
+        return "<guess>" + "".join(str(int(b)) for b in bits) + "</guess>"

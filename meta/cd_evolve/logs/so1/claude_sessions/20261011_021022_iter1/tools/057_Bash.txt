@@ -1,0 +1,89 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 - <<'EOF'
+import re
+p='agents/veto_determined.py'; s=open(p).read()
+a='"""Iteration 1, exploration of a new channel on top of enum15: a veto at decision time.'
+b='"""Iteration 1, exploitation of enum15: keep its text, add a veto at decision time.'
+assert a in s; s=s.replace(a,b)
+a='''it does skip one it lands on another determined output twice as often as on
+an undetermined one.'''
+b='''it does skip one it lands on another determined output almost twice as often
+as on an undetermined one.'''
+assert a in s; s=s.replace(a,b)
+open(p,'w').write(s)
+p='agents/answer_grid.py'; s=open(p).read()
+a='''effect at all (13%). But a skip lands on another determined output twice as
+often as on an undetermined one,'''
+b='''effect at all (13%). But a skip lands on another determined output almost
+twice as often as on an undetermined one,'''
+assert a in s; s=s.replace(a,b)
+open(p,'w').write(s)
+EOF
+sed -n 1,30p agents/veto_determined.py; echo ....; sed -n 1,30p agents/answer_grid.py
+
+description: Fix docstring wording in two candidates and review
+
+--- output ---
+"""Iteration 1, exploitation of enum15: keep its text, add a veto at decision time.
+
+enum15 names the outputs that are already determined ("do not ask these
+again"). In the so1 traces the 7B model still asks such an output 56% of the
+time when it is the next one in its canonical scan (87% under bare), and when
+it does skip one it lands on another determined output almost twice as often
+as on an undetermined one. open1's open_entries showed that a positive list of the
+undetermined outputs does not change this at all (87%): the model scans, it
+does not pick from lists. So the information has to meet the model at the
+moment it commits to a query.
+
+The per-turn text is enum15's, unchanged. What is new is filter_action: when
+the model's reply asks an output on which every remaining configuration
+agrees (a repeat is one such case), or contains no parsable query, the reply
+is not passed to the environment. The model is told the output is already
+determined and to what value, is shown the outputs that are not determined
+yet in canonical order, and replies again (at most twice per turn; no query
+is spent). Nothing is ranked or recommended: the list is the complement of
+enum15's determined list. Once a single configuration remains every reply is
+accepted. Rejected exchanges are removed from the context once the turn is
+settled, so later turns look exactly like enum15's.
+
+The final hint presents the configurations still consistent with the answers
+(when at most 15 remain), written in the required <guess> order; with one
+left that is the answer, which the model cannot assemble from 24 separate
+bits on its own (enum15: 6% exact at 38% uniq@end).
+"""
+
+from harness_lib import count_line, determined, determined_text, enumeration_text
+
+....
+"""Iteration 1, exploitation of enum15: the same state, laid out as the answer sheet.
+
+enum15 gives two flat lists: the determined outputs ("do not ask these
+again") and, below 16 configurations, the joint 24-bit tables. In the so1
+traces the named determined list is the part that works: when the next entry
+of the model's canonical scan is listed, the model skips it 44% of the time
+(bare: 13%), while open1's positive list of undetermined outputs had no
+effect at all (13%). But a skip lands on another determined output almost
+twice as often as on an undetermined one, the joint tables get misread as single
+circuits, and the model keeps "filling in the truth table" of a circuit whose
+eight outputs are all listed.
+
+Here the state is one per-circuit table in the shape of the final answer:
+every output in canonical order, written as its value when the inventory and
+the answers determine it and as ? otherwise, with each circuit marked
+complete or with its number of undetermined outputs. The model's planned
+query is found in its row, and so is the nearest ? next to it. No query is
+ranked or recommended; the ? cells are exactly enum15's undetermined outputs.
+The joint tables are dropped. The sheet is one object, always current:
+compose_messages strips earlier copies from older turns (their environment
+lines stay), so the context holds a single table instead of enum15's growing
+log of summaries.
+
+The final hint presents the configurations still consistent with the answers
+(when at most 15 remain), written in the required <guess> order.
+"""
+
+from harness_lib import count_line, determined
+
+NAME = "answer_grid"

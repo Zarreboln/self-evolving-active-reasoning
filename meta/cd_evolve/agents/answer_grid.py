@@ -1,0 +1,78 @@
+"""Iteration 1, exploitation of enum15: the same state, laid out as the answer sheet.
+
+enum15 gives two flat lists: the determined outputs ("do not ask these
+again") and, below 16 configurations, the joint 24-bit tables. In the so1
+traces the named determined list is the part that works: when the next entry
+of the model's canonical scan is listed, the model skips it 44% of the time
+(bare: 13%), while open1's positive list of undetermined outputs had no
+effect at all (13%). But a skip lands on another determined output almost
+twice as often as on an undetermined one, the joint tables get misread as
+single circuits, and the model keeps "filling in the truth table" of a
+circuit whose eight outputs are all listed.
+
+Here the state is one per-circuit table in the shape of the final answer:
+every output in canonical order, written as its value when the inventory and
+the answers determine it and as ? otherwise, with each circuit marked
+complete or with its number of undetermined outputs. The model's planned
+query is found in its row, and so is the nearest ? next to it. No query is
+ranked or recommended; the ? cells are exactly enum15's undetermined outputs.
+The joint tables are dropped. The sheet is one object, always current:
+compose_messages strips earlier copies from older turns (their environment
+lines stay), so the context holds a single table instead of enum15's growing
+log of summaries.
+
+The final hint presents the configurations still consistent with the answers
+(when at most 15 remain), written in the required <guess> order.
+"""
+
+from harness_lib import count_line, determined
+
+NAME = "answer_grid"
+PARENT = "enum15"
+LIST_CAP = 15
+LABELS = "ABCDEFGH"
+ENV_NEXT = "Please send your next query."
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    fixed = dict(determined(view))
+    rows = []
+    for c in range(view.c):
+        qs = range(c << view.k, (c + 1) << view.k)
+        n_open = sum(q not in fixed for q in qs)
+        status = "complete" if n_open == 0 else f"{n_open} not determined yet"
+        cells = ", ".join(f"{view.fmt(q)}={fixed[q] if q in fixed else '?'}" for q in qs)
+        rows.append(f"{LABELS[c]} ({status}): {cells}")
+    return (count_line(view) + " Your truth tables so far (value = determined by the inventory "
+            "and your answers, ? = not determined yet; asking an output that already has a value "
+            "wastes a query):\n" + "\n".join(rows))
+
+
+def compose_messages(view, state, msgs):
+    """Keep the sheet only in the newest message: older turns keep their two environment lines."""
+    out = []
+    for i, m in enumerate(msgs):
+        lines = m["content"].split("\n") if m["role"] == "user" else []
+        if 0 < i < len(msgs) - 1 and len(lines) > 2 and lines[1].startswith(ENV_NEXT):
+            m = {**m, "content": "\n".join(lines[:2])}
+        out.append(m)
+    return out
+
+
+def final_hint(view, state):
+    n = len(view.alive)
+    if n > LIST_CAP:
+        return ""
+    tables = sorted("".join(str(int(b)) for b in row) for row in view.H[view.alive].tolist())
+    order = (", then ".join(LABELS[:view.c]) + f"; inputs {'0' * view.k} to {'1' * view.k} "
+             "within each circuit")
+    if n == 1:
+        return ("Exactly one configuration of the circuits is consistent with all your answers. "
+                f"Its outputs in the required order ({order}): <guess>{tables[0]}</guess>")
+    return (f"{n} configurations of the circuits are still consistent with all your answers. "
+            f"Their outputs in the required order ({order}): "
+            + ", ".join(f"<guess>{t}</guess>" for t in tables) + ".")

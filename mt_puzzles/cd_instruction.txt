@@ -1,0 +1,41 @@
+**Welcome to the Circuit Deduction Challenge!**
+
+**Your Inventory:** You have a total of {components}. These are distributed across {num_circuits} circuits, labeled {circuit_labels}.
+
+**Your Goal:** Deduce the logical structure of each circuit.
+
+**The Setup:**
+* Each circuit accepts {num_inputs} binary inputs (0 or 1) and produces a single binary output (0 or 1).
+* All circuits are built by creating layers of logic. You begin with the {num_inputs} initial inputs. At each step either (a) an AND or OR gate takes two currently available signals and combines them into one new signal or (b) a NOT gate takes any one available signal and transforms it into one new signal. This process continues, using the available gates for that circuit, reducing the number of signals until only the single, final output of the circuit remains.
+* No circuit will always output 0 or always output 1, regardless of input.
+* All circuit components are being used and are distributed without replacement across {num_circuits} circuits.
+
+**Your Tools:** You have {num_questions_per_episode} queries to figure all the circuits out. Each query is a call to a circuit with specific inputs.
+At each turn of the conversation with me, you must make only 1 query. Hence, there will be {num_questions_per_episode} turns of the conversation before you have to make your final guess.
+
+**How to Play:**
+1. At each turn, you must query one circuit (any circuit with any input of your choice)
+2. Use the following format for your query:
+
+    `<query>Circuit_Label_1(input1_1, ..., input1_{num_inputs})</query>`
+
+    For example, to query circuit A with inputs 1, 0, 1 (if num_inputs=3):
+    `<query>A(1, 0, 1)</query>`
+3. You must make only 1 query at each turn
+
+**Think Strategically:**
+* Reason about the behavior of each circuit based on the available components.
+* Plan your {num_questions_per_episode} queries carefully to maximize information gained.
+
+**Final Submission:**
+After your {num_questions_per_episode} queries, provide the truth tables for all circuits ({circuit_labels_str}) in this format:
+
+`<guess>XXXXXXXXXXXXXXXX</guess>`
+
+Where:
+* Each 'X' is either 0 or 1, representing the circuit's output.
+* The sequence of outputs follows this order (each circuit's outputs are grouped together):
+
+{truth_table_description}
+
+Please start with your first query. Plan your steps before making the queries

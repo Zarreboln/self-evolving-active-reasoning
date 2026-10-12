@@ -1,0 +1,22 @@
+Write: ../../../../.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mocks.md
+
+content:
+---
+name: cd-evolve-context-and-mocks
+description: Measured token cost of CD harness text and limits of the scripted mocks, for budgeting and prototyping harness candidates
+metadata:
+  type: project
+---
+
+Measured 2026-10-10 (iteration 1 of run open1), not recorded in the workspace:
+
+- The prompt limit is 11,088 tokens (12,288 context minus 1,200 reserved output). Fitting the logged `in_tokens` of the bare/enum15 traces with the system prompt pinned at 700 tokens: harness-appended text costs ~0.55 tokens/char (entry lists like `A(0,0,1), ` cost more because Qwen tokenizes each digit and comma), and model replies plus env lines cost ~0.40 tokens/char (fit error 2.8%).
+- The scripted `follow` mock only reads `Most informative next query: X(a,b,c)`. It ignores `<query>` tags in harness text, so directive-style candidates need a scratch copier mock (an async client that copies the tag with probability p, else falls back to scanning) driven through `cd_harness_run.run_episode`.
+
+**Why:** the enum15 context-overflow crashes count as failures, and the stock mocks cannot show whether a directive candidate's plumbing (copy, then final `<guess>` copy) works.
+**How to apply:** estimate each candidate's per-episode token load before submitting. Build the copier mock in the scratchpad, not in `runner/`, which is off limits. See [[cd-evolve-iter1-design]] for what the copier mock showed.
+
+
+
+--- output ---
+File created successfully at: /Users/zarreboln/.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/cd-evolve-context-and-mocks.md

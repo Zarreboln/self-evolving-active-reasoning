@@ -1,0 +1,36 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; for pl in 0.0 0.5 1.0; do python3 drive.py proto/veto_determined.py --p_list $pl --p_ign 0.0; done; python3 drive.py proto/veto_determined.py --p_list 0.3 --p_ign 0.4 --verbose 300; python3 drive.py /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve/agents/enum15.py --verbose 300
+
+description: Run veto prototype against the scanner mock at several compliance levels
+
+--- output ---
+veto_determined.py p_list=0.0 p_ign=0.0: n=100 err=0 uniq=0.930 exact=0.960 zero=0.106 reasks/ep=5.50 calls/ep=24.5 ill/ep=0.00 max_chars mean=10934 max=13767 tok_in=50032
+veto_determined.py p_list=0.5 p_ign=0.0: n=100 err=96 uniq=1.000 exact=1.000 zero=0.095 reasks/ep=4.25 calls/ep=23.2 ill/ep=0.00 max_chars mean=11560 max=12839 tok_in=50761
+ERR AttributeError: 'NoneType' object has no attribute 'group'
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/numpy/_core/fromnumeric.py:3860: RuntimeWarning: Mean of empty slice.
+  return _methods._mean(a, axis=axis, dtype=dtype,
+/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/numpy/_core/_methods.py:145: RuntimeWarning: invalid value encountered in scalar divide
+  ret = ret.dtype.type(ret / rcount)
+Traceback (most recent call last):
+  File "/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/drive.py", line 133, in <module>
+    asyncio.run(main(p.parse_args()))
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 194, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/asyncio/base_events.py", line 720, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/drive.py", line 115, in main
+    f"max={max(o['max_chars'] for o in ok)} tok_in={np.mean([o['tok']['in'] for o in ok]):.0f}")
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: max() iterable argument is empty
+veto_determined.py p_list=0.3 p_ign=0.4: n=100 err=94 uniq=0.833 exact=0.833 zero=0.138 reasks/ep=5.67 calls/ep=24.7 ill/ep=0.00 max_chars mean=15621 max=17283 tok_in=69780
+ERR AttributeError: 'NoneType' object has no attribute 'group'
+enum15.py p_list=0.5 p_ign=0.0: n=100 err=0 uniq=0.180 exact=0.150 zero=0.385 reasks/ep=0.00 calls/ep=19.0 ill/ep=0.00 max_chars mean=15873 max=19795 tok_in=54951
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

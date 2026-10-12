@@ -1,0 +1,28 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && cat >> $S/calib.py <<'EOF'
+
+# refit: sys fixed per prompt from its own chars (unknown ratio s), overhead 5/message
+print("system prompt chars:", len(R.fill_instruction(tmpl, {"AND": 1, "OR": 5, "NOT": 2}, 3, 3, 18)))
+for sys_tok in (700, 900, 1100):
+    nprompts = np.array([0]*len(Y), dtype=float)
+    # number of prompts = number of calls = rows + 1 (final); recover from X[:,0]/sys_chars
+    sys_chars = len(R.fill_instruction(tmpl, {"AND": 1, "OR": 5, "NOT": 2}, 3, 3, 18))
+    npr = X[:, 0] / sys_chars
+    Y2 = Y - sys_tok * npr - 5 * X[:, 3]
+    c2, *_ = np.linalg.lstsq(X[:, 1:3], Y2, rcond=None)
+    p2 = X[:, 1:3] @ c2 + sys_tok * npr + 5 * X[:, 3]
+    print(f"sys={sys_tok}: harness {c2[0]:.3f} tok/char, other {c2[1]:.3f} tok/char, median rel err {np.median(abs(Y-p2)/Y):.3f}")
+EOF
+python3 $S/calib.py
+
+description: Refit token ratios with fixed system prompt size
+
+--- output ---
+tokens per char: sys 0.945  harness 0.805  other 0.451 ; per-message overhead -80.3
+R^2 = 0.9856, median abs rel err = 0.023
+system prompt chars: 2438
+sys=700: harness 0.551 tok/char, other 0.397 tok/char, median rel err 0.028
+sys=900: harness 0.550 tok/char, other 0.317 tok/char, median rel err 0.052
+sys=1100: harness 0.550 tok/char, other 0.236 tok/char, median rel err 0.069

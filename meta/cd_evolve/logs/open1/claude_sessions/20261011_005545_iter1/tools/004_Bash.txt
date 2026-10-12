@@ -1,0 +1,297 @@
+Bash
+
+command:
+for f in agents/*.py; do echo "=== $f ==="; cat $f; done; echo "=== tools/run_mock.sh ==="; cat tools/run_mock.sh; echo "=== tools/show_trace.py ==="; cat tools/show_trace.py
+
+description: Read all seed agents and tool scripts
+
+--- output ---
+=== agents/bare.py ===
+"""Seed 0: the environment line only. Reproduces the `bare` condition of
+results/gate_cd.jsonl (runner/cd_runner_async.py)."""
+
+NAME = "bare"
+PARENT = None
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    return ""
+
+
+def final_hint(view, state):
+    return ""
+=== agents/enum15.py ===
+"""Seed 1: the hand-written belief summary, verbatim from
+runner/cd_runner_async.py belief_summary(list_cap=15). Reproduces the
+`belief_injected` condition of results/gate_cd.jsonl.
+
+Per turn: count of remaining configurations, the entries every remaining
+configuration agrees on (with 'do not ask these again'), and -- once at
+most 15 remain -- the full list of remaining joint truth tables."""
+
+from harness_lib import count_line, determined_text, enumeration_text
+
+NAME = "enum15"
+PARENT = "bare"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/facts.py ===
+"""Ladder rung (a): restate the model's own observations compactly, with no
+inference at all. Everything in this message is already in the transcript;
+if this alone moves repeat% or eff, the bottleneck was retrieval from a long
+transcript, not reasoning."""
+
+from harness_lib import observations_text
+
+NAME = "facts"
+PARENT = "bare"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    return observations_text(view)
+
+
+def final_hint(view, state):
+    return observations_text(view)
+=== agents/oracle_hint.py ===
+"""Ladder rung (d), the ceiling: enum15 plus the max-entropy query spelled
+out. A model that simply copies the hint reproduces the oracle policy
+(300/300 within budget, mean 11.6 queries). Whatever gap remains below that
+is the model failing to copy, not failing to reason."""
+
+from harness_lib import count_line, determined_text, enumeration_text, best_query, fmt
+
+NAME = "oracle_hint"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    q = best_query(view)
+    if q is not None:
+        parts.append(f"Most informative next query: {fmt(q, view.k)}.")
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/splits.py ===
+"""Ladder rung (c): enum15 plus, for every undetermined entry, how the
+remaining configurations split between 0 and 1. Choosing the next query is
+now a comparison over at most 24 pairs of numbers instead of a deduction
+over circuits. If this restores ex-ante efficiency where enum15 did not,
+the compensation boundary sits between 'state' and 'decision table'."""
+
+from harness_lib import count_line, determined_text, enumeration_text, split_table_text
+
+NAME = "splits"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view), split_table_text(view),
+             enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/symbolic.py ===
+"""Seed 2: enum15 without the enumeration -- count plus determined entries
+only. Isolates the symbolic-summary half of the hand-written harness
+(GN showed list vs symbolic was a 19.2% vs 73.0% dead-guess difference)."""
+
+from harness_lib import count_line, determined_text
+
+NAME = "symbolic"
+PARENT = "enum15"
+
+
+def init_state(view):
+    return {}
+
+
+def build_feedback(view, state):
+    parts = [count_line(view), determined_text(view)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== agents/t3_gate.py ===
+"""Seed 3: enum15 content, but only on turns where the T3-style trap proxy
+fires (the query just made carried zero information, repeated an earlier
+query, or left the feasible set unchanged). Otherwise identical to bare.
+The proxy measured precision 0.74 / recall 0.32 on gate_cd.jsonl
+(runner/calibrate_t3_proxy.py), so this is expected to under-intervene."""
+
+from harness_lib import count_line, determined_text, enumeration_text
+
+NAME = "t3_gate"
+PARENT = "enum15"
+LIST_CAP = 15
+
+
+def init_state(view):
+    return {"fired": 0}
+
+
+def _trapped(view):
+    if view.last_bits_expected < 1e-9:
+        return True
+    if view.history[:-1] and any(q == view.last_q for q, _ in view.history[:-1]):
+        return True
+    return view.n_before == view.n_after
+
+
+def build_feedback(view, state):
+    if not _trapped(view):
+        return ""
+    state["fired"] += 1
+    parts = [count_line(view), determined_text(view), enumeration_text(view, LIST_CAP)]
+    return " ".join(p for p in parts if p)
+
+
+def final_hint(view, state):
+    return ""
+=== tools/run_mock.sh ===
+#!/bin/bash
+# Smoke-test a candidate harness on the search instances with a scripted
+# task model (no GPU, seconds). Catches crashes and shows what the harness
+# actually sends. Policies: greedy (oracle) | sequential | random | follow | flaky
+#   tools/run_mock.sh agents/<name>.py [policy] [n_instances]
+set -euo pipefail
+HERE=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$HERE/../.." && pwd)
+H=${1:?agents/<name>.py}; POL=${2:-sequential}; N=${3:-10}
+OUT=$HERE/logs/mock/$(basename "$H" .py)__$POL.jsonl
+rm -f "$OUT"
+python3 "$ROOT/runner/cd_harness_run.py" --harness "$HERE/$H" --mock "$POL" --split search \
+  --limit "$N" --seeds 1 --concurrency 16 --out "$OUT" >/dev/null
+python3 "$ROOT/runner/cd_score.py" "$OUT" --split search
+echo "trace: python3 $HERE/tools/show_trace.py $OUT --key <k>"
+=== tools/show_trace.py ===
+"""Print one CircuitDecoding episode from a traces jsonl in readable form.
+
+    python tools/show_trace.py logs/<run>/traces/<candidate>/search.jsonl --key 17 [--seed 0]
+    python tools/show_trace.py <file> --list            # one line per episode: key seed uniq exact n_alive_end eff
+    python tools/show_trace.py <file> --worst 5         # the 5 episodes with the most zero-information queries
+"""
+
+import argparse
+import json
+from pathlib import Path
+
+LABELS = "ABCDEFGH"
+
+
+def fmt(q, k=3):
+    lb = LABELS[q // (1 << k)]
+    row = q % (1 << k)
+    return f"{lb}({','.join(str((row >> (k - 1 - i)) & 1) for i in range(k))})"
+
+
+def load(path):
+    latest = {}
+    for line in Path(path).open():
+        if line.strip():
+            r = json.loads(line)
+            latest[(r["key"], r["seed"])] = r
+    return latest
+
+
+def summary_line(r):
+    res = r.get("result") or {}
+    rows = r.get("rows") or []
+    legal = [x for x in rows if not x.get("illegal") and x.get("n_before", 0) > 1]
+    eff = sum(x["efficiency"] for x in legal if x.get("efficiency") is not None) / max(1, len(legal))
+    zero = sum(1 for x in legal if x.get("zero_info"))
+    rep = sum(1 for x in rows if x.get("repeat"))
+    ill = sum(1 for x in rows if x.get("illegal"))
+    return (f"key={r['key']:<4} seed={r['seed']} uniq={int(bool(res.get('unique_at_end')))} "
+            f"exact={int(bool(res.get('correct')))} alive_end={res.get('n_alive_end')!s:<5} "
+            f"eff={eff:.3f} zero={zero:<2} repeat={rep:<2} illegal={ill:<2} err={bool(r.get('error'))}")
+
+
+def show(r):
+    print(summary_line(r))
+    print("=" * 100)
+    for x in r.get("rows") or []:
+        if x.get("illegal"):
+            print(f"[turn {x['turn']}] ILLEGAL (no query parsed)")
+        else:
+            q = fmt(x["query"])
+            best = fmt(x["best_query"]) if x.get("best_query") is not None else "-"
+            print(f"[turn {x['turn']}] query {q} -> {x['answer']}   alive {x['n_before']}->{x['n_after']}   "
+                  f"bits {x['bits_chosen']:.3f}/{x['bits_available']:.3f}   best {best}"
+                  f"{'   ZERO-INFO' if x.get('zero_info') else ''}{'   REPEAT' if x.get('repeat') else ''}")
+        print("  MODEL >>", (x.get("model_text") or "").strip().replace("\n", "\n           "))
+        if x.get("sent"):
+            print("  SENT  <<", x["sent"].strip().replace("\n", "\n           "))
+        print("-" * 100)
+    print("FINAL SENT <<", (r.get("final_sent") or "").strip().replace("\n", "\n              "))
+    print("FINAL MODEL >>", (r.get("final_text") or "").strip().replace("\n", "\n               "))
+    res = r.get("result") or {}
+    print("truth  ", "".join(map(str, res.get("truth_bits") or [])))
+    print("guess  ", "".join(map(str, res.get("guess_bits") or [])) or "(unparsed)")
+    if r.get("error"):
+        print("ERROR  ", r["error"])
+
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("file")
+    p.add_argument("--key", type=int)
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--list", action="store_true")
+    p.add_argument("--worst", type=int, default=0)
+    a = p.parse_args()
+    eps = load(a.file)
+    if a.list:
+        for k in sorted(eps):
+            print(summary_line(eps[k]))
+        return
+    if a.worst:
+        def nzero(r):
+            return sum(1 for x in (r.get("rows") or []) if x.get("zero_info"))
+        for r in sorted(eps.values(), key=nzero, reverse=True)[: a.worst]:
+            show(r)
+            print("\n\n")
+        return
+    if a.key is None:
+        p.error("--key N (or --list / --worst N)")
+    show(eps[(a.key, a.seed)])
+
+
+if __name__ == "__main__":
+    main()

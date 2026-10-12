@@ -1,0 +1,69 @@
+Bash
+
+command:
+grep -n "def \|static\|FORBID\|forbid\|regime\|NAME\|PARENT\|pending_eval\|smoke\|mock" evolve.py | head -100
+
+description: Scan evolve.py for validation logic
+
+--- output ---
+5:skill, filesystem access to this workspace) -> validate (import + mock smoke
+6:test + regime static check) -> benchmark each candidate on the search split
+11:    python evolve.py --run-name open1 --regime open --iterations 1
+12:    python evolve.py --run-name open1 --regime open --iterations 7      # resumes
+44:STATE_ONLY_FORBIDDEN = ["available_bits", "expected_bits", "best_query", "split_table_text",
+49:LOCAL_MOCK = None      # --local-mock POLICY: benchmark with the scripted task model on this machine
+53:def ts():
+57:def log(msg):
+63:def sh(cmd, timeout=3600, check=False, **kw):
+71:def ssh(cmd, timeout=3600):
+77:def remote_endpoint():
+91:def wait_endpoint(max_wait=6 * 3600):
+103:def sync_agent(name):
+109:def benchmark(name, split, seeds, out_local, timeout=5400):
+114:                str(AGENTS / f"{name}.py"), "--mock", LOCAL_MOCK, "--split", split, "--seeds",
+116:        log(f"  mock-benchmark {name}/{split}: {r.stdout.strip().splitlines()[-1]}")
+142:def score(out_local, split, vs=None):
+155:def mock_check(name):
+157:        out = RUN / "mock" / f"{name}__{pol}.jsonl"
+162:                str(AGENTS / f"{name}.py"), "--mock", pol, "--split", "search", "--limit", "6",
+165:            return f"mock {pol}: {r.stderr[-800:]}"
+168:            return f"mock {pol}: episode error {next(e for e in errs if e)}"
+172:def validate(cand, regime):
+180:    if not re.search(r"^NAME\s*=\s*['\"]%s['\"]" % re.escape(name), src, re.M):
+181:        return "NAME constant must equal the file stem"
+184:    if regime == "state_only":
+185:        hit = [w for w in STATE_ONLY_FORBIDDEN if w in src]
+187:            return f"state_only regime forbids {hit}"
+188:    return mock_check(name)
+193:def read_summary():
+198:def frontier():
+203:def update_frontier(name, s, iteration):
+217:def append_summary(row):
+222:def summary_row(iteration, cand, s, best_before, regime, status="ok", timing=None):
+223:    row = {"iteration": iteration, "system": cand["name"], "regime": regime, "status": status,
+242:def render_task_prompt(iteration, regime):
+247:    return (f"Run iteration {iteration} of CircuitDecoding harness evolution. REGIME: {regime}.\n\n"
+255:            f"- Write pending_eval.json to: `logs/{RUN.name}/pending_eval.json`\n")
+258:def propose(iteration, regime, timeout):
+263:            body = (AGENTS / f"{src}.py").read_text().replace(f'NAME = "{src}"', f'NAME = "{name}"')
+267:        (RUN / "pending_eval.json").write_text(json.dumps({"iteration": iteration, "candidates": cands}))
+271:    pending = RUN / "pending_eval.json"
+275:        prompt=render_task_prompt(iteration, regime), model="opus",
+294:def phase_baselines(names):
+310:def iterate(iteration, regime, args):
+313:    log(f"=== iteration {iteration} regime={regime} frontier={best_before}")
+315:    cands = propose(iteration, regime, args.propose_timeout)
+319:        append_summary({"iteration": iteration, "system": None, "regime": regime,
+324:        err = validate(c, regime)
+327:            append_summary(summary_row(iteration, c, None, best_before, regime,
+338:            append_summary(summary_row(iteration, c, None, best_before, regime,
+343:            append_summary(summary_row(iteration, c, s, best_before, regime, status="too_many_errors"))
+346:        append_summary(summary_row(iteration, c, s, best_before, regime,
+355:def finalize(args):
+383:def main():
+387:    p.add_argument("--regime", choices=["open", "state_only"], default=None)
+393:    p.add_argument("--local-mock", default=None, help="CPU test: benchmark with this scripted policy")
+397:    LOCAL_MOCK, STUB_PROPOSER = args.local_mock, args.stub_proposer
+406:    regime = args.regime or (read_summary() or [{}])[-1].get("regime") or "open"
+407:    (RUN / "REGIME").write_text(regime)
+412:        ok = iterate(i, regime, args)

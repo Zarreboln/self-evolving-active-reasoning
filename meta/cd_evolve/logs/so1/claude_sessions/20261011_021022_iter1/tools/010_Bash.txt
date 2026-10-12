@@ -1,0 +1,206 @@
+Bash
+
+command: cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; sed -n 1,200p evolve.py
+description: Read evolve.py first part
+
+--- output ---
+"""Harness-evolution loop for CircuitDecoding, mirroring
+meta_harness_official/reference_examples/text_classification/meta_harness.py.
+
+One iteration = propose (fresh `claude -p` session with the meta-harness-cd
+skill, filesystem access to this workspace) -> validate (import + mock smoke
+test + regime static check) -> benchmark each candidate on the search split
+with the fixed 7B model served on Engaging -> score -> update frontier and
+evolution_summary.jsonl. Held-out numbers only exist after `--test`, which
+freezes the run.
+
+    python evolve.py --run-name open1 --regime open --iterations 1
+    python evolve.py --run-name open1 --regime open --iterations 7      # resumes
+    python evolve.py --run-name open1 --test                             # one-shot held-out, then frozen
+
+The task model runs on Engaging: submit engaging/serve_7b.sbatch; this loop
+reads ~/results/ar_harness/serve_7b.endpoint over ssh and runs the runner
+inside that job's allocation (srun --overlap), so nothing heavy runs on the
+login node. Candidate files are synced before each benchmark.
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+import claude_wrapper
+
+WS = Path(__file__).resolve().parent            # this workspace (proposer cwd)
+ROOT = WS.parent.parent                          # ar_harness
+AGENTS = WS / "agents"
+BASELINES = ["bare", "enum15", "symbolic", "facts", "splits", "oracle_hint", "t3_gate"]
+SEED_FILES = {f"{b}.py" for b in BASELINES} | {"__init__.py"}
+REMOTE = "engaging"
+REMOTE_CODE = "~/code/ar_harness"
+REMOTE_RESULTS = "~/results/ar_harness/cd_evolve"
+SEARCH_SEEDS, HELDOUT_SEEDS, CONCURRENCY = 2, 3, 48
+PROPOSER_TOOLS = ["Read", "Glob", "Grep", "Write", "Edit", "Bash"]
+STATE_ONLY_FORBIDDEN = ["available_bits", "expected_bits", "best_query", "split_table_text",
+                        "log2", "entropy"]
+# Critic denylist (RRSI-style precheck): a harness has no business touching files,
+# the network, the interpreter, or anything that smells like the truth table.
+CRITIC_DENY = [
+    # "truth table" is the task's own vocabulary and appears in legitimate harness text;
+    # only code-level access patterns are denied (the View carries no truth anyway).
+    (r"truth_bits|\[['\"]truth['\"]\]|\.truth\b|\binst\[|\binst\.", "accesses truth / instance fields"),
+    (r"cd_test|circuit_joint_lookup|orig_index|\[['\"]circuits['\"]\]", "references the instance file / truth fields"),
+    (r"\bopen\(|\bPath\(|json\.load|\bglob\b|pickle|shelve", "file IO"),
+    (r"subprocess|\bos\.|\bsys\.(?!path)|urllib|requests|socket|httpx", "process / network access"),
+    (r"\beval\(|\bexec\(|__import__|importlib", "dynamic code execution"),
+]
+IMPORT_ALLOW = {"numpy", "np", "re", "math", "itertools", "collections", "functools", "typing",
+                "dataclasses", "random", "string", "harness_lib", "cd_oracle", "statistics", "heapq"}
+SPLIT_FILE = ROOT / "splits/cd_split.json"
+ENDPOINT_FILE = "serve_7b.endpoint"          # under ~/results/ar_harness on the cluster
+REMOTE_RUNNER = "runner/cd_harness_run.py"   # relative to REMOTE_CODE
+DELTA_OVERRIDE = None
+BETA0, BETA1 = 0.1, 2.0        # cost rule: dC <= beta0 + beta1 * dS  (dS in uniq@end fraction)
+WITHIN_BAND_SAVING = 0.05      # inside the noise band only a >=5% token saving is admissible
+CRITIC_MODE = "llm"
+
+# per-run paths, set in main()
+RUN = None
+LOCAL_MOCK = None      # --local-mock POLICY: benchmark with the scripted task model on this machine
+STUB_PROPOSER = False  # --stub-proposer: copy a seed harness under a new name instead of calling claude
+
+
+def ts():
+    return datetime.now().strftime("[%H:%M:%S]")
+
+
+def log(msg):
+    print(f"{ts()} {msg}", flush=True)
+    with (RUN / "evolve.log").open("a") as f:
+        f.write(f"{datetime.now().isoformat(timespec='seconds')} {msg}\n")
+
+
+def sh(cmd, timeout=3600, check=False, **kw):
+    r = subprocess.run(cmd, shell=isinstance(cmd, str), capture_output=True, text=True,
+                       timeout=timeout, **kw)
+    if check and r.returncode != 0:
+        raise RuntimeError(f"command failed ({r.returncode}): {cmd}\n{r.stderr[-2000:]}")
+    return r
+
+
+def ssh(cmd, timeout=3600):
+    return sh(["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=20", REMOTE, cmd], timeout=timeout)
+
+
+# ----------------------------------------------------------------- remote GPU
+
+def remote_endpoint():
+    """-> (job_id, node, port) of a running task-model server, or None.
+    The endpoint file is written by engaging/serve_7b.sbatch as node:port:jobid once
+    vLLM answers /health, and removed when the job ends."""
+    r = ssh(f"cat ~/results/ar_harness/{ENDPOINT_FILE} 2>/dev/null; echo ---; "
+            "squeue -u $USER -n serve7b -h -o '%i %T'")
+    ep, _, jobs = r.stdout.partition("---")
+    ep = ep.strip()
+    running = [l.split()[0] for l in jobs.strip().splitlines() if "RUNNING" in l]
+    if not running:
+        return None
+    if ":" not in ep:
+        return (running[0], None, None)
+    parts = ep.split(":")
+    node, port = parts[0], parts[1]
+    job = parts[2] if len(parts) > 2 and parts[2] in running else running[0]
+    return (job, node, port)
+
+
+def wait_endpoint(max_wait=6 * 3600):
+    t0 = time.time()
+    while time.time() - t0 < max_wait:
+        ep = remote_endpoint()
+        if ep and ep[1]:
+            return ep
+        state = "no serve7b job" if not ep else "serve7b starting (no endpoint yet)"
+        log(f"waiting for the task-model server: {state}")
+        time.sleep(60)
+    raise RuntimeError("no task-model server after max_wait")
+
+
+def sync_agent(name):
+    sh(["scp", "-q", str(AGENTS / f"{name}.py"), str(WS / "harness_lib.py"),
+        f"{REMOTE}:{REMOTE_CODE}/meta/cd_evolve/agents/"], check=True)
+    sh(["scp", "-q", str(WS / "harness_lib.py"), f"{REMOTE}:{REMOTE_CODE}/meta/cd_evolve/"], check=True)
+    sh(["scp", "-q", str(SPLIT_FILE), f"{REMOTE}:{REMOTE_CODE}/splits/"], check=True)
+
+
+def benchmark(name, split, seeds, out_local, timeout=5400):
+    """Run the fixed task model on `split` with harness `name`; sync traces back."""
+    if LOCAL_MOCK:
+        out_local.parent.mkdir(parents=True, exist_ok=True)
+        r = sh([sys.executable, str(ROOT / "runner/cd_harness_run.py"), "--harness",
+                str(AGENTS / f"{name}.py"), "--mock", LOCAL_MOCK, "--split", split, "--seeds",
+                str(seeds), "--split-file", str(SPLIT_FILE), "--concurrency", "64",
+                "--out", str(out_local)], timeout=timeout, check=True)
+        log(f"  mock-benchmark {name}/{split}: {r.stdout.strip().splitlines()[-1]}")
+        return r
+    job, node, port = wait_endpoint()
+    sync_agent(name)
+    remote_out = f"{REMOTE_RESULTS}/{RUN.name}/{name}/{split}.jsonl"
+    runner = (f"cd {REMOTE_CODE} && mkdir -p $(dirname {remote_out}) && "
+              f"conda_env/bin/python {REMOTE_RUNNER} "
+              f"--harness meta/cd_evolve/agents/{name}.py --split {split} --seeds {seeds} "
+              f"--split-file splits/{SPLIT_FILE.name} "
+              f"--concurrency {CONCURRENCY} --base-url http://127.0.0.1:{port}/v1 "
+              f"--out {remote_out}")
+    cmd = (f"srun --jobid={job} --overlap --ntasks=1 --cpus-per-task=2 --mem=4G "
+           f"--quiet bash -lc {json.dumps(runner)}")
+    t0 = time.time()
+    r = ssh(cmd, timeout=timeout)
+    if "done in" not in r.stdout and "to run 0" not in r.stdout:
+        # fall back to the login node talking to the compute node directly
+        log(f"  srun step failed ({r.returncode}); falling back to login-node runner")
+        runner_ln = runner.replace("http://127.0.0.1", f"http://{node}")
+        r = ssh(runner_ln, timeout=timeout)
+    tail = "\n".join(r.stdout.splitlines()[-3:])
+    out_local.parent.mkdir(parents=True, exist_ok=True)
+    sh(["rsync", "-az", f"{REMOTE}:{remote_out}", str(out_local)], check=True)
+    log(f"  benchmark {name}/{split}: {time.time()-t0:.0f}s  {tail.strip().splitlines()[-1] if tail.strip() else ''}")
+    return r
+
+
+def score(out_local, split, vs=None):
+    cmd = [sys.executable, str(ROOT / "runner/cd_score.py"), str(out_local), "--split", split,
+           "--split-file", str(SPLIT_FILE)]
+    if vs:
+        cmd += ["--vs", str(vs)]
+    sj = RUN / "scores" / f"{out_local.parent.name}.{split}.json"
+    sj.parent.mkdir(parents=True, exist_ok=True)
+    r = sh(cmd + ["--out", str(sj)], check=True)
+    data = json.loads(sj.read_text())
+    return data, r.stdout
+
+
+# ------------------------------------------------------- RRSI-style regularizers
+
+def noise_delta():
+    """delta = z * sqrt(2) * se(uniq@end) of the bare baseline on the search split
+    (RRSI calibrate.py, z = 2): the band inside which a score difference is noise."""
+    if DELTA_OVERRIDE is not None:
+        return float(DELTA_OVERRIDE)
+    cache = RUN / "noise.json"
+    if cache.exists():
+        return json.loads(cache.read_text())["delta"]
+    import random as _r
+    vals = []
+    f = RUN / "traces/bare/search.jsonl"
+    if not f.exists():
+        return 0.0
+    seen = {}
+    for line in f.open():
+        if line.strip():
+            r = json.loads(line)

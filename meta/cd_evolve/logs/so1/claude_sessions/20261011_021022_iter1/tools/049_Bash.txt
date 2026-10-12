@@ -1,0 +1,40 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 tools/show_trace.py logs/so1/traces/enum15/search.jsonl --key 2 --seed 0 | grep -E "^\[turn" ; python3 - <<'EOF'
+import json
+for l in open('logs/so1/traces/enum15/search.jsonl'):
+    r=json.loads(l)
+    if r['key']==2 and r['seed']==0:
+        for x in r['rows'][11:]:
+            t=x['model_text']; print(x['turn'], '<guess>' in t, len(t))
+EOF
+
+description: Verify turn-by-turn facts cited for key 2/0
+
+--- output ---
+[turn 1] query A(0,0,0) -> 1   alive 2886->1268   bits 0.989/0.989   best A(0,0,0)
+[turn 2] query A(0,0,1) -> 0   alive 1268->614   bits 0.999/0.999   best A(0,0,1)
+[turn 3] query A(0,1,0) -> 0   alive 614->292   bits 0.998/0.998   best A(0,1,0)
+[turn 4] query A(1,0,0) -> 1   alive 292->147   bits 1.000/1.000   best A(1,0,1)
+[turn 5] query A(1,0,1) -> 1   alive 147->146   bits 0.059/0.998   best B(0,0,1)
+[turn 6] query A(1,1,0) -> 1   alive 146->145   bits 0.059/0.999   best B(0,0,1)
+[turn 7] query B(0,0,0) -> 0   alive 145->91   bits 0.953/0.999   best B(0,0,1)
+[turn 8] query B(0,0,1) -> 1   alive 91->47   bits 0.999/0.999   best B(0,0,1)
+[turn 9] query B(0,1,0) -> 1   alive 47->34   bits 0.851/0.992   best C(0,1,1)
+[turn 10] query B(1,0,0) -> 0   alive 34->3   bits 0.431/0.990   best C(0,1,1)
+[turn 11] query C(0,0,0) -> 0   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO
+[turn 12] query C(0,1,1) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO
+[turn 13] query C(0,0,0) -> 0   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+[turn 14] query A(0,0,0) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+[turn 15] query A(0,0,0) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+[turn 16] query A(0,0,0) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+[turn 17] query A(0,0,0) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+[turn 18] query A(0,0,0) -> 1   alive 3->3   bits 0.000/0.918   best B(1,0,1)   ZERO-INFO   REPEAT
+12 False 566
+13 True 1942
+14 True 2019
+15 True 2028
+16 True 2028
+17 True 2028
+18 True 2046

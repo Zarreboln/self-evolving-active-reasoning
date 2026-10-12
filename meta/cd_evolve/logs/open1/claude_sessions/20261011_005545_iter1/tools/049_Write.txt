@@ -1,0 +1,9 @@
+Write: ../../../../.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/MEMORY.md
+
+content:
+- [CD context budget and mock limits](cd-evolve-context-and-mocks.md) — ~0.55 tok/char for harness text, 11,088-token prompt cap; follow mock ignores <query> tags
+
+
+
+--- output ---
+File created successfully at: /Users/zarreboln/.claude/projects/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/memory/MEMORY.md (file state is current in your context — no need to Read it back)

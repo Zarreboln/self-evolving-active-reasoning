@@ -1,0 +1,67 @@
+Bash
+
+command:
+cd /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad; cat > an3.py <<'EOF'
+import json, sys, collections
+import numpy as np
+sys.path.insert(0, '/Users/zarreboln/Desktop/ar_harness/stage0')
+from cd_oracle import CDGame
+games={}
+def game(nH):
+    return games[nH]
+for comp in [{"AND":1,"OR":5,"NOT":2},{"AND":3,"OR":3,"NOT":0},{"AND":3,"OR":3,"NOT":1}]:
+    g=CDGame(comp); games[len(g.H)]=g
+def load(p):
+    latest={}
+    for l in open(p):
+        if l.strip():
+            r=json.loads(l); latest[(r['key'],r['seed'])]=r
+    return latest
+for name in sys.argv[1:]:
+    eps=load(name)
+    c=collections.Counter()
+    for r in eps.values():
+        rows=[x for x in (r.get('rows') or []) if not x.get('illegal')]
+        if not rows: continue
+        g=games[rows[0]['n_before']]; H=g.H
+        hist=[]; alive=np.arange(len(H))
+        prev=None
+        for x in rows:
+            q=x['query']
+            if prev is not None and len(alive)>1:
+                nxt=(prev+1)%24
+                col=H[alive,nxt]; nxt_det = col.min()==col.max()
+                if nxt_det:
+                    if q==nxt: c['next_det_taken']+=1
+                    else:
+                        cq=H[alive,q]; qdet=cq.min()==cq.max()
+                        c['next_det_skipped_to_open' if not qdet else 'next_det_skipped_to_det']+=1
+                else:
+                    if q==nxt: c['next_open_taken']+=1
+                    else:
+                        cq=H[alive,q]; qdet=cq.min()==cq.max()
+                        c['next_open_skipped_to_open' if not qdet else 'next_open_skipped_to_det']+=1
+            alive=alive[H[alive,q]==x['answer']]
+            prev=q
+    tot_det=c['next_det_taken']+c['next_det_skipped_to_open']+c['next_det_skipped_to_det']
+    tot_open=c['next_open_taken']+c['next_open_skipped_to_open']+c['next_open_skipped_to_det']
+    print(name); print('  when next canonical entry is DETERMINED (%d): taken %.2f, skipped->open %.2f, skipped->det %.2f'%(tot_det,c['next_det_taken']/tot_det,c['next_det_skipped_to_open']/tot_det,c['next_det_skipped_to_det']/tot_det))
+    print('  when next canonical entry is OPEN (%d): taken %.2f, skipped->open %.2f, skipped->det %.2f'%(tot_open,c['next_open_taken']/tot_open,c['next_open_skipped_to_open']/tot_open,c['next_open_skipped_to_det']/tot_open))
+EOF
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; python3 /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/af7d714c-c2e2-446c-a5b5-108e27c4efdd/scratchpad/an3.py logs/so1/traces/bare/search.jsonl logs/so1/traces/enum15/search.jsonl logs/open1/traces/open_entries/search.jsonl logs/open1/traces/enum15/search.jsonl
+
+description: Measure whether model skips determined next-in-scan entries
+
+--- output ---
+logs/so1/traces/bare/search.jsonl
+  when next canonical entry is DETERMINED (1227): taken 0.87, skipped->open 0.04, skipped->det 0.09
+  when next canonical entry is OPEN (2034): taken 0.94, skipped->open 0.04, skipped->det 0.02
+logs/so1/traces/enum15/search.jsonl
+  when next canonical entry is DETERMINED (980): taken 0.56, skipped->open 0.15, skipped->det 0.28
+  when next canonical entry is OPEN (2185): taken 0.86, skipped->open 0.06, skipped->det 0.07
+logs/open1/traces/open_entries/search.jsonl
+  when next canonical entry is DETERMINED (598): taken 0.87, skipped->open 0.08, skipped->det 0.05
+  when next canonical entry is OPEN (1007): taken 0.98, skipped->open 0.01, skipped->det 0.01
+logs/open1/traces/enum15/search.jsonl
+  when next canonical entry is DETERMINED (477): taken 0.54, skipped->open 0.20, skipped->det 0.27
+  when next canonical entry is OPEN (1065): taken 0.88, skipped->open 0.06, skipped->det 0.06

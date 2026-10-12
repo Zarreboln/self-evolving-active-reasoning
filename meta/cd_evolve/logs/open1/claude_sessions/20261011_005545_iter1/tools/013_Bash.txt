@@ -1,0 +1,86 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness && ls -la results/ && ls -la results/* | head -80
+
+description: List results directory for prior ladder runs
+
+--- output ---
+total 7248
+drwxr-xr-x@ 13 zarreboln  staff      416 Oct 10 20:30 .
+drwxr-xr-x@ 22 zarreboln  staff      704 Oct 10 19:49 ..
+drwxr-xr-x@  2 zarreboln  staff       64 Oct 10 19:43 cd
+drwxr-xr-x@  3 zarreboln  staff       96 Oct 10 20:00 cd_heldout
+drwxr-xr-x@ 30 zarreboln  staff      960 Oct 10 20:29 cd_mock
+-rw-rw-r--@  1 zarreboln  staff  2533821 Oct  7 15:29 gate_cd.jsonl
+-rw-rw-r--@  1 zarreboln  staff  1018691 Oct  7 15:53 gate_sp.jsonl
+-rw-r--r--@  1 zarreboln  staff    90684 Oct  8 13:36 judge_eval_set.json
+-rw-r--r--@  1 zarreboln  staff    51312 Oct  8 13:29 judge_sample.json
+-rw-r--r--@  1 zarreboln  staff     2801 Oct  8 13:41 labels_opus.json
+-rw-r--r--@  1 zarreboln  staff      926 Oct  8 13:38 labels_opus_b1.json
+drwxr-xr-x@  4 zarreboln  staff      128 Oct 10 20:30 oldenv
+drwxr-xr-x@  3 zarreboln  staff       96 Oct  7 15:43 sp
+-rw-rw-r--@ 1 zarreboln  staff  2533821 Oct  7 15:29 results/gate_cd.jsonl
+-rw-rw-r--@ 1 zarreboln  staff  1018691 Oct  7 15:53 results/gate_sp.jsonl
+-rw-r--r--@ 1 zarreboln  staff    90684 Oct  8 13:36 results/judge_eval_set.json
+-rw-r--r--@ 1 zarreboln  staff    51312 Oct  8 13:29 results/judge_sample.json
+-rw-r--r--@ 1 zarreboln  staff     2801 Oct  8 13:41 results/labels_opus.json
+-rw-r--r--@ 1 zarreboln  staff      926 Oct  8 13:38 results/labels_opus_b1.json
+
+results/cd:
+total 0
+drwxr-xr-x@  2 zarreboln  staff   64 Oct 10 19:43 .
+drwxr-xr-x@ 13 zarreboln  staff  416 Oct 10 20:30 ..
+
+results/cd_heldout:
+total 0
+drwxr-xr-x@  3 zarreboln  staff   96 Oct 10 20:00 .
+drwxr-xr-x@ 13 zarreboln  staff  416 Oct 10 20:30 ..
+drwxr-xr-x@  9 zarreboln  staff  288 Oct 10 20:00 dry_mock
+
+results/cd_mock:
+total 32888
+drwxr-xr-x@ 30 zarreboln  staff     960 Oct 10 20:29 .
+drwxr-xr-x@ 13 zarreboln  staff     416 Oct 10 20:30 ..
+-rw-r--r--@  1 zarreboln  staff  351230 Oct 10 20:29 flaky__bare.jsonl
+-rw-r--r--@  1 zarreboln  staff  577670 Oct 10 20:29 flaky__enum15.jsonl
+-rw-r--r--@  1 zarreboln  staff  442985 Oct 10 20:29 flaky__facts.jsonl
+-rw-r--r--@  1 zarreboln  staff  605039 Oct 10 20:29 flaky__oracle_hint.jsonl
+-rw-r--r--@  1 zarreboln  staff  824097 Oct 10 20:29 flaky__splits.jsonl
+-rw-r--r--@  1 zarreboln  staff  528087 Oct 10 20:29 flaky__symbolic.jsonl
+-rw-r--r--@  1 zarreboln  staff  438044 Oct 10 20:29 flaky__t3_gate.jsonl
+-rw-r--r--@  1 zarreboln  staff  375736 Oct 10 20:29 follow__bare.jsonl
+-rw-r--r--@  1 zarreboln  staff  685365 Oct 10 20:29 follow__enum15.jsonl
+-rw-r--r--@  1 zarreboln  staff  502730 Oct 10 20:29 follow__facts.jsonl
+-rw-r--r--@  1 zarreboln  staff  711274 Oct 10 20:29 follow__oracle_hint.jsonl
+-rw-r--r--@  1 zarreboln  staff  959809 Oct 10 20:29 follow__splits.jsonl
+-rw-r--r--@  1 zarreboln  staff  604722 Oct 10 20:29 follow__symbolic.jsonl
+-rw-r--r--@  1 zarreboln  staff  532941 Oct 10 20:29 follow__t3_gate.jsonl
+-rw-r--r--@  1 zarreboln  staff  367240 Oct 10 20:29 greedy__bare.jsonl
+-rw-r--r--@  1 zarreboln  staff  694511 Oct 10 20:29 greedy__enum15.jsonl
+-rw-r--r--@  1 zarreboln  staff  494244 Oct 10 20:29 greedy__facts.jsonl
+-rw-r--r--@  1 zarreboln  staff  715598 Oct 10 20:29 greedy__oracle_hint.jsonl
+-rw-r--r--@  1 zarreboln  staff  867324 Oct 10 20:29 greedy__splits.jsonl
+-rw-r--r--@  1 zarreboln  staff  644031 Oct 10 20:29 greedy__symbolic.jsonl
+-rw-r--r--@  1 zarreboln  staff  481470 Oct 10 20:29 greedy__t3_gate.jsonl
+-rw-r--r--@  1 zarreboln  staff  375936 Oct 10 20:29 sequential__bare.jsonl
+-rw-r--r--@  1 zarreboln  staff  685563 Oct 10 20:29 sequential__enum15.jsonl
+-rw-r--r--@  1 zarreboln  staff  502931 Oct 10 20:29 sequential__facts.jsonl
+-rw-r--r--@  1 zarreboln  staff  718084 Oct 10 20:29 sequential__oracle_hint.jsonl
+-rw-r--r--@  1 zarreboln  staff  960017 Oct 10 20:29 sequential__splits.jsonl
+-rw-r--r--@  1 zarreboln  staff  604921 Oct 10 20:29 sequential__symbolic.jsonl
+-rw-r--r--@  1 zarreboln  staff  533132 Oct 10 20:29 sequential__t3_gate.jsonl
+
+results/oldenv:
+total 0
+drwxr-xr-x@  4 zarreboln  staff  128 Oct 10 20:30 .
+drwxr-xr-x@ 13 zarreboln  staff  416 Oct 10 20:30 ..
+drwxr-xr-x@  8 zarreboln  staff  256 Oct 10 20:30 agents_open1
+drwxr-xr-x@ 11 zarreboln  staff  352 Oct 10 20:07 open1_logs
+
+results/sp:
+total 2808
+drwxr-xr-x@  3 zarreboln  staff       96 Oct  7 15:43 .
+drwxr-xr-x@ 13 zarreboln  staff      416 Oct 10 20:30 ..
+-rw-rw-r--@  1 zarreboln  staff  1433601 Oct  7 15:43 log_zero_shot_qwen7b.json
+Shell cwd was reset to /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve

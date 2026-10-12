@@ -1,0 +1,16 @@
+Bash
+
+command:
+S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-evolve/e3ab8c0a-064b-4b20-befc-e87eb5ce7441/scratchpad && cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve && ls agents/ && for n in copy_query open_entries copy_open; do test -e agents/$n.py && echo "EXISTS: $n"; done; echo ok
+
+description: Check that candidate names are not taken
+
+--- output ---
+bare.py
+enum15.py
+facts.py
+oracle_hint.py
+splits.py
+symbolic.py
+t3_gate.py
+ok

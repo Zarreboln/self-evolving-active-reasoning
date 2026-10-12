@@ -1,0 +1,29 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_evolve; ls -la agents/*.py logs/so1/reports/ logs/so1/pending_eval.json; wc -l logs/so1/reports/iter0.md
+
+description: Confirm final deliverables are in place
+
+--- output ---
+-rw-r--r--@ 1 zarreboln  staff  3632 Oct 10 22:08 agents/answer_grid.py
+-rw-r--r--@ 1 zarreboln  staff   288 Oct 10 19:49 agents/bare.py
+-rw-r--r--@ 1 zarreboln  staff  2738 Oct 10 20:54 agents/copy_open.py
+-rw-r--r--@ 1 zarreboln  staff  2628 Oct 10 20:54 agents/copy_query.py
+-rw-r--r--@ 1 zarreboln  staff   763 Oct 10 19:49 agents/enum15.py
+-rw-r--r--@ 1 zarreboln  staff   507 Oct 10 19:49 agents/facts.py
+-rw-r--r--@ 1 zarreboln  staff  2763 Oct 10 20:54 agents/open_entries.py
+-rw-r--r--@ 1 zarreboln  staff   787 Oct 10 19:49 agents/oracle_hint.py
+-rw-r--r--@ 1 zarreboln  staff   788 Oct 10 19:49 agents/splits.py
+-rw-r--r--@ 1 zarreboln  staff   525 Oct 10 19:49 agents/symbolic.py
+-rw-r--r--@ 1 zarreboln  staff  1034 Oct 10 19:49 agents/t3_gate.py
+-rw-r--r--@ 1 zarreboln  staff  4651 Oct 10 22:08 agents/veto_determined.py
+-rw-r--r--@ 1 zarreboln  staff  4268 Oct 10 22:06 agents/veto_only.py
+-rw-r--r--@ 1 zarreboln  staff  4617 Oct 10 22:09 logs/so1/pending_eval.json
+
+logs/so1/reports/:
+total 8
+drwxr-xr-x@  3 zarreboln  staff    96 Oct 10 22:06 .
+drwxr-xr-x@ 12 zarreboln  staff   384 Oct 10 22:09 ..
+-rw-r--r--@  1 zarreboln  staff  2997 Oct 10 22:06 iter0.md
+      15 logs/so1/reports/iter0.md

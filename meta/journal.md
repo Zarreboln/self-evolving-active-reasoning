@@ -246,3 +246,11 @@
   said "opus5". Flagged to the user; the running strict3/labeled3 keep the alias for consistency with
   the pilots unless told otherwise.
 - 18:31 user decision: keep Opus 5.5 (claude-opus-5-5) for proposer and judge; strict3/labeled3 continue.
+
+### 2026-10-12 18:43 EDT — strict3/labeled3 stopped (audit false positive), strict4/labeled4 launched
+- The outside-folder rule `ar_harness/(?!meta/cd_tthe/)` matched every session's own prefix
+  `cd .../meta/cd_tthe;` (no trailing slash), so the first proposers of both arms were discarded for
+  nothing. Fixed to `ar_harness/(?!meta/cd_tthe\b)`; 12 unit cases (own-folder prefixes, repo root,
+  sibling folder, experiments, ../.., other runs, git, memory, scratchpad) pass. Both runs killed,
+  their files archived, sandbox back to agents/=bare.py and logs/ empty (plumbing stubs removed too).
+- Relaunched as strict4_b10g3r2 / labeled4_b10g3r2 (same 30 instances, same settings, Opus 5.5).

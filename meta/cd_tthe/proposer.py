@@ -125,7 +125,7 @@ def off_limits(arm):
 
 
 REQ_FORBID = (r"ar_harness_controller|mt_puzzles|cd_test\.jsonl|_truth\b|solver_cache|/\.claude/|claude_sessions"
-              r"|\.\./\.\.|ar_harness/(?!meta/cd_tthe/)"                      # anything outside this folder
+              r"|\.\./\.\.|ar_harness/(?!meta/cd_tthe\b)"                      # anything outside this folder
               r"|(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b")
 # instance truths: our trace/score fields, and the data file's own keys (its rows carry the circuits)
 VAL_TRUTH = r"truth_bits|['\"]truth(?:_table|_tables|s)?['\"]\s*:\s*['\"\[(]?\s*[01]|circuit_joint_lookup|avg_reveals"

@@ -254,3 +254,17 @@
   sibling folder, experiments, ../.., other runs, git, memory, scratchpad) pass. Both runs killed,
   their files archived, sandbox back to agents/=bare.py and logs/ empty (plumbing stubs removed too).
 - Relaunched as strict4_b10g3r2 / labeled4_b10g3r2 (same 30 instances, same settings, Opus 5.5).
+
+### 2026-10-12 19:02 EDT — audit rewritten; strict6/labeled6 launched
+- strict4/labeled4 (18:42) stopped at 18:55: three false positives in one session (`ls ../../` from
+  inside the trace folder resolves inside the run; `circuit_joint_lookup` appears in our own audit.py
+  source; the proposal card mentions cd_oracle in prose). strict5/labeled5 (18:57) stopped at 19:00:
+  my test gate did not stop the launch on two failing cases (reading proposer.py returns the pattern
+  word `truth_bits`; Claude Code's tool-results spill files live under .claude).
+- audit_session rewritten: requests judged on PATHS only (Bash command text, Read/Write/Edit paths,
+  Glob/Grep paths), resolved against the command's `cd` target, with a `cd` landing outside flagged;
+  absolute tokens must start at a real top-level dir (no more /def, /query fragments); value patterns
+  require data form (lower-case JSON booleans, key-colon). 30 unit cases incl. reading every source
+  file; regression on the 42 archived pilot transcripts leaves only real escapes (cd .., ../journal.md,
+  memory dir, stage0/, repo root). Note: the pilot's b1 judge and several proposers did `ls ../`.
+- strict6_b10g3r2 / labeled6_b10g3r2 launched (same 30 instances, Opus 5.5).

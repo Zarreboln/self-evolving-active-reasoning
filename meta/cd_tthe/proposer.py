@@ -124,24 +124,90 @@ def off_limits(arm):
     return OFF_LIMITS.format(stage0="" if arm == "lib" else "`stage0/` (the oracle code), ")
 
 
-REQ_FORBID = (r"ar_harness_controller|mt_puzzles|cd_test\.jsonl|_truth\b|solver_cache|/\.claude/|claude_sessions"
-              r"|\.\./\.\.|ar_harness/(?!meta/cd_tthe\b)"                      # anything outside this folder
-              r"|(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b")
-# instance truths: our trace/score fields, and the data file's own keys (its rows carry the circuits)
-VAL_TRUTH = r"truth_bits|['\"]truth(?:_table|_tables|s)?['\"]\s*:\s*['\"\[(]?\s*[01]|circuit_joint_lookup|avg_reveals"
-VAL_GOLD = r"\"gold\":\s*\{"
-VAL_ORACLE = r"\"(uniq_end|n_alive_end|zero_info|oracle_agree|eff)\":\s*(true|false|[0-9.]+|null)"
+# ----------------------------------------------------------------------------- session audit
+# What a proposer/judge session may touch: this folder, its scratch directory and system binaries.
+# Requests are judged on PATHS (resolved against the command's `cd`), never on prose the session writes.
+ALLOWED_ROOTS = [str(HERE)] + ["/private/tmp/claude-501", "/tmp", "/private/tmp", "/dev/", "/usr/", "/bin/", "/sbin/",
+                               "/opt/", "/Library/", "/System/", "/etc/", "/var/folders", "/private/var/folders"]
+NAME_RULES = [  # applied to path-bearing fields only
+    ("controller store", r"ar_harness_controller"),
+    ("memory / Claude Code state", r"/\.claude/(?!projects/[^/\s'\"]+/[0-9a-f-]+/tool-results/)"),
+    ("solver cache", r"solver_cache"),
+    ("session transcripts", r"claude_sessions"),
+    ("task data file", r"cd_test\.jsonl|mt_puzzles/[A-Za-z0-9_]+\.(?:jsonl|txt)"),
+    ("git", r"(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b"),
+]
+ORACLE_RULES = [("oracle code", r"stage0/|cd_oracle\.py|(?:from|import)\s+cd_oracle\b")]
+# instance truths / gold / oracle-derived values as they appear in DATA (lower-case JSON), not in our source code
+VAL_TRUTH = r"\"truth_bits\"\s*:|['\"]truth(?:_table|_tables|s)?['\"]\s*:\s*['\"\[(]?\s*[01]|\"circuit_joint_lookup\"\s*:|\"avg_reveals\"\s*:\s*[0-9]"
+VAL_GOLD = r"\"gold\":\s*\{\s*\"parsed_guess\":\s*(?:true|false)"
+VAL_ORACLE = r"\"(uniq_end|n_alive_end|zero_info|oracle_agree|eff)\":\s*(?:true|false|[0-9.]+|null)"
+# real path candidates only: absolute paths under a real top-level directory, `../` and `~/`
+_PATH_TOKEN = re.compile(r"(?<![A-Za-z0-9_.:])((?:~/|\.\./|/(?:Users|private|tmp|opt|usr|etc|var|Library|System|dev|bin|sbin|home|Volumes|Applications)(?:/|\b))[A-Za-z0-9_./~+-]*)")
+_CD = re.compile(r"(?:^|[;&|]\s*|\n\s*)cd\s+([^\s;&|]+)")
+
+
+def _path_fields(name, inp):
+    if name == "Bash":
+        return [inp.get("command") or ""]
+    if name in ("Read", "Write", "Edit", "MultiEdit", "NotebookEdit"):
+        return [inp.get("file_path") or inp.get("notebook_path") or ""]
+    if name == "Glob":
+        return [inp.get("pattern") or "", inp.get("path") or ""]
+    if name == "Grep":
+        return [inp.get("path") or "", inp.get("glob") or ""]
+    return []
+
+
+def _resolve(tok, cwd):
+    tok = os.path.expanduser(tok)
+    return os.path.normpath(tok if tok.startswith("/") else os.path.join(cwd, tok))
+
+
+_SPILL = re.compile(r"/\.claude/projects/[^/]+/[0-9a-f-]+/tool-results/")   # Claude Code's own large-output spill files
+
+
+def _path_ok(resolved):
+    if _SPILL.search(resolved):
+        return True
+    return any(resolved == r.rstrip("/") or resolved.startswith(r if r.endswith("/") else r + "/") for r in ALLOWED_ROOTS)
+
+
+def _escapes(text, cwd0, whole=False):
+    """Paths in a command/field that resolve outside the allowed roots. Relative ones are resolved
+    against the command's `cd` target; a `cd` that itself lands outside is reported too."""
+    if whole:
+        r = _resolve(text.strip(), cwd0)
+        return [] if _path_ok(r) else [f"{text.strip()} -> {r}"]
+    bad = []
+    cwd = cwd0
+    pos = 0
+    segments = []
+    for m in _CD.finditer(text):           # cwd changes along the command
+        segments.append((pos, m.start(), cwd))
+        cwd = _resolve(m.group(1).strip("'\""), cwd); pos = m.end()
+        if not _path_ok(cwd):
+            bad.append(f"cd {m.group(1)} -> {cwd}")
+    segments.append((pos, len(text), cwd))
+    for a, b, c in segments:
+        for t in _PATH_TOKEN.findall(text[a:b]):
+            r = _resolve(t.rstrip("/"), c)
+            if not _path_ok(r):
+                bad.append(f"{t} -> {r}")
+    return bad
 
 
 def audit_session(run_dir, name, arm):
-    """Scan the newest session named `name`: what it asked for and what came back. Returns the audit
-    dict (clean / hits) and records it in the session dir and in session_audits.jsonl."""
+    """Scan the newest session named `name`: which paths it touched and what came back. Returns the
+    audit dict (clean / hits) and records it in the session dir and in session_audits.jsonl."""
     sessions = sorted((Path(run_dir) / "claude_sessions").glob(f"*_{name}"))
     if not sessions:
         return {"name": name, "clean": True, "hits": [], "note": "no session dir"}
     sess = sessions[-1]; ev = sess / "events.jsonl"
     run_name = re.escape(Path(run_dir).name)
-    req_rx = re.compile(REQ_FORBID + ("" if arm == "lib" else r"|stage0|cd_oracle") + rf"|logs/(?!{run_name}(?:/|$|\b))")
+    rules = [(k, re.compile(rx)) for k, rx in NAME_RULES] + [("other run's logs", re.compile(rf"logs/(?!{run_name}\b)[A-Za-z0-9_]+\b"))]
+    if arm != "lib":
+        rules += [(k, re.compile(rx)) for k, rx in ORACLE_RULES]
     val_rx = [("instance truth", re.compile(VAL_TRUTH)), ("oracle signal value", re.compile(VAL_ORACLE))]
     if not LABELED:
         val_rx.append(("gold record", re.compile(VAL_GOLD)))
@@ -153,14 +219,19 @@ def audit_session(run_dir, name, arm):
             continue
         if d.get("type") == "assistant":
             for b in (d.get("message") or {}).get("content") or []:
-                if b.get("type") == "tool_use":
-                    uses[b["id"]] = (b["name"], b.get("input") or {})
-                    m = req_rx.search(json.dumps(b.get("input")))
-                    if m and m.group(0) == "/.claude/" and "/tool-results/" in json.dumps(b.get("input")):
-                        m = None          # Claude Code spills its own large tool outputs there; reading them is not a leak
-                    if m:
-                        hits.append({"kind": "request", "match": m.group(0), "tool": b["name"],
-                                     "input": json.dumps(b.get("input"))[:300]})
+                if b.get("type") != "tool_use":
+                    continue
+                uses[b["id"]] = (b["name"], b.get("input") or {})
+                for field in _path_fields(b["name"], b.get("input") or {}):
+                    if not field:
+                        continue
+                    for kind, rx in rules:
+                        m = rx.search(field)
+                        if m:
+                            hits.append({"kind": kind, "match": m.group(0)[:80], "tool": b["name"], "input": field[:300]})
+                    esc = _escapes(field, str(HERE), whole=(b["name"] != "Bash"))
+                    if esc:
+                        hits.append({"kind": "path outside the folder", "match": esc[0][:120], "tool": b["name"], "input": field[:300]})
         elif d.get("type") == "user":
             for b in (d.get("message") or {}).get("content") or []:
                 if b.get("type") != "tool_result":

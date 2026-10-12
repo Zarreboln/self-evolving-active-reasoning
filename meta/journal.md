@@ -268,3 +268,10 @@
   file; regression on the 42 archived pilot transcripts leaves only real escapes (cd .., ../journal.md,
   memory dir, stage0/, repo root). Note: the pilot's b1 judge and several proposers did `ls ../`.
 - strict6_b10g3r2 / labeled6_b10g3r2 launched (same 30 instances, Opus 5.5).
+- 19:21 strict6 b0 round 0: audit discarded the conservative-repair candidate for a request containing
+  `solver_cache` — the session had written its own parallel check runner embedding the solver config
+  (cache_dir path) because the given check script runs 10 instances sequentially (~3 min each) and its
+  10-minute background cap would cut it short. Not a label channel (the cache holds only the 7B's replies).
+  Rule removed from NAME_RULES and the OFF-LIMITS text for future launches; strict6/labeled6 keep running
+  with the old module loaded (label isolation unaffected; one round-0 candidate lost). Other 5 round-0
+  sessions clean.

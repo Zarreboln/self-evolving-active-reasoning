@@ -113,7 +113,7 @@ def write_traces(results, trace_dir, labeled=False):
 
 
 OFF_LIMITS = ("\n\nOFF-LIMITS (your session transcript is audited automatically; a violation discards your work): "
-              "do not read, list, grep or copy `~/.ar_harness_controller/`, `mt_puzzles/`, {stage0}`solver_cache/`, other "
+              "do not read, list, grep or copy `~/.ar_harness_controller/`, `mt_puzzles/`, {stage0}other "
               "runs under `logs/`, sessions under `claude_sessions/`, any `.claude/` directory (memory included), anything "
               "outside `meta/cd_tthe/` (the rest of the repository, its README and experiments), or any file that contains "
               "truth tables; do not run git. Work from this run's trace files named above, the harness sources in `agents/`, "
@@ -132,7 +132,6 @@ ALLOWED_ROOTS = [str(HERE)] + ["/private/tmp/claude-501", "/tmp", "/private/tmp"
 NAME_RULES = [  # applied to path-bearing fields only
     ("controller store", r"ar_harness_controller"),
     ("memory / Claude Code state", r"/\.claude/(?!projects/[^/\s'\"]+/[0-9a-f-]+/tool-results/)"),
-    ("solver cache", r"solver_cache"),
     ("session transcripts", r"claude_sessions"),
     ("task data file", r"cd_test\.jsonl|mt_puzzles/[A-Za-z0-9_]+\.(?:jsonl|txt)"),
     ("git", r"(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b"),

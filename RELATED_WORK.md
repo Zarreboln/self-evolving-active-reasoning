@@ -163,6 +163,14 @@ Mastermind._generate_secret_code():  random.sample(possible_colors, k=code_lengt
 - **Bayesian-Agent** — arXiv 2606.08348。把可复用技能当贝叶斯证据对象维护后验，跨 harness；有"从零在线进化"模式。→ 选择侧的另一种正则（后验而非噪声带）。
 - Harness Engineering 源码研究 arXiv 2609.00006；Agentic World Modeling 综述 arXiv 2604.22748（只记录，未读）。
 
+### 5.5 测试时 / 在线（内循环）harness 进化（10-12 下载，用户要求：harness 要放进内循环）
+- **TTHE: Test-Time Harness Evolution** — arXiv 2607.08124（HKBU/USTC/HKUST，2026-07）。任务：部署中的 agent。问题：harness 都是部署前在开发集上搜好再冻结，测试分布/失败模式变了就不适应。方法：把可执行 harness 当作"测试时自适应的状态"：评测过程中维护一个候选 harness 种群，proposer 读**无标签**执行轨迹改 harness，judge 用执行派生的代理信号（不用金标）提交改进版，提交后的程序持续管辖后续输入；solver/proposer/judge 是同一冻结 LLM 的不同角色。结果：text-to-SQL、竞赛编程、SWE、数据科学、工具使用上都改进固定 ReAct 基线；附录一例 30 题分 6 批，48.9→69.8（+20.9）。→ **与我们最贴**：CD 的 uniq@end、零信息率、重复率都是不碰真值就能算的代理信号。
+- **JIT-Agent: Just-in-Time Harness Evolution** — arXiv 2608.25593。训练一个专门"生成 harness 的模型"，按任务即时合成/修复 harness，并从档案的性能信号里自进化；DeepSeek-V4-Flash + JIT 超 GPT-5.6 于 DeepSearchQA。→ 他们训 harness 生成器，我们用冻结 Claude。
+- **RHO: Retrospective Harness Optimization via Self-Preference** — arXiv 2606.05922。无验证集：从过去轨迹选困难核心集并行重解，自验证+自一致性分析，候选更新由成对自偏好选；SWE-Bench Pro 59→78 一轮。→ 无标签选择的另一种做法。
+- **Evo-Harness: Context-to-Harness Skill Compilation** — arXiv 2608.15071。提出"在线 harness 学习"：冻结 agent 在顺序任务流中持续更新结构化 harness，把嘈杂的一次性执行编译成可复用技能。
+- **AgentStream: self-evolving agents under streaming tasks** — arXiv 2608.00155。统一的流式评测框架（isolated / sequential / interleaved 三种流），对 ACE、A-Mem、ReasoningBank、AutoSkill、Harness 五类方法 × 三个前沿模型 × 六个 benchmark：自进化并非普遍有益，相当比例配置低于原始基线。→ 在线实验的评测口径（累计曲线、流顺序、多 seed）照它来。
+- **Rethinking the Evaluation of Harness Evolution for Agents** — arXiv 2607.12227（AI2/UW）。两条批评：没有和同预算的 test-time scaling/发现基线比；用同一 benchmark 的验证信号搜又在其上报分。Terminal-Bench 2.1 上自动 harness 进化打不过简单 test-time scaling、泛化有限；但长程游戏（ARC-AGI-3 +80%、EdgeBench +11%）是有效场景——余量大、依赖分布外动态适应、反馈细粒度。→ 我们的 CD 正是"反馈细粒度 + 余量大"的类型；必须加同预算 best-of-N 对照。
+- 其余同期：EvoHarnessBench 2609.04280（agent 跟得上进化中的 harness 吗）、Evo-Bench 2608.09096（LM 能改进 harness 吗）、HarnessX 2606.14249（可组合可进化 harness 工厂）、AHE 2604.25850（可观测性驱动的编码 agent harness 自动进化）、"Harness updating is not harness benefit" 2605.30621（拆解自进化 agent 的进化能力）、Learning While Acting 2606.04815、AdaMEM 2606.05684、Evo-Memory 2511.20857、EnvHarness 2608.19880；Continual harness（Karten 等，Prime Intellect 博客）。
 ## 6. 对抗课程 / UED
 
 - **PAIRED** — 原始的 regret-based 对抗环境生成。

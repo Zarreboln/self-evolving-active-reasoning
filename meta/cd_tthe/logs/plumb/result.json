@@ -1,0 +1,23 @@
+{
+ "final_harness": "cand_plumb_b0r0g0",
+ "n_instances": 5,
+ "prequential": {
+  "uniq_end": 0.4,
+  "exact": 0.0
+ },
+ "transductive": {
+  "uniq_end": 1.0,
+  "exact": 1.0
+ },
+ "per_batch": [
+  {
+   "batch": 0,
+   "incoming": "bare",
+   "committed": "cand_plumb_b0r0g0",
+   "preq_uniq": 0.4,
+   "trans_uniq": 1.0,
+   "preq_exact": 0.0,
+   "trans_exact": 1.0
+  }
+ ]
+}

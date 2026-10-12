@@ -44,3 +44,11 @@ mt_puzzles/mr_*
 mt_puzzles/tq_*
 mt_puzzles/wc_*
 mt_puzzles/wg_*
+
+# cd_tthe runtime products (caches, per-episode job files, proposer check dirs)
+meta/cd_tthe/logs/*/solver_cache/
+meta/cd_tthe/logs/*/solve_jobs/
+meta/cd_tthe/logs/*/checks/
+meta/cd_tthe/logs/dry/
+meta/cd_tthe/logs/cpu_test/
+meta/cd_tthe/logs/*_nohup.out

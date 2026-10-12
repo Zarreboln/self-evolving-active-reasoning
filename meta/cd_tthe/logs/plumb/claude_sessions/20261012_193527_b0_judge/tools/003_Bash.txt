@@ -1,0 +1,8 @@
+Bash
+
+command:
+echo cand_plumb_b0r0g0 > /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/plumb/choice_b0.txt; cat /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/plumb/choice_b0.txt
+
+
+--- output ---
+cand_plumb_b0r0g0

@@ -1,0 +1,159 @@
+Write: agents/cand_plumb_b0r0g0.py
+
+content:
+"""Conservative repair of `bare`: same relay loop, plus label-free bookkeeping of what the answers
+already imply. Traces of `bare` show the model sweeping entries in a fixed order, spending ~1/3 of
+its queries on entries its own answers already determine, and padding every unqueried entry with 0
+in the final guess. The harness now (1) tells the model, after each answer, which entries are
+already determined by the answers + inventory, (2) does not spend budget on a query for an entry
+that is already determined (tells the model its value and asks again, at most once), and (3) lists
+the determined entries again right before the final guess. The model still writes every query and
+the final guess."""
+
+import re
+from itertools import permutations, product
+
+from harness_base import CDHarness
+
+QUERY_RE = re.compile(r"<query>\s*([A-Ca-c])\s*\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)\s*</query>")
+
+FULL = 0xFF
+INPUTS = (0b00001111, 0b00110011, 0b01010101)   # x0 is the MSB of the row index
+
+
+def _realizable(a, o, n):
+    """Truth tables (8-bit ints, row 000 is the MSB) of one circuit using exactly a AND, o OR, n NOT."""
+    out, seen = set(), set()
+
+    def walk(sig, a, o, n):
+        key = (sig, a, o, n)
+        if key in seen:
+            return
+        seen.add(key)
+        if len(sig) == 1 and not (a or o or n):
+            if sig[0] not in (0, FULL):
+                out.add(sig[0])
+            return
+        for i in range(len(sig) if n else 0):
+            walk(tuple(sorted(sig[:i] + (FULL ^ sig[i],) + sig[i + 1:])), a, o, n - 1)
+        for i in range(len(sig)):
+            for j in range(i + 1, len(sig)):
+                rest = tuple(s for k, s in enumerate(sig) if k not in (i, j))
+                if a:
+                    walk(tuple(sorted(rest + (sig[i] & sig[j],))), a - 1, o, n)
+                if o:
+                    walk(tuple(sorted(rest + (sig[i] | sig[j],))), a, o - 1, n)
+
+    walk(tuple(sorted(INPUTS)), a, o, n)
+    return out
+
+
+def _configurations(inv):
+    """All (ttA, ttB, ttC) consistent with the inventory (gates split without replacement)."""
+    a, o, n = inv.get("AND", 0), inv.get("OR", 0), inv.get("NOT", 0)
+    joint, cache = set(), {}
+    for perm in set(permutations("A" * a + "O" * o)):
+        if len(perm) != 6:
+            continue
+        bs = [(perm[2 * i:2 * i + 2].count("A"), perm[2 * i:2 * i + 2].count("O")) for i in range(3)]
+        for ns in product(range(n + 1), repeat=3):
+            if sum(ns) != n:
+                continue
+            per = []
+            for i in range(3):
+                k = bs[i] + (ns[i],)
+                if k not in cache:
+                    cache[k] = _realizable(*k)
+                per.append(cache[k])
+            joint.update(product(*per))
+    return list(joint)
+
+
+def _bit(cfg, c, row):
+    return (cfg["ABC".index(c)] >> (7 - row)) & 1
+
+
+class Harness(CDHarness):
+    def _determined(self, alive):
+        """{(c, row): bit} for every entry on which all alive configurations agree."""
+        if not alive:
+            return {}
+        out = {}
+        for c in "ABC":
+            for row in range(8):
+                b = _bit(alive[0], c, row)
+                if all(_bit(cfg, c, row) == b for cfg in alive):
+                    out[(c, row)] = b
+        return out
+
+    def _lines(self, entries):
+        return "\n".join(self.env.format_answer(c, row >> 2 & 1, row >> 1 & 1, row & 1, b)
+                         for (c, row), b in sorted(entries.items()))
+
+    def solve(self):
+        env = self.env
+        alive = _configurations(env.inventory)
+        asked, told = set(), set()      # entries answered by a query / reported as implied
+
+        def implied_note():
+            if not alive:
+                return ""
+            det = self._determined(alive)
+            new = {k: v for k, v in det.items() if k not in asked and k not in told}
+            told.update(new)
+            if not new:
+                return ""
+            return ("\nYour answers so far (with the gate inventory) already determine these outputs "
+                    "-- no need to query them:\n" + self._lines(new))
+
+        msgs = [{"role": "system", "content": env.system_prompt},
+                {"role": "user", "content": "Please start with your first query." + implied_note()}]
+        last_line = None
+        vetoed = False
+        calls = 0
+        while env.remaining > 0 and calls < 30:
+            if alive and len(alive) == 1:
+                break                       # every entry is determined; further queries carry no information
+            calls += 1
+            reply = self.llm(msgs)
+            msgs.append({"role": "assistant", "content": reply})
+            m = QUERY_RE.search(reply or "")
+            if not m:
+                msgs.append({"role": "user", "content": "Your message did not contain a query in the "
+                             "required format. Reply with exactly one <query>X(a, b, c)</query>."})
+                continue
+            c, a, b, x = m.group(1).upper(), int(m.group(2)), int(m.group(3)), int(m.group(4))
+            key = (c, a * 4 + b * 2 + x)
+            det = self._determined(alive)
+            if key in det and not vetoed:
+                # already known: do not spend budget, tell the model the value, ask once more
+                vetoed = True
+                msgs.append({"role": "user", "content": f"{env.format_answer(c, a, b, x, det[key])} "
+                             f"(already determined by your earlier answers; this did not use a query)\n"
+                             f"Please query an output that is not yet determined. "
+                             f"{env.remaining} queries remaining."})
+                continue
+            vetoed = False
+            try:
+                bit = env.query(c, a, b, x)
+            except Exception:
+                break
+            asked.add(key)
+            alive = [cfg for cfg in alive if _bit(cfg, c, key[1]) == bit]
+            last_line = env.format_answer(c, a, b, x, bit)
+            if env.remaining > 0:
+                msgs.append({"role": "user", "content": f"{last_line}\nPlease send your next query. "
+                             f"{env.remaining} queries remaining." + implied_note()})
+        det = self._determined(alive)
+        summary = ""
+        if det:
+            summary = ("All outputs determined by your answers and the gate inventory:\n"
+                       + self._lines(det) + "\n")
+        final = (f"{last_line}\n" if last_line else "") + summary + env.last_turn_prompt
+        msgs.append({"role": "user", "content": final})
+        return self.llm(msgs)
+
+
+
+--- output ---
+File created successfully at: /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/agents/cand_plumb_b0r0g0.py (file state is current in your context — no need to Read it back)

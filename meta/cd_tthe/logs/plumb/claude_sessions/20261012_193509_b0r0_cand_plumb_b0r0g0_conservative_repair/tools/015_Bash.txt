@@ -1,0 +1,41 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; mkdir -p logs/plumb/proposal_cards; python - <<'EOF'
+import json
+card = {
+ "candidate": "cand_plumb_b0r0g0", "parent": "bare", "role": "conservative repair",
+ "hypothesis": "In bare's traces 34% of queries are zero-information (the frozen model sweeps entries in fixed order and asks outputs its answers already determine) and the final guess pads unqueried entries with 0, so only 40% of episodes end pinned down. If the harness (a) refuses to spend budget on an entry that the inventory + answers already determine, telling the model that value and asking again, and (b) lists every determined output right before the final-guess prompt, then zero_info drops to ~0, uniq_end rises well above 40%, and the model's final 24-bit string equals the unique consistent table. This is falsified if zero_info stays above 10% or uniq_end does not rise on this batch.",
+ "behavior_changes": [
+  "Harness enumerates all (A,B,C) truth-table configurations consistent with the inventory (each circuit gets exactly 2 AND/OR gates plus any number of NOTs, no constant circuits) and filters them by every answer. All of this is written in the harness; it does not import cd_oracle.",
+  "Veto: if the model asks for an entry all consistent configurations agree on, no query is spent. The harness replies with 'X(a, b, c) = v' plus a note that no query was used, and asks again. If the model asks for the same entry again immediately, the query is sent as bare would send it, so the harness never loops.",
+  "Stops asking for queries once exactly one configuration remains, since further queries cannot carry information.",
+  "The final-guess turn now has the list of all determined outputs ahead of the benchmark's last_turn_prompt.",
+  "The loop counts budget spent (env.remaining) instead of turns, with a cap of 40 model calls."
+ ],
+ "preserved_behaviors": [
+  "Same system prompt, opening message, per-answer wording ('X(a, b, c) = v / Please send your next query. N queries remaining.') and format re-prompt as bare.",
+  "The model writes every query and the final <guess>; the harness never picks a query or writes the guess.",
+  "Proactive 'already determined' lists after each answer were tried and dropped: they doubled the observation lines, and the fixed-order model then repeated entries (repeat 55-87%, uniq_end fell to 1/5)."
+ ],
+ "verification": [
+  "The provided check script crashes before running anything: line 4 contains the JSON literal `null` (NameError). I ran it unmodified via `python -c \"null=None; exec(open(check).read())\"`.",
+  "Final run on instances 156, 11, 250, 128, 98: every status=ok, health=True, uniq_end=True, alive_end=1, zero_info=0.0, repeat=0.0. eff is 0.95 / 0.85 / 0.83 / 0.98 / 0.91; parent mean is 0.58. Queries used: 9 / 12 / 17 / 12 / 10.",
+  "Label-free check: in all 5 episodes the model's final 24-bit guess equals the table rebuilt from the determined-output list the harness showed it.",
+  "python audit.py agents/cand_plumb_b0r0g0.py --arm scratch -> OK.",
+  "First attempt (determined lists after every answer) passed health but got worse: zero_info 0.61-0.93 and uniq_end 1/5. That is why the mechanism was narrowed to veto-time only."
+ ],
+ "risks": [
+  "Verified only with the scripted 'sequential' mock solver, not the real Qwen2.5-7B. A real model might ignore the veto message and repeat the same entry; the second repeat is then spent, which is bare's behavior.",
+  "If the harness's enumeration of the hypothesis space were wrong, a veto could hide a truly unknown entry. If no configuration stays consistent, alive becomes empty, vetoes and the summary switch off, and the harness falls back to bare.",
+  "Early stop leaves budget unused. That is harmless only if the inventory model is correct.",
+  "The final summary is plain text. A real 7B model may still copy it wrongly into the 24-bit string, since the harness does not assemble the guess."
+ ]
+}
+json.dump(card, open('logs/plumb/proposal_cards/cand_plumb_b0r0g0.json','w'), indent=2)
+EOF
+python -m json.tool logs/plumb/proposal_cards/cand_plumb_b0r0g0.json >/dev/null && echo valid
+
+
+--- output ---
+valid

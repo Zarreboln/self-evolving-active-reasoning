@@ -1,0 +1,12 @@
+Bash [ERROR]
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; python -c "
+import json;d=json.load(open('logs/plumb/traces/b0/bare__i11.json'));print(d['steps'][0]['messages'][0]['content'])"
+
+
+--- output ---
+Exit code 1
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+KeyError: 'steps'

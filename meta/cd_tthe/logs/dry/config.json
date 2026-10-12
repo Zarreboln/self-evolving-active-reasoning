@@ -5,10 +5,10 @@
  "split": "heldout",
  "split_file": null,
  "stream_seed": 0,
- "limit": 10,
+ "limit": 5,
  "batch_size": 5,
- "group": 2,
- "rounds": 2,
+ "group": 1,
+ "rounds": 1,
  "solver_base_url": null,
  "solver_model": "Qwen/Qwen2.5-7B-Instruct",
  "solver_mock": "sequential",
@@ -26,12 +26,7 @@
   11,
   250,
   128,
-  98,
-  239,
-  105,
-  247,
-  164,
-  265
+  98
  ],
- "n_batches": 2
+ "n_batches": 1
 }

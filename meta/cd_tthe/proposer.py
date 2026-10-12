@@ -109,9 +109,9 @@ def check_script(run_dir, tag, name, indices, solver_cfg, arm, timeout):
     p = Path(run_dir) / f"check_{tag}.py"
     p.write_text(f'''import json, subprocess, sys, os
 from pathlib import Path
-HERE = Path({json.dumps(str(HERE))})
-name = {json.dumps(name)}; idx = {json.dumps(list(indices))}; solver = {json.dumps(solver_cfg)}; arm = {json.dumps(arm)}
-out_dir = Path({json.dumps(str(run_dir))}) / "checks" / {json.dumps(tag)}; out_dir.mkdir(parents=True, exist_ok=True)
+HERE = Path({str(HERE)!r})
+name = {name!r}; idx = {list(indices)!r}; solver = {solver_cfg!r}; arm = {arm!r}
+out_dir = Path({str(run_dir)!r}) / "checks" / {tag!r}; out_dir.mkdir(parents=True, exist_ok=True)
 for i in idx:
     task = out_dir / f"task_{{i}}.json"; res = out_dir / f"res_{{i}}.json"
     task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm}}))

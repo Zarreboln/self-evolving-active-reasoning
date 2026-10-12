@@ -22,127 +22,126 @@ status: ok   status=ok health=True queries=18 uniq_end=False alive_end=5 zero_in
 ## Model calls (what the harness sent, what the model replied)
 
 ### call 1 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+Please start with your first query.
 
 MODEL REPLY:
 Querying now. <query>A(0, 0, 0)</query>
 
 ### call 2 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(0, 0, 0) = 0
+Please send your next query. 17 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(0, 0, 1)</query>
 
 ### call 3 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(0, 0, 1) = 0
+Please send your next query. 16 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(0, 1, 0)</query>
 
 ### call 4 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(0, 1, 0) = 1
+Please send your next query. 15 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(0, 1, 1)</query>
 
 ### call 5 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(0, 1, 1) = 1
+Please send your next query. 14 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(1, 0, 0)</query>
 
 ### call 6 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(1, 0, 0) = 0
+Please send your next query. 13 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(1, 0, 1)</query>
 
 ### call 7 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(1, 0, 1) = 1
+Please send your next query. 12 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(1, 1, 0)</query>
 
 ### call 8 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(1, 1, 0) = 1
+Please send your next query. 11 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>A(1, 1, 1)</query>
 
 ### call 9 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+A(1, 1, 1) = 1
+Please send your next query. 10 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(0, 0, 0)</query>
 
 ### call 10 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(0, 0, 0) = 0
+Please send your next query. 9 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(0, 0, 1)</query>
 
 ### call 11 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(0, 0, 1) = 0
+Please send your next query. 8 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(0, 1, 0)</query>
 
 ### call 12 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(0, 1, 0) = 0
+Please send your next query. 7 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(0, 1, 1)</query>
 
 ### call 13 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(0, 1, 1) = 1
+Please send your next query. 6 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(1, 0, 0)</query>
 
 ### call 14 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(1, 0, 0) = 0
+Please send your next query. 5 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(1, 0, 1)</query>
 
 ### call 15 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(1, 0, 1) = 0
+Please send your next query. 4 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(1, 1, 0)</query>
 
 ### call 16 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(1, 1, 0) = 1
+Please send your next query. 3 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>B(1, 1, 1)</query>
 
 ### call 17 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+B(1, 1, 1) = 1
+Please send your next query. 2 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>C(0, 0, 0)</query>
 
 ### call 18 -- last user message sent:
-C(0, 0, 1) = 0
-Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.
+C(0, 0, 0) = 0
+Please send your next query. 1 queries remaining.
 
 MODEL REPLY:
 Querying now. <query>C(0, 0, 1)</query>

@@ -8,6 +8,9 @@ conservative repair / independent exploration / adversarial audit), then one jud
 harness for the next batch (the incumbent is always in the pool = rollback gate). Prequential = the
 incoming harness on the new batch *before* any adaptation; transductive = the committed harness on
 the batch it was adapted on. 30 instances = 3 batches, stream seed 0, same instances in both arms.
+Models: questioner Qwen2.5-7B-Instruct (vLLM, temperature 0.7, seed 0); proposer and judge are
+`claude -p --model opus` via Claude Code 2.1.295, which the session metadata and billing resolve to
+`claude-opus-5-5` (effort high; a fresh session per candidate and per judge call).
 Arm `scratch`: no oracle library; the proposer sees only the system prompt, the harness interface
 and raw traces. Two signal regimes: **strict** (run status only) and **labeled** (strict + each
 episode's outcome). Metrics follow the paper (see [`../OFFICIAL_DEFINITIONS.md`](../OFFICIAL_DEFINITIONS.md)).

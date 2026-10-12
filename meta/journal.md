@@ -237,3 +237,12 @@
   OFF-LIMITS text extended. Unit cases + mock dry run pass. strict3_b10g3r2 / labeled3_b10g3r2 launched
   18:24 EDT (same 30 instances). The slug fix landed after launch; for these two runs the memory channel
   is closed by the audit (any .claude/ read or write discards that session's work), not by the move.
+
+### 2026-10-12 18:30 EDT — which Claude the proposer/judge actually are
+- All cd_tthe sessions (pilots, strict2/labeled2, strict3/labeled3) run `claude -p --model opus` through
+  Claude Code 2.1.295; the session init and the billing line resolve that alias to canonical model id
+  `claude-opus-5-5` (plus a few hundred tokens of `claude-haiku-5-5` per session: Claude Code's own
+  auxiliary calls). So proposer = judge = Claude Opus 5.5 by model id; the user's standing instruction
+  said "opus5". Flagged to the user; the running strict3/labeled3 keep the alias for consistency with
+  the pilots unless told otherwise.
+- 18:31 user decision: keep Opus 5.5 (claude-opus-5-5) for proposer and judge; strict3/labeled3 continue.

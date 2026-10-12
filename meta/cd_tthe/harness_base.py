@@ -45,8 +45,9 @@ class CDHarness(ABC):
         self._trace = []
 
     def llm(self, messages, temperature=0.7, max_tokens=1200):
-        out = self._solver(messages, temperature=temperature, max_tokens=max_tokens)
-        self._trace.append({"step": "llm", "messages": messages, "response": out})
+        snapshot = [dict(m) for m in messages]      # the harness keeps appending to its list
+        out = self._solver(snapshot, temperature=temperature, max_tokens=max_tokens)
+        self._trace.append({"step": "llm", "messages": snapshot, "response": out})
         return out
 
     @abstractmethod

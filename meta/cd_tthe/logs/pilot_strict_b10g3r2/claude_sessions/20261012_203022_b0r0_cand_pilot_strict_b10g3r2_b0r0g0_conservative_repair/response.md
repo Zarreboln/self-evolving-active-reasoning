@@ -1,0 +1,1 @@
+Simplifying the retry loop before running:The check run is still going (now in the background). The file change on disk is just my own retry-loop rewrite.It's making progress, about 1–2 minutes per instance. I'll check the finished ones for consistency while the rest run (without looking at gold):

@@ -1,4 +1,4 @@
-"""Proposers and judge for the CircuitDecoding TTHE loop.
+"""Proposers and judge for the Circuit Decoding TTHE loop.
 
 Backends:
   claude   a fresh `claude -p` session per role (subscription), via meta/cd_evolve/claude_wrapper.py
@@ -28,7 +28,7 @@ AGENTS = HERE / "agents"
 BUDGET = 18          # set by optimize.py from --budget
 STRICT = False       # --signals strict: proposer/judge see only raw traces + run status; no oracle-derived
                      # signals (uniq_end, alive_end, zero_info, eff) and no prior about the model's habits
-LABELED = False      # --signals labeled: strict + the final outcome of every episode (exact / circuits right)
+LABELED = False      # --signals labeled: strict + each episode's gold outcome (joint truth table correct / circuit-wise accuracy)
 PROPOSER_TOOLS = ["Read", "Glob", "Grep", "Write", "Edit", "Bash"]
 
 ROLES = [
@@ -59,7 +59,7 @@ def signal_line(r):
                 f"calls={r.get('solver_calls')} tokens_out={(r.get('tokens') or {}).get('out')}")
         if LABELED:
             g = r.get("gold") or {}
-            line += f" | OUTCOME: final table correct={g.get('exact')} circuits_right={round(3 * float(g.get('ckt') or 0))}/3"
+            line += f" | OUTCOME: joint truth table correct={g.get('joint_truth_table_correct')} circuit-wise accuracy={round(3 * float(g.get('circuit_wise_accuracy') or 0))}/3"
         return line
     return (f"status={r.get('status')} health={f(s.get('health'))} queries={f(s.get('n_queries'))} "
             f"uniq_end={f(s.get('uniq_end'))} alive_end={f(s.get('n_alive_end'))} zero_info={f(s.get('zero_info'))} "
@@ -69,7 +69,7 @@ def signal_line(r):
 
 def render_trace(r):
     """One episode as markdown: what the harness did, what the model said, what the environment
-    answered. The truth table and exact-match are deliberately absent."""
+    answered. The truth table and the gold outcome are deliberately absent."""
     L = [f"# Trace -- harness `{r['harness']}` -- instance {r['index']}",
          f"status: {r.get('status')}   {signal_line(r)}"]
     if r.get("error"):
@@ -89,11 +89,86 @@ def render_trace(r):
     return "\n".join(L)
 
 
-def write_traces(results, trace_dir):
+PUBLIC_SIGNALS = ("health", "crashed", "parsed_guess", "n_queries", "repeat")
+OUTCOME_KEYS = ("parsed_guess", "joint_truth_table_correct", "circuit_wise_accuracy")
+
+
+def public_record(r, labeled=False):
+    """What a proposer or judge may see of one episode: never the gold record or the oracle-derived
+    signals; in the labeled arm the episode's outcome is added (labels are shown there by design)."""
+    pub = {k: v for k, v in r.items() if k not in ("gold", "signals")}
+    s = r.get("signals") or {}
+    pub["signals"] = {k: s.get(k) for k in PUBLIC_SIGNALS}
+    if labeled and r.get("gold"):
+        pub["gold"] = {k: (r["gold"] or {}).get(k) for k in OUTCOME_KEYS}
+    return pub
+
+
+def write_traces(results, trace_dir, labeled=False):
     trace_dir = Path(trace_dir); trace_dir.mkdir(parents=True, exist_ok=True)
     for r in results:
-        (trace_dir / f"{r['harness']}__i{r['index']}.md").write_text(render_trace(r))
-        (trace_dir / f"{r['harness']}__i{r['index']}.json").write_text(json.dumps(r))
+        pub = public_record(r, labeled)
+        (trace_dir / f"{r['harness']}__i{r['index']}.md").write_text(render_trace(pub))
+        (trace_dir / f"{r['harness']}__i{r['index']}.json").write_text(json.dumps(pub))
+
+
+OFF_LIMITS = ("\n\nOFF-LIMITS (your session transcript is audited automatically; a violation discards your work): "
+              "do not read, list, grep or copy `~/.ar_harness_controller/`, `mt_puzzles/`, {stage0}`solver_cache/`, other "
+              "sessions under `claude_sessions/`, any `.claude/` directory, or any file that contains truth tables. "
+              "Use only the trace files named above, the harness sources, the interface doc and your check script.")
+
+
+def off_limits(arm):
+    return OFF_LIMITS.format(stage0="" if arm == "lib" else "`stage0/` (the oracle code), ")
+
+
+REQ_FORBID = r"ar_harness_controller|mt_puzzles|cd_test\.jsonl|_truth\b|solver_cache|/\.claude/|claude_sessions"
+# instance truths: our trace/score fields, and the data file's own keys (its rows carry the circuits)
+VAL_TRUTH = r"truth_bits|['\"]truth(?:_table|_tables|s)?['\"]\s*:\s*['\"\[(]?\s*[01]|circuit_joint_lookup|avg_reveals"
+VAL_GOLD = r"\"gold\":\s*\{"
+VAL_ORACLE = r"\"(uniq_end|n_alive_end|zero_info|oracle_agree|eff)\":\s*(true|false|[0-9.]+|null)"
+
+
+def audit_session(run_dir, name, arm):
+    """Scan the newest session named `name`: what it asked for and what came back. Returns the audit
+    dict (clean / hits) and records it in the session dir and in session_audits.jsonl."""
+    sessions = sorted((Path(run_dir) / "claude_sessions").glob(f"*_{name}"))
+    if not sessions:
+        return {"name": name, "clean": True, "hits": [], "note": "no session dir"}
+    sess = sessions[-1]; ev = sess / "events.jsonl"
+    req_rx = re.compile(REQ_FORBID + ("" if arm == "lib" else r"|stage0|cd_oracle"))
+    val_rx = [("instance truth", re.compile(VAL_TRUTH)), ("oracle signal value", re.compile(VAL_ORACLE))]
+    if not LABELED:
+        val_rx.append(("gold record", re.compile(VAL_GOLD)))
+    uses, hits = {}, []
+    for line in (ev.read_text().splitlines() if ev.exists() else []):
+        try:
+            d = json.loads(line)
+        except Exception:
+            continue
+        if d.get("type") == "assistant":
+            for b in (d.get("message") or {}).get("content") or []:
+                if b.get("type") == "tool_use":
+                    uses[b["id"]] = (b["name"], b.get("input") or {})
+                    m = req_rx.search(json.dumps(b.get("input")))
+                    if m:
+                        hits.append({"kind": "request", "match": m.group(0), "tool": b["name"],
+                                     "input": json.dumps(b.get("input"))[:300]})
+        elif d.get("type") == "user":
+            for b in (d.get("message") or {}).get("content") or []:
+                if b.get("type") != "tool_result":
+                    continue
+                c = b.get("content"); txt = c if isinstance(c, str) else json.dumps(c)
+                for kind, rx in val_rx:
+                    m = rx.search(txt)
+                    if m:
+                        tool, inp = uses.get(b.get("tool_use_id"), ("?", {}))
+                        hits.append({"kind": kind, "match": m.group(0)[:80], "tool": tool, "input": json.dumps(inp)[:300]})
+    res = {"name": name, "session": sess.name, "clean": not hits, "hits": hits[:20]}
+    (sess / "audit.json").write_text(json.dumps(res, indent=1))
+    with (Path(run_dir) / "session_audits.jsonl").open("a") as f:
+        f.write(json.dumps(res) + "\n")
+    return res
 
 
 def summary_table(results_by_name):
@@ -107,9 +182,9 @@ def summary_table(results_by_name):
             line = (f"{name:<34} n={len(rs):<3} parsed_final_guess={100*parsed:5.1f}%  queries_used/ep={q:5.1f}  "
                     f"tokens_out/ep={toks:7.0f}  crashes={sum(1 for r in rs if r.get('status') != 'ok')}")
             if LABELED:
-                ex = sum(1 for r in rs if (r.get("gold") or {}).get("exact")) / max(1, len(rs))
-                ck = sum(float((r.get("gold") or {}).get("ckt") or 0) for r in rs) / max(1, len(rs))
-                line += f"  | OUTCOME: final table correct={100*ex:5.1f}%  circuits right={100*ck:5.1f}%"
+                ex = sum(1 for r in rs if (r.get("gold") or {}).get("joint_truth_table_correct")) / max(1, len(rs))
+                ck = sum(float((r.get("gold") or {}).get("circuit_wise_accuracy") or 0) for r in rs) / max(1, len(rs))
+                line += f"  | OUTCOME: joint truth table correct={100*ex:5.1f}%  circuit-wise accuracy={100*ck:5.1f}%"
             rows.append(line)
             continue
         m = lambda k: (sum(1 for s in sig if s.get(k)) / len(sig)) if sig else 0.0
@@ -130,6 +205,7 @@ def interface_doc():
 def check_script(run_dir, tag, name, indices, solver_cfg, arm, timeout, budget=18):
     """A script the proposer can run: its candidate on the batch instances, label-free output."""
     p = Path(run_dir) / f"check_{tag}.py"
+    reveal = "outcome" if LABELED else "none"
     p.write_text(f'''import json, subprocess, sys, os
 from pathlib import Path
 HERE = Path({str(HERE)!r})
@@ -137,7 +213,7 @@ name = {name!r}; idx = {list(indices)!r}; solver = {solver_cfg!r}; arm = {arm!r}
 out_dir = Path({str(run_dir)!r}) / "checks" / {tag!r}; out_dir.mkdir(parents=True, exist_ok=True)
 for i in idx:
     task = out_dir / f"task_{{i}}.json"; res = out_dir / f"res_{{i}}.json"
-    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm, "budget": {budget}}}))
+    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm, "budget": {budget}, "reveal": {reveal!r}}}))
     try:
         subprocess.run([sys.executable, str(HERE / "solve_worker.py"), "--task", str(task)], timeout={int(timeout)}, check=False)
     except subprocess.TimeoutExpired:
@@ -149,7 +225,7 @@ for i in idx:
         line = f"instance {{i}}: status={{r['status']}} parsed_final_guess={{s.get('parsed_guess')}} queries_used={{s.get('n_queries')}} calls={{r.get('solver_calls')}}"
         if {LABELED!r}:
             g = r.get("gold") or {{}}
-            line += f" | OUTCOME: final table correct={{g.get('exact')}} circuits_right={{round(3*float(g.get('ckt') or 0))}}/3"
+            line += f" | OUTCOME: joint truth table correct={{g.get('joint_truth_table_correct')}} circuit-wise accuracy={{round(3*float(g.get('circuit_wise_accuracy') or 0))}}/3"
         print(line)
     else:
         print(f"instance {{i}}: status={{r['status']}} health={{s.get('health')}} queries={{s.get('n_queries')}} "
@@ -169,7 +245,7 @@ def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_p
                 if arm == "lib" else
                 "There is NO helper library: if you want the harness to track what the answers imply, you must "
                 "write that logic yourself from the task's rules (gate inventory -> possible circuits).")
-    return f"""A FROZEN 7B chat model plays CircuitDecoding inside a HARNESS you control. You CANNOT see the
+    return f"""A FROZEN 7B chat model plays Circuit Decoding inside a HARNESS you control. You CANNOT see the
 truth tables. GOAL: edit the harness so the model RELIABLY pins the three circuits down within the {BUDGET}
 queries and returns the right 24-bit table -- judged only by label-free evidence.
 
@@ -212,12 +288,12 @@ Then write a proposal card to `{card_path}` as JSON:
 
 
 def propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path):
-    outcome_note = ("Each episode's OUTCOME (whether the final table was correct, and how many of the three "
-                    "circuits were right) is shown in the traces and the run summary; nothing else is evaluated for you."
+    outcome_note = ("Each episode's OUTCOME (joint truth table correct?, and the circuit-wise accuracy: how many of the "
+                    "three circuits' tables were right) is shown in the traces and the run summary; nothing else is evaluated for you."
                     if LABELED else
                     "You are given no evaluation of the episodes beyond whether they ran. Decide what \"going well\" "
                     "means from the task rules and the traces yourself.")
-    return f"""A FROZEN 7B chat model plays CircuitDecoding inside a HARNESS you control. You CANNOT see the
+    return f"""A FROZEN 7B chat model plays Circuit Decoding inside a HARNESS you control. You CANNOT see the
 truth tables. {outcome_note} GOAL: edit the harness so the model RELIABLY deduces the three circuits
 within the {BUDGET} queries and returns the right 24-bit table.
 
@@ -258,10 +334,10 @@ Then write a proposal card to `{card_path}` as JSON:
 def judge_prompt(cands, incumbent, trace_dir, summary, choice_path, check_paths):
     if STRICT:
         checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
-        return f"""You are the JUDGE of a test-time harness-evolution loop for CircuitDecoding. {len(cands)} harnesses
+        return f"""You are the JUDGE of a test-time harness-evolution loop for Circuit Decoding. {len(cands)} harnesses
 were run on the same batch of instances. The incumbent is `{incumbent}`; the others are this batch's
 candidates. Pick the ONE harness most likely to deduce the circuits correctly on NEW instances. You
-cannot see the truth tables. {"Each episode's OUTCOME (final table correct? circuits right?) is in the summary and traces." if LABELED else "No evaluation beyond run status is provided."} Judge from the traces
+cannot see the truth tables. {"Each episode's OUTCOME (joint truth table correct? circuit-wise accuracy?) is in the summary and traces." if LABELED else "No evaluation beyond run status is provided."} Judge from the traces
 (`{trace_dir}`, `<harness>__i<index>.md`) and the source files (`{AGENTS}`) using the task rules.
 
 Run summary:
@@ -275,7 +351,7 @@ better than the incumbent on this evidence, keep the incumbent. You may re-run a
 Decide, then write ONLY the chosen harness name to `{choice_path}` (e.g. run: echo <name> > {choice_path}).
 Then STOP."""
     checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
-    return f"""You are the JUDGE of a test-time harness-evolution loop for CircuitDecoding. {len(cands)} harnesses
+    return f"""You are the JUDGE of a test-time harness-evolution loop for Circuit Decoding. {len(cands)} harnesses
 were run on the same batch of instances. The incumbent is `{incumbent}`; the others are this batch's
 candidates. Pick the ONE harness most likely to pin the circuits down and answer correctly on NEW
 instances. You cannot see the truth tables.
@@ -365,8 +441,14 @@ def propose(parent, child, role_idx, trace_dir, active, results_by_name, run_dir
     summary = summary_table(results_by_name)
     check = check_script(run_dir, f"{tag}_{child}", child, batch_indices, solver_cfg, arm, solve_timeout, BUDGET)
     card = Path(run_dir) / "proposal_cards" / f"{child}.json"; card.parent.mkdir(parents=True, exist_ok=True)
-    prompt = propose_prompt(parent, child, role_text, trace_dir, active, summary, check, arm, card, batch_indices)
+    prompt = propose_prompt(parent, child, role_text, trace_dir, active, summary, check, arm, card, batch_indices) + off_limits(arm)
     _session(prompt, f"{tag}_{child}_{role_name}", run_dir, backend, model, timeout, effort)
+    aud = audit_session(run_dir, f"{tag}_{child}_{role_name}", arm)
+    if not aud["clean"]:
+        print(f"   AUDIT: proposer session {tag}_{child} touched off-limits information -> candidate discarded "
+              f"({aud['hits'][0]['kind']}: {aud['hits'][0]['match']})", flush=True)
+        (AGENTS / f"{child}.py").unlink(missing_ok=True)
+        return False
     return (AGENTS / f"{child}.py").exists()
 
 
@@ -387,8 +469,13 @@ def judge(cands, incumbent, trace_dir, results_by_name, run_dir, tag, batch_indi
     checks = {n: check_script(run_dir, f"{tag}_judge_{n}", n, batch_indices, solver_cfg, arm, solve_timeout, BUDGET)
               for n in cands}
     choice = Path(run_dir) / f"choice_{tag}.txt"; choice.unlink(missing_ok=True)
-    prompt = judge_prompt(cands, incumbent, trace_dir, summary, choice, checks)
+    prompt = judge_prompt(cands, incumbent, trace_dir, summary, choice, checks) + off_limits(arm)
     _session(prompt, f"{tag}_judge", run_dir, backend, model, timeout, effort)
+    aud = audit_session(run_dir, f"{tag}_judge", arm)
+    if not aud["clean"]:
+        print(f"   AUDIT: judge session {tag} touched off-limits information -> verdict discarded, incumbent kept "
+              f"({aud['hits'][0]['kind']}: {aud['hits'][0]['match']})", flush=True)
+        return incumbent
     if choice.exists():
         picked = choice.read_text().strip().split()[-1].strip("`'\"") if choice.read_text().strip() else ""
         if picked in cands:

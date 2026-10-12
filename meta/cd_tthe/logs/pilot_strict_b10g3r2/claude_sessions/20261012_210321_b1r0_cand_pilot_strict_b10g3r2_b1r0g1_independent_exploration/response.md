@@ -1,0 +1,16 @@
+Reading the parent harness and its traces to find where episodes go wrong; next I'll scan every trace's final state.Now I'll write the edits: the docstring, a tiered Space, a check phase, and menu ordering.All 10 ran with 18 queries each. Now checking whether any verification answer contradicted the rule-derived tables, and comparing against the parent's guesses:The fallback recovers rule-violating circuits in the mock. Next I'll check how the real 7B handled the check prompts:The fix worked: no retries in the check phase (instance 130 went from 23 model calls to 20), and the guesses are unchanged. Writing the proposal card.I built `agents/cand_pilot_strict_b10g3r2_b1r0g1.py` and ran it on all 10 instances: no crashes, every episode produced a final guess, and each used all 18 queries. The main finding is that my hypothesis turned out wrong on this batch, and every final guess is identical to the parent's.
+
+**What I tested.** The parent harness already stops the model from wasting queries, so I didn't think query choice was the weak point. My guess was that the risk lay in the harness's own reading of the rules: exactly two AND/OR gates per circuit, and the inventory split exactly across A, B and C. The parent stops after about 11 queries with every circuit marked "SOLVED", but most of the 24 output bits are never actually queried. Some circuits are pinned down only by reasoning about how the gates are shared out. In instance 130, for example, circuit C was "solved" after a single direct query on C.
+
+**What I changed.** It's one mechanism: the parent's leftover queries now go to checking the answers it inferred instead of being left unused. The model still writes every query, picking from a list of checks:
+- first, inputs where a circuit would still be ambiguous if you ignored how the gates are shared out;
+- then any input not yet asked, starting with the circuit that has the fewest direct answers.
+
+If an answer contradicts the inferred tables, the harness relaxes its assumptions one circuit at a time instead of trusting them. It first drops the exact gate split, then allows any non-constant table that fits the answers, ranked by how close it is to a rule-allowed table.
+
+**What happened.**
+- **Fix after the first run:** during checking, the prompt still said "SOLVED … Do NOT query A again" right above "check these inputs". That caused extra re-asks, so I removed the contradiction and re-ran. Check-phase re-asks then dropped to zero.
+- **The checks found nothing:** about 70 extra direct answers across the 10 instances all matched the parent's inferred tables. The fallback never triggered, every final guess agrees with all 18 answers, and each is identical to the parent's guess.
+- **The fallback does work:** I checked it offline with a mock environment and a scripted query picker (not the 7B model). It recovered the exact 24 bits on circuits that break the rules, including one built with an XOR-style table and one with an impossible gate split.
+
+On these 10 instances the change makes no difference to the answers. It costs about 7 extra model calls per episode and only pays off if the rule reading fails on some instance elsewhere. I recorded the hypothesis as falsified on this batch in the proposal card, saved at `logs/pilot_strict_b10g3r2/proposal_cards/cand_pilot_strict_b10g3r2_b1r0g1.json`.

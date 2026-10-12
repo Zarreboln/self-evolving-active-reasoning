@@ -1,0 +1,29 @@
+{"candidate": "cand_pilot_strict_b10g3r2_b0r1g2", "parent": "cand_pilot_strict_b10g3r2_b0r0g2", "role": "adversarial auditor / synthesizer",
+  "hypothesis": "g2's rule-derived candidate space is the only independently supported strength across branches, and its remaining failure mode is running out of queries before every circuit is pinned (i250 used 18/18, i247 17/18). Ranking queries by how evenly they split the JOINT (A,B,C) space, which is coupled through the inventory split, showing the model only the top 3, and never spending a query on a reply that names no informative query will cut the queries needed to reach a unique table per circuit. This is falsifiable: on rule-sampled synthetic circuits with NOT-heavy inventories, the number of episodes needing more than 18 queries should drop from >0 to 0, and on this batch the maximum queries used should drop below 18 while every circuit still ends with exactly one consistent candidate.",
+  "behavior_changes": [
+    "Space.joint() exposes per-allocation candidate blocks; candidate weight = number of joint (A,B,C) completions that use the table (parent counted allocations).",
+    "Query ranking uses joint-weighted binary entropy instead of per-circuit unweighted entropy, so a query that also narrows other circuits through the inventory split ranks higher.",
+    "The model is shown only the 3 best queries (parent showed 8 plus 'weaker ones'); on retries 1-3 only listed queries are accepted, and on the last retry any informative query is.",
+    "Removed the zero-info fallback: if the model never names an informative query, nothing is sent to the environment and the model is asked again in a fresh round (parent spent a query on the model's uninformative pick, e.g. A(1,1,1) on i156).",
+    "Final prompt says that candidates are listed most likely first (joint weight), and the default pick is the top-weighted one."
+  ],
+  "preserved_behaviors": [
+    "The model writes every query and every final pick; the harness only filters, re-asks and assembles.",
+    "Rule-derived hypothesis space (exactly two 2-input gates per circuit plus NOTs, inventory split without replacement, no constant circuits), with a relaxed fallback if the answers ever contradict it.",
+    "Querying stops once every circuit has one candidate; final 24 bits are assembled from the per-circuit picks among the consistent candidates.",
+    "Fresh two-message prompts each turn (no growing chat), solved circuits marked 'Do NOT query'."
+  ],
+  "verification": [
+    "Label-free audit of the parent traces: bare/g0/g1 spent 3-11 zero-information queries per episode and their final guesses contradicted their own received answers (bare, g0) or left circuits with 4-9 candidates (g1). g2 ended with one candidate per circuit on 10/10 episodes, and its guesses matched all of its own answers.",
+    "Cross-branch adversarial check: g2's 10 final tables contradict none of the 524 answers that bare, g0 and g1 independently received on the same instances. The relaxed fallback never fired in any of the 40 episodes, so the rule-derived space was never contradicted.",
+    "Offline policy simulation on 60 rule-sampled synthetic circuits per inventory: with per-circuit (parent) ranking, top-8 random picks needed more than 18 queries in 2/60 episodes at 3/3/2 and 8/60 at 2/4/3. Joint-entropy top-3 needed more than 18 in 0/60 for every inventory tested, and mean queries also fell (e.g. 1/5/2: 13.2 -> 12.1; 2/4/3: 16.9 -> 15.5).",
+    "Ran check_b0r1_cand_pilot_strict_b10g3r2_b0r1g2.py: 10/10 status=ok with a parsed final guess. Queries used were 9, 11, 12, 10, 11, 13, 13, 12, 8, 15 (mean 11.4, max 15; the parent's were mean 11.7, max 18). Solver calls = queries + 1 on every episode, so the model picked a listed query on the first ask every time.",
+    "New traces: one candidate per circuit at the end on 10/10 episodes, 0 zero-info queries, and no contradiction with any of the 650 answers received by the other four harnesses on the same instances. The final tables are identical to g2's on all 10.",
+    "I did not use the gold/exact fields present in the trace JSONs or in branch_lineage.jsonl. Correctness was judged only from internal consistency and cross-branch agreement."
+  ],
+  "risks": [
+    "Everything rests on reading the rules as 'exactly two 2-input gates per circuit'. If the generator allowed something else (e.g. a gate fed the same signal twice), the true table could be missing. The relaxed fallback only triggers on an outright contradiction, not when a wrong table happens to be the only survivor. No contradiction appeared in 650+ answers.",
+    "The 3-item menu relies on the model copying a listed query. If it ignores the menu, each round can cost up to 4 calls, and after 18 empty rounds the harness stops and guesses with candidates still open.",
+    "Inventories with 3+ NOT gates still average about 15 queries in simulation, leaving little margin. If the budget runs out, the final pick among the remaining candidates is the model's (most likely first) and does not enforce joint consistency between circuits.",
+    "Greedy one-step entropy is not optimal. On individual instances, pure greedy is sometimes worse than another order (e.g. i239: 16 vs 13 in simulation)."
+  ]}

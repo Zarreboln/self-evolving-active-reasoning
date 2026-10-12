@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import importlib.util
 import json
+import re
 import sys
 import time
 import traceback
@@ -57,8 +58,23 @@ def main():
             crashed = True
             out["status"] = "crash"
             out["error"] = traceback.format_exc()[-1500:]
-        out["signals"] = signals.compute(env, guess_text, crashed)
-        out["gold"] = env.score(guess_text)                     # record only
+        # What leaves this worker depends on task["reveal"] (label isolation, 2026-10-12):
+        #   none       public run status only (the proposer's own check runs in the strict arm)
+        #   outcome    + the episode's gold outcome (labeled arm: labels are shown by design)
+        #   controller + oracle-derived signals and the full gold record, for the controller's private store
+        reveal = task.get("reveal", "none")
+        parsed = bool(re.findall(r"[01]{24}", re.sub(r"\s", "", guess_text or "")))
+        seen, rep = set(), 0
+        for q, _ in env.history:
+            rep += q in seen; seen.add(q)
+        out["signals"] = {"health": (not crashed) and parsed, "crashed": crashed, "parsed_guess": parsed,
+                          "n_queries": len(env.history), "repeat": (rep / len(env.history)) if env.history else None}
+        if reveal == "controller":
+            out["signals"] = signals.compute(env, guess_text, crashed)
+            out["gold"] = env.score(guess_text)
+        elif reveal == "outcome":
+            g = env.score(guess_text)
+            out["gold"] = {k: g[k] for k in ("parsed_guess", "joint_truth_table_correct", "circuit_wise_accuracy")}
         out["history"] = [[list(q), b] for q, b in env.history]
         out["trace"] = h._trace
         out["guess_text"] = (guess_text or "")[-600:]

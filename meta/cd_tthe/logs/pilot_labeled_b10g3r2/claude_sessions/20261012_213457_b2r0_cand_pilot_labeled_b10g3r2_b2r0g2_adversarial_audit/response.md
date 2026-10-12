@@ -1,0 +1,1 @@
+Quick status: the parent branch already scores 10/10 on this batch, so I'm auditing its traces against the b1 siblings to find where it wastes queries or could break.Now checking the parent's rule-derived hypothesis space against the public oracle space (no truth tables involved), then I'll build an offline simulator so I can compare query policies.

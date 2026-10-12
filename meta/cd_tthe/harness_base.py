@@ -1,4 +1,4 @@
-"""The HARNESS interface for CircuitDecoding, in the TTHE sense (arXiv 2607.08124):
+"""The HARNESS interface for Circuit Decoding, in the TTHE sense (arXiv 2607.08124):
 a harness is ARBITRARY PYTHON wrapping the FROZEN task model and playing one whole episode.
 
 Unlike meta/cd_evolve (hooks around a fixed loop), here `solve()` owns the loop: it decides what

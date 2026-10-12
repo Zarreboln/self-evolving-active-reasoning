@@ -125,3 +125,99 @@
 - cd_tthe internal keys (bridge.score, solve_worker, proposer render, result.json) NOT renamed yet:
   the two pilots import those files in subprocesses; renaming mid-run would desynchronise the running
   optimize.py. Phase 2 after the pilots finish.
+
+### 2026-10-12 16:56 EDT — strict pilot: first judge decision (batch 0, 2639 s)
+- Run `pilot_strict_b10g3r2` (arm scratch = no cd_oracle library; signals strict = raw traces + run
+  status only; proposer Claude Opus, judge Claude Opus, solver Qwen2.5-7B on node3502). Batch 0 =
+  instances [156, 11, 250, 128, 98, 239, 105, 247, 164, 265].
+- Pool on batch 0 (uniq_end / joint truth table correct): bare 0.20/0.00; r0g0 0.30/0.00; r0g1 0.40/0.00;
+  **r0g2 1.00/1.00**; r1g0 0.70/0.00; r1g1 0.80/0.00; r1g2 1.00/1.00. The judge saw none of the
+  gold numbers, only parsed%/queries/tokens/crashes + traces + source.
+- JUDGE -> `cand_pilot_strict_b10g3r2_b0r0g2` (round-0 adversarial-audit candidate). Its reasons:
+  enumerates the rule-allowed circuits from the system prompt alone; the model still chooses every
+  query (menu of up to 8 informative queries, its own choice sent after bounded re-asks) and the final
+  table (numbered candidates); traces decisive, 11.7 queries/episode. Rejected r1g2 (menu of 3, other
+  choices refused until the last try = "close to the harness choosing the queries").
+- Prequential on batch 1 (10 fresh instances, before any adaptation): joint truth table correct 10/10,
+  circuit-wise accuracy 100%, mean 11.1 queries. Trace audit (my script): every sent query appears in
+  the model's reply in all 10 episodes; the model wrote the final <guess> itself in 9/10 (in i228 the
+  harness assembled the guess from the model's numbered picks).
+- Answer to the user's question "proposer 最开始什么也没有，看他能不能长出来": yes — zero hints, the
+  enumerator + split menu grew in round 0 and was selected label-free.
+- Diagnostic bug noted for phase 2: pool `tokens_out` shows 0 for candidates because the proposer's own
+  check runs filled the solver cache for the same (messages, temperature, seq) keys, and cache hits carry
+  no usage. Store usage in the cache entries. Does not affect any result.
+- Labeled arm: still batch 0, round 1 proposers running.
+
+### 2026-10-12 17:03 EDT — labeled pilot: first judge decision (batch 0, 2987 s); both arms 100% on batch 1
+- `pilot_labeled_b10g3r2` (strict signals + per-episode outcome shown to proposer/judge). Pool on batch 0
+  (uniq_end / joint truth table correct): bare 0.30/0.00; r0g0 0.60/0.10; r0g1 0.40/0.00; r0g2 1.00/1.00;
+  r1g0 1.00/1.00; r1g1 0.00/0.00 (wall timeout 900 s in 9/10 — a formula checker too slow); r1g2 1.00/1.00.
+- JUDGE -> `cand_pilot_labeled_b10g3r2_b0r1g2` (round-1 adversarial audit, child of r0g2): same
+  rule-derived enumerator, suggestions ranked by binary entropy over the JOINT space (an answer on A also
+  prunes B and C), most-likely-first fallback at the end. Judge's tie-break among the three perfect
+  candidates was its own judgement about new instances, not a measured difference; it also flagged the
+  tokens_out=0 accounting gap and ignored that column.
+- Trace audit (batch 0, loose query form): every query sent by r1g2 / r0g2 / r1g0 appears in a model
+  reply (my first tag-only audit under-counted: the harness accepts an untagged `X(a, b, c)` when it is
+  the only one in the reply). Final <guess> written by the model and equal to the returned guess in 9/10
+  (r1g2), 9/10 (r0g2), 8/10 (r1g0); the rest assembled from the model's numbered picks.
+- Prequential batch 1 (10 fresh instances each): strict arm 10/10 joint truth table correct, labeled arm
+  10/10. Both arms now proposing on batch 1 (strict: b1r0 sessions started 17:0x).
+
+### 2026-10-12 17:20 EDT — batch 1 decisions: accuracy saturated, judges differ on ties
+- Strict (1390 s): all 7 harnesses (incumbent r0g2 + 6 new) 10/10 joint truth table correct on batch 1.
+  Judge kept the incumbent ("no candidate clearly better", as instructed). From the traces: incumbent
+  11.1 queries/episode; the four candidates that spend leftover queries re-checking their deductions use
+  all 18 (the judge counted ~7 extra checks/episode that never contradicted the rule reading).
+- Labeled (1001 s): all 7 at 10/10 as well. Judge switched to b1r1g2: fewest queries (9.9 vs 10.5),
+  refuses queries that carry much less information than the best available, accepts the model's tag
+  with a missing `<`, and its final guess is always a joint-consistent gate split. The switch is a
+  judgement call on secondary criteria, not an accuracy difference.
+- Batch 2 prequential: both arms 10/10 again (strict with r0g2, labeled with b1r1g2). 30-instance
+  streams: both arms 0/10 -> 10/10 -> 10/10 prequential after one batch of adaptation.
+- Both judges independently flagged tokens_out=0 as an accounting gap and ignored it (correct: cache
+  hits from the proposers' own check runs carry no usage; traces of cached candidates also show
+  tok_in = 0 and duration 0). Fix in phase 2.
+
+### 2026-10-12 17:51–18:10 EDT — both pilots finished; label-leak audit of every session
+- Final (30 instances, 3 batches): strict prequential circuit-wise accuracy 70.0% / joint truth table
+  correct 66.7% (0/10 -> 10/10 -> 10/10), transductive 100%; labeled 68.9% / 66.7%, transductive 100%.
+  Batch-2 judges both switched on secondary criteria (strict -> b2r0g2 after an offline simulation of
+  NOT-heavy inventories: over-budget runs 1/4 vs incumbent 12/28; labeled -> b2r0g0: 0 re-asks, 11.5
+  queries vs 12.1; it also found two round-1 candidates byte-identical to b2r0g0 except docstrings, and
+  a candidate with an undefined attribute in a fallback path). Strict's final harness spends leftover
+  queries re-checking deductions (18.0 queries/episode vs 11-13 before).
+- Cost: strict 14 proposer + 3 judge sessions, $14.25 + $1.63 subscription-priced, 99 min wall;
+  labeled $13.17 + $0.86, 95 min. Token columns for cached candidates read 0 (fixed in phase 2).
+- Phase 2 applied after the runs ended: cd_tthe keys renamed to the official names, cache entries now
+  store usage, pilot logs migrated (circuit_wise_accuracy recomputed from the gold records).
+- AUDIT (events.jsonl of all 42 sessions, looking for gold VALUES or instance truths in tool results):
+  strict b0 round-0 proposers (all three) and the b0 judge: CLEAN. From b0 round 1 on, proposers read
+  `branch_lineage.jsonl` (aggregate `exact` of earlier candidates) and in b1/b2 four proposers read trace
+  JSON heads containing per-episode gold records of the incumbent; the b2 judge saw aggregate exact in
+  the lineage (said it ignored it); b1 judge clean. No session saw an instance truth table. Labeled arm:
+  labels are shown by design; no instance truths seen either.
+  => Only the batch-0 step of the strict arm (bare -> r0g2, judged label-free, 10/10 prequential on
+  batch 1) is a clean zero-hint result. The stream as a whole is not. Leak channels: gold inside trace
+  JSON, checks/res_*.json and solve_jobs results; aggregate exact in branch_lineage/opt_log.
+- Next: gold moved out of the run directory (controller-only file), strict lineage/opt_log without
+  gold, automatic per-session audit that discards a candidate whose session touched gold, then rerun.
+
+### 2026-10-12 18:20 EDT — label isolation for cd_tthe (phase 3), before the rerun
+- Worker `reveal` levels: none (proposer self-checks in strict), outcome (labeled arm: joint truth table
+  correct / circuit-wise accuracy of the episode, nothing oracle-derived), controller (everything).
+- Controller-private store `~/.ar_harness_controller/<run>/` (outside the repo): full per-episode records
+  (gold + oracle signals), opt_log_full / branch_lineage_full. The run directory gets only public
+  records: traces without gold and with public signals only (health, crashed, parsed, n_queries,
+  repeat); opt_log / lineage with public aggregates (strict: n, health, tokens; labeled: + outcome).
+  When the run ends the full logs replace the public ones and the private records are copied to
+  <run>/controller/ (git-ignored, goes to the release tarball).
+- Prompts carry an OFF-LIMITS paragraph (controller dir, mt_puzzles, stage0 unless lib arm, solver_cache,
+  other sessions, .claude, anything with truth tables).
+- Automatic session audit after every proposer/judge session (requests + returned values; strict also
+  forbids gold records; both forbid instance truths and oracle-signal values): a violating proposer's
+  candidate is discarded, a violating judge's verdict is discarded (incumbent kept). Results in
+  <session>/audit.json and <run>/session_audits.jsonl.
+- Verified on a mock dry run (dry_iso) and on synthetic transcripts. Reruns: strict2_b10g3r2 /
+  labeled2_b10g3r2, same stream (seed 0, 30 held-out instances), same B=10 G=3 R=2.

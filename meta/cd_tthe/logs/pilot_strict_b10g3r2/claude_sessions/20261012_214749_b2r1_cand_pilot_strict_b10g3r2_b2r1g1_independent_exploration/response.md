@@ -1,0 +1,1 @@
+The exact minimax search didn't finish within 5 minutes, so I'm switching to cheaper evidence: profiling which worlds push greedy selection to 15 queries.Now the edits: docstring, a copyable-tag helper, menu lines, prompt wording, and parsing the last tag in the reply.Audit passes. Running the check script on the 10 batch instances now.

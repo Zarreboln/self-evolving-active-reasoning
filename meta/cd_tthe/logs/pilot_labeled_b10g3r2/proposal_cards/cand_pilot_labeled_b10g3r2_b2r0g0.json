@@ -1,0 +1,27 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b2r0g0",
+  "parent": "cand_pilot_labeled_b10g3r2_b1r1g2",
+  "role": "conservative repair",
+  "hypothesis": "The parent's only trace-visible failure is the low-information veto on i230 and i266. Each circuit's 'still uncertain inputs' line offered rows the veto then rejected, and the model picked A(0, 0, 0), the last entry of A's list. If those lines list only rows at or above the veto floor (VETO_FRAC of the best entropy), the low-information vetoes stop. Correctness and the query policy stay the same, because the suggestions, veto and fallback are unchanged. Falsified if low-information vetoes still occur on this batch, or if any instance loses correctness or needs more queries than under the parent.",
+  "behavior_changes": [
+    "Each circuit's state line is now 'still uncertain inputs worth querying: ...'. It lists only open rows with entropy >= VETO_FRAC * the best entropy (the rows the veto accepts), best first. If a circuit has open rows but none qualify, the line reads 'none right now, query another circuit'.",
+    "A query written as a code block with 'query' as its language (```query / A(0, 1, 0) / ```) is now accepted. In the first run of this candidate, the loose fallback missed it on i60 because the same reply also listed other inputs, which cost one re-ask."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived joint space (inventory split x tables A, B, C), with joint-entropy ranking of queries",
+    "The top-4 suggestions (>= SUGGEST_FRAC of the best), the veto below VETO_FRAC, the fallback to the best proposal when every ask in a turn is vetoed, and the veto of answered or implied rows",
+    "Compact per-turn state instead of the raw transcript; MAX_ASKS_PER_TURN; calls budget",
+    "Existing query parsing: <query>, the '```query>' fence-swallowed tag, and the single-match loose fallback",
+    "Final prompt with candidate lists, per-circuit A:/B:/C: line parsing, and snapping to the jointly consistent triple"
+  ],
+  "verification": [
+    "Offline (no labels; truths sampled from the rule-derived hypothesis space; a simulated model picks at random among the suggestions; 3000 episodes per inventory): parent and child give identical query counts. Means are 12.13 / 7.53 / 12.04 for 1AND-5OR-2NOT / 3AND-3OR / 3AND-3OR-1NOT, the maximum is 17, and nothing is left unresolved at 18. So budget is not the risk, and the change does not alter the suggestion policy.",
+    "First run of check_b2r0 with only the state-line change: 10/10 status ok, final table correct 10/10, circuits right 30/30, queries 115 (mean 11.5 vs the parent's 12.1). No low-information vetoes, but one format re-ask on i60 (the fenced ```query block).",
+    "Final run of check_b2r0 with both changes: 10/10 ok, final table correct 10/10, 3/3 circuits on every instance. Queries per instance: 11, 9, 14, 13, 14, 12, 11, 11, 13, 7 (mean 11.5, max 14 of 18). Calls = queries + 1 on every instance, with zero re-asks of any kind. One candidate is left per circuit at the end, and the model's A:/B:/C: lines equal the submitted guess on all 10, so snapping was never needed."
+  ],
+  "risks": [
+    "Hiding below-floor rows removes information the model never needed, but a model that reasons per circuit might now be steered toward the 'none right now' circuits less often. That is intended, since those queries would be vetoed anyway.",
+    "The fewer queries on this batch (115 vs 121) come from the model taking different near-best suggestions after the prompt text changed. Offline the policy is identical, so do not read this as a real efficiency gain.",
+    "n=10, and most replies come from the solver cache; with the prompt changed, temperature-0.7 resampling on other instances may surface other format slips that this change does not cover."
+  ]
+}

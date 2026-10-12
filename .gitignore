@@ -54,3 +54,9 @@ meta/cd_tthe/logs/*/checks/
 meta/cd_tthe/logs/dry/
 meta/cd_tthe/logs/cpu_test/
 meta/cd_tthe/logs/*_nohup.out
+meta/cd_tthe/logs/*/controller/
+meta/cd_tthe/logs/dry_iso/
+meta/cd_tthe/logs/*/traces/
+meta/cd_tthe/logs/*/claude_sessions/*/events.jsonl
+meta/cd_tthe/logs/*/claude_sessions/*/tools/
+meta/cd_tthe/logs/*/check_*.py

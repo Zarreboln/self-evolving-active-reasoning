@@ -1,0 +1,33 @@
+{
+ "candidate": "cand_pilot_strict_b10g3r2_b0r1g0",
+ "parent": "cand_pilot_strict_b10g3r2_b0r0g0",
+ "role": "conservative repair",
+ "hypothesis": "The parent loses episodes for two trace-visible reasons: (1) 6/10 episodes sweep A and B row by row and leave C with 2 queries; (2) in 10/10 episodes the model's final <guess> is the wrong length or contradicts answers it received, even after 3 retries. Splitting queries evenly (veto, not harness-chosen queries) and building the 24 bits from received answers plus the model's per-row `X(a,b,c) = v` statements will give every circuit 6 distinct observed rows and a final table that matches every answer received, with the model inferring only the 6 unqueried rows.",
+ "behavior_changes": [
+  "A query is vetoed and the model re-asked (no budget spent) if it repeats an answered row, or if its circuit already has budget//3 queries while another circuit has fewer. The veto message lists the under-queried circuits' unasked rows. Vetoes are capped at 12 per episode; after that every well-formed query is sent.",
+  "The per-turn counts line adds 'Spread them: at most 6 per circuit.'",
+  "The final prompt asks the model to first write one `X(a,b,c) = v` line for every row marked ?, then the usual last_turn_prompt.",
+  "The harness builds the final guess itself. Queried rows come from env.history. Unqueried rows come from the model's last `X(a,b,c) = v` statement for that row, else from a 24-bit <guess> if it gave one. The harness returns <guess>24 bits</guess>.",
+  "Bounded re-ask (max 3) if any ? row has no stated value, or if a circuit comes out constant (forbidden by the task rules). For a constant circuit, its inferred rows are cleared so the model restates them.",
+  "Removed the parent's conflict-listing retry loop: received answers are now copied in, so conflicts can't happen."
+ ],
+ "preserved_behaviors": [
+  "System prompt, opening message and per-answer wording (env.format_answer + query counts + remaining).",
+  "A reply with no query is re-asked, bounded at 6 per episode.",
+  "The final message recaps every received answer row by row in guess order, with ? for unqueried rows.",
+  "The model writes every query; the harness never picks one."
+ ],
+ "verification": [
+  "Ran check_b0r1_cand_pilot_strict_b10g3r2_b0r1g0.py: 10/10 status=ok, parsed_final_guess=True, queries_used=18, 19-21 solver calls, no crashes.",
+  "Read the written traces/results. Every episode split queries A:6 B:6 C:6 with 18 distinct queries (the parent split 8/8/2 in 4 episodes, and repeated C(1,1,1) in i265). Vetoes per episode: 0-2, and the model obeyed every veto on the next reply.",
+  "Final phase: in 9/10 episodes the model stated all 6 ? rows explicitly; in i247 it stated 4 and the other 2 came from its 24-bit <guess>. No zero defaults were needed. Its own <guess> strings were still malformed in 5/10 (lengths 72, 22, 22, 16, and 8+8+8 in three tags), so assembling the guess in the harness is what makes them usable.",
+  "i164: the model first set B to all zeros. The constant-circuit re-ask fired twice, and the third reply gave B(1,1,0)=B(1,1,1)=1 (B = a AND b, which fits the six observed zeros).",
+  "Spot-checked the inferred rows in i105 and i164: they fit simple 2-gate circuits that match the observed rows (e.g. B = b AND x, C = a OR (b AND x)). I did not check correctness: no outcome signal is available."
+ ],
+ "risks": [
+  "Because the model sweeps rows in order and the veto stops it at 6, A and B usually leave the same rows unqueried, (1,1,0) and (1,1,1). Those are exactly where a or b both being 1 tells circuits apart, so the inferred bits there may often be wrong. Spreading which rows get queried would need more prompting than this repair adds.",
+  "Within one reply, the last statement for a row wins. If the model restates a row with a different value later in that reply (e.g. a summary list), the later value is used.",
+  "Rows never stated and not in a 24-bit <guess> become 0. Not seen in this batch.",
+  "The fixed budget//3 share assumes the circuits are equally hard. Two binary gates per circuit, which the inventory implies, supports that, but a circuit with NOT gates might need more than 6 rows."
+ ]
+}

@@ -1,4 +1,4 @@
-"""Data, environment, frozen solver and trace bridge for the CircuitDecoding TTHE loop.
+"""Data, environment, frozen solver and trace bridge for the Circuit Decoding TTHE loop.
 
 The environment holds the truth; a harness only ever sees answer bits through env.query. The
 solver is a frozen chat model behind an OpenAI-compatible endpoint (or a scripted mock for CPU
@@ -92,10 +92,11 @@ class CDEnv:
     def score(self, guess_text):
         bits = re.findall(r"[01]{24}", re.sub(r"\s", "", guess_text or ""))
         guess = np.array([int(ch) for ch in bits[-1]], dtype=np.uint8) if bits else None
-        exact = guess is not None and bool((guess == self._truth).all())
-        ckt = (sum(int((guess[i * 8:(i + 1) * 8] == self._truth[i * 8:(i + 1) * 8]).all()) for i in range(C)) / C
-               if guess is not None else 0.0)
-        return {"parsed_guess": guess is not None, "exact": exact, "ckt": ckt,
+        # the benchmark's own metric (circuit-wise accuracy, MTP Table 1) and the whole joint truth table
+        joint = guess is not None and bool((guess == self._truth).all())
+        circuit_wise = (sum(int((guess[i * 8:(i + 1) * 8] == self._truth[i * 8:(i + 1) * 8]).all()) for i in range(C)) / C
+                        if guess is not None else 0.0)
+        return {"parsed_guess": guess is not None, "joint_truth_table_correct": joint, "circuit_wise_accuracy": circuit_wise,
                 "guess": "".join(map(str, guess)) if guess is not None else None}
 
 
@@ -130,7 +131,12 @@ class Solver:
             p = self.cache_dir / f"{key}.json"
             if p.exists():
                 d = json.loads(p.read_text())
+                # a replayed call still costs what it cost: account the stored usage (entries written
+                # before 2026-10-12 carry none, which is why the pilots' candidate token columns read 0)
+                self.tokens_in += int(d.get("in") or 0)
+                self.tokens_out += int(d.get("out") or 0)
                 return d["text"]
+        u_in = u_out = 0
         if self.mock:
             from cd_mock import MockClient
             import asyncio
@@ -149,11 +155,12 @@ class Solver:
                                                      temperature=temperature, max_tokens=max_tokens, seed=self.seed)
             text = r.choices[0].message.content or ""
             if r.usage:
-                self.tokens_in += r.usage.prompt_tokens or 0
-                self.tokens_out += r.usage.completion_tokens or 0
+                u_in, u_out = r.usage.prompt_tokens or 0, r.usage.completion_tokens or 0
+                self.tokens_in += u_in
+                self.tokens_out += u_out
         if self.cache_dir:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
-            (self.cache_dir / f"{key}.json").write_text(json.dumps({"text": text}))
+            (self.cache_dir / f"{key}.json").write_text(json.dumps({"text": text, "in": u_in, "out": u_out}))
         return text
 
 

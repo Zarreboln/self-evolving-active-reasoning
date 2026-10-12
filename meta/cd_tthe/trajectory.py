@@ -14,23 +14,24 @@ def main(run):
     run = Path(run)
     rows = [json.loads(l) for l in (run / "opt_log.jsonl").open()]
     cards = {p.stem: json.loads(p.read_text()) for p in (run / "proposal_cards").glob("*.json")} if (run / "proposal_cards").exists() else {}
-    print(f"{'batch':>5} {'incoming':<26} {'committed':<26} {'preq uniq':>9} {'preq exact':>10} {'trans uniq':>10} {'trans exact':>11}  change")
+    print(f"{'batch':>5} {'incoming':<26} {'committed':<26} {'preq cwa':>9} {'preq joint':>10} {'preq uniq':>9} {'trans cwa':>9} {'trans joint':>11}  change")
     for r in rows:
         changed = r["committed"] != r["incoming"]
         card = cards.get(r["committed"], {})
         desc = (card.get("hypothesis") or "")[:70] if changed else ""
         print(f"{r['batch']:>5} {r['incoming'][:26]:<26} {r['committed'][:26]:<26} "
-              f"{100*r['prequential']['uniq_end']:>8.0f}% {100*r['prequential']['exact']:>9.0f}% "
-              f"{100*r['transductive']['uniq_end']:>9.0f}% {100*r['transductive']['exact']:>10.0f}%  {'* ' + desc if changed else ''}")
+              f"{100*r['prequential']['circuit_wise_accuracy']:>8.0f}% {100*r['prequential']['joint_truth_table_correct']:>9.0f}% {100*r['prequential']['uniq_end']:>8.0f}% "
+              f"{100*r['transductive']['circuit_wise_accuracy']:>8.0f}% {100*r['transductive']['joint_truth_table_correct']:>10.0f}%  {'* ' + desc if changed else ''}")
     try:
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
         x = [r["batch"] for r in rows]
         fig, ax = plt.subplots(figsize=(8, 3.6))
-        ax.plot(x, [100 * r["prequential"]["uniq_end"] for r in rows], "o-", label="prequential uniq@end (deployed)")
-        ax.plot(x, [100 * r["prequential"]["exact"] for r in rows], "s-", label="prequential exact")
-        ax.plot(x, [100 * r["transductive"]["uniq_end"] for r in rows], "o--", alpha=0.5, label="transductive uniq@end")
+        ax.plot(x, [100 * r["prequential"]["circuit_wise_accuracy"] for r in rows], "o-", label="prequential circuit-wise accuracy (deployed; the benchmark's metric)")
+        ax.plot(x, [100 * r["prequential"]["joint_truth_table_correct"] for r in rows], "s-", label="prequential joint truth table correct")
+        ax.plot(x, [100 * r["prequential"]["uniq_end"] for r in rows], "^:", alpha=0.6, label="prequential uniq@end (ours)")
+        ax.plot(x, [100 * r["transductive"]["circuit_wise_accuracy"] for r in rows], "o--", alpha=0.5, label="transductive circuit-wise accuracy")
         for r in rows:
             if r["committed"] != r["incoming"]:
                 ax.axvline(r["batch"], color="gray", lw=0.6, ls=":")

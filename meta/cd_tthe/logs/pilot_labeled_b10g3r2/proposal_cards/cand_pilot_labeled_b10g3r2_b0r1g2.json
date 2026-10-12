@@ -1,0 +1,31 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b0r1g2",
+  "parent": "cand_pilot_labeled_b10g3r2_b0r0g2",
+  "role": "adversarial audit and synthesis",
+  "hypothesis": "The parent's rule-derived hypothesis space (exactly two binary gates per circuit, NOTs on any of the 5 signals with parity, non-constant, inventory split exactly) is correct, and its only remaining failure mode is running out of queries on NOT-heavy inventories. Ranking suggested queries by the entropy of the answer over the JOINT (split, A, B, C) space lowers the queries the model needs to fully determine all three circuits. Falsifiable: on matched replays (same truth, same random top-4 pick by the model) the joint ranking should need fewer queries on average and leave no more episodes unresolved at 18 than the parent's per-circuit count split; on the real batch it must keep 10/10 exact.",
+  "behavior_changes": [
+    "Suggested queries (top 4 shown to the model) and the order of 'still uncertain inputs' are ranked by binary entropy of the answer over all consistent (inventory split, table A, table B, table C) combinations, so an answer on one circuit also gets credit for pruning splits and thus the other circuits. Falls back to the per-circuit split if the rules-derived space ever becomes inconsistent.",
+    "If a circuit is still ambiguous at the final prompt, its candidate tables are listed most-likely-first by joint weight and the prompt says the first is the most likely; ties in nearest-candidate snapping and an unparsed circuit resolve to the most likely candidate instead of the lexicographically first one."
+  ],
+  "preserved_behaviors": [
+    "The model writes every query; the harness only vetoes queries that are already answered or rule-implied and re-asks (up to 4 times per turn).",
+    "Compact per-turn state (answers, implied rows, open rows) instead of the raw transcript.",
+    "Early stop once every circuit has a single consistent table (no wasted LLM calls on determined circuits).",
+    "Final guess assembled from the model's per-circuit lines, snapped to the nearest consistent candidate.",
+    "Frozen solver (self.llm only) and label-free (only env.query / env.history / inventory / prompts)."
+  ],
+  "verification": [
+    "Cross-branch audit: on every one of the 10 instances, g2's final 24-bit table agrees with all 530 answers that g0, g1 and bare observed (0 conflicts). That is independent support for g2's hypothesis space. g0/g1 failed (10%/0% exact) because they had no rule-derived consistency, not because of conflicting evidence, so I found no behavior of theirs worth importing.",
+    "Ran check_b0r1_cand_pilot_labeled_b10g3r2_b0r1g2.py: 10/10 status=ok, parsed_final_guess=True, final table correct=True and circuits_right=3/3 on every instance; queries used 9,13,13,13,11,15,9,13,5,15 (mean 11.6 vs the parent's 10.9 in its run).",
+    "Traces show the model takes suggestion #1 most often, #2-#4 sometimes, and goes off-list rarely, so per-run query counts mostly reflect the model's random pick among the top 4. A single n=10 run cannot rank the two policies.",
+    "Matched replay on these 10 instances' (now known) tables, 200 random top-4 picks each: parent mean 11.74 queries, joint 11.42; the joint ranking is lower on all 10 instances and neither leaves anything unresolved (0/2000). The parent's 10.9 was a favourable draw.",
+    "Offline sim on random truths (60 per inventory, top-4 random pick): 3 AND/3 OR/2 NOT unresolved-at-18 1/60 -> 0/60, mean 15.4 -> 15.0; 2 AND/4 OR/3 NOT 3/60 -> 1/60, mean 16.5 -> 15.9; 1 AND/5 OR/2 NOT mean 13.3 -> 12.1 (max 18 -> 16).",
+    "Offline smoke test with a fake env and a model that writes a garbage final table: 40/40 exact on random NOT inventories (snapping recovers determined tables), no crashes."
+  ],
+  "risks": [
+    "On this batch (0-2 NOT inventories) the gain is small (about 0.3 queries) and invisible in one run; the benefit is mainly in the tail for inventories with 2+ NOTs, which this batch barely covers.",
+    "Joint weights treat every (split, table) combination as equally likely; if the generator's prior differs, the entropy ranking and the most-likely-first order for ambiguous circuits are miscalibrated (this cannot cost correctness when all circuits get determined, only query efficiency).",
+    "Inventories with 3+ NOTs still sit near the 18-query limit (sim: 1/60 unresolved); there, the final pick for an ambiguous circuit is a likelihood-ordered guess, not a deduction.",
+    "If the rules were misread (truth outside the enumerated space), early stop plus snapping would silently commit to a wrong table. The 0/530 conflicts across branches argue against this on this batch, but other batches haven't been checked."
+  ]
+}

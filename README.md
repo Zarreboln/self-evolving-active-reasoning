@@ -1,92 +1,78 @@
-# Self-Evolving Questioning Policies
-### for active reasoning of LLM agents
+# Self-Evolving Harnesses for Active Reasoning
 
 MAS.S62 *Self-Evolving AI* (Fall 2026) course project.
 **Zining Liu** (ziningl@mit.edu) — Massachusetts Institute of Technology
 
 ## The question
 
-A question that buys nothing still costs a turn. Active reasoning asks an agent to acquire the
-information a problem withholds, one question at a time, and its dominant failure is not a wrong
-final answer but a stalled one: the agent keeps interacting while its questions stop narrowing
-what the answer could be.
+An active-reasoning agent must *ask* for the information a problem withholds, one question at
+a time, and the dominant failure of small models is not a wrong final answer but a stalled
+dialogue: questions that stop narrowing what the answer could be. Here the model's weights are
+fixed and everything around it — what it is shown, what it is asked again, what is refused —
+is a **harness** that a stronger coding agent evolves against measured traces
+(the Meta-Harness protocol, arXiv 2603.28052, with RRSI-style regularized selection,
+arXiv 2609.24972). The questioner is a frozen Qwen2.5-7B-Instruct; the proposer is Claude.
 
-The strongest current remedy, **T3** ([arXiv:2510.12264](https://arxiv.org/abs/2510.12264),
-ICLR 2026), detects that stall and truncates the training trajectory. Three things about it
-open this project:
+Testbed: **CircuitDecoding** from Multi-Turn Puzzles (arXiv 2508.10142). Three hidden boolean
+circuits built from an announced gate inventory, 18 one-bit queries, then the joint truth table.
+The inventory implies an exact, enumerable hypothesis space (252–3924 joint tables), so the
+feasible set after every answer, the expected information of every possible query and a
+max-entropy oracle are all computable without the truth — the harness can be given *any* state,
+and what the model does with it can be measured per turn.
 
-1. The fix lives **inside RL**. At inference an agent cannot discard the episode it is in —
-   detecting a stall is only useful paired with something to do next.
-2. The criterion is stated task-agnostically but **instantiated by hand** per task. The
-   patience `k` takes the values 1, 3, 5 and 2 across the four reported tasks. Hand-fitting a
-   criterion per task is exactly the labour a self-improving system should absorb.
-3. On preference estimation the refinement proxy reads the **ground-truth** preference vector,
-   which no deployed agent has.
+## Results so far (300 instances unless noted; held-out numbers are frozen one-shot evaluations)
 
-So: can the signal be computed at inference, and can the rule that reads it be improved by the
-agent itself, with no gradient update?
+| system | who wrote it | uniq@end | exact | eff |
+|---|---|---|---|---|
+| bare (no harness) | — | 23–25 | 0.3 | 0.55 |
+| EvoHarness-RL ReAct / EvoHarness-Base (inline) | official framework | 26–29 / 30–32 | 0 / 1 | 0.57 |
+| enum15 (state summary every turn) | hand-written | 38–42 | 6 | 0.61 |
+| EvoHarness-RL always-on panels | official framework | 71–75 | 62–65 | 0.76 |
+| oracle hint (the max-entropy query every turn) | hand-written | 96.5 | 6.8 | 0.95 |
+| answer_grid (state_only regime, held-out 200×3) | proposer | 90.0 | 84.7 | 0.76 |
+| **veto_only** (state_only: refuse queries whose answer is already determined) | proposer | **96.7** | **86.2** | 0.89 |
+| copy_query (open regime: one copyable query, held-out 250×3) | proposer | 99.7 | 80.4 | 0.96 |
 
-## Why the main arena makes this exact
+`uniq@end` = the 18 queries pinned the answer down (information gathering, luck-free);
+`exact` = the task's success metric; `eff` = ex-ante bits of the chosen query over the best
+available query (1.0 = oracle, 0.63 ≈ a random unasked entry). Details, commands and CIs in
+[`experiments/`](experiments/).
 
-Movie Recommendation from **Multi-Turn Puzzles**
-([arXiv:2508.10142](https://arxiv.org/abs/2508.10142), Google DeepMind) is, as far as we found,
-the only released task where the refinement signal is exactly computable *without* the ground
-truth. The user's utility is linear over `k=8` observable attributes; the agent sees the
-attribute scores of 20 candidate films and may ask 10 questions of one admissible form,
-*would you prefer A over B*; answers are yes / no / no preference.
-
-Each answer is therefore a halfspace constraint `w·(a_A − a_B) > 0` whose coefficients the
-agent already knows. The consistent set `H_t` is an exactly characterised region of weight
-space and its contraction needs no hidden information.
-
-Measured on the 1000 released episodes: weights lie strictly on the grid {0.0 … 0.9}, so
-`|H_0| = 10^8`; the action space is `C(20,2) = 190` questions; ties ("no preference") occur in
-**0.57%** of all pairs. Ten binary questions can remove at most a factor of `2^10`, so the task
-is underdetermined by design — which is why the benchmark scores the *rank* of the recommended
-film rather than recovery of the weights.
-
-## One idea, two layers
-
-Both layers act on one artifact: a small set of written rules, `When [condition], [action]`, deciding
-whether the next turn is spent on another question, which question, and what to do once
-questioning has stopped paying. Rules are proposed, scored by accuracy bought per question
-asked, and kept or retired. No model weights change.
-
-| | |
-|---|---|
-| **Task-specific layer** | Derive a task's instantiation from outcomes — what counts as the hypothesis set, how refinement is measured, how many flat steps to tolerate, what to do on a stall |
-| **General layer** | A mapping from a task's signature to a starting instantiation, plus an exact error decomposition: *did not ask well* vs *had the answer and did not use it* |
-
-The decomposition is the point. Given the constraints collected in an episode, the
-best-supported recommendation is computable. The gap to the agent's choice is error from not
-using the information; the gap from there to the optimum is error from not having asked well.
-That split is what belief deviation means, and here it is measured rather than estimated.
+What the numbers say: the 7B's failure on this task is belief tracking, not planning — it keeps
+asking outputs its own answers already determine. A 30-line harness that only refuses such
+queries, computing no information quantity, lifts it from 25% to 97% at the same token cost; a
+harness that hands it the decision reaches the ceiling but leaves the final answer to copying.
+Pull-style harnesses (the model must call `track`) go unused by a frozen 7B.
 
 ## Layout
 
+| path | content |
+|---|---|
+| `experiments/` | one folder per experiment: setup, command, results, takeaway, score files |
+| `stage0/` | hypothesis-space oracle (`cd_oracle.py`), AR-Bench counterparts, family survey |
+| `runner/` | episode runners (`cd_harness_run.py`, `sp_runner_async.py`), scorers, mock task models, judge calibration |
+| `meta/cd_evolve/` | the evolution loop (`evolve.py`), proposer skill prompt, `agents/` (seed + proposer-written harnesses), run logs and proposer transcripts |
+| `baselines/evoharness_cd/` | our CircuitDecoding adapter for EvoHarness-RL |
+| `engaging/` | Slurm scripts (vLLM servers, ladder, judge, downloads) for the MIT Engaging cluster |
+| `envs/`, `signal/`, `policy/` | pointers into the above, by role |
+| `experiments.md`, `RELATED_WORK.md`, `meta/journal.md` | dated experiment log, literature notes, process journal |
+| `THIRD_PARTY.md` | pinned external repositories (AR-Bench, Meta-Harness, RRSI, EvoHarness-RL, MastermindEval) |
+
+Raw per-episode traces (~330 MB) are attached to GitHub Releases, one tarball per experiment.
+
+## Reproduce (sketch)
+
+```bash
+# serve the task model (any OpenAI-compatible endpoint), then
+python runner/cd_harness_run.py --harness meta/cd_evolve/agents/veto_only.py \
+    --split heldout --split-file splits/cd_split_v2.json --seeds 3 --base-url http://host:port/v1 \
+    --out results/cd_heldout/so1/veto_only.jsonl
+python runner/cd_score.py results/cd_heldout/so1/*.jsonl --split heldout --split-file splits/cd_split_v2.json
+# one evolution iteration (needs the claude CLI for the proposer and a served 7B on the cluster)
+cd meta/cd_evolve && python evolve.py --run-name demo --regime state_only --iterations 1 \
+    --split-file ../../splits/cd_split_v2.json
 ```
-envs/         Movie Recommendation and Circuit Decoding environments + deterministic scorers
-signal/       hypothesis-set tracking, contraction, the stall indicator
-policy/       rule schema, propose/score/retire loop, task signature -> instantiation
-baselines/    T3's published settings, one global setting, AR-Bench's six strategies,
-              and the exact greedy-contraction policy as an upper reference
-experiments/  run configs and logs, one directory per dated run
-```
 
-## Data
-
-- **Multi-Turn Puzzles** — [huggingface.co/datasets/arianhosseini/mt_puzzles](https://huggingface.co/datasets/arianhosseini/mt_puzzles).
-  Data and prompts only; no environment or scorer is released, so both are ours to build. We
-  validate them by reproducing the frontier-model numbers the paper reports before any of our
-  own runs.
-- **AR-Bench** — [tmlr-group/AR-Bench](https://github.com/tmlr-group/AR-Bench) (ICML 2025), the
-  transfer domain. Ships the full harness and six questioning strategies. Note its
-  `arbench/utils/inference.py` returns a placeholder string on API failure, so a transient
-  error is indistinguishable from a wrong answer; since rules are scored by outcome, that path
-  needs explicit retry and failure accounting before any evolution run.
-
-## Status
-
-Proposal stage (October 2026). Code lands from the week of 6 Oct: build and validate the Movie
-Recommendation environment and scorer, implement exact `H_t` tracking and the greedy reference,
-and freeze the rule schema before either loop is written.
+The Situation Puzzles track (AR-Bench) uses Llama-3.1-405B-Instruct AWQ-INT4 as respondent and
+judge (82.0% on TurtleBench-150, equal to the official bf16 judge's 82.7%); see
+`experiments/02_judge_calibration/` and `experiments/07_sp_bare_405judge/`.

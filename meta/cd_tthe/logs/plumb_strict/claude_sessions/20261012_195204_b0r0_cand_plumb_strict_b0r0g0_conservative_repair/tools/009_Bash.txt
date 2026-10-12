@@ -1,0 +1,41 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; ls logs/plumb_strict/checks/b0r0_cand_plumb_strict_b0r0g0/ | head; for i in 156 11 250 128 98; do python -c "
+import json,sys;i=$i
+a=json.load(open(f'logs/plumb_strict/checks/b0r0_cand_plumb_strict_b0r0g0/res_{i}.json'));b=json.load(open(f'logs/plumb_strict/traces/b0/bare__i{i}.json'))
+print(i,a['guess_text'],b['guess_text'],a['guess_text']==b['guess_text'])"; done
+python - <<'EOF'
+import json
+a=json.load(open('logs/plumb_strict/checks/b0r0_cand_plumb_strict_b0r0g0/res_11.json'))
+tr=a['trace']; ms=[x for x in tr if x.get('step')=='llm']
+print(ms[5]['messages'][-1]['content']); print('---'); print(ms[-1]['messages'][-1]['content'])
+EOF
+
+
+--- output ---
+res_11.json
+res_128.json
+res_156.json
+res_250.json
+res_98.json
+task_11.json
+task_128.json
+task_156.json
+task_250.json
+task_98.json
+156 <guess>000101010101011100000000</guess> <guess>000101010101011100000000</guess> True
+11 <guess>101111110100010101000000</guess> <guess>101111110100010101000000</guess> True
+250 <guess>000111110101011101000000</guess> <guess>000111110101011101000000</guess> True
+128 <guess>001101110001001100000000</guess> <guess>001101110001001100000000</guess> True
+98 <guess>011100001011001101000000</guess> <guess>011100001011001101000000</guess> True
+A(1, 0, 0) = 1
+Please send your next query. 13 queries remaining.
+Queries per circuit so far: A=5, B=0, C=0. 13 queries cannot read every remaining row, so use the gate inventory to infer rows you do not query; circuit(s) B, C not queried yet.
+---
+C(0, 0, 1) = 1
+All answers so far:
+Circuit A: A(0, 0, 0) = 1; A(0, 0, 1) = 0; A(0, 1, 0) = 1; A(0, 1, 1) = 1; A(1, 0, 0) = 1; A(1, 0, 1) = 1; A(1, 1, 0) = 1; A(1, 1, 1) = 1
+Circuit B: B(0, 0, 0) = 0; B(0, 0, 1) = 1; B(0, 1, 0) = 0; B(0, 1, 1) = 0; B(1, 0, 0) = 0; B(1, 0, 1) = 1; B(1, 1, 0) = 0; B(1, 1, 1) = 1
+Circuit C: C(0, 0, 0) = 0; C(0, 0, 1) = 1
+Please provide the truth tables for all circuits in the format requested. Make sure to enclose your guess in the <guess> </guess> markers.

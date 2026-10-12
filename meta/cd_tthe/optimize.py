@@ -114,8 +114,8 @@ def main():
     ap.add_argument("--proposer-model", default="opus")
     ap.add_argument("--propose-timeout", type=int, default=900); ap.add_argument("--judge-timeout", type=int, default=900)
     ap.add_argument("--effort", default="high")
-    ap.add_argument("--signals", choices=["full", "strict"], default="full",
-                    help="strict: proposer/judge see raw traces and run status only (no oracle-derived signals, no habit prior)")
+    ap.add_argument("--signals", choices=["strict", "labeled"], default="strict",
+                    help="strict: raw traces + run status only; labeled: strict + each episode's final outcome")
     ap.add_argument("--solve-timeout", type=int, default=600, help="wall-clock cap per episode")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--start-batch", type=int, default=0)
@@ -124,7 +124,8 @@ def main():
     global BUDGET_OVERRIDE
     BUDGET_OVERRIDE = args.budget
     P.BUDGET = args.budget
-    P.STRICT = args.signals == "strict"
+    P.STRICT = True                       # the oracle-derived signal arm was dropped (2026-10-12)
+    P.LABELED = args.signals == "labeled"
     run_dir = HERE / "logs" / args.run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     stream = bridge.make_stream(args.split, args.split_file, args.stream_seed, args.limit)

@@ -1,0 +1,17 @@
+Bash
+
+command:
+cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/plumb_strict/traces/b0; for i in 11 98 128 156 250; do echo "$i: $(tail -1 bare__i$i.md) | $(tail -1 cand_plumb_strict_b0r0g0__i$i.md)"; done; grep -c "contradicts" cand*.md
+
+
+--- output ---
+11: <guess>101111110100010101000000</guess> | <guess>101111110100010101000000</guess>
+98: <guess>011100001011001101000000</guess> | <guess>011100001011001101000000</guess>
+128: <guess>001101110001001100000000</guess> | <guess>001101110001001100000000</guess>
+156: <guess>000101010101011100000000</guess> | <guess>000101010101011100000000</guess>
+250: <guess>000111110101011101000000</guess> | <guess>000111110101011101000000</guess>
+cand_plumb_strict_b0r0g0__i11.md:0
+cand_plumb_strict_b0r0g0__i128.md:0
+cand_plumb_strict_b0r0g0__i156.md:0
+cand_plumb_strict_b0r0g0__i250.md:0
+cand_plumb_strict_b0r0g0__i98.md:0

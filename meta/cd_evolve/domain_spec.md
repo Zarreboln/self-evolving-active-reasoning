@@ -1,11 +1,11 @@
-# domain_spec.md — Meta-Harness applied to CircuitDecoding (active reasoning)
+# domain_spec.md — Meta-Harness applied to Circuit Decoding (active reasoning)
 
 Written 2026-10-10 following meta_harness_official/ONBOARDING.md. "Confirmed" = decided in conversation; "default" = my proposal, change freely; "unknown" = open.
 
 ## Task and success criterion
-- Task: Multi-Turn Puzzles CircuitDecoding, 300 released instances (3 inventories x 100), 18 queries, final 24-bit guess. Example: inventory {AND 1, OR 5, NOT 2}; query `<query>A(0,1,1)</query>` -> "The output of that query is 1."; final `<guess>0001...1</guess>`.
+- Task: Multi-Turn Puzzles Circuit Decoding, 300 released instances (3 inventories x 100), 18 queries, final 24-bit guess. Example: inventory {AND 1, OR 5, NOT 2}; query `<query>A(0,1,1)</query>` -> "The output of that query is 1."; final `<guess>0001...1</guess>`.
 - Task model (fixed): Qwen2.5-7B-Instruct, vLLM, temperature 0.7, max_tokens 1200, context 12288. Confirmed (the paper's own weak-model regime; the 7B is where the hand-written harness failed).
-- Primary metric: uniq@end (feasible set collapsed to one hypothesis after 18 queries). Secondary: exact. Diagnostics: eff, zero%, oracle%, repeat%, illegal%, parsed%, tokens. Confirmed (uniq@end is luck-free and isolates information gathering from the final copy step).
+- Primary metric: circuit-wise accuracy (the benchmark's own metric, MTP Table 1; its normalization is undefined, we report the raw fraction of circuits whose full truth table is right). Second: joint truth table correct (whole 24-bit table right; the paper's noun, our reading of success). Diagnostics (ours): uniq@end (feasible set collapsed to one hypothesis after 18 queries; luck-free, isolates information gathering from the final copy step), eff, zero%, oracle%, repeat%, illegal%, parsed%, tokens. Changed 2026-10-12 (user: official definitions and names only); runs open1/so1 were selected on uniq@end.
 
 ## What the harness may change / what stays fixed
 - Editable: one file per candidate `agents/<name>.py` implementing `init_state / build_feedback / final_hint` over a `View` with public information only (H, alive, history, transcript, game). Interface in `../../runner/cd_harness_run.py`.
@@ -17,13 +17,13 @@ Written 2026-10-10 following meta_harness_official/ONBOARDING.md. "Confirmed" = 
 - Split: `splits/cd_split.json`, seed 20261010, search 50 (17/17/16 by inventory), held-out 250. Confirmed.
 - Candidate evaluation: search split x 2 seeds = 100 episodes, concurrency 48, on the Engaging vLLM server (job `serve7b`), traces synced back to `logs/<run>/traces/<name>/search.jsonl`, score in `logs/<run>/scores/<name>.json` (bootstrap CIs).
 - Proposer access: this workspace only — `agents/`, `logs/<run>/{evolution_summary.jsonl, frontier_val.json, reports/, traces/, scores/}`, `data/cd_search.jsonl` (the 50 search instances, with truths — like validation labels), tools. Held-out instances live in `../../mt_puzzles/cd_test.jsonl` and held-out results in `../../results/cd_heldout/<run>/`, both outside the workspace (operational isolation, same as the reference implementation).
-- Selection: frontier = best uniq@end on search (ties by exact). Final candidate chosen before any held-out number is seen. `evolve.py --test` freezes the run, evaluates baselines + frontier on held-out x 3 seeds, and refuses further evolution under that run name.
+- Selection: frontier = best circuit-wise accuracy on search (ties by joint truth table correct; before 2026-10-12: uniq@end). Final candidate chosen before any held-out number is seen. `evolve.py --test` freezes the run, evaluates baselines + frontier on held-out x 3 seeds, and refuses further evolution under that run name.
 - Failure handling: candidates that fail import / mock smoke test are recorded as failed and skipped; episodes with API errors are retried once on resume; a candidate with >5% errored episodes is marked invalid.
 
 ## Baselines, budget, stopping
 - Seeds (all evaluated under identical conditions first): bare, enum15 (= hand-written belief summary), symbolic, facts (ladder a), splits (ladder c), oracle_hint (ladder d, ceiling), t3_gate.
 - Budget per iteration: 3 candidates x ~4.5 min GPU + one proposer session (`claude -p --model opus`, subscription; timeout 2400 s). Default: 8 iterations per regime; measure the first iteration before committing (unknown: proposer token cost per session -> measured from `logs/<run>/claude_sessions/*/meta.json`).
-- Stopping: fixed iteration count; no plateau stop (reference rule). Kill criterion for the paper: the evolved harness must beat `enum15` on held-out uniq@end with a CI excluding 0; otherwise the paper reports the ladder only.
+- Stopping: fixed iteration count; no plateau stop (reference rule). Kill criterion for the paper: the evolved harness must beat `enum15` on held-out circuit-wise accuracy with a CI excluding 0; otherwise the paper reports the ladder only.
 
 ## Execution evidence saved
 - Per episode: every message sent, every raw model reply, per-turn feasible-set sizes, bits chosen/available, best query, flags; final prompt and reply; harness state dump; harness file sha; model/temperature/budget.
@@ -31,7 +31,7 @@ Written 2026-10-10 following meta_harness_official/ONBOARDING.md. "Confirmed" = 
 
 ## Smallest first implementation and acceptance check
 1. CPU: all seeds x scripted policies (done 2026-10-10: oracle policy -> 100% uniq@end under every harness; sequential -> 20%, eff 0.535 matching the synthetic reference).
-2. GPU: `bare` and `enum15` on the search split must reproduce the direction seen in results/gate_cd.jsonl (bare uniq@end ~34%, enum15 lower, exact higher). Unknown until job 25535085 (ladder) finishes.
+2. GPU: `bare` and `enum15` on the search split must reproduce the direction seen in results/gate_cd.jsonl (bare uniq@end ~34%, enum15 lower, joint truth table correct higher). Unknown until job 25535085 (ladder) finishes.
 3. One proposer iteration in regime `open`: 3 valid candidates, benchmarked, summary row written. Then decide the iteration budget.
 
 ## Constraints

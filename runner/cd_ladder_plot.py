@@ -1,4 +1,5 @@
-"""Actionability-ladder figure: uniq@end and ex-ante efficiency per harness
+"""Actionability-ladder figure: uniq@end and ex-ante efficiency per harness (our diagnostics; the
+benchmark's own metric, circuit-wise accuracy, is in the score JSON)
 with 95% bootstrap CIs, from cd_score.py --out JSON files.
 
     python runner/cd_score.py results/cd_ladder/*.jsonl --split all --out results/cd_ladder/scores.json
@@ -22,7 +23,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("scores")
     p.add_argument("--out", default="ladder.png")
-    p.add_argument("--title", default="CircuitDecoding, Qwen2.5-7B-Instruct, 300 instances x 2 seeds")
+    p.add_argument("--title", default="Circuit Decoding, Qwen2.5-7B-Instruct, 300 instances x 2 seeds")
     a = p.parse_args()
     S = json.load(open(a.scores))
     names = [n for n in ORDER if n in S] + [n for n in S if n not in ORDER]
@@ -34,9 +35,9 @@ def main():
     ax[0].bar(x, u, yerr=[lo, hi], capsize=3, color="#4c72b0")
     ax[0].set_ylabel("uniq@end (%)")
     ax[0].set_ylim(0, 100)
-    ex = [100 * S[n]["exact"] for n in names]
+    ex = [100 * S[n]["joint_truth_table_correct"] for n in names]
     for i, v in enumerate(ex):
-        ax[0].text(i, u[i] + hi[i] + 2, f"exact {v:.1f}", ha="center", fontsize=7)
+        ax[0].text(i, u[i] + hi[i] + 2, f"joint table {v:.1f}", ha="center", fontsize=7)
     e = [S[n]["eff"] for n in names]
     ax[1].bar(x, e, color="#dd8452")
     for k, v in REF.items():

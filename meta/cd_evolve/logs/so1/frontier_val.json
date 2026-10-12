@@ -6,7 +6,7 @@
    0.95,
    0.995
   ],
-  "exact": 0.835,
+  "joint_truth_table_correct": 0.835,
   "eff": 0.8992903981155377,
   "repeat": 0,
   "illegal": 0.0008333333333333334,
@@ -22,7 +22,7 @@
     0.14,
     0.25
    ],
-   "exact": 0,
+   "joint_truth_table_correct": 0,
    "eff": 0.5501394589209037,
    "repeat": 0.02167003756139844,
    "illegal": 0.0038888888888888888,
@@ -37,7 +37,7 @@
     0.31,
     0.45
    ],
-   "exact": 0.06,
+   "joint_truth_table_correct": 0.06,
    "eff": 0.6042264193296433,
    "repeat": 0.04398216939078752,
    "illegal": 0.0027785495971103086,
@@ -52,7 +52,7 @@
     0.9,
     0.965
    ],
-   "exact": 0.765,
+   "joint_truth_table_correct": 0.765,
    "eff": 0.8802693727737483,
    "repeat": 0,
    "illegal": 0.01028634973589102,
@@ -67,7 +67,7 @@
     0.95,
     0.995
    ],
-   "exact": 0.835,
+   "joint_truth_table_correct": 0.835,
    "eff": 0.8992903981155377,
    "repeat": 0,
    "illegal": 0.0008333333333333334,
@@ -78,7 +78,7 @@
   },
   "answer_grid": {
    "uniq": 0.865,
-   "exact": 0.825,
+   "joint_truth_table_correct": 0.825,
    "eff": 0.7458024327097329,
    "cost": 51215.5,
    "iteration": 1,

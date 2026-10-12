@@ -4,10 +4,13 @@
     python runner/cd_score.py results/cd/enum15/search.jsonl --vs results/cd/bare/search.jsonl --out score.json
 
 Episode-level metrics (one row per harness):
-    uniq@end   feasible set collapsed to one hypothesis after the budget (primary;
+    uniq@end   feasible set collapsed to one hypothesis after the budget (ours, diagnostic;
                measures information gathering, immune to final-guess luck)
-    exact      final guess == truth (secondary)
-    ckt / bit  circuit-wise and bit-wise accuracy of the final guess
+    joint truth table correct   the whole 24-bit joint truth table is right (our literal
+               reading of a successful episode; the paper defines none for this task)
+    circuit-wise accuracy   fraction of the 3 circuits whose full truth table is right --
+               the benchmark's own metric (MTP Table 1; its normalization is undefined)
+    bit        bit-wise accuracy of the final guess (ours)
     parsed     final guess was in the required format
     alive_end  mean |feasible set| after the budget
 Turn-level metrics (over legal turns while >1 hypothesis remained):
@@ -16,7 +19,7 @@ Turn-level metrics (over legal turns while >1 hypothesis remained):
     oracle%    queries equal to the max-entropy query
     repeat%    queries identical to an earlier query
     illegal%   turns with no parsable query (over all turns)
-95% bootstrap CIs on uniq@end and exact; paired bootstrap on the delta vs --vs.
+95% bootstrap CIs on uniq@end and joint truth table correct; paired bootstrap on the delta vs --vs.
 """
 
 import argparse
@@ -49,13 +52,13 @@ def episode_metrics(r):
     res = r.get("result") or {}
     g, t = res.get("guess_bits"), res.get("truth_bits")
     m = {"err": bool(r.get("error")), "uniq": bool(res.get("unique_at_end")),
-         "exact": bool(res.get("correct")), "parsed": bool(res.get("parsed_guess")),
+         "joint_truth_table_correct": bool(res.get("correct")), "parsed": bool(res.get("parsed_guess")),
          "alive_end": res.get("n_alive_end"), "tok_out": r.get("out_tokens", 0),
          "tok_in": r.get("in_tokens", 0)}
     if g and t and len(g) == len(t):
         k = len(t) // 3
         m["bit"] = sum(x == y for x, y in zip(g, t)) / len(t)
-        m["ckt"] = sum(g[i * k:(i + 1) * k] == t[i * k:(i + 1) * k] for i in range(3)) / 3
+        m["circuit_wise_accuracy"] = sum(g[i * k:(i + 1) * k] == t[i * k:(i + 1) * k] for i in range(3)) / 3
     return m
 
 
@@ -106,28 +109,30 @@ def summarize(latest):
     mean = lambda f: (st.mean(x[f] for x in eps.values() if x.get(f) is not None)
                       if any(x.get(f) is not None for x in eps.values()) else float("nan"))
     tmean = lambda f: st.mean(turns[f]) if turns[f] else float("nan")
-    s = {"n": n, "err": mean("err"), "uniq": mean("uniq"), "exact": mean("exact"),
-         "ckt": mean("ckt"), "bit": mean("bit"), "parsed": mean("parsed"),
+    s = {"n": n, "err": mean("err"), "uniq": mean("uniq"), "joint_truth_table_correct": mean("joint_truth_table_correct"),
+         "circuit_wise_accuracy": mean("circuit_wise_accuracy"), "bit": mean("bit"), "parsed": mean("parsed"),
          "alive_end": mean("alive_end"), "eff": tmean("eff"), "zero": tmean("zero"),
          "oracle": tmean("oracle"), "repeat": tmean("repeat"), "illegal": tmean("illegal"),
          "tok_out": mean("tok_out"), "tok_in": mean("tok_in"),
          "uniq_ci": boot_ci([x["uniq"] for x in eps.values()]),
-         "exact_ci": boot_ci([x["exact"] for x in eps.values()])}
+         "joint_truth_table_correct_ci": boot_ci([x["joint_truth_table_correct"] for x in eps.values()])}
     return s, eps
 
 
-# Column order: the benchmark's own metrics first (success = all 24 bits right; ckt-acc = circuit-wise
-# accuracy), then our diagnostics. See experiments/OFFICIAL_DEFINITIONS.md.
-HDR = (f"{'harness':<14}{'n':>5}{'err%':>6}{'success':>9}{'ckt-acc':>9}{'uniq@end':>10}{'  95% CI':>14}{'bit':>7}"
+# Column order: the benchmark's own metric first ("circuit-wise accuracy", MTP Table 1), then
+# "joint truth table correct" (the whole 24-bit joint truth table right -- our literal reading of a
+# successful episode; the paper defines no success event for this task), then our diagnostics
+# (uniq@end, bit, eff, ...). See experiments/OFFICIAL_DEFINITIONS.md.
+HDR = (f"{'harness':<14}{'n':>5}{'err%':>6}{'circuit-wise accuracy':>23}{'joint truth table correct':>27}{'uniq@end':>10}{'  95% CI':>14}{'bit':>7}"
        f"{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill%':>6}{'prs%':>6}{'alive':>7}{'tok':>7}")
-# Errored episodes (context overflow, API failures) count as NOT unique / NOT exact:
+# Errored episodes (context overflow, API failures) count as NOT unique / NOT correct:
 # they are real failures of that harness at this context budget. Turn-level metrics
 # and `alive` are computed over the completed episodes only. err% makes this visible.
 
 
 def fmt_row(name, s):
     pc = lambda v: "  n/a" if v != v else f"{100 * v:.1f}"
-    return (f"{name:<14}{s['n']:>5}{pc(s['err']):>6}{pc(s['exact']):>9}{pc(s['ckt']):>9}{pc(s['uniq']):>10}"
+    return (f"{name:<14}{s['n']:>5}{pc(s['err']):>6}{pc(s['circuit_wise_accuracy']):>23}{pc(s['joint_truth_table_correct']):>27}{pc(s['uniq']):>10}"
             f"{'[' + pc(s['uniq_ci'][0]) + ',' + pc(s['uniq_ci'][1]) + ']':>14}"
             f"{pc(s['bit']):>7}"
             f"{s['eff']:>7.3f}{pc(s['zero']):>7}{pc(s['oracle']):>7}{pc(s['repeat']):>6}"
@@ -159,7 +164,7 @@ def main():
             sub = {k: v for k, v in latest.items() if k[0] == c}
             s, eps = summarize(sub)
             if base:
-                s["vs"] = {fld: paired_delta(eps, base, fld) for fld in ("uniq", "exact")}
+                s["vs"] = {fld: paired_delta(eps, base, fld) for fld in ("uniq", "joint_truth_table_correct")}
             summaries[c] = s
             print(fmt_row(c, s))
             if base and s["vs"]["uniq"]:
@@ -167,8 +172,8 @@ def main():
                 vs_name = Path(a.vs).stem if Path(a.vs).stem not in ("search", "heldout") else Path(a.vs).parent.name
                 print(f"{'':<14}  vs {vs_name}: uniq {100*d['uniq']['delta']:+.1f} "
                       f"[{100*d['uniq']['ci'][0]:+.1f},{100*d['uniq']['ci'][1]:+.1f}]  "
-                      f"exact {100*d['exact']['delta']:+.1f} "
-                      f"[{100*d['exact']['ci'][0]:+.1f},{100*d['exact']['ci'][1]:+.1f}]  "
+                      f"joint truth table correct {100*d['joint_truth_table_correct']['delta']:+.1f} "
+                      f"[{100*d['joint_truth_table_correct']['ci'][0]:+.1f},{100*d['joint_truth_table_correct']['ci'][1]:+.1f}]  "
                       f"(n={d['uniq']['n_pairs']} paired)")
     if a.out:
         Path(a.out).write_text(json.dumps(summaries, indent=1))

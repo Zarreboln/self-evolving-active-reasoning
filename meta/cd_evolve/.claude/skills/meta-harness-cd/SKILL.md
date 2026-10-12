@@ -1,9 +1,9 @@
 ---
 name: meta-harness-cd
-description: Run one iteration of harness evolution for CircuitDecoding (fixed Qwen2.5-7B-Instruct task model). Called by evolve.py.
+description: Run one iteration of harness evolution for Circuit Decoding (fixed Qwen2.5-7B-Instruct task model). Called by evolve.py.
 ---
 
-# Meta-Harness (CircuitDecoding harness evolution)
+# Meta-Harness (Circuit Decoding harness evolution)
 
 Run ONE iteration. Do the work in the main session; do not delegate the analysis or the implementation to subagents (constraints get lost and you end up with parameter variants).
 
@@ -11,11 +11,11 @@ Run ONE iteration. Do the work in the main session; do not delegate the analysis
 
 ## The task being solved by the (fixed) task model
 
-CircuitDecoding (Multi-Turn Puzzles): three hidden 3-input boolean circuits A, B, C built from an announced gate inventory (e.g. "1 AND, 5 OR, 2 NOT"). The task model gets 18 queries, one per turn, of the form `<query>A(0, 1, 1)</query>`; the environment answers with one output bit. After the 18th answer it must output all three 8-row truth tables as a 24-bit string in `<guess>...</guess>`.
+Circuit Decoding (Multi-Turn Puzzles): three hidden 3-input boolean circuits A, B, C built from an announced gate inventory (e.g. "1 AND, 5 OR, 2 NOT"). The task model gets 18 queries, one per turn, of the form `<query>A(0, 1, 1)</query>`; the environment answers with one output bit. After the 18th answer it must output all three 8-row truth tables as a 24-bit string in `<guess>...</guess>`.
 
 Everything about the task is fixed and NOT yours to change: the system prompt (`mt_puzzles/cd_instruction.txt`), the budget (18), the environment lines (official wording from the paper transcript: `A(0, 0, 1) = 1` / `Please send your next query. 17 queries remaining.`; the 18th answer arrives together with the final prompt), the final prompt, the query/guess formats, the model (Qwen2.5-7B-Instruct, temperature 0.7, max 1200 output tokens, 12k context).
 
-The hypothesis space is exact and public: the inventory implies a finite set H of joint truth tables (252 / 2886 / 3924 depending on the inventory). Each answer filters H. Max-entropy querying pins the truth in 11.6 queries on average; 18 is enough for 100% in principle. Measured on this 7B model: the bare harness collapses the feasible set to one hypothesis (uniq@end) in only ~34% of episodes and the final guess is right in 0.3%; the hand-written belief summary `enum15` raised exact to 6.7% but LOWERED uniq@end to 26%, raised repeated queries from 4% to 12% and illegal turns from 0.3% to 2.7%, and left ex-ante efficiency at 0.61 (random fresh queries would score 0.63). The model mostly scans entries in order, ignores "do not ask these again", and rarely uses the summary for anything but copying a listed configuration at the end.
+The hypothesis space is exact and public: the inventory implies a finite set H of joint truth tables (252 / 2886 / 3924 depending on the inventory). Each answer filters H. Max-entropy querying pins the truth in 11.6 queries on average; 18 is enough for 100% in principle. Measured on this 7B model: the bare harness collapses the feasible set to one hypothesis (uniq@end) in only ~34% of episodes and the final guess is right in 0.3%; the hand-written belief summary `enum15` raised joint truth table correct to 6.7% but LOWERED uniq@end to 26%, raised repeated queries from 4% to 12% and illegal turns from 0.3% to 2.7%, and left ex-ante efficiency at 0.61 (random fresh queries would score 0.63). The model mostly scans entries in order, ignores "do not ask these again", and rarely uses the summary for anything but copying a listed configuration at the end.
 
 ## What a harness is here
 
@@ -56,12 +56,13 @@ Helpers you may import: `from harness_lib import fmt, determined, count_line, de
 
 ## Metrics (per candidate, 50 search instances x 2 seeds = 100 episodes)
 
-- `uniq@end` — PRIMARY. Feasible set collapsed to exactly one hypothesis after the 18 queries. Luck-free: it measures information gathering, not the final guess.
-- `exact` — final 24-bit guess equals the truth. Secondary.
+- `circuit-wise accuracy` — PRIMARY: the benchmark's own metric (Multi-Turn Puzzles, Table 1). Fraction of the 3 circuits whose full 8-row truth table is right in the final guess.
+- `joint truth table correct` — the whole 24-bit joint truth table is right (the paper's noun; our reading of a successful episode). Tie-breaker.
+- `uniq@end` — ours, diagnostic. Feasible set collapsed to exactly one hypothesis after the 18 queries. Luck-free: it measures information gathering, not the final guess.
 - `eff` — mean ex-ante efficiency over legal turns: expected bits of the chosen query / best available. 1.0 = oracle, 0.63 = random fresh entry, 0.54 = scanning entries in order.
 - `zero%` — queries whose answer was already determined (0 bits). `orcl%` — queries equal to the max-entropy query. `rep%` — queries identical to an earlier one. `ill%` — turns without a parsable query (they burn one of the 18). `prs%` — final guess parsable. `alive` — mean |feasible set| at the end. `tok` — output tokens per episode.
 
-Selection (RRSI-style, see `evolution_summary.jsonl` fields `admissible` / `selection`): a noise band `delta` is estimated from the bare baseline by bootstrap (about 0.09 at 200 episodes, 0.13 at 100). A candidate becomes the new frontier only if (1) its uniq@end is not below the best-so-far minus delta, and (2) if its gain over the incumbent exceeds delta, its token cost per episode grew by at most beta0 + beta1 * gain (0.1 + 2.0 * gain, relative); a gain inside the band is admitted only when it saves at least 5% tokens. So: do not pay for small gains with long messages, and do not expect +5 points to register.
+Selection (RRSI-style, see `evolution_summary.jsonl` fields `admissible` / `selection`): a noise band `delta` is estimated from the bare baseline by bootstrap (about 0.09 at 200 episodes, 0.13 at 100). A candidate becomes the new frontier only if (1) its circuit-wise accuracy is not below the best-so-far minus delta, and (2) if its gain over the incumbent exceeds delta, its token cost per episode grew by at most beta0 + beta1 * gain (0.1 + 2.0 * gain, relative); a gain inside the band is admitted only when it saves at least 5% tokens. So: do not pay for small gains with long messages, and do not expect +5 points to register.
 
 Before any candidate is benchmarked, a critic screens the file: file/network/interpreter access and any reference to the truth or the instance file are rejected outright (regex), then an LLM review rejects instance leakage, degenerate near-copies of the parent, unbounded work, and regime violations. Rejections appear in `evolution_summary.jsonl` with the reason. Write mechanisms, not lookup tables.
 
@@ -76,7 +77,7 @@ Before any candidate is benchmarked, a critic screens the file: file/network/int
 ## WORKFLOW
 
 ### Step 0: Post-eval reports (write if missing)
-For each past iteration that has rows in `evolution_summary.jsonl` but no `reports/iter<N>.md`, write one (<= 30 lines): what changed, what moved (uniq@end, exact, eff, rep%, ill%), what the traces show the model actually did with the text, one takeaway.
+For each past iteration that has rows in `evolution_summary.jsonl` but no `reports/iter<N>.md`, write one (<= 30 lines): what changed, what moved (circuit-wise accuracy, joint truth table correct, uniq@end, eff, rep%, ill%), what the traces show the model actually did with the text, one takeaway.
 
 ### Step 1: Analyze
 Read `evolution_summary.jsonl`, `frontier_val.json`, `reports/`, then the raw traces of the frontier and of the latest candidates: `python tools/show_trace.py traces/<name>/search.jsonl --list`, `--worst 5`, `--key <k>`. Look at what the model wrote right after your text. Where does the feasible set stop shrinking? Does the model repeat, scan, or query determined entries? Does it use the enumeration at the end? Form 3 falsifiable hypotheses, each about a different mechanism.

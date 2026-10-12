@@ -1,4 +1,4 @@
-"""Harness-evolution loop for CircuitDecoding, mirroring
+"""Harness-evolution loop for Circuit Decoding, mirroring
 meta_harness_official/reference_examples/text_classification/meta_harness.py.
 
 One iteration = propose (fresh `claude -p` session with the meta-harness-cd
@@ -35,6 +35,10 @@ WS = Path(__file__).resolve().parent            # this workspace (proposer cwd)
 ROOT = WS.parent.parent                          # ar_harness
 AGENTS = WS / "agents"
 BASELINES = ["bare", "enum15", "symbolic", "facts", "splits", "oracle_hint", "t3_gate"]
+# Selection objective S: the benchmark's own metric ("circuit-wise accuracy", MTP Table 1), ties broken by
+# joint truth table correct; uniq@end is recorded as our diagnostic only. Runs open1/so1 (2026-10-10/11)
+# were selected on uniq@end before this switch (2026-10-12). See experiments/OFFICIAL_DEFINITIONS.md.
+S_KEY, S2_KEY = "circuit_wise_accuracy", "joint_truth_table_correct"
 SEED_FILES = {f"{b}.py" for b in BASELINES} | {"__init__.py"}
 REMOTE = "engaging"
 REMOTE_CODE = "~/code/ar_harness"
@@ -182,7 +186,7 @@ def score(out_local, split, vs=None):
 # ------------------------------------------------------- RRSI-style regularizers
 
 def noise_delta():
-    """delta = z * sqrt(2) * se(uniq@end) of the bare baseline on the search split
+    """delta = z * sqrt(2) * se(circuit-wise accuracy) of the bare baseline on the search split
     (RRSI calibrate.py, z = 2): the band inside which a score difference is noise."""
     if DELTA_OVERRIDE is not None:
         return float(DELTA_OVERRIDE)
@@ -198,7 +202,11 @@ def noise_delta():
     for line in f.open():
         if line.strip():
             r = json.loads(line)
-            seen[(r["key"], r["seed"])] = int(bool((r.get("result") or {}).get("unique_at_end")))
+            res = r.get("result") or {}
+            g, t = res.get("guess_bits"), res.get("truth_bits")
+            k = len(t) // 3 if t else 0
+            seen[(r["key"], r["seed"])] = (sum(g[i * k:(i + 1) * k] == t[i * k:(i + 1) * k] for i in range(3)) / 3
+                                           if g and t and len(g) == len(t) else 0.0)
     vals = list(seen.values())
     rng = _r.Random(7)
     n = len(vals)
@@ -305,11 +313,11 @@ def critic(name, cand, regime):
 
 
 def admissible(s, incumbent, s_star, delta):
-    """RRSI selection side on our metrics: S = uniq@end, C = tokens per episode."""
-    S, C = s["uniq"], (s["tok_in"] or 0) + (s["tok_out"] or 0)
+    """RRSI selection side: S = circuit-wise accuracy (the benchmark's metric), C = tokens per episode."""
+    S, C = s[S_KEY], (s["tok_in"] or 0) + (s["tok_out"] or 0)
     if incumbent is None:
         return True, "first entry", 0.0, 0.0
-    S0, C0 = incumbent["uniq"], incumbent.get("cost") or 1.0
+    S0, C0 = incumbent[S_KEY], incumbent.get("cost") or 1.0
     dS, dC = S - S0, (C - C0) / C0 if C0 else 0.0
     if S < s_star - delta:
         return False, f"below floor: S {S:.3f} < S* {s_star:.3f} - delta {delta:.3f}", dS, dC
@@ -375,13 +383,13 @@ def frontier():
 
 def update_frontier(name, s, iteration):
     fr = frontier()
-    entry = {"uniq": s["uniq"], "uniq_ci": s["uniq_ci"], "exact": s["exact"], "eff": s["eff"],
+    entry = {S_KEY: s[S_KEY], S2_KEY: s[S2_KEY], "uniq": s["uniq"], "uniq_ci": s["uniq_ci"], "eff": s["eff"],
              "repeat": s["repeat"], "illegal": s["illegal"], "oracle": s["oracle"],
              "cost": (s["tok_in"] or 0) + (s["tok_out"] or 0),
              "n": s["n"], "iteration": iteration}
     fr["candidates"][name] = entry
     best = fr.get("_best")
-    key = lambda e: (round(e["uniq"], 6), round(e["exact"], 6))
+    key = lambda e: (round(e[S_KEY], 6), round(e[S2_KEY], 6))
     if best is None or key(entry) > key(fr["candidates"][best["agent"]]):
         fr["_best"] = {"agent": name, **entry}
     (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
@@ -400,12 +408,13 @@ def summary_row(iteration, cand, s, best_before, regime, status="ok", timing=Non
            "prediction": cand.get("prediction", "")}
     if s:
         row.update({k: (round(s[k], 4) if isinstance(s[k], float) else s[k]) for k in
-                    ("n", "uniq", "exact", "eff", "zero", "oracle", "repeat", "illegal", "parsed",
+                    ("n", S_KEY, S2_KEY, "uniq", "eff", "zero", "oracle", "repeat", "illegal", "parsed",
                      "alive_end", "tok_out")})
         row["uniq_ci"] = [round(x, 4) for x in s["uniq_ci"]]
-        d = s["uniq"] - (best_before or 0.0)
-        row["delta_uniq"] = round(d, 4)
-        row["outcome"] = f"uniq {100*s['uniq']:.1f}% ({100*d:+.1f}) exact {100*s['exact']:.1f}%"
+        d = s[S_KEY] - (best_before or 0.0)
+        row["delta_S"] = round(d, 4)
+        row["outcome"] = (f"circuit-wise accuracy {100*s[S_KEY]:.1f}% ({100*d:+.1f}) "
+                          f"joint truth table correct {100*s[S2_KEY]:.1f}% uniq@end {100*s['uniq']:.1f}%")
     else:
         row["outcome"] = status
     if timing:
@@ -416,7 +425,7 @@ def summary_row(iteration, cand, s, best_before, regime, status="ok", timing=Non
 def render_task_prompt(iteration, regime):
     fr = frontier()
     best = fr.get("_best")
-    best_txt = (f"{best['agent']} @ uniq@end {100*best['uniq']:.1f}% / exact {100*best['exact']:.1f}%"
+    best_txt = (f"{best['agent']} @ circuit-wise accuracy {100*best[S_KEY]:.1f}% / joint truth table correct {100*best[S2_KEY]:.1f}%"
                 if best else "none yet")
     return (f"Run iteration {iteration} of CircuitDecoding harness evolution. REGIME: {regime}.\n\n"
             f"Current frontier: {best_txt}.\n\n"
@@ -513,7 +522,7 @@ def phase_baselines(names):
 
 def iterate(iteration, regime, args):
     t_iter = time.time()
-    best_before = (frontier().get("_best") or {}).get("uniq")
+    best_before = (frontier().get("_best") or {}).get(S_KEY)
     log(f"=== iteration {iteration} regime={regime} frontier={best_before}")
     t0 = time.time()
     cands = propose(iteration, regime, args.propose_timeout)
@@ -527,7 +536,7 @@ def iterate(iteration, regime, args):
     delta = noise_delta()
     fr0 = frontier()
     inc0 = fr0["candidates"].get((fr0.get("_best") or {}).get("agent")) if fr0.get("_best") else None
-    s_star0 = (fr0.get("_best") or {}).get("uniq", 0.0)   # S*: best ACCEPTED score so far (RRSI)
+    s_star0 = (fr0.get("_best") or {}).get(S_KEY, 0.0)   # S*: best ACCEPTED score so far (RRSI)
     scored = []                                            # (cand, s, row) judged against inc0
     for c in cands:
         err = validate(c, regime)
@@ -565,10 +574,10 @@ def iterate(iteration, regime, args):
         scored.append((c, s, row, ok))
         log("  " + "\n  ".join(txt.strip().splitlines()[-2:]))
         log(f"  selection[{c['name']}]: {'ADMISSIBLE' if ok else 'not admissible'} -- {why}")
-    # round winner: the admissible candidate with the highest uniq@end (ties: exact); siblings
+    # round winner: the admissible candidate with the highest circuit-wise accuracy (ties: joint truth table correct); siblings
     # never price each other, and only the winner becomes the incumbent
     adm = [(c, s, row) for c, s, row, ok in scored if ok]
-    winner = max(adm, key=lambda t: (t[1]["uniq"], t[1]["exact"]), default=None)
+    winner = max(adm, key=lambda t: (t[1][S_KEY], t[1][S2_KEY]), default=None)
     fr = frontier()
     for c, s, row, ok in scored:
         is_winner = winner is not None and c["name"] == winner[0]["name"]
@@ -577,14 +586,14 @@ def iterate(iteration, regime, args):
             update_frontier(c["name"], s, iteration)
         else:
             fr = frontier()
-            fr["candidates"][c["name"]] = {"uniq": s["uniq"], "exact": s["exact"], "eff": s["eff"],
+            fr["candidates"][c["name"]] = {S_KEY: s[S_KEY], S2_KEY: s[S2_KEY], "uniq": s["uniq"], "eff": s["eff"],
                                            "cost": (s["tok_in"] or 0) + (s["tok_out"] or 0),
                                            "iteration": iteration, "admissible": ok}
             (RUN / "frontier_val.json").write_text(json.dumps(fr, indent=1))
         append_summary(row)
     best_after = (frontier().get("_best") or {})
     log(f"  iteration {iteration} done in {time.time()-t_iter:.0f}s; frontier now "
-        f"{best_after.get('agent')} @ {100*best_after.get('uniq', 0):.1f}%")
+        f"{best_after.get('agent')} @ circuit-wise accuracy {100*best_after.get(S_KEY, 0):.1f}%")
     return True
 
 
@@ -595,7 +604,7 @@ def finalize(args):
         sys.exit("no frontier yet")
     if frozen.exists() and json.loads(frozen.read_text()).get("status") == "complete":
         log("already finalized"); return
-    ranked = sorted(fr["candidates"].items(), key=lambda kv: (kv[1]["uniq"], kv[1]["exact"]), reverse=True)
+    ranked = sorted(fr["candidates"].items(), key=lambda kv: (kv[1][S_KEY], kv[1][S2_KEY]), reverse=True)
     chosen = [n for n, _ in ranked if n not in BASELINES][:3]
     systems = sorted(set(["bare", "enum15"]) | set(chosen) | {fr["_best"]["agent"]})
     frozen.write_text(json.dumps({"status": "in_progress", "systems": systems,

@@ -108,3 +108,20 @@
   in both arms (uniq_end 20% strict / 30% labeled). Round-0 candidates (3 per arm) passed the static
   check at 16:16–16:17 and are being solved on the 7B now (solver_cache growing).
 - TTHE clone pinned at 69a614d in THIRD_PARTY.md; `tthe_official/` ignored.
+
+### 2026-10-12 16:50 EDT — naming pass: official names only (user: "全部按照官方的叫法")
+- Correction of my 16:30 sheet: MTP Table 1 lists ONE metric for Circuit Decoding, "Normalized
+  circuit-wise accuracy". "Normalized % of trajectories with successful end state" is Word Chaining's
+  metric; I had mis-attributed it. Figures 1/5 label every task's number "Success Rate (%)" without
+  saying how it is derived for Circuit Decoding.
+- New names everywhere (score JSON keys, printed tables, READMEs, experiments.md, evolve.py):
+  `circuit_wise_accuracy` / "circuit-wise accuracy" (official, headline) and
+  `joint_truth_table_correct` / "joint truth table correct" (whole 24-bit table right; the paper's noun,
+  our reading of success). Old keys `exact` / `ckt` migrated in every committed score file.
+  uniq@end / eff / zero% / orcl% / rep% / bit stay as our diagnostics, labelled "(ours)".
+- Task name in prose: "Circuit Decoding" (paper), identifiers/paths unchanged.
+- cd_evolve selection objective switched from uniq@end to circuit-wise accuracy (ties: joint truth
+  table correct) for any future run; runs open1/so1 keep their recorded uniq@end-based selections.
+- cd_tthe internal keys (bridge.score, solve_worker, proposer render, result.json) NOT renamed yet:
+  the two pilots import those files in subprocesses; renaming mid-run would desynchronise the running
+  optimize.py. Phase 2 after the pilots finish.

@@ -3,8 +3,8 @@
   "n": 100,
   "err": 0,
   "uniq": 0.26,
-  "exact": 0,
-  "ckt": 0.10852713178294573,
+  "joint_truth_table_correct": 0,
+  "circuit_wise_accuracy": 0.10852713178294573,
   "bit": 0.6821705426356589,
   "parsed": 0.86,
   "alive_end": 3.96,
@@ -19,7 +19,7 @@
    0.18,
    0.35
   ],
-  "exact_ci": [
+  "joint_truth_table_correct_ci": [
    0.0,
    0.0
   ]

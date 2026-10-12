@@ -1,4 +1,4 @@
-"""Score EvoHarness-RL CircuitDecoding trajectories with ar_harness's metrics.
+"""Score EvoHarness-RL Circuit Decoding trajectories with ar_harness's metrics.
 
 Their records hold won/score and the env-action sequence; replaying the queries
 through the public hypothesis space gives uniq@end, ex-ante efficiency,
@@ -57,7 +57,7 @@ def replay(rec):
             rep.append(q in seen)
         seen.add(q)
         alive = alive[g.H[alive, q] == int(truth[q])]
-    return {"uniq": len(alive) == 1, "exact": bool(rec["won"]), "ckt": float(rec["score"]),
+    return {"uniq": len(alive) == 1, "joint_truth_table_correct": bool(rec["won"]), "circuit_wise_accuracy": float(rec["score"]),
             "eff": st.mean(eff) if eff else float("nan"), "zero": st.mean(zero) if zero else float("nan"),
             "orcl": st.mean(orcl) if orcl else float("nan"), "rep": st.mean(rep) if rep else float("nan"),
             "ill": ill, "meta": sum(rec["meta_actions"]["executed"].values()),
@@ -71,8 +71,8 @@ def boot_ci(vals, n=2000, seed=0):
 
 
 def main(dirs):
-    # benchmark's own metrics first (success = all 24 bits right, ckt-acc = circuit-wise accuracy); see experiments/OFFICIAL_DEFINITIONS.md
-    print(f"{'run':<34}{'n':>5}{'success':>9}{'ckt-acc':>9}{'uniq@end':>10}{'  95% CI':>14}{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill/ep':>7}{'meta/ep':>8}{'turns':>7}")
+    # the benchmark's own metric first (circuit-wise accuracy), then joint truth table correct, then our diagnostics; see experiments/OFFICIAL_DEFINITIONS.md
+    print(f"{'run':<34}{'n':>5}{'circuit-wise accuracy':>23}{'joint truth table correct':>27}{'uniq@end':>10}{'  95% CI':>14}{'eff':>7}{'zero%':>7}{'orcl%':>7}{'rep%':>6}{'ill/ep':>7}{'meta/ep':>8}{'turns':>7}")
     for d in dirs:
         recs = [json.loads(p.read_text()) for p in sorted(Path(d, "trajectories").glob("*.json"))]
         if not recs:
@@ -80,7 +80,7 @@ def main(dirs):
         ms = [replay(r) for r in recs]
         mean = lambda k: st.mean(x[k] for x in ms if x[k] == x[k])
         lo, hi = boot_ci([m["uniq"] for m in ms])
-        print(f"{Path(d).name:<34}{len(ms):>5}{100*mean('exact'):>9.1f}{100*mean('ckt'):>9.1f}"
+        print(f"{Path(d).name:<34}{len(ms):>5}{100*mean('circuit_wise_accuracy'):>23.1f}{100*mean('joint_truth_table_correct'):>27.1f}"
               f"{100*mean('uniq'):>10.1f}{'[' + f'{100*lo:.1f},{100*hi:.1f}' + ']':>14}{mean('eff'):>7.3f}{100*mean('zero'):>7.1f}"
               f"{100*mean('orcl'):>7.1f}{100*mean('rep'):>6.1f}{mean('ill'):>7.2f}{mean('meta'):>8.2f}{mean('turns'):>7.1f}")
 

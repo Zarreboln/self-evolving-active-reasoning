@@ -1,7 +1,7 @@
 """Print one CircuitDecoding episode from a traces jsonl in readable form.
 
     python tools/show_trace.py logs/<run>/traces/<candidate>/search.jsonl --key 17 [--seed 0]
-    python tools/show_trace.py <file> --list            # one line per episode: key seed uniq exact n_alive_end eff
+    python tools/show_trace.py <file> --list            # one line per episode: key seed uniq joint_table n_alive_end eff
     python tools/show_trace.py <file> --worst 5         # the 5 episodes with the most zero-information queries
 """
 
@@ -36,7 +36,7 @@ def summary_line(r):
     rep = sum(1 for x in rows if x.get("repeat"))
     ill = sum(1 for x in rows if x.get("illegal"))
     return (f"key={r['key']:<4} seed={r['seed']} uniq={int(bool(res.get('unique_at_end')))} "
-            f"exact={int(bool(res.get('correct')))} alive_end={res.get('n_alive_end')!s:<5} "
+            f"joint_table={int(bool(res.get('correct')))} alive_end={res.get('n_alive_end')!s:<5} "
             f"eff={eff:.3f} zero={zero:<2} repeat={rep:<2} illegal={ill:<2} err={bool(r.get('error'))}")
 
 

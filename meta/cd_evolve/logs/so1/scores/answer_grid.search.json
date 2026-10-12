@@ -3,8 +3,8 @@
   "n": 200,
   "err": 0,
   "uniq": 0.865,
-  "exact": 0.825,
-  "ckt": 0.9025641025641026,
+  "joint_truth_table_correct": 0.825,
+  "circuit_wise_accuracy": 0.9025641025641026,
   "bit": 0.9658119658119658,
   "parsed": 0.975,
   "alive_end": 1.295,
@@ -19,7 +19,7 @@
    0.82,
    0.91
   ],
-  "exact_ci": [
+  "joint_truth_table_correct_ci": [
    0.77,
    0.875
   ],
@@ -32,7 +32,7 @@
      0.735
     ]
    },
-   "exact": {
+   "joint_truth_table_correct": {
     "n_pairs": 200,
     "delta": 0.825,
     "ci": [

@@ -1,13 +1,13 @@
-harness           n  uniq@end        95% CI   exact    ckt    bit    eff  zero%  orcl%  rep%  ill%  prs%  alive    tok
-----------------------------------------------------------------------------------------------------------------------
-bare            750      22.5   [19.6,25.6]     0.3   13.2   66.4  0.550   37.0   25.0   3.0   0.2  86.4   4.59   2222
-                vs enum15: uniq -12.5 [-16.5,-8.4]  exact -6.8 [-8.8,-5.1]  (n=750 paired)
-copy_open       750      99.7  [99.3,100.0]    68.4   72.4   88.2  0.962    2.7   94.5   0.0   8.7  95.7   1.00   1181
-                vs enum15: uniq +64.7 [+61.3,+68.0]  exact +61.3 [+57.5,+65.1]  (n=750 paired)
-copy_query      750      99.7  [99.3,100.0]    80.4   84.3   93.7  0.962    2.7   94.5   0.0   8.3  96.3   1.00   1129
-                vs enum15: uniq +64.7 [+61.2,+68.1]  exact +73.3 [+69.9,+76.7]  (n=750 paired)
-enum15          750      35.1   [31.7,38.3]     7.1   26.1   73.1  0.609   30.6   27.0   4.8   0.3  89.7   3.04   2960
-                vs enum15: uniq +0.0 [+0.0,+0.0]  exact +0.0 [+0.0,+0.0]  (n=750 paired)
-open_entries    750      34.5   [31.2,37.9]    42.3   73.1   91.0  0.582   33.7   29.1   0.8   0.7  97.7   3.84   1672
-                vs enum15: uniq -0.5 [-4.8,+3.9]  exact +35.2 [+31.3,+38.9]  (n=750 paired)
--> /Users/zarreboln/Desktop/ar_harness/results/cd_heldout/open1/scores.json
+harness           n  err%  circuit-wise accuracy  joint truth table correct  uniq@end        95% CI    bit    eff  zero%  orcl%  rep%  ill%  prs%  alive    tok
+---------------------------------------------------------------------------------------------------------------------------------------------------------------
+bare            750   0.0                   13.2                        0.3      22.5   [19.6,25.6]   66.4  0.550   37.0   25.0   3.0   0.2  86.4   4.59   2222
+                vs enum15: uniq -12.5 [-16.5,-8.4]  joint truth table correct -6.8 [-8.8,-5.1]  (n=750 paired)
+enum15          750   6.1                   26.1                        7.1      35.1   [31.7,38.3]   73.1  0.609   30.6   27.0   4.8   0.3  89.7   3.04   2960
+                vs enum15: uniq +0.0 [+0.0,+0.0]  joint truth table correct +0.0 [+0.0,+0.0]  (n=750 paired)
+copy_query      750   0.3                   84.3                       80.4      99.7  [99.3,100.0]   93.7  0.962    2.7   94.5   0.0   8.3  96.3   1.00   1129
+                vs enum15: uniq +64.7 [+61.2,+68.1]  joint truth table correct +73.3 [+69.9,+76.7]  (n=750 paired)
+copy_open       750   0.3                   72.4                       68.4      99.7  [99.3,100.0]   88.2  0.962    2.7   94.5   0.0   8.7  95.7   1.00   1181
+                vs enum15: uniq +64.7 [+61.3,+68.0]  joint truth table correct +61.3 [+57.5,+65.1]  (n=750 paired)
+open_entries    750   0.3                   73.1                       42.3      34.5   [31.2,37.9]   91.0  0.582   33.7   29.1   0.8   0.7  97.7   3.84   1672
+                vs enum15: uniq -0.5 [-4.8,+3.9]  joint truth table correct +35.2 [+31.3,+38.9]  (n=750 paired)
+-> results/cd_heldout/open1/scores.json

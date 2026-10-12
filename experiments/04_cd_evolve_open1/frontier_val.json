@@ -6,13 +6,14 @@
    1.0,
    1.0
   ],
-  "exact": 0.81,
+  "joint_truth_table_correct": 0.81,
   "eff": 0.9620520713063087,
   "repeat": 0,
   "illegal": 0.08333333333333333,
   "oracle": 0.9450915141430949,
   "n": 100,
-  "iteration": 1
+  "iteration": 1,
+  "circuit_wise_accuracy": 0.826530612244898
  },
  "candidates": {
   "bare": {
@@ -21,13 +22,14 @@
     0.18,
     0.35
    ],
-   "exact": 0,
+   "joint_truth_table_correct": 0,
    "eff": 0.5583296643008447,
    "repeat": 0.017960602549246814,
    "illegal": 0.002777777777777778,
    "oracle": 0.2728852838933951,
    "n": 100,
-   "iteration": 0
+   "iteration": 0,
+   "circuit_wise_accuracy": 0.10852713178294573
   },
   "enum15": {
    "uniq": 0.53,
@@ -35,13 +37,14 @@
     0.43,
     0.63
    ],
-   "exact": 0.05,
+   "joint_truth_table_correct": 0.05,
    "eff": 0.6286569838963698,
    "repeat": 0.034713763702801465,
    "illegal": 0.002224694104560623,
    "oracle": 0.30633373934226554,
    "n": 100,
-   "iteration": 0
+   "iteration": 0,
+   "circuit_wise_accuracy": 0.24054982817869414
   },
   "copy_query": {
    "uniq": 1,
@@ -49,13 +52,14 @@
     1.0,
     1.0
    ],
-   "exact": 0.81,
+   "joint_truth_table_correct": 0.81,
    "eff": 0.9620520713063087,
    "repeat": 0,
    "illegal": 0.08333333333333333,
    "oracle": 0.9450915141430949,
    "n": 100,
-   "iteration": 1
+   "iteration": 1,
+   "circuit_wise_accuracy": 0.826530612244898
   },
   "open_entries": {
    "uniq": 0.32,
@@ -63,13 +67,14 @@
     0.24,
     0.41
    ],
-   "exact": 0.47,
+   "joint_truth_table_correct": 0.47,
    "eff": 0.5774339878311957,
    "repeat": 0.0064516129032258064,
    "illegal": 0.0033333333333333335,
    "oracle": 0.29970674486803517,
    "n": 100,
-   "iteration": 1
+   "iteration": 1,
+   "circuit_wise_accuracy": 0.7624113475177304
   },
   "copy_open": {
    "uniq": 0.99,
@@ -77,13 +82,14 @@
     0.97,
     1.0
    ],
-   "exact": 0.74,
+   "joint_truth_table_correct": 0.74,
    "eff": 0.9620520713063087,
    "repeat": 0,
    "illegal": 0.08615897720956087,
    "oracle": 0.9450915141430949,
    "n": 100,
-   "iteration": 1
+   "iteration": 1,
+   "circuit_wise_accuracy": 0.7697594501718213
   }
  }
 }

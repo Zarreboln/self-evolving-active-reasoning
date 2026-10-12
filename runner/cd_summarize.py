@@ -1,4 +1,4 @@
-"""CircuitDecoding gate table, read against the synthetic reference policies."""
+"""Circuit Decoding gate table, read against the synthetic reference policies."""
 import json, statistics as st, sys
 from collections import defaultdict
 
@@ -8,7 +8,7 @@ REF = """synthetic reference (300 released instances, 18-query budget):
   random-fresh    156/300  16.51 q  eff 0.629  zero-info 27.7%
   sequential       58/300  17.41 q  eff 0.540  zero-info 38.1%
   random           35/300  17.63 q  eff 0.480  zero-info 44.1%
-paper: Gemini 2.5 Pro 32.2% on CD."""
+paper Fig. 5 "Success Rate (%)" on Circuit Dec.: Gemini 2.0 Pro 32.2, Flash 7.2, Flash-lite 4.1; Fig. 1: Gemini 2.5 Pro 39.8."""
 
 
 def main(path):
@@ -31,10 +31,9 @@ def main(path):
         a = agg[r["condition"]]
         res = r.get("result") or {}
         a["correct"].append(bool(res.get("correct")))
-        # MTP reports two metrics for CD: "normalized circuit-wise accuracy"
-        # and "normalized % of trajectories with successful end state". The
-        # paper does not pin down the first, so both plausible readings are
-        # computed: per-circuit (all 8 bits of a circuit right) and per-bit.
+        # MTP Table 1 gives Circuit Decoding one metric, "Normalized circuit-wise
+        # accuracy" (normalization undefined). We compute the per-circuit reading
+        # (all 8 bits of a circuit right); bit-wise accuracy is our own diagnostic.
         g, t = res.get("guess_bits"), res.get("truth_bits")
         if g and t and len(g) == len(t):
             k = len(t) // 3
@@ -54,14 +53,14 @@ def main(path):
                 a["eff"].append(q["efficiency"])
             a["zero"].append(q["zero_info"])
             a["repeat"].append(bool(q.get("repeat")))
-    hdr = (f"{'condition':<12}{'exact':>7}{'ckt-acc':>9}{'bit-acc':>9}{'uniq@end':>10}{'eff':>8}"
+    hdr = (f"{'condition':<12}{'circuit-wise accuracy':>23}{'joint truth table correct':>27}{'bit-acc':>9}{'uniq@end':>10}{'eff':>8}"
            f"{'zero%':>8}{'repeat%':>9}{'illegal%':>10}{'parsed%':>9}{'tok/ep':>8}")
     print(hdr); print("-" * len(hdr))
     for c, a in agg.items():
         n = len(a["correct"])
         m = lambda k, p=False, nd=3: ("n/a" if not a[k] else
             f"{100*st.mean(a[k]):.1f}%" if p else f"{st.mean(a[k]):.{nd}f}")
-        print(f"{c:<12}{sum(a['correct'])}/{n:<5}{m('ckt'):>9}{m('bitacc'):>9}"
+        print(f"{c:<12}{m('ckt'):>23}{(str(sum(a['correct'])) + '/' + str(n)):>27}{m('bitacc'):>9}"
               f"{sum(a['unique'])}/{n:<8}"
               f"{m('eff'):>8}{m('zero',1):>8}{m('repeat',1):>9}"
               f"{m('illegal',1):>10}{m('parsed',1):>9}{m('tok',nd=0):>8}")

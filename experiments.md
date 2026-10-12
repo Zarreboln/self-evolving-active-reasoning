@@ -1,5 +1,7 @@
 # Stage 0 实验记录
 
+> 2026-10-12 起指标一律用官方叫法：`circuit-wise accuracy`（论文 Table 1 唯一指标，normalization 未定义，这里是原始值）、`joint truth table correct`（整张 24 位 joint truth table 全对，论文的名词、我们对"成功"的字面读法）；uniq@end / eff / zero% 等是我们自己的诊断量。本文件是流水账，旧表只改了列名，列序未动；见 experiments/OFFICIAL_DEFINITIONS.md。
+
 ## 2026-10-06 · Stage 0 仪器搭建与零成本验证
 - 起止：2026-10-06 约 10:29–10:55（本地），各脚本耗时见下
 - 环境：mac 本地 python3 + numpy 2.2.1，纯 CPU，无模型调用，花费 $0
@@ -164,11 +166,11 @@ CD 里可以精确测量，但对抗答题者要自己造。这正好说明"受�
 结论：SP 要么换判官（405B-INT4 / Opus 5）要么不报。
 
 ### B. CD bare vs belief_injected，300 实例 × 1 seed，18 次预算（`results/gate_cd.jsonl`，老 runner，无时间戳）
-| 条件 | exact | uniq@end | eff | zero% | repeat% | illegal% | parsed% | alive_end |
+| 条件 | joint truth table correct | uniq@end | eff | zero% | repeat% | illegal% | parsed% | alive_end |
 |---|---|---|---|---|---|---|---|---|
 | bare | 1/300 | 101/300（33.7%） | 0.629 | 32.6% | 4.1% | 0.3% | 86.7% | 3.04 |
 | belief_injected（enum15） | 20/300 | 78/300（26.0%） | 0.613 | 32.7% | 12.1% | 2.7% | 98.7% | 3.63 |
-读法：exact 的 +19 大半来自结尾抄枚举表（parsed 86.7→98.7、alive_end 反升），每轮查询反而更差。与 10-07 L40S 那次（2→15，109→100，0.631→0.637）方向一致。
+读法：joint truth table correct 的 +19 大半来自结尾抄枚举表（parsed 86.7→98.7、alive_end 反升），每轮查询反而更差。与 10-07 L40S 那次（2→15，109→100，0.631→0.637）方向一致。
 T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0.74 / recall 0.32（`runner/calibrate_t3_proxy.py`）。
 
 ## 2026-10-10 · Meta-Harness 搬到 CD：接口、切分、自测、首轮启动（纯 CPU + Engaging）
@@ -184,7 +186,7 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 - 进化循环首轮 `open1`（regime open）20:02:26 启动（`meta/cd_evolve/logs/open1/`）。
 - 20:30 **协议纠错**：MTP 论文附录给出 CD 官方对话格式（`A(0, 0, 0) = 1` / `Please send your next query. 17 queries remaining.`；第 18 答随最终提示发）。此前 runner 的环境话术是自拟的，全部 CD 数字（含 gate_cd.jsonl 与 cd_ladder_oldenv）标为"旧话术"，之后一律用官方话术重跑。重提 cd_ladder、重启 open1。
 - 20:41 **官方话术下 CD 基线（Engaging L40S，Qwen2.5-7B，search 50 × 2 seeds，18 次）**：
-  | 条件 | uniq@end | 95% CI | exact | eff | zero% | repeat% | illegal% | parsed% |
+  | 条件 | uniq@end | 95% CI | joint truth table correct | eff | zero% | repeat% | illegal% | parsed% |
   |---|---|---|---|---|---|---|---|---|
   | bare | 26.0% | [18,35] | 0.0% | 0.558 | 36.9% | 1.8% | 0.3% | 86% |
   | enum15 | **53.0%** | [43,63] | 5.0% | 0.629 | 29.1% | 3.5% | 0.2% | 97% |
@@ -194,7 +196,7 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 
 ## 2026-10-10 · 进化循环首轮结果（官方话术，Qwen2.5-7B @ Engaging L40S，search 切分，每候选 ×2 seeds）
 ### open1（regime open，v1 search 50，20:30–21:07，proposer 866s / $3.90）
-| 系统 | uniq@end | 95% CI | exact | eff | zero% | oracle% | rep% | ill% | tok_out |
+| 系统 | uniq@end | 95% CI | joint truth table correct | eff | zero% | oracle% | rep% | ill% | tok_out |
 |---|---|---|---|---|---|---|---|---|---|
 | bare | 26.0 | [18,35] | 0.0 | 0.558 | 36.9 | 27.3 | 1.8 | 0.3 | 2084 |
 | enum15 | 53.0 | [43,63] | 5.0 | 0.629 | 29.1 | 30.6 | 3.5 | 0.2 | 2879 |
@@ -204,17 +206,17 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 结论：决策级提示一轮到顶（模型当抄写员，oracle 一致率 94.5%）；状态级改写对信息收集无效。open1 已冻结，held-out 250×3 终评进行中。
 
 ### so1（regime state_only，v2 search 100，21:22–22:55，proposer 1346s / $6.69，critic 三候选全部通过，δ=0.080）
-| 系统 | uniq@end | exact | eff | rep% | ill% | tok_out | 选择 |
+| 系统 | uniq@end | joint truth table correct | eff | rep% | ill% | tok_out | 选择 |
 |---|---|---|---|---|---|---|---|
 | bare | 19.5 | 0.0 | 0.550 | 2.2 | 0.4 | 2200 | 种子 |
 | enum15 | 38.0 | 6.0 | 0.604 | 4.4 | 0.3 | 2904 | 种子 |
 | veto_determined（enum15 + 打回"已确定/重复"的查询） | 93.5 | 76.5 | 0.880 | 0 | 1.0 | 4437 | 可接纳（+0.555，成本 +27%） |
 | **veto_only**（bare + 只在模型要浪费查询时打回并给"未定输出"清单；终猜前列剩余配置） | **97.5** | **83.5** | 0.899 | 0 | 0.1 | 2882 | **frontier**（带内，省 49% token） |
 | answer_grid（enum15 的网格呈现） | 86.5 | 82.5 | 0.746 | 1.4 | 2.3 | 3966 | 低于底线 |
-结论：**不算任何信息量、不推荐任何查询**，只靠"把已确定/重复的查询打回去"这一条集合成员判断，7B 从 19.5% 到 97.5%、exact 从 0 到 83.5%。CD 上 7B 的失败几乎全是信念跟踪（忘了自己已经知道什么），不是规划。so1 已冻结，held-out 200×3 终评进行中。
+结论：**不算任何信息量、不推荐任何查询**，只靠"把已确定/重复的查询打回去"这一条集合成员判断，7B 从 19.5% 到 97.5%、joint truth table correct 从 0 到 83.5%。CD 上 7B 的失败几乎全是信念跟踪（忘了自己已经知道什么），不是规划。so1 已冻结，held-out 200×3 终评进行中。
 - 阶梯作业副作用：`splits` 在 12k 上下文下 61% 的局超限（425/600 时 err=259），该行作废，需用 16k 服务器重跑；enum15 4% 超限。
 ### open1 终评（冻结后一次性，v1 held-out 250 × 3 seeds = 750 局/系统，21:13–23:10，serve7b node3102）
-| 系统 | uniq@end | 95% CI | exact | eff | zero% | oracle% | rep% | ill% | tok_out | vs enum15（配对，uniq / exact） |
+| 系统 | uniq@end | 95% CI | joint truth table correct | eff | zero% | oracle% | rep% | ill% | tok_out | vs enum15（配对，uniq@end / joint truth table correct） |
 |---|---|---|---|---|---|---|---|---|---|---|
 | bare | 22.5 | [19.6,25.6] | 0.3 | 0.550 | 37.0 | 25.0 | 3.0 | 0.2 | 2222 | −12.5 [−16.5,−8.4] / −6.8 |
 | enum15 | 35.1 | [31.7,38.3] | 7.1 | 0.609 | 30.6 | 27.0 | 4.8 | 0.3 | 2960 | — |
@@ -224,7 +226,7 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 读法：held-out 复现 search 结论，无过拟合迹象；enum15 的 search 估计（53%，n=100）偏高，held-out 35.1%——50 题切分的抽样噪声，正是 v2 扩到 100 题的理由。结果文件 results/cd_heldout/open1/。
 
 ## 2026-10-11 · 阶梯作业结果（cd_ladder 25537286，node3402 1×L40S，20:36–00:28，7 harness × 300 × 2 seeds，官方话术，12k 上下文）
-| harness | err% | uniq@end | 95% CI | exact | eff | zero% | oracle% | rep% | ill% | parsed% | tok_out |
+| harness | err% | uniq@end | 95% CI | joint truth table correct | eff | zero% | oracle% | rep% | ill% | parsed% | tok_out |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | bare | 0.0 | 23.2 | [19.8,26.8] | 0.5 | 0.553 | 36.7 | 25.4 | 3.2 | 0.3 | 85.7 | 2389 |
 | facts (a) | 0.3 | 29.0 | [25.3,32.5] | 0.5 | 0.570 | 34.8 | 26.4 | 3.4 | 0.2 | 86.0 | 2800 |
@@ -234,9 +236,9 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 | splits (c) | **58.7** | 27.2 | — | 4.0 | 0.720 | 18.8 | 30.9 | 5.8 | 2.2 | 39.7 | 3362 |
 | oracle_hint (d) | **20.7** | 78.7 | — | 9.0 | 0.950 | 3.4 | 90.9 | 0.1 | 1.9 | 78.3 | 4077 |
 口径：出错（上下文超限）的局算未收敛/未答对；轮级指标只算完成的局。splits 与 oracle_hint 两行因超限作废，已用 16k 服务器重跑（cd_ladder16k，含 enum15 以便对照）。
-读法（有效行）：状态级三种（symbolic / enum15 / t3_gate）uniq@end 都在 37–41%，互相在 CI 内，比 bare 高 14–18 点；facts（只复述观测）+6 点、CI 相接；枚举列表对 uniq@end 无额外贡献，但把 exact 从 2.2 提到 5.5，门控版 t3_gate 的 exact 最高（10.2）。决策级 oracle_hint 即便 21% 的局超限仍到 78.7%、eff 0.95。与进化结果对照：copy_query（只给一条可抄查询，972 tok）与 veto_only（只打回已确定查询）都 ≥97.5%——阶梯里没有一级靠"多给状态"接近这个数。
+读法（有效行）：状态级三种（symbolic / enum15 / t3_gate）uniq@end 都在 37–41%，互相在 CI 内，比 bare 高 14–18 点；facts（只复述观测）+6 点、CI 相接；枚举列表对 uniq@end 无额外贡献，但把 joint truth table correct 从 2.2 提到 5.5，门控版 t3_gate 的 joint truth table correct 最高（10.2）。决策级 oracle_hint 即便 21% 的局超限仍到 78.7%、eff 0.95。与进化结果对照：copy_query（只给一条可抄查询，972 tok）与 veto_only（只打回已确定查询）都 ≥97.5%——阶梯里没有一级靠"多给状态"接近这个数。
 ### so1 终评（冻结后一次性，v2 held-out 200 × 3 seeds = 600 局/系统，22:57–01:0x，serve_7b_pre node3600，16k 上下文）
-| 系统 | err% | uniq@end | 95% CI | exact | eff | zero% | oracle% | rep% | ill% | tok_out | vs enum15（配对 uniq / exact） |
+| 系统 | err% | uniq@end | 95% CI | joint truth table correct | eff | zero% | oracle% | rep% | ill% | tok_out | vs enum15（配对 uniq@end / joint truth table correct） |
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | bare | 0.0 | 25.2 | [21.7,28.7] | 0.3 | 0.556 | 36.7 | 24.9 | 3.1 | 0.3 | 2347 | −12.5 / −6.2 |
 | enum15 | 0.5 | 37.7 | [34.0,41.7] | 6.5 | 0.614 | 29.9 | 26.9 | 4.7 | 0.3 | 3046 | — |
@@ -245,17 +247,17 @@ T3 代理（上一轮零信息/重复/集合不缩）在该日志上 precision 0
 | **veto_only** | 0.0 | **96.7** | [95.2,98.0] | **86.2** | 0.890 | 0.1 | 43.7 | 0.0 | 0.2 | 2699 | **+59.0 [+55.2,+63.0] / +79.7 [+76.3,+82.8]** |
 读法：search 上的 97.5% 在 held-out 守住（96.7%）；veto_only 的 token 与 bare 相当（2699 vs 2347）。state_only 规则下合法（只用集合成员：重复/已确定/无查询），critic 通过。answer_grid 在 held-out 上 90.0%，比 search 的 86.5% 还高——它在 search 上被噪声底线拒掉是保守选择的代价，不影响结论。
 ### 阶梯 16k 重跑（cd_ladder16k 25547662，01:xx–03:20，1×L40S，16k 上下文，300 × 2 seeds）
-| harness | err% | uniq@end | 95% CI | exact | eff | zero% | oracle% | tok_out |
+| harness | err% | uniq@end | 95% CI | joint truth table correct | eff | zero% | oracle% | tok_out |
 |---|---|---|---|---|---|---|---|---|
 | enum15 | 0.2 | 41.8 | [38.0,45.8] | 5.8 | 0.612 | 30.4 | 28.7 | 2892 |
 | splits (c) | 10.2 | 53.7 | [49.8,57.8] | 5.7 | 0.702 | 20.8 | 32.2 | 4316 |
 | oracle_hint (d) | 3.0 | **96.5** | [95.0,97.8] | 6.8 | 0.951 | 3.4 | 91.1 | 4522 |
 合并后的阶梯（取各行有效版本，`results/cd_ladder/scores_best.json`，图 `ladder.png`）：bare 23.2 → facts 29.0 → symbolic 41.2 ≈ enum15 41.8 → t3_gate 36.8 → splits 53.7（仍有 10% 超限）→ oracle_hint 96.5。
-读法：状态 +18、决策表 +30、决策 +73；oracle_hint 的 exact 只有 6.8（没有终猜提示，模型抄查询不抄答案），而进化出的 copy_query（99.7 / 80.4）和 veto_only（96.7 / 86.2）同时解决了两段。
+读法：状态 +18、决策表 +30、决策 +73；oracle_hint 的 joint truth table correct 只有 6.8（没有终猜提示，模型抄查询不抄答案），而进化出的 copy_query（99.7 / 80.4）和 veto_only（96.7 / 86.2）同时解决了两段。
 
 ## 2026-10-11 · EvoHarness-RL 当 baseline（官方框架 + 自写 CD 适配器，Qwen2.5-7B @ serve_7b_pre，300 题 × 2 run，06:28–07:36）
 框架 github.com/EvoHarnessRL/EvoHarness-RL；适配器 evoharness_rl_official/evoharness/envs/circuitdecoding/；元动作不计 18 次预算（上限 18）；累积对话；温度 0.7；他们的 I/O 格式（OBJECTIVE/OBSERVATION/ADMISSIBLE COMMANDS + <think>/<action>）。回放打分 runner/cd_score_evoharness.py。
-| 模式 | run | uniq@end | 95% CI | exact | ckt | eff | zero% | oracle% | rep% | meta/局 |
+| 模式 | run | uniq@end | 95% CI | joint truth table correct | circuit-wise accuracy | eff | zero% | oracle% | rep% | meta/局 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | env_only（ReAct） | s0 / s1 | 29.3 / 26.0 | [24,34] / [21,31] | 0.0 / 0.0 | 4.3 / 4.9 | 0.577 / 0.569 | 33.5 / 33.9 | 20.2 / 19.3 | 4.9 / 4.1 | 0 |
 | always_on（面板每轮贴：可行集计数/已确定/未确定/≤15 全表 + plan） | s0 / s1 | **71.0 / 74.7** | [66,76] / [70,79] | **62.0 / 65.0** | 74.8 / 79.0 | 0.760 / 0.763 | 14.7 / 13.8 | 38.4 / 38.1 | 0.6 / 0.4 | 0 |

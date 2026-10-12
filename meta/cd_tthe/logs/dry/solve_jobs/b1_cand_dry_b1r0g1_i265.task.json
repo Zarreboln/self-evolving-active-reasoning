@@ -1,0 +1,1 @@
+{"harness": "cand_dry_b1r0g1", "index": 265, "output": "/Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/dry/solve_jobs/b1_cand_dry_b1r0g1_i265.result.json", "solver": {"base_url": null, "model": "Qwen/Qwen2.5-7B-Instruct", "mock": "sequential", "seed": 0, "cache_dir": "/Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/logs/dry/solver_cache"}, "arm": "scratch"}

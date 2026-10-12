@@ -14,7 +14,8 @@ class Harness(CDHarness):
         msgs = [{"role": "system", "content": env.system_prompt},
                 {"role": "user", "content": "Please start with your first query."}]
         last_line = None
-        for t in range(1, 19):
+        B = env.budget
+        for t in range(1, B + 1):
             reply = self.llm(msgs)
             msgs.append({"role": "assistant", "content": reply})
             m = QUERY_RE.search(reply or "")
@@ -22,7 +23,7 @@ class Harness(CDHarness):
                 # the benchmark gives no second chance: the turn is spent
                 msgs.append({"role": "user", "content": "Your message did not contain a query in the "
                              "required format. Reply with exactly one <query>X(a, b, c)</query>."})
-                if t == 18:
+                if t == B:
                     last_line = None      # the previous answer was already delivered with its own prompt
                 continue
             c, a, b, x = m.group(1).upper(), int(m.group(2)), int(m.group(3)), int(m.group(4))
@@ -31,8 +32,8 @@ class Harness(CDHarness):
             except Exception:
                 break
             last_line = env.format_answer(c, a, b, x, bit)
-            if t < 18:
-                msgs.append({"role": "user", "content": f"{last_line}\nPlease send your next query. {18 - t} queries remaining."})
+            if t < B:
+                msgs.append({"role": "user", "content": f"{last_line}\nPlease send your next query. {B - t} queries remaining."})
         final = (f"{last_line}\n" if last_line else "") + env.last_turn_prompt
         msgs.append({"role": "user", "content": final})
         return self.llm(msgs)

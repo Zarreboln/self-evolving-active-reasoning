@@ -25,6 +25,7 @@ sys.path.insert(0, str(HERE.parent / "cd_evolve"))
 import claude_wrapper  # noqa: E402  (copied verbatim from Meta-Harness, MIT)
 
 AGENTS = HERE / "agents"
+BUDGET = 18          # set by optimize.py from --budget
 PROPOSER_TOOLS = ["Read", "Glob", "Grep", "Write", "Edit", "Bash"]
 
 ROLES = [
@@ -104,7 +105,7 @@ def interface_doc():
     return (HERE / "harness_base.py").read_text()
 
 
-def check_script(run_dir, tag, name, indices, solver_cfg, arm, timeout):
+def check_script(run_dir, tag, name, indices, solver_cfg, arm, timeout, budget=18):
     """A script the proposer can run: its candidate on the batch instances, label-free output."""
     p = Path(run_dir) / f"check_{tag}.py"
     p.write_text(f'''import json, subprocess, sys, os
@@ -114,7 +115,7 @@ name = {name!r}; idx = {list(indices)!r}; solver = {solver_cfg!r}; arm = {arm!r}
 out_dir = Path({str(run_dir)!r}) / "checks" / {tag!r}; out_dir.mkdir(parents=True, exist_ok=True)
 for i in idx:
     task = out_dir / f"task_{{i}}.json"; res = out_dir / f"res_{{i}}.json"
-    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm}}))
+    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm, "budget": {budget}}}))
     try:
         subprocess.run([sys.executable, str(HERE / "solve_worker.py"), "--task", str(task)], timeout={int(timeout)}, check=False)
     except subprocess.TimeoutExpired:
@@ -138,7 +139,7 @@ def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_p
                 "There is NO helper library: if you want the harness to track what the answers imply, you must "
                 "write that logic yourself from the task's rules (gate inventory -> possible circuits).")
     return f"""A FROZEN 7B chat model plays CircuitDecoding inside a HARNESS you control. You CANNOT see the
-truth tables. GOAL: edit the harness so the model RELIABLY pins the three circuits down within the 18
+truth tables. GOAL: edit the harness so the model RELIABLY pins the three circuits down within the {BUDGET}
 queries and returns the right 24-bit table -- judged only by label-free evidence.
 
 READ FIRST:
@@ -150,7 +151,7 @@ READ FIRST:
   answers; uniq_end = the answers pin the circuits down to one configuration):
 {summary}
 
-Harness API: self.env.query(c, a, b, x) -> bit (c in "ABC"; 18 per episode, then BudgetExhausted),
+Harness API: self.env.query(c, a, b, x) -> bit (c in "ABC"; self.env.budget per episode -- {BUDGET} in this run -- then BudgetExhausted),
 self.env.remaining, self.env.history, self.env.inventory, self.env.system_prompt,
 self.env.last_turn_prompt, self.env.format_answer(...), self.llm(messages, temperature=0.7,
 max_tokens=1200) -> str. The model must still be the one writing the queries you send; the harness
@@ -255,7 +256,7 @@ def propose(parent, child, role_idx, trace_dir, active, results_by_name, run_dir
         return stub_propose(parent, child, role_idx)
     role_name, role_text = ROLES[role_idx % len(ROLES)]
     summary = summary_table(results_by_name)
-    check = check_script(run_dir, f"{tag}_{child}", child, batch_indices, solver_cfg, arm, solve_timeout)
+    check = check_script(run_dir, f"{tag}_{child}", child, batch_indices, solver_cfg, arm, solve_timeout, BUDGET)
     card = Path(run_dir) / "proposal_cards" / f"{child}.json"; card.parent.mkdir(parents=True, exist_ok=True)
     prompt = propose_prompt(parent, child, role_text, trace_dir, active, summary, check, arm, card, batch_indices)
     _session(prompt, f"{tag}_{child}_{role_name}", run_dir, backend, model, timeout, effort)
@@ -276,7 +277,7 @@ def judge(cands, incumbent, trace_dir, results_by_name, run_dir, tag, batch_indi
         best = max(cands, key=key)
         return best if key(best) > key(incumbent) else incumbent
     summary = summary_table({n: results_by_name[n] for n in cands if n in results_by_name})
-    checks = {n: check_script(run_dir, f"{tag}_judge_{n}", n, batch_indices, solver_cfg, arm, solve_timeout)
+    checks = {n: check_script(run_dir, f"{tag}_judge_{n}", n, batch_indices, solver_cfg, arm, solve_timeout, BUDGET)
               for n in cands}
     choice = Path(run_dir) / f"choice_{tag}.txt"; choice.unlink(missing_ok=True)
     prompt = judge_prompt(cands, incumbent, trace_dir, summary, choice, checks)

@@ -44,7 +44,7 @@ def main():
         problems = audit(src, task.get("arm", "scratch"))
         if problems:
             raise RuntimeError("audit: " + "; ".join(problems))
-        env = bridge.CDEnv(task["index"])
+        env = bridge.CDEnv(task["index"], budget=int(task.get("budget", bridge.BUDGET)))
         sv = task.get("solver", {})
         solver = bridge.Solver(base_url=sv.get("base_url"), model=sv.get("model"), cache_dir=sv.get("cache_dir"),
                                mock=sv.get("mock"), mock_game=bridge.game_for(env.inventory), seed=int(sv.get("seed", 0)))

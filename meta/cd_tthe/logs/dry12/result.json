@@ -1,0 +1,32 @@
+{
+ "final_harness": "bare",
+ "n_instances": 6,
+ "prequential": {
+  "uniq_end": 0.6666666666666666,
+  "exact": 0.8333333333333334
+ },
+ "transductive": {
+  "uniq_end": 0.6666666666666666,
+  "exact": 0.8333333333333334
+ },
+ "per_batch": [
+  {
+   "batch": 0,
+   "incoming": "bare",
+   "committed": "bare",
+   "preq_uniq": 1.0,
+   "trans_uniq": 1.0,
+   "preq_exact": 1.0,
+   "trans_exact": 1.0
+  },
+  {
+   "batch": 1,
+   "incoming": "bare",
+   "committed": "bare",
+   "preq_uniq": 0.3333333333333333,
+   "trans_uniq": 0.3333333333333333,
+   "preq_exact": 0.6666666666666666,
+   "trans_exact": 0.6666666666666666
+  }
+ ]
+}

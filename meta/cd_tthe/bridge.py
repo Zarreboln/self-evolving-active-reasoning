@@ -39,14 +39,14 @@ def game_for(inventory):
     return _GAMES[key]
 
 
-def fill_instruction(inventory):
+def fill_instruction(inventory, budget=BUDGET):
     labels = list(LABELS[:C])
     comp = ", ".join(f"{v} {g} gate{'s' if v != 1 else ''}" for g, v in sorted(inventory.items()) if v)
     order = ", ".join(f"{lb}({','.join(str((r >> (K - 1 - i)) & 1) for i in range(K))})"
                       for lb in labels for r in range(1 << K))
     return (INSTRUCTION.replace("{components}", comp).replace("{num_circuits}", str(C))
             .replace("{circuit_labels}", ", ".join(labels)).replace("{circuit_labels_str}", ", ".join(labels))
-            .replace("{num_inputs}", str(K)).replace("{num_questions_per_episode}", str(BUDGET))
+            .replace("{num_inputs}", str(K)).replace("{num_questions_per_episode}", str(budget))
             .replace("{truth_table_description}", order))
 
 
@@ -57,19 +57,20 @@ class BudgetExhausted(Exception):
 class CDEnv:
     """One episode's environment. Truth is private; a harness uses query/remaining/history."""
 
-    def __init__(self, index):
+    def __init__(self, index, budget=BUDGET):
         inst = INSTANCES[index]
         self.index = index
+        self.budget = int(budget)
         self.inventory = dict(inst["components"])
         self._truth = inst["truth"]                   # never read by a harness (audit forbids it)
         self.history = []
-        self.system_prompt = fill_instruction(self.inventory)
+        self.system_prompt = fill_instruction(self.inventory, self.budget)
         self.last_turn_prompt = LAST_TURN
         self.events = []                              # [(kind, payload)] for the trace
 
     @property
     def remaining(self):
-        return BUDGET - len(self.history)
+        return self.budget - len(self.history)
 
     @staticmethod
     def format_answer(c, a, b, x, bit):
@@ -80,7 +81,7 @@ class CDEnv:
         if c not in LABELS or any(int(v) not in (0, 1) for v in (a, b, x)):
             raise ValueError(f"bad query {c}({a}, {b}, {x})")
         if self.remaining <= 0:
-            raise BudgetExhausted("18 queries already used")
+            raise BudgetExhausted(f"{self.budget} queries already used")
         q = LABELS.index(c) * (1 << K) + (int(a) << 2) + (int(b) << 1) + int(x)
         bit = int(self._truth[q])
         self.history.append(((c, int(a), int(b), int(x)), bit))

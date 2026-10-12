@@ -38,6 +38,7 @@ import proposer as P   # noqa: E402
 from audit import audit  # noqa: E402
 
 AGENTS = HERE / "agents"
+BUDGET_OVERRIDE = 18
 
 
 def loadable(name, arm):
@@ -49,7 +50,8 @@ def solve_one(run_dir, name, index, solver_cfg, arm, timeout, tag):
     jobs = Path(run_dir) / "solve_jobs"; jobs.mkdir(parents=True, exist_ok=True)
     task, out = jobs / f"{tag}.task.json", jobs / f"{tag}.result.json"
     out.unlink(missing_ok=True)
-    task.write_text(json.dumps({"harness": name, "index": index, "output": str(out), "solver": solver_cfg, "arm": arm}))
+    task.write_text(json.dumps({"harness": name, "index": index, "output": str(out), "solver": solver_cfg, "arm": arm,
+                                "budget": BUDGET_OVERRIDE}))
     proc = subprocess.Popen([sys.executable, "-u", str(HERE / "solve_worker.py"), "--task", str(task)],
                             cwd=str(HERE), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
                             start_new_session=True)
@@ -102,6 +104,7 @@ def main():
     ap.add_argument("--split", default="heldout"); ap.add_argument("--split-file", default=None)
     ap.add_argument("--stream-seed", type=int, default=0); ap.add_argument("--limit", type=int, default=None)
     ap.add_argument("--batch-size", type=int, default=10)
+    ap.add_argument("--budget", type=int, default=18, help="queries per episode (the benchmark's 18; 12 keeps headroom)")
     ap.add_argument("--group", type=int, default=3, help="G fixed branches")
     ap.add_argument("--rounds", type=int, default=2, help="R proposer rounds per batch")
     ap.add_argument("--solver-base-url", default=None); ap.add_argument("--solver-model", default="Qwen/Qwen2.5-7B-Instruct")
@@ -116,6 +119,9 @@ def main():
     ap.add_argument("--start-batch", type=int, default=0)
     args = ap.parse_args()
 
+    global BUDGET_OVERRIDE
+    BUDGET_OVERRIDE = args.budget
+    P.BUDGET = args.budget
     run_dir = HERE / "logs" / args.run_name
     run_dir.mkdir(parents=True, exist_ok=True)
     stream = bridge.make_stream(args.split, args.split_file, args.stream_seed, args.limit)

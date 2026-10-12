@@ -1,0 +1,23 @@
+{
+ "final_harness": "bare",
+ "n_instances": 4,
+ "prequential": {
+  "uniq_end": 0.25,
+  "exact": 0.0
+ },
+ "transductive": {
+  "uniq_end": 0.25,
+  "exact": 0.0
+ },
+ "per_batch": [
+  {
+   "batch": 0,
+   "incoming": "bare",
+   "committed": "bare",
+   "preq_uniq": 0.25,
+   "trans_uniq": 0.25,
+   "preq_exact": 0.0,
+   "trans_exact": 0.0
+  }
+ ]
+}

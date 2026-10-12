@@ -26,6 +26,8 @@ import claude_wrapper  # noqa: E402  (copied verbatim from Meta-Harness, MIT)
 
 AGENTS = HERE / "agents"
 BUDGET = 18          # set by optimize.py from --budget
+STRICT = False       # --signals strict: proposer/judge see only raw traces + run status; no oracle-derived
+                     # signals (uniq_end, alive_end, zero_info, eff) and no prior about the model's habits
 PROPOSER_TOOLS = ["Read", "Glob", "Grep", "Write", "Edit", "Bash"]
 
 ROLES = [
@@ -51,6 +53,9 @@ ROLES = [
 def signal_line(r):
     s = r.get("signals") or {}
     f = lambda v: "-" if v is None else (f"{v:.2f}" if isinstance(v, float) else str(v))
+    if STRICT:
+        return (f"status={r.get('status')} parsed_final_guess={f(s.get('parsed_guess'))} queries_used={f(s.get('n_queries'))} "
+                f"calls={r.get('solver_calls')} tokens_out={(r.get('tokens') or {}).get('out')}")
     return (f"status={r.get('status')} health={f(s.get('health'))} queries={f(s.get('n_queries'))} "
             f"uniq_end={f(s.get('uniq_end'))} alive_end={f(s.get('n_alive_end'))} zero_info={f(s.get('zero_info'))} "
             f"repeat={f(s.get('repeat'))} eff={f(s.get('eff'))} calls={r.get('solver_calls')} "
@@ -90,6 +95,13 @@ def summary_table(results_by_name):
     rows = []
     for name, rs in results_by_name.items():
         sig = [r.get("signals") or {} for r in rs]
+        if STRICT:
+            parsed = sum(1 for x in sig if x.get("parsed_guess")) / max(1, len(sig))
+            q = sum(x.get("n_queries") or 0 for x in sig) / max(1, len(sig))
+            toks = sum((r.get("tokens") or {}).get("out", 0) for r in rs) / max(1, len(rs))
+            rows.append(f"{name:<34} n={len(rs):<3} parsed_final_guess={100*parsed:5.1f}%  queries_used/ep={q:5.1f}  "
+                        f"tokens_out/ep={toks:7.0f}  crashes={sum(1 for r in rs if r.get('status') != 'ok')}")
+            continue
         m = lambda k: (sum(1 for s in sig if s.get(k)) / len(sig)) if sig else 0.0
         mean = lambda k: (sum(s[k] for s in sig if s.get(k) is not None) / max(1, sum(1 for s in sig if s.get(k) is not None)))
         toks = sum((r.get("tokens") or {}).get("out", 0) for r in rs) / max(1, len(rs))
@@ -123,15 +135,20 @@ for i in idx:
     if not res.exists():
         print(f"instance {{i}}: no result (worker died)"); continue
     r = json.loads(res.read_text()); s = r.get("signals") or {{}}
-    print(f"instance {{i}}: status={{r['status']}} health={{s.get('health')}} queries={{s.get('n_queries')}} "
-          f"uniq_end={{s.get('uniq_end')}} alive_end={{s.get('n_alive_end')}} zero_info={{s.get('zero_info')}} "
-          f"repeat={{s.get('repeat')}} eff={{s.get('eff')}} calls={{r.get('solver_calls')}}")
+    if {STRICT!r}:
+        print(f"instance {{i}}: status={{r['status']}} parsed_final_guess={{s.get('parsed_guess')}} queries_used={{s.get('n_queries')}} calls={{r.get('solver_calls')}}")
+    else:
+        print(f"instance {{i}}: status={{r['status']}} health={{s.get('health')}} queries={{s.get('n_queries')}} "
+              f"uniq_end={{s.get('uniq_end')}} alive_end={{s.get('n_alive_end')}} zero_info={{s.get('zero_info')}} "
+              f"repeat={{s.get('repeat')}} eff={{s.get('eff')}} calls={{r.get('solver_calls')}}")
     if r.get("error"): print("   error:", r["error"][-400:].replace("\\n", " | "))
 ''')
     return p
 
 
 def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_path, arm, card_path, batch_indices):
+    if STRICT:
+        return propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path)
     lib_note = ("You MAY `from cd_oracle import CDGame` (the public hypothesis space implied by the inventory: "
                 "CDGame(inventory).H is an (N,24) 0/1 array, .feasible(history) / .expected_bits(q, alive) / "
                 ".available_bits(alive)); it contains no truth."
@@ -180,7 +197,65 @@ Then write a proposal card to `{card_path}` as JSON:
 {role_text}"""
 
 
+def propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path):
+    return f"""A FROZEN 7B chat model plays CircuitDecoding inside a HARNESS you control. You CANNOT see the
+truth tables and you are given no evaluation of the episodes beyond whether they ran. GOAL: edit the
+harness so the model RELIABLY deduces the three circuits within the {BUDGET} queries and returns the
+right 24-bit table. Decide what "going well" means from the task rules and the traces yourself.
+
+READ FIRST:
+- `{HERE / 'harness_base.py'}` -- the interface and the two invariants (frozen solver, label-free).
+- `{AGENTS / (parent + '.py')}` -- your branch's CURRENT harness: copy it, then improve it.
+- `{trace_dir}` -- full traces of every active branch on this batch ({', '.join(active)}): one `.md` per
+  harness x instance (`<harness>__i<index>.md`): the queries the model asked, the answers the
+  environment gave, every message sent to the model and every reply. Nothing else is provided.
+- Run summary (what ran, what crashed):
+{summary}
+
+Harness API: self.env.query(c, a, b, x) -> bit (c in "ABC"; self.env.budget per episode -- {BUDGET} in this
+run -- then BudgetExhausted), self.env.remaining, self.env.history, self.env.inventory,
+self.env.system_prompt, self.env.last_turn_prompt, self.env.format_answer(...), self.llm(messages,
+temperature=0.7, max_tokens=1200) -> str. The model must still be the one writing the queries you send;
+the harness may re-ask it, change what it sees, veto a reply, assemble the final guess from what it
+said -- but may not choose a query itself. There is no helper library: anything you want the harness
+to know about the circuits must come from the task rules in the system prompt and the answers.
+
+VERIFY BY RE-RUNNING -- do not guess, do not finish on a broken harness:
+  1. Edit `{AGENTS / (child + '.py')}` (start from the parent). Keep `from harness_base import CDHarness`
+     and `class Harness(CDHarness)`.
+  2. Run it on this batch's instances:  python {check_path}
+     It prints per-instance run status, whether a final guess was produced, and queries used.
+     Read the traces it writes to judge the rest yourself.
+  3. If an instance crashes, fix and re-run. General mechanisms only: never branch on an instance's
+     inventory or index, never hard-code tables.
+
+Then write a proposal card to `{card_path}` as JSON:
+{{"candidate": "{child}", "parent": "{parent}", "role": "<your role name>",
+  "hypothesis": "<falsifiable claim>", "behavior_changes": ["..."], "preserved_behaviors": ["..."],
+  "verification": ["what you ran and saw"], "risks": ["..."]}}
+
+{role_text}"""
+
+
 def judge_prompt(cands, incumbent, trace_dir, summary, choice_path, check_paths):
+    if STRICT:
+        checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
+        return f"""You are the JUDGE of a test-time harness-evolution loop for CircuitDecoding. {len(cands)} harnesses
+were run on the same batch of instances. The incumbent is `{incumbent}`; the others are this batch's
+candidates. Pick the ONE harness most likely to deduce the circuits correctly on NEW instances. You
+cannot see the truth tables and no evaluation beyond run status is provided: judge from the traces
+(`{trace_dir}`, `<harness>__i<index>.md`) and the source files (`{AGENTS}`) using the task rules.
+
+Run summary:
+{summary}
+
+A harness that chooses queries itself violates the interface -- read the source and REJECT such
+candidates. Prefer general mechanisms over anything keyed to this batch. If no candidate is clearly
+better than the incumbent on this evidence, keep the incumbent. You may re-run any harness on the batch:
+{checks}
+
+Decide, then write ONLY the chosen harness name to `{choice_path}` (e.g. run: echo <name> > {choice_path}).
+Then STOP."""
     checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
     return f"""You are the JUDGE of a test-time harness-evolution loop for CircuitDecoding. {len(cands)} harnesses
 were run on the same batch of instances. The incumbent is `{incumbent}`; the others are this batch's

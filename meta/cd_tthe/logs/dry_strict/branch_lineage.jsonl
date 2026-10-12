@@ -1,0 +1,1 @@
+{"batch": 0, "round": 0, "branch": 0, "parent": "bare", "child": "cand_dry_strict_b0r0g0", "accepted": "cand_dry_strict_b0r0g0", "fell_back": false, "child_agg": {"n": 4, "uniq_end": 0.25, "health": 1.0, "exact": 0.0, "tokens_out": 0.0}}

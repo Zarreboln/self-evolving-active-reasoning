@@ -1,0 +1,6 @@
+condition             n   err%  f1_char  f1_word  kp_cov   in_tok out_tok
+-------------------------------------------------------------------------
+bare                200   0.0%    0.621    0.244   0.000    45861     727
+
+reference (run_arbench_sp.py, official zero_shot path, same prompts):
+  bare  100 episodes  f1_char=0.659 f1_word=0.242 (100-case run, 2026-10-07)

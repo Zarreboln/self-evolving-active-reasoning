@@ -442,7 +442,10 @@ def _claude_memory_dir():
     """Claude Code keeps an auto-memory directory per working directory. A proposer session
     must see nothing but the workspace, so that directory is emptied before each session and
     whatever the session wrote is archived with the session log afterwards."""
-    slug = "-" + str(WS).strip("/").replace("/", "-")
+    # Claude Code keys auto-memory by the git root and turns every non-alphanumeric character into '-';
+    # the old slug (underscores kept, cwd instead of root) never matched, so this isolation was a no-op
+    # until 2026-10-12 (see experiments/08_cd_tthe_pilot/README.md).
+    slug = re.sub(r"[^A-Za-z0-9]", "-", str(ROOT))
     return Path.home() / ".claude" / "projects" / slug / "memory"
 
 

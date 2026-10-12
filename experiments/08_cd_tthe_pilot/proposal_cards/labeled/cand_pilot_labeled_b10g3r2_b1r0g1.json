@@ -1,0 +1,28 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b1r0g1",
+  "parent": "cand_pilot_labeled_b10g3r2_b0r1g2",
+  "role": "independent exploration: model compliance (information-floor veto)",
+  "hypothesis": "The remaining risk is not the query-ranking criterion: offline, greedy joint entropy already matches a one-step minimax/decision-depth ranking (same mean, same max over 80 sampled truths per inventory for 0-4 NOTs). The risk is the 7B ignoring the suggestions and taking a low-information row. In the parent's batch-1 traces it took a query at 0.29 of the best entropy on query 2 of every 1-NOT episode (209, 228, 236, 253). Offline, one such pick adds 0.3-0.6 queries per episode and raises over-budget episodes on a 3 AND/3 OR/4 NOT inventory from 9/150 to 15/150. Falsifiable claim: if the harness vetoes any query below 0.75x the best available entropy and re-asks, every accepted query in the traces is >=0.75x the best, final-table correctness stays at 100% on this batch, and on harder (high-NOT) batches fewer episodes end with an unresolved circuit than under the parent.",
+  "behavior_changes": [
+    "Before sending a model-written query, the harness compares the entropy of that query's answer (over the joint consistent space, the same score the parent already computes) with the best available. If it is below INFO_FLOOR=0.75 of the best, the query is not sent. The model is told its choice splits the remaining possibilities very unevenly and is re-asked to pick from the suggested queries.",
+    "On the last of the MAX_ASKS_PER_TURN=4 asks in a turn, the floor is dropped and any informative query the model writes is accepted, so a turn never stalls and the model always writes the query that gets sent."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived enumeration of the joint (split, A, B, C) space; compact state prompt; the top-4 suggestions ranked by joint entropy; the veto on already-answered or rule-implied queries; early stop once every circuit is determined.",
+    "Final stage unchanged: per-circuit lines parsed, then snapped to the nearest consistent table, falling back to the most likely table.",
+    "Frozen solver (self.llm only) and label-free (env.query only). No branching on inventory or instance index."
+  ],
+  "verification": [
+    "Ran check_b1r0_cand_pilot_labeled_b10g3r2_b1r0g1.py: 10/10 status=ok, parsed_final_guess=True, final table correct 10/10, circuits right 3/3 everywhere, no crashes.",
+    "Queries used: 130:9 129:7 253:15 228:12 236:11 107:6 195:10 185:7 81:11 209:14 (mean 10.2 vs. the parent's 10.5). Per-instance counts mostly reflect which answers came back: 228 went 7->12, 129 went 10->7, 236 went 14->11, 209 went 16->14.",
+    "Replayed every accepted query in the new traces against the parent's scorer: the lowest ratio to the best entropy is 0.93 (the parent had 0.29 on all four 1-NOT episodes and 0.69 on i129). The floor triggered 6 re-asks across the batch (129, 209, 228, 253 once each; 236 twice), and the model complied each time with a top-ranked query.",
+    "Offline simulation (uniform over consistent truth triples, model = always-top vs. one lowest-entropy pick at query 2): 3/3/1 mean 12.54->13.11, max 16->17; 2/4/3 mean 15.85->16.16; 3/3/4 over-budget 9/150->15/150.",
+    "Offline check of the alternative hypothesis (greedy entropy is the bottleneck): minimax on per-circuit optimal decision depth gave no better max and a slightly worse mean on every inventory tested, so the ranking was left unchanged."
+  ],
+  "risks": [
+    "This batch is already 100% correct and never ends ambiguous, so the gain cannot show up in correctness here. It only shows as query efficiency and tail behavior on harder (high-NOT) batches.",
+    "Each veto costs one extra model call (6 extra calls on this batch). If the model keeps writing low-information queries, the fourth ask accepts anything informative, which is the parent's behavior.",
+    "The 0.75 threshold is a guess. Near the end of an episode, when every option has low entropy, it compares against a small best value, which is fine because it is relative, but it could reject reasonable near-ties around 0.7.",
+    "The offline tail numbers assume a uniform prior over truth triples. The real instance generator may weight them differently."
+  ]
+}

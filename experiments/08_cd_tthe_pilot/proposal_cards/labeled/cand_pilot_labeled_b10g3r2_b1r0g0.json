@@ -1,0 +1,28 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b1r0g0",
+  "parent": "cand_pilot_labeled_b10g3r2_b0r1g2",
+  "role": "conservative repair",
+  "hypothesis": "The parent's only recurring query waste is the model ignoring the suggestion list on its second turn and asking A(0,0,0) (0.28 bits vs 0.95 available on the 3-AND/3-OR/1-NOT instances i209/i228/i236/i253, three of them the longest episodes at 14-16 queries). Sending a query back once per turn when its answer entropy is below half the best open query's removes these weak picks without changing any other behavior; over several batches this lowers the queries-used tail on such inventories while final-table correctness stays at 100%. Falsified if weak (<0.5x best) picks still get through, or if correctness drops.",
+  "behavior_changes": [
+    "A parsed, still-informative query whose joint-space answer entropy is < 0.5 x the best open query's is sent back once per turn, with a note naming the top suggestions; if the model repeats a weak pick on the next ask it is accepted (the model still chooses every query).",
+    "QUERY_RE accepts the tag with its opening '<' missing ('query>C(0, 1, 1)</query>'), which the model wrote in i209 and i228; in i228 this had cost a re-ask because the reply also named other inputs, so the loose fallback was ambiguous."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived joint candidate space, compact per-turn state, joint-entropy ranked suggestions (top 4).",
+    "Veto of already-answered / rule-implied queries; loose single-mention fallback parse; MAX_ASKS_PER_TURN=4 and the 6*budget call cap.",
+    "Stop querying once every circuit is determined.",
+    "Final prompt with candidates most-likely-first, per-circuit line parsing, snapping each circuit to the nearest consistent candidate, most-likely fallback."
+  ],
+  "verification": [
+    "Ran check_b1r0_cand_pilot_labeled_b10g3r2_b1r0g0.py on all 10 instances: 10/10 status=ok, parsed final guess 10/10, final table correct 10/10, circuits right 30/30, 0 crashes.",
+    "Queries used per instance (parent -> new): 130 9->9, 129 10->10, 253 15->15, 228 7->12, 236 14->12, 107 6->6, 195 10->10, 185 7->7, 81 11->11, 209 16->14. Mean 10.5 -> 10.6, max 16 -> 15.",
+    "The weak-pick note fired exactly 4 times, all on the turn-2 A(0,0,0) pick (i209, i228, i236, i253), and the model switched to B(0,0,1) each time. The 6 instances where it did not fire reproduced the parent's query sequence exactly.",
+    "Recomputed each chosen query's joint answer entropy offline from the histories: picks below 0.5x the best dropped from 4 to 0; ratio of chosen to best entropy went from 0.892/0.946/0.952/0.954 to 1.000/0.953/0.993/1.000 on i228/i236/i253/i209.",
+    "i228's 7->12 is luck with the answers, not worse queries: the new run took the top-entropy query every turn (ratio 1.000), while the parent's 7 came from lucky answers after a weak query. With n=10, the change in mean query count is noise."
+  ],
+  "risks": [
+    "The gain is only in query efficiency, and on this batch it is not measurable: the mean query count is flat and correctness was already 100%. The benefit is shrinking the near-budget tail, which needs more batches to confirm.",
+    "Each weak-pick note costs one extra LLM call (calls +1 on 4 instances); a model that keeps proposing weak queries spends asks within MAX_ASKS_PER_TURN, which is bounded by the existing caps.",
+    "Making '<' optional in the tag regex could in principle match a stray 'query>' fragment, but it still requires the closing </query> and a full X(a, b, c)."
+  ]
+}

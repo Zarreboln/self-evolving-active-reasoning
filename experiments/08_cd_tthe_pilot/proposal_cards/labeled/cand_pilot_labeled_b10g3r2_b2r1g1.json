@@ -1,0 +1,30 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b2r1g1",
+  "parent": "cand_pilot_labeled_b10g3r2_b2r0g1",
+  "role": "independent exploration",
+  "hypothesis": "The parent's leftover waste (off-suggestion picks, vetoed re-asks, untagged replies) comes from the reply order, not from what the state lists. The prompt asks for 'a short reason and exactly one <query>', so the 7B reasons first and settles on an input there ('Given the current state, querying `A(0, 0, 0)` seems like a strategic choice ...') before it reads the suggestions. In the parent's traces every off-suggestion pick on turn 2 (i205/206/230/238/266/284/60) opens like this. If the suggestions are a numbered list of ready-made <query> tags and the reply must START with one tag copied from it, off-list picks and re-asks drop to ~0, and correctness and the query policy stay the same. Falsified if any instance loses correctness, if off-list picks or re-asks persist at the parent's rate (7 off-list, 2 vetoed re-asks, 2 untagged in ~124 query replies), or if replies stop opening with the tag.",
+  "behavior_changes": [
+    "Turn prompt: the suggested queries are shown as a numbered list of complete tags ('1. <query>B(0, 0, 1)</query>'), and the model is told to start its reply with the chosen tag copied exactly, then give one sentence of reason, and write no other query. The state text above the list is unchanged.",
+    "self._loose (per-circuit fallback space: any AND/OR mix with up to the inventory's NOT count) is now defined. The parent referenced it without defining it. The path is unreachable today, because only still-open rows are ever sent and an open row keeps a candidate for either answer. A fault-injection run with non-buildable truths confirmed that no contradiction arises.",
+    "Docstring corrected: the parent's docstring described a leftover-budget 'check implied rows' phase that its code never implemented. Querying still stops once every row is implied."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived joint space (inventory split x per-circuit tables), joint-weight entropy ranking, SUGGEST_FRAC=0.97 / top-4 suggestions, VETO_FRAC=0.9 veto and the best-vetoed-proposal fallback: the query policy is identical",
+    "The model writes every query. An off-list query is still accepted if it carries >= 0.9 of the best entropy",
+    "Final step: the per-circuit A:/B:/C: lines, re-asked once if incomplete, then snapped to the nearest jointly consistent triple",
+    "Querying stops once every row of every circuit is implied"
+  ],
+  "verification": [
+    "Ran check_b2r1_cand_pilot_labeled_b10g3r2_b2r1g1.py: 10/10 status=ok, parsed_final_guess=True, OUTCOME final table correct on 10/10, 3/3 circuits on every instance. Queries 11,11,16,12,13,12,13,11,16,7 (12.2/ep; parent 12.1). Calls = queries + 1 on every instance, so there were zero re-asks (parent: 17 calls for 15 queries on i230 and i266).",
+    "Replay of the child's traces (trace/history fields only): 122/122 query replies opened with a <query> tag, and 122/122 picked a listed suggestion (104 the first one, 18 another one). That is 0 off-list, 0 untagged, 0 vetoed. Parent traces on the same batch: 82 first suggestion, 32 another one, 7 off-list (5 accepted at >= 0.9, 2 vetoed and re-asked), 2 untagged replies ('Query C(1, 0, 1)') that needed the loose parser.",
+    "Offline, two other hypotheses I tested and rejected before choosing this one: (a) the prior is wrong because the generator draws gate structures, not tables. On the 30 determined triples from b0-b2 traces (deduced from answers in the .md files, not from gold), the parent's uniform-over-(split, table) prior has the best log-likelihood (-216.6), vs -223.8 for structure counts with multinomial split weights and -244.8 for a random-process prior. (b) the query count tail is myopic greedy. A 2-step lookahead ranking was slightly worse in simulation (mean 11.44 vs 11.08 queries, max 17 vs 16 over 300 runs).",
+    "Offline reliability check of the shared query policy: a simulated model mimicking the parent's observed pick rates (66% first suggestion, 27% other suggestion, 7% any row >= 0.9 of best), run on the 30 observed truths x 30 reps (900 episodes): mean 11.2 queries, max 16, 0 unresolved at 18. Per-truth spread is large (i238: 11-17, i171: 5-14 queries) and comes from which near-tied suggestion is taken, so query-count differences between siblings on n=10 are noise.",
+    "audit.py on the new source: no problems"
+  ],
+  "risks": [
+    "The outcome is already saturated (parent 10/10). This change removes wasted model calls but cannot raise the final-table rate on this batch, and does not lower queries (12.2 vs 12.1, within noise).",
+    "With ready-made tags in the list, the model copies the first one more often (85% vs 66%). Its choice is still its own and the harness still accepts any informative query, but its free reasoning now has even less effect on which query is sent.",
+    "Every turn prompt changed, so all replies are fresh samples at temperature 0.7, not cache replays. One run of 122 replies supports the effect, but rare format slips, such as echoing the whole list (the first tag would then be taken), have not been seen yet and are not specifically handled.",
+    "The parent's misleading docstring hid that a misread rule space would give a confidently wrong table, with no check of implied rows. That is still true. The space matches the system-prompt rules exactly, so it is not expected to matter."
+  ]
+}

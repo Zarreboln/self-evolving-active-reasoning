@@ -1,0 +1,27 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b2r1g0",
+  "parent": "cand_pilot_labeled_b10g3r2_b2r0g0",
+  "role": "conservative repair",
+  "hypothesis": "The parent's traces on this batch show nothing to repair, so the smallest valid change is none. Carried over verbatim, the harness keeps 10/10 final tables correct with zero vetoes, zero format re-asks and zero final-call retries (calls = queries + 1), and it uses at most 14 of the 18 queries. Falsified if a re-run of this candidate on the batch loses any table, crashes, or shows a veto or re-ask the parent did not have.",
+  "behavior_changes": [
+    "None to the logic or prompts. The only edit is a docstring paragraph recording why the parent was carried over unchanged. Every message sent to the model is byte-identical to the parent's."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived joint space (inventory split x tables A, B, C), with joint-entropy ranking of the suggested queries",
+    "The compact per-turn state, which lists only uncertain inputs at or above the veto floor and says 'none right now, query another circuit' when a circuit has none",
+    "The top-4 near-best suggestions (SUGGEST_FRAC), the low-information veto (VETO_FRAC), the veto of answered or implied rows, and the fallback to the best vetoed proposal when every ask in a turn is vetoed",
+    "Stopping as soon as every circuit is determined",
+    "Query parsing: <query>, the '```query>' fence-swallowed tag, the ```query code-block form, and the single-match loose fallback",
+    "Final prompt with ranked candidate lists, per-circuit A:/B:/C: line parsing, and snapping to the nearest jointly consistent triple"
+  ],
+  "verification": [
+    "Audit of the parent's 10 traces (traces/b2/*b2r0g0*.md): 10/10 final table correct and 30/30 circuits right. Calls = queries + 1 on every instance (no vetoes, no format re-asks, a single final call). Every circuit is 'determined' in the final prompt, and the model's A:/B:/C: lines and <guess> equal the returned guess on all 10, so snapping never changed anything. Queries per instance: 7 to 14, mean 11.5.",
+    "Siblings for comparison: b2r0g1 and b1r1g2 each have one low-information veto, on i230 and i266 (A(0, 0, 0)). The parent already removed it, and no failure of any kind is left in its traces.",
+    "Ran check_b2r1_cand_pilot_labeled_b10g3r2_b2r1g0.py twice: once with a verbatim copy, and once with the docstring note added. Both runs: 10/10 status ok, parsed_final_guess True, final table correct 10/10, circuits right 3/3 on every instance. Queries: i206 11, i238 9, i266 14, i0 13, i171 14, i60 12, i284 11, i205 11, i230 13, i173 7 (mean 11.5, max 14/18). Calls = queries + 1 everywhere.",
+    "Compared each instance's query and answer history from the check's results (the history field only) with the parent's trace query lists: identical on all 10 instances."
+  ],
+  "risks": [
+    "No change means no improvement: margin against the budget stays at 4 queries on the worst instance (i171, i266 at 14/18) and is untested on harder inventories outside this batch.",
+    "Most replies come from the solver cache, so this re-run mostly confirms determinism, not robustness to resampling. A temperature-0.7 resample could hit a format slip the parent does not parse, but none appears in any trace, so no fix is warranted under the conservative role."
+  ]
+}

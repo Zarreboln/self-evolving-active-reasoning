@@ -14,6 +14,8 @@ GitHub Release named in each README.
 | 05 | Evolution run `so1` (regime state_only) | Qwen2.5-7B | veto_only held-out: circuit-wise accuracy 91.3%, joint truth table correct 86.2%, uniq@end 96.7%; no information-gain computation, tokens = bare |
 | 06 | EvoHarness-RL as baseline | Qwen2.5-7B | uniq@end (ours): ReAct 26-29, EvoHarness-Base (inline) 30-32, always-on panels 71-75 |
 | 07 | Situation Puzzles bare with the official-grade judge | Qwen2.5-7B + 405B-INT4 | f1_char 0.621 (the earlier 0.659 was self-judged by the 7B) |
+| 08 | Test-time harness evolution (TTHE port), pilot streams strict / labeled | Qwen2.5-7B + Opus proposer/judge | strict batch 0: zero-hint proposer rebuilds the hypothesis space, label-free judge picks it, 20/20 joint tables correct on batches 1–2; stream 30: circuit-wise accuracy 70.0 / joint 66.7 prequential; later batches not label-isolated (audit) → rerun |
+| 09 | Same streams with label isolation + session audit (`strict2` / `labeled2`) | same | running |
 
 Common protocol for 03-06: Multi-Turn Puzzles Circuit Decoding, 300 released instances, 18
 queries + final guess, environment wording from the paper's transcript, Qwen2.5-7B-Instruct

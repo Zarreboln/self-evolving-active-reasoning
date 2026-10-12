@@ -1,0 +1,30 @@
+{
+  "candidate": "cand_pilot_labeled_b10g3r2_b0r0g0",
+  "parent": "bare",
+  "role": "conservative_repair",
+  "hypothesis": "bare fails for two mechanical reasons visible in its traces: (1) the model enumerates A's 8 rows, then B's, and reaches C with 0-2 queries, so C is always a blind guess; (2) the final 24-bit string contradicts rows the model itself observed in 10/10 episodes (2-11 contradicted rows each), so even fully-queried circuits are scored wrong. Capping each circuit at ceil(budget/3) queries (veto + re-ask, no query spent) and keeping observed bits for asked rows in the final guess (model supplies only the unasked rows) should raise circuits-right well above bare's 6.7% and make some full tables correct; if circuits-right on this batch does not rise above bare's 2/30, the hypothesis is false.",
+  "behavior_changes": [
+    "Query veto: a reply whose query repeats an already-asked row, or targets a circuit that already had ceil(budget/3) queries (6 of 18), is rejected with a one-line reason plus the observed table; the model is re-asked (up to 3 times) and the rejected reply does not consume a query.",
+    "Final prompt prepends the observed table for all 24 rows ('?' = not queried) to the benchmark's final-guess prompt.",
+    "Final guess assembly: rows the environment answered keep the observed bit; unasked rows take the model's bit from its 24-bit <guess> (or the last 24-bit string). If that string is missing or the wrong length, the model's explicit 'X(a,b,c) = v' row statements are used instead. If rows are still missing, the model is re-asked for a bare <guess> (up to 2 times).",
+    "Final call max_tokens raised from 1200 to 2400 (one episode's final reply was truncated mid-table at 1200)."
+  ],
+  "preserved_behaviors": [
+    "Same system prompt, opening message, per-turn wording ('<answer line>\\nPlease send your next query. N queries remaining.'), and the benchmark's last_turn_prompt.",
+    "The model writes every query. The harness only vetoes and re-asks; it never picks a query.",
+    "A reply with no parseable query still gets the parent's format reminder.",
+    "The full 18-query budget is used, and exactly one final guess is returned."
+  ],
+  "verification": [
+    "audit.py: OK (scratch arm).",
+    "Run 1 (cap + observed-bit assembly, 24-bit <guess> only): 10/10 status ok, 18 queries each, split 6/6/6 in every episode; final table correct 1/10 (bare 0/10), circuits right 9/30 (bare 2/30); but 3/10 had no parsed final guess (two 22-bit <guess> strings, one reply truncated at 1200 tokens).",
+    "Compared the model's per-row statements with its 24-bit string on unasked rows. They disagree in several episodes, and in the one exact episode (156) the string was right where the statements were wrong. So the string stays primary and the statements are only a fallback.",
+    "Run 2 (final version: string -> statements -> re-ask, 2400-token final call): 10/10 status ok, parsed_final_guess 10/10, 18 queries each, 0 crashes; final table correct 1/10 (instance 156), circuits right 11/30 = 36.7% (bare: 0/10 exact, 6.7%). Per instance: 156 3/3, 98/164/265 2/3, 11/105 1/3, 250/128/239/247 0/3.",
+    "Trace check: vetoes fire as intended (e.g. instance 11: 5 vetoes, still 18 distinct queries, 6 per circuit), and the final guesses agree with every observed answer."
+  ],
+  "risks": [
+    "The remaining failure is deduction: with 6 rows per circuit the model must infer 2 unasked rows, and it usually leaves the same two (x110, x111) and fills them wrongly. This candidate does nothing to improve query choice or inference.",
+    "A hard equal-share cap may starve a circuit that needs more than 6 rows to pin down, though no circuit can use more than 8 and the budget cannot cover all three anyway.",
+    "Outcomes on 10 instances are noisy (episodes 105 and 98 moved by +/-1 circuit between runs just from changing the final call), so the gain should be confirmed on the next batch."
+  ]
+}

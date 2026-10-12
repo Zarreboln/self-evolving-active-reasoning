@@ -1,0 +1,30 @@
+{
+  "candidate": "cand_pilot_strict_b10g3r2_b1r0g1",
+  "parent": "cand_pilot_strict_b10g3r2_b0r0g2",
+  "role": "independent exploration: verify the harness's rule model with the unused budget",
+  "hypothesis": "Where the parent can go wrong is not the model's query choice (already vetted) but the harness's own reading of the rules: it stops at ~11 queries with every circuit 'SOLVED', yet only ~3-4 of each circuit's 8 rows were observed, and some circuits are 'solved' purely through the inventory-split coupling (e.g. i130 C was pinned by one direct C query). Falsifiable: if that reading is wrong for an instance, spending the leftover queries on the weakest-supported rows (coupling-only distinctions first, then unobserved rows on the least-observed circuit) yields at least one answer that contradicts the 'SOLVED' table; if the reading is right, there are zero contradictions and the final guess is unchanged. Result on this batch: 0 contradictions in ~70 verification answers across 10 instances, so the hypothesis is FALSIFIED here. The parent's rule model held, and the mechanism acts as insurance at no cost to the final table.",
+  "behavior_changes": [
+    "After the rule-derived space pins all three circuits, querying continues to the full budget instead of stopping (queries/ep 11.1 -> 18).",
+    "Check menu (the model still picks; off-list or repeated replies are re-asked): first rows where circuits would still differ if each were read on its own without the inventory-split coupling, then any unobserved row, with the least-observed circuit first; each entry shows the table's predicted bit.",
+    "In the check phase the state says 'pinned down' instead of 'SOLVED ... Do NOT query again' (first run had that conflict and extra re-asks, e.g. i130 23 -> 20 calls after fix).",
+    "Tiered fallback when answers contradict the joint rule space: per circuit, rules read on their own (no exact split) -> any non-constant table consistent with answers, ranked by Hamming closeness to a rule-allowed table (parent fell straight to 'any table', unranked, for all circuits)."
+  ],
+  "preserved_behaviors": [
+    "Same joint candidate enumeration, entropy-ranked query menu, and query vetting during the main phase.",
+    "Model writes every query; harness never chooses one.",
+    "Final 24 bits assembled from the model's numbered picks among consistent candidates.",
+    "Label-free: only env.query answers and the system-prompt rules are used; no instance/index branching."
+  ],
+  "verification": [
+    "Ran check_b1r0_cand_pilot_strict_b10g3r2_b1r0g1.py twice (before/after the 'SOLVED' wording fix): 10/10 status=ok, parsed_final_guess=True, queries_used=18, 0 crashes.",
+    "Label-free consistency check from the run's own answers: every final guess agrees with all 18 observed answers; every guess is identical to the parent's guess on the same instance; the parent's guesses also agree with all ~70 new verification answers (0 contradictions); the relaxed/fallback space was never entered.",
+    "Direct coverage rose from ~11/24 to 18/24 rows per episode (5-8 rows observed per circuit).",
+    "Offline mock (a scripted picker, not the 7B) with off-rule circuits (XOR-like A table; an allocation violating the inventory split): the fallback recovered the exact 24 bits in all 3 cases; a rule-consistent case was unchanged."
+  ],
+  "risks": [
+    "On this batch the change made no difference to the final guesses; its value only shows if the rule reading is wrong for some instances in the wider distribution.",
+    "About 7 extra model calls per episode (more tokens and latency).",
+    "If a contradiction does occur late, the 'any table' tier can leave several unobserved rows for the 7B to choose among from a ranked list. Closeness ranking helps but the pick may still be wrong.",
+    "The check menu is ordered by observation count, so the 7B sometimes picks lower-listed checks; harmless because all listed items are unobserved rows."
+  ]
+}

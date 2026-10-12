@@ -1,0 +1,30 @@
+{
+  "candidate": "cand_pilot_strict_b10g3r2_b1r0g0",
+  "parent": "cand_pilot_strict_b10g3r2_b0r0g2",
+  "role": "conservative repair",
+  "hypothesis": "The parent's only trace-visible budget leak is its re-ask loop: each re-ask shows only the latest rejected reply, so the 7B alternates between two zero-information picks (A(1,1,1) <-> B(1,1,1) in i107/i129) until MAX_TRIES runs out, and then the harness spends a query on the rejected pick. If each re-ask names every pick rejected that turn and gives a few usable queries in the exact tag format, and the harness never sends a pick its own tracker knows splits nothing, then zero-information queries per episode drop to 0 and re-ask call counts fall. Query choice, candidate pinning, and the final answer stay as in the parent.",
+  "behavior_changes": [
+    "_ask_query: keeps a per-turn list of rejected picks; each re-ask says 'These give no new information, do not pick them: ...' and shows up to 4 top-split queries in <query>X(a, b, c)</query> form as examples (the model still writes the query).",
+    "_ask_query: after MAX_TRIES without an informative pick it returns None (no query spent; the solve loop's existing wasted counter re-asks on the next round) instead of sending the model's rejected zero-information pick.",
+    "Module docstring updated to describe both changes."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived candidate enumeration (Space, _enumerate) and joint inventory coupling are unchanged.",
+    "First-turn prompt (state text, ranked split menu, instruction) is unchanged byte-for-byte.",
+    "Queries stop once every circuit has one candidate.",
+    "Final phase: numbered candidates, the model's per-circuit picks, and <guess> assembly are unchanged.",
+    "Only self.llm is used; the harness never chooses a query, only vetoes or re-asks."
+  ],
+  "verification": [
+    "Parent traces (b1, .md plus history/trace fields; the gold/signals fields were not used): all 10 episodes ended with every circuit pinned and a final guess equal to the pinned tables. Replaying each history through the parent's own tracker showed exactly two zero-information queries (A(1,1,1) as the 3rd query in i107 and i129), each preceded by 4 rejected re-asks that cycled between A(1,1,1) and B(1,1,1)/B(1,1,0). Every other query was at or near the best available split.",
+    "Ran check_b1r0_cand_pilot_strict_b10g3r2_b1r0g0.py: 10/10 status=ok, parsed_final_guess=True, 0 crashes; queries used 6-15 (i107 9->8, i195 10->11, the rest unchanged).",
+    "Replayed the new histories through the tracker: 0 zero-information queries in all 10 episodes (parent: 2); all three circuits pinned to one candidate in all 10; final guess == pinned tables in all 10; the relaxed fallback never triggered.",
+    "LLM calls: i107 16->11, i129 17->11, i195 14->13. The trace shows the rejected-list re-ask working: after a rejected A(1,1,1) the model picked A(1,0,1) on the next call, and after a rejected B(1,1,0) it picked C(1,0,0)."
+  ],
+  "risks": [
+    "Correctness depends on the rule-derived hypothesis space being right. No answer contradicted it (relaxed never triggered), but without labels that cannot be confirmed.",
+    "Two episodes (i209, i236) used 15/18 queries. The headroom on harder NOT-heavy inventories is small, and this repair does not change how efficient the splits are.",
+    "Showing example queries could pull the model toward the top-listed circuit. This only happens on re-asks, after a pick was already rejected.",
+    "If the model never produces an informative pick, rounds are spent re-asking (bounded by budget x MAX_TRIES calls) rather than querying, which could leave a circuit unpinned. This was not seen in this batch."
+  ]
+}

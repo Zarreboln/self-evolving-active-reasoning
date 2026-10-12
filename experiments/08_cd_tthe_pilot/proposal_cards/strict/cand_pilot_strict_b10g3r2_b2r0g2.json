@@ -1,0 +1,34 @@
+{
+  "candidate": "cand_pilot_strict_b10g3r2_b2r0g2",
+  "parent": "cand_pilot_strict_b10g3r2_b0r0g2",
+  "role": "adversarial audit and synthesis",
+  "hypothesis": "The parent's rule model is sound but its budget margin is not. On b2 it pinned i284 at 17/18 and i266 at 16/18 because the 7B picked weak entries from an 8-item, per-circuit-ranked menu (e.g. 'splits most unevenly'). In a rule-model simulation where the model picks uniformly from that menu, 2-9% of worlds go past 18 queries on NOT-heavy inventories ((2,4,2): 5/300, (3,3,2): 10/300, (2,4,3): 27/300, (1,5,3): 11/300). Ranking by joint (A,B,C) information and listing only near-best queries (>=0.9 of best, 2-3 items) brings that to 0/300 for each inventory and lowers the mean by ~0.7-1 query. Using the leftover budget for model-chosen checks turns 'pinned by inference' into 'mostly observed' without changing the final when the rules hold. Falsified if, on fresh instances, (a) any episode ends with a circuit still holding >1 candidate, (b) pin points are not lower on average than the parent's, or (c) a check answer contradicts a pinned table.",
+  "behavior_changes": [
+    "Query ranking uses joint split counts over (A,B,C) assignments summed over inventory allocations (taken from b1r1g0/b1r1g1/b1r1g2, which proposed it independently). Falls back to per-circuit ranking once the rules are relaxed.",
+    "New: the menu lists queries with >=90% of the best query's joint information, capped at 3 and never fewer than 2 when two can split, so the model still chooses. Off-menu informative picks are re-asked and sent only as a last resort. b1r1g2 used a plain top-3; b1r1g0's near-best idea is combined with a floor of 2.",
+    "A query known to carry no information is never sent. Re-asks name every reply rejected that turn. If a whole round yields nothing usable, the next prompt carries a stuck note (from b1r0g0/b1r1g2). In the parent, b2 i171 sent one zero-information query.",
+    "After every circuit is pinned, querying continues to the full budget with a check menu: first rows where the circuit's own rule tables, ignoring the inventory split, disagree with the deduction, then unobserved rows. If an answer contradicts the pinned tables, the space degrades per circuit (from b1r0g1/b1r0g2).",
+    "Query parser: the 'Circuit_C(...)' prefix (from b1r1g2) and, new, a garbled opening tag such as '=query>B(1,0,1)</query>', case-insensitive. In b1r1g2's i185 trace the garbled tag cost 4 re-asks.",
+    "Bug fix vs b1r1g2: the stuck note's example was built with examples.split(', ')[0], which cuts '<query>A(0, 1, 0)</query>' to '<query>A(0'. It now uses the first full example."
+  ],
+  "preserved_behaviors": [
+    "Same rule-derived hypothesis space and enumerator as the parent: two 2-input gates per circuit, NOTs anywhere, inventory split without replacement, no constant tables.",
+    "The model writes every query; the harness only lists, vets and re-asks.",
+    "Final 24 bits are assembled from the model's per-circuit candidate picks, with the parent's parsing and fallback.",
+    "Label-free and frozen solver: audit.py --arm scratch prints OK."
+  ],
+  "verification": [
+    "Ran check_b2r0_cand_pilot_strict_b10g3r2_b2r0g2.py: 10/10 status=ok, parsed_final_guess=True, 18 queries each, 19-20 model calls each (the parent used 14-23). In the menu phase the model's first reply was on-menu in all but one turn (i238, one re-ask).",
+    "Label-free replay of the histories through the rule model: every circuit pinned on all 10 instances. Pin points 12,11,7,11,10,16,11,16,13,12 (sum 119, max 16) vs the parent's 13,12,6,14,13,11,13,16,17,14 (sum 129, max 17). Relaxed fallback never triggered. 0 check contradictions over 61 post-pin check answers. Each final equals the pinned tables and is consistent with all 18 answers.",
+    "Cross-harness audit on the same instances: the parent's and this harness's finals are identical on 10/10. Each harness's final fits the other's answers with 0 mismatches, and together their answers directly cover 19-23 of the 24 rows per instance.",
+    "i230 regressed (pin 16 vs the parent's 11). The trace shows the model took the top menu item on every turn, so this is the greedy policy's variance on that world, not a model error. In simulation, greedy joint ranking maxes at 16 on (3,3,1).",
+    "Simulation (300 worlds each, sampled uniformly over joint assignments, model picking uniformly from the menu): parent >18 queries in 5/10/27/11 worlds for (2,4,2)/(3,3,2)/(2,4,3)/(1,5,3); this menu 0 in each (max 18, 18, 18, 16). Plain top-3 joint menu: 1 world >18 on (3,3,2).",
+    "Tried and rejected: two-step lookahead ranking. On 60 worlds per inventory it gave the same mean and a max at most 1 lower, at ~30x the compute, so it was not adopted."
+  ],
+  "risks": [
+    "(3,3,2) and (2,4,3) inventories still reach 18 queries in the worst simulated case. If the model goes off-menu repeatedly there, the episode can end unpinned, and the final then depends on the model's pick among marginal candidates. Those picks are not forced to be jointly consistent with the inventory split.",
+    "The check phase adds ~5-7 model calls per episode (tokens) and has caught nothing so far. Its value is insurance against a misread rule, unproven on data.",
+    "With 2-3 near-equal items the menu is narrow. It is still the model's choice, but closer to the harness steering than the parent's 8-item list.",
+    "The more lenient parser could accept a query the model mentioned rather than committed to. It uses the first tagged match, as the parent did."
+  ]
+}

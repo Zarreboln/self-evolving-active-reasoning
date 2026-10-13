@@ -16,6 +16,8 @@ export HF_HOME=/orcd/scratch/orcd/012/$USER/hf_cache
 export VLLM_LOGGING_LEVEL=WARNING
 export VLLM_USE_FLASHINFER_SAMPLER=0
 export VLLM_ATTENTION_BACKEND=FLASH_ATTN
+# DeepGEMM's JIT fails against the cluster's nvcc 13.4 headers (same family as the FlashInfer TP issue): use the CUTLASS/Triton FP8 path
+export VLLM_USE_DEEP_GEMM=0
 VLLM=$CODE/conda_env/bin/vllm
 export CUDA_HOME=$CODE/conda_env/lib/python3.12/site-packages/nvidia/cu13
 export PATH=$CODE/conda_env/bin:$CUDA_HOME/bin:$PATH
@@ -25,7 +27,7 @@ EP=$RESULTS/serve_referee_${TAG}.endpoint; rm -f "$EP"; trap 'rm -f "$EP"' EXIT
 PORT=$((9000 + RANDOM % 900))
 echo "host=$(hostname) start=$(date -Is) port=$PORT repo=$REPO vargs=[$VARGS]"
 "$VLLM" serve "$REPO" --served-model-name "$REPO" $VARGS \
-  --max-num-seqs 128 --gpu-memory-utilization 0.92 --enable-prefix-caching \
+  --max-num-seqs ${MAXSEQ:-128} --gpu-memory-utilization 0.92 --enable-prefix-caching \
   --port "$PORT" > "$RESULTS/judge/vllm_referee_${TAG}_${SLURM_JOB_ID}.log" 2>&1 &
 PID=$!
 for i in $(seq 1 240); do

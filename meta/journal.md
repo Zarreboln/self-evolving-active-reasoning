@@ -443,3 +443,10 @@
   of 4500 questions (No 58.5, Yes 27.6), so about one question in seven falls in that class.
   Referee unchanged (official = 405B, AR-Bench reports accuracy), but the macro table goes in the
   paper and an SP robustness check under Flash-Next(think) is queued.
+- 15:5x Jev prompting levers (its own docs': structured what/not_for/examples criteria, splitting
+  into a decidability noul + a 2-way choice, both) all cost 3-5 points of accuracy to buy 10-25
+  points of Unknown recall -- the same trade the probability threshold gives for free. Best macro
+  70.9 (both) vs plain's 66-69. And Jev is NOT deterministic: five identical plain runs gave
+  78.7 / 80.0 / 79.3 / 80.0 / 78.0 accuracy, Unknown recall 26.3-36.8, probabilities moving too.
+  So its ceiling here is ~79 acc / ~70 macro, under the 405B (83.3/69.6) and under
+  Flash-Next-think (80.7/79.9). Variants + repeats cost about $0.03 in total.

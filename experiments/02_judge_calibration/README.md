@@ -160,3 +160,33 @@ This does not change the referee: AR-Bench's is the 405B, accuracy is what AR-Be
 a swap would move the Situation Puzzles numbers for reasons unrelated to the harness. It does mean
 the macro numbers belong in the paper next to the accuracy, and that a robustness check of the SP
 results under Flash-Next (think) as referee is worth running once the main results are in.
+
+
+### Can Jev be prompted into doing better? (2026-10-13)
+
+Three levers from TypeSafe's own guidance (`docs.typesafe.ai/primitives/advanced`), each on the
+same 150 cases: `runner/jev_judge_variants.py`.
+
+| variant | accuracy | macro recall | macro F1 | recall C / I / U | tokens | cost |
+|---|---|---|---|---|---|---|
+| plain (rules verbatim, one choice) | 78.0–80.0 | 66.3–69.2 | 67.5–71.0 | ~80 / ~91 / 26–37 | 98,480 | $0.0041 |
+| boundaries (`what` / `not_for` / `examples` criteria) | 74.0 | 69.4 | 67.6 | 81.8 / 73.7 / 52.6 | 126,680 | $0.0053 |
+| split (noul "is it decidable" + choice) | 74.7 | 68.5 | 67.2 | 81.8 / 76.3 / 47.4 | 92,480 | $0.0039 |
+| both | 76.0 | **70.9** | 69.0 | 83.6 / 76.3 / 52.6 | 112,280 | $0.0047 |
+
+None of them is a win. Each buys Unknown recall (26–37 to 47–53) by giving up 3–5 points of
+accuracy on the two majority classes, which is the same trade the probability threshold already
+offers without a second request.
+
+**Jev is not deterministic.** Five runs of the identical `plain` request returned 78.7, 80.0, 79.3,
+80.0 and 78.0 accuracy, with macro recall from 66.3 to 69.2 and Unknown recall from 26.3 to 36.8.
+Two points of spread on 150 cases, with the same prompt, the same model id and no sampling
+parameter exposed. The per-case probabilities move too. That matters more than the variants: a
+margin under about 2 points against Jev cannot be read from a single run, and it is why the
+single-run numbers above carry no conclusions beyond "not better than plain".
+
+So the ceiling for Jev on this task is about 79 accuracy and about 70 macro recall, against the
+405B's 83.3 / 69.6 and Qwen3.8-Flash-Next (think)'s 80.7 / 79.9. Better typed-decision models
+exist on paper -- Cloudflare's Clef (Qwen3.8-27B with a joint schema head), CLM, JevK5, all served
+by the open [OpenJev](https://github.com/razorback16/openjev) -- but running any of them needs that
+server, which is not installed here.

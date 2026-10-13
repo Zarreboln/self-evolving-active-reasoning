@@ -1,0 +1,2402 @@
+{
+ "1": {
+  "id": 1,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0996,
+   "Incorrect": 0.7303999999999999,
+   "Unknown": 0.17000000000000004
+  },
+  "confidence": 0.76,
+  "usage": {
+   "input_tokens": 699,
+   "output_tokens": 50
+  }
+ },
+ "2": {
+  "id": 2,
+  "gold": "Correct",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0468,
+   "Incorrect": 0.7332,
+   "Unknown": 0.21999999999999997
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 745,
+   "output_tokens": 50
+  }
+ },
+ "3": {
+  "id": 3,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.434,
+   "Incorrect": 0.186,
+   "Unknown": 0.38
+  },
+  "confidence": 0.4,
+  "usage": {
+   "input_tokens": 744,
+   "output_tokens": 50
+  }
+ },
+ "4": {
+  "id": 4,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.6048,
+   "Incorrect": 0.1152,
+   "Unknown": 0.28
+  },
+  "confidence": 0.68,
+  "usage": {
+   "input_tokens": 774,
+   "output_tokens": 50
+  }
+ },
+ "5": {
+  "id": 5,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0648,
+   "Incorrect": 0.4752,
+   "Unknown": 0.45999999999999996
+  },
+  "confidence": 0.76,
+  "usage": {
+   "input_tokens": 778,
+   "output_tokens": 50
+  }
+ },
+ "6": {
+  "id": 6,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.9119999999999999,
+   "Incorrect": 0.048,
+   "Unknown": 0.040000000000000036
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 810,
+   "output_tokens": 50
+  }
+ },
+ "7": {
+  "id": 7,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.018,
+   "Incorrect": 0.282,
+   "Unknown": 0.7
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 729,
+   "output_tokens": 50
+  }
+ },
+ "8": {
+  "id": 8,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0288,
+   "Incorrect": 0.45119999999999993,
+   "Unknown": 0.52
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 692,
+   "output_tokens": 50
+  }
+ },
+ "9": {
+  "id": 9,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8918,
+   "Incorrect": 0.0182,
+   "Unknown": 0.08999999999999997
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 806,
+   "output_tokens": 50
+  }
+ },
+ "10": {
+  "id": 10,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0087,
+   "Incorrect": 0.2813,
+   "Unknown": 0.71
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 697,
+   "output_tokens": 50
+  }
+ },
+ "11": {
+  "id": 11,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.92,
+   "Incorrect": 0.0,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 1014,
+   "output_tokens": 50
+  }
+ },
+ "12": {
+  "id": 12,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.06230000000000001,
+   "Incorrect": 0.8277000000000001,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.86,
+  "usage": {
+   "input_tokens": 775,
+   "output_tokens": 50
+  }
+ },
+ "13": {
+  "id": 13,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.86,
+   "Unknown": 0.14
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 723,
+   "output_tokens": 50
+  }
+ },
+ "14": {
+  "id": 14,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.792,
+   "Incorrect": 0.08800000000000001,
+   "Unknown": 0.12
+  },
+  "confidence": 0.8,
+  "usage": {
+   "input_tokens": 749,
+   "output_tokens": 50
+  }
+ },
+ "15": {
+  "id": 15,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.011399999999999999,
+   "Incorrect": 0.5586,
+   "Unknown": 0.43000000000000005
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 704,
+   "output_tokens": 50
+  }
+ },
+ "16": {
+  "id": 16,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0074,
+   "Incorrect": 0.7326,
+   "Unknown": 0.26
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 703,
+   "output_tokens": 50
+  }
+ },
+ "17": {
+  "id": 17,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.27649999999999997,
+   "Incorrect": 0.5135000000000001,
+   "Unknown": 0.20999999999999996
+  },
+  "confidence": 0.3,
+  "usage": {
+   "input_tokens": 780,
+   "output_tokens": 50
+  }
+ },
+ "18": {
+  "id": 18,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7209000000000001,
+   "Incorrect": 0.1691,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.62,
+  "usage": {
+   "input_tokens": 779,
+   "output_tokens": 50
+  }
+ },
+ "19": {
+  "id": 19,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.92,
+   "Incorrect": 0.0,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 742,
+   "output_tokens": 50
+  }
+ },
+ "20": {
+  "id": 20,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.1692,
+   "Incorrect": 0.3008,
+   "Unknown": 0.53
+  },
+  "confidence": 0.28,
+  "usage": {
+   "input_tokens": 757,
+   "output_tokens": 50
+  }
+ },
+ "21": {
+  "id": 21,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.89,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 750,
+   "output_tokens": 50
+  }
+ },
+ "22": {
+  "id": 22,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.9016000000000001,
+   "Incorrect": 0.0184,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 736,
+   "output_tokens": 50
+  }
+ },
+ "23": {
+  "id": 23,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.33599999999999997,
+   "Incorrect": 0.364,
+   "Unknown": 0.30000000000000004
+  },
+  "confidence": 0.04,
+  "usage": {
+   "input_tokens": 757,
+   "output_tokens": 50
+  }
+ },
+ "24": {
+  "id": 24,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7223999999999999,
+   "Incorrect": 0.11760000000000001,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.72,
+  "usage": {
+   "input_tokens": 810,
+   "output_tokens": 50
+  }
+ },
+ "25": {
+  "id": 25,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.2736,
+   "Incorrect": 0.44639999999999996,
+   "Unknown": 0.28
+  },
+  "confidence": 0.24,
+  "usage": {
+   "input_tokens": 781,
+   "output_tokens": 50
+  }
+ },
+ "26": {
+  "id": 26,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0091,
+   "Incorrect": 0.9009,
+   "Unknown": 0.08999999999999997
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 730,
+   "output_tokens": 50
+  }
+ },
+ "27": {
+  "id": 27,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.5915,
+   "Incorrect": 0.058499999999999996,
+   "Unknown": 0.35
+  },
+  "confidence": 0.82,
+  "usage": {
+   "input_tokens": 728,
+   "output_tokens": 50
+  }
+ },
+ "28": {
+  "id": 28,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.22719999999999999,
+   "Incorrect": 0.4828,
+   "Unknown": 0.29000000000000004
+  },
+  "confidence": 0.36,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "29": {
+  "id": 29,
+  "gold": "Incorrect",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.36569999999999997,
+   "Incorrect": 0.1643,
+   "Unknown": 0.47
+  },
+  "confidence": 0.38,
+  "usage": {
+   "input_tokens": 750,
+   "output_tokens": 50
+  }
+ },
+ "30": {
+  "id": 30,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0064,
+   "Incorrect": 0.6336,
+   "Unknown": 0.36
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 746,
+   "output_tokens": 50
+  }
+ },
+ "31": {
+  "id": 31,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0782,
+   "Incorrect": 0.3818,
+   "Unknown": 0.54
+  },
+  "confidence": 0.66,
+  "usage": {
+   "input_tokens": 839,
+   "output_tokens": 50
+  }
+ },
+ "32": {
+  "id": 32,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.013500000000000002,
+   "Incorrect": 0.2565,
+   "Unknown": 0.73
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 805,
+   "output_tokens": 50
+  }
+ },
+ "33": {
+  "id": 33,
+  "gold": "Correct",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.1632,
+   "Incorrect": 0.1768,
+   "Unknown": 0.6599999999999999
+  },
+  "confidence": 0.04,
+  "usage": {
+   "input_tokens": 742,
+   "output_tokens": 50
+  }
+ },
+ "34": {
+  "id": 34,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0427,
+   "Incorrect": 0.5673,
+   "Unknown": 0.39
+  },
+  "confidence": 0.86,
+  "usage": {
+   "input_tokens": 730,
+   "output_tokens": 50
+  }
+ },
+ "35": {
+  "id": 35,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7789999999999999,
+   "Incorrect": 0.041,
+   "Unknown": 0.18000000000000005
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 770,
+   "output_tokens": 50
+  }
+ },
+ "36": {
+  "id": 36,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.16770000000000002,
+   "Incorrect": 0.2623,
+   "Unknown": 0.5700000000000001
+  },
+  "confidence": 0.22,
+  "usage": {
+   "input_tokens": 739,
+   "output_tokens": 50
+  }
+ },
+ "37": {
+  "id": 37,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0054,
+   "Incorrect": 0.5346000000000001,
+   "Unknown": 0.45999999999999996
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 709,
+   "output_tokens": 50
+  }
+ },
+ "38": {
+  "id": 38,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.82,
+   "Unknown": 0.18000000000000005
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "39": {
+  "id": 39,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.4015,
+   "Incorrect": 0.3285,
+   "Unknown": 0.27
+  },
+  "confidence": 0.1,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "40": {
+  "id": 40,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.1998,
+   "Incorrect": 0.3402,
+   "Unknown": 0.45999999999999996
+  },
+  "confidence": 0.26,
+  "usage": {
+   "input_tokens": 809,
+   "output_tokens": 50
+  }
+ },
+ "41": {
+  "id": 41,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8536,
+   "Incorrect": 0.0264,
+   "Unknown": 0.12
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 831,
+   "output_tokens": 50
+  }
+ },
+ "42": {
+  "id": 42,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.6396,
+   "Incorrect": 0.18039999999999998,
+   "Unknown": 0.18000000000000005
+  },
+  "confidence": 0.56,
+  "usage": {
+   "input_tokens": 820,
+   "output_tokens": 50
+  }
+ },
+ "43": {
+  "id": 43,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0366,
+   "Incorrect": 0.5733999999999999,
+   "Unknown": 0.39
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 743,
+   "output_tokens": 50
+  }
+ },
+ "44": {
+  "id": 44,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.021599999999999998,
+   "Incorrect": 0.3384,
+   "Unknown": 0.64
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 707,
+   "output_tokens": 50
+  }
+ },
+ "45": {
+  "id": 45,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0087,
+   "Incorrect": 0.8613,
+   "Unknown": 0.13
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 755,
+   "output_tokens": 50
+  }
+ },
+ "46": {
+  "id": 46,
+  "gold": "Unknown",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.5427000000000001,
+   "Incorrect": 0.1273,
+   "Unknown": 0.32999999999999996
+  },
+  "confidence": 0.62,
+  "usage": {
+   "input_tokens": 753,
+   "output_tokens": 50
+  }
+ },
+ "47": {
+  "id": 47,
+  "gold": "Correct",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.2352,
+   "Incorrect": 0.2448,
+   "Unknown": 0.52
+  },
+  "confidence": 0.02,
+  "usage": {
+   "input_tokens": 656,
+   "output_tokens": 50
+  }
+ },
+ "48": {
+  "id": 48,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0378,
+   "Incorrect": 0.5922,
+   "Unknown": 0.37
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 707,
+   "output_tokens": 50
+  }
+ },
+ "49": {
+  "id": 49,
+  "gold": "Incorrect",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.63,
+   "Incorrect": 0.21,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.5,
+  "usage": {
+   "input_tokens": 836,
+   "output_tokens": 50
+  }
+ },
+ "50": {
+  "id": 50,
+  "gold": "Incorrect",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.4288,
+   "Incorrect": 0.2412,
+   "Unknown": 0.32999999999999996
+  },
+  "confidence": 0.28,
+  "usage": {
+   "input_tokens": 755,
+   "output_tokens": 50
+  }
+ },
+ "51": {
+  "id": 51,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.028499999999999998,
+   "Incorrect": 0.1615,
+   "Unknown": 0.81
+  },
+  "confidence": 0.7,
+  "usage": {
+   "input_tokens": 655,
+   "output_tokens": 50
+  }
+ },
+ "52": {
+  "id": 52,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0063,
+   "Incorrect": 0.6237,
+   "Unknown": 0.37
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 709,
+   "output_tokens": 50
+  }
+ },
+ "53": {
+  "id": 53,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.9114,
+   "Incorrect": 0.018600000000000002,
+   "Unknown": 0.06999999999999995
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "54": {
+  "id": 54,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.2331,
+   "Incorrect": 0.39690000000000003,
+   "Unknown": 0.37
+  },
+  "confidence": 0.26,
+  "usage": {
+   "input_tokens": 706,
+   "output_tokens": 50
+  }
+ },
+ "55": {
+  "id": 55,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.1275,
+   "Incorrect": 0.6224999999999999,
+   "Unknown": 0.25
+  },
+  "confidence": 0.66,
+  "usage": {
+   "input_tokens": 730,
+   "output_tokens": 50
+  }
+ },
+ "56": {
+  "id": 56,
+  "gold": "Unknown",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.1704,
+   "Incorrect": 0.5396,
+   "Unknown": 0.29000000000000004
+  },
+  "confidence": 0.52,
+  "usage": {
+   "input_tokens": 752,
+   "output_tokens": 50
+  }
+ },
+ "57": {
+  "id": 57,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.061200000000000004,
+   "Incorrect": 0.6188,
+   "Unknown": 0.31999999999999995
+  },
+  "confidence": 0.82,
+  "usage": {
+   "input_tokens": 749,
+   "output_tokens": 50
+  }
+ },
+ "58": {
+  "id": 58,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.014199999999999999,
+   "Incorrect": 0.6958,
+   "Unknown": 0.29000000000000004
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 742,
+   "output_tokens": 50
+  }
+ },
+ "59": {
+  "id": 59,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8644999999999999,
+   "Incorrect": 0.045500000000000006,
+   "Unknown": 0.08999999999999997
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 721,
+   "output_tokens": 50
+  }
+ },
+ "60": {
+  "id": 60,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.010400000000000001,
+   "Incorrect": 0.5096,
+   "Unknown": 0.48
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 729,
+   "output_tokens": 50
+  }
+ },
+ "61": {
+  "id": 61,
+  "gold": "Correct",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0936,
+   "Incorrect": 0.6264,
+   "Unknown": 0.28
+  },
+  "confidence": 0.74,
+  "usage": {
+   "input_tokens": 753,
+   "output_tokens": 50
+  }
+ },
+ "62": {
+  "id": 62,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8712,
+   "Incorrect": 0.0088,
+   "Unknown": 0.12
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 761,
+   "output_tokens": 50
+  }
+ },
+ "63": {
+  "id": 63,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.97,
+   "Incorrect": 0.0,
+   "Unknown": 0.030000000000000027
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 731,
+   "output_tokens": 50
+  }
+ },
+ "64": {
+  "id": 64,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8722,
+   "Incorrect": 0.0178,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "65": {
+  "id": 65,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.2565,
+   "Incorrect": 0.3135,
+   "Unknown": 0.43000000000000005
+  },
+  "confidence": 0.1,
+  "usage": {
+   "input_tokens": 725,
+   "output_tokens": 50
+  }
+ },
+ "66": {
+  "id": 66,
+  "gold": "Correct",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.20579999999999998,
+   "Incorrect": 0.2142,
+   "Unknown": 0.5800000000000001
+  },
+  "confidence": 0.02,
+  "usage": {
+   "input_tokens": 737,
+   "output_tokens": 50
+  }
+ },
+ "67": {
+  "id": 67,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.1152,
+   "Incorrect": 0.5247999999999999,
+   "Unknown": 0.36
+  },
+  "confidence": 0.64,
+  "usage": {
+   "input_tokens": 761,
+   "output_tokens": 50
+  }
+ },
+ "68": {
+  "id": 68,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.33480000000000004,
+   "Incorrect": 0.20520000000000002,
+   "Unknown": 0.45999999999999996
+  },
+  "confidence": 0.24,
+  "usage": {
+   "input_tokens": 1018,
+   "output_tokens": 50
+  }
+ },
+ "69": {
+  "id": 69,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0092,
+   "Incorrect": 0.9108,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 728,
+   "output_tokens": 50
+  }
+ },
+ "70": {
+  "id": 70,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.714,
+   "Incorrect": 0.126,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.7,
+  "usage": {
+   "input_tokens": 723,
+   "output_tokens": 50
+  }
+ },
+ "71": {
+  "id": 71,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0158,
+   "Incorrect": 0.7742,
+   "Unknown": 0.20999999999999996
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 739,
+   "output_tokens": 50
+  }
+ },
+ "72": {
+  "id": 72,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.88,
+   "Unknown": 0.12
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 707,
+   "output_tokens": 50
+  }
+ },
+ "73": {
+  "id": 73,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.97,
+   "Incorrect": 0.0,
+   "Unknown": 0.030000000000000027
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 784,
+   "output_tokens": 50
+  }
+ },
+ "74": {
+  "id": 74,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0078000000000000005,
+   "Incorrect": 0.7722,
+   "Unknown": 0.21999999999999997
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 705,
+   "output_tokens": 50
+  }
+ },
+ "75": {
+  "id": 75,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.94,
+   "Incorrect": 0.0,
+   "Unknown": 0.06000000000000005
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 761,
+   "output_tokens": 50
+  }
+ },
+ "76": {
+  "id": 76,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.84,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 746,
+   "output_tokens": 50
+  }
+ },
+ "77": {
+  "id": 77,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.4056,
+   "Incorrect": 0.3744,
+   "Unknown": 0.21999999999999997
+  },
+  "confidence": 0.04,
+  "usage": {
+   "input_tokens": 724,
+   "output_tokens": 50
+  }
+ },
+ "78": {
+  "id": 78,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7031000000000001,
+   "Incorrect": 0.0869,
+   "Unknown": 0.20999999999999996
+  },
+  "confidence": 0.78,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "79": {
+  "id": 79,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7475999999999999,
+   "Incorrect": 0.0924,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.78,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "80": {
+  "id": 80,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7566,
+   "Incorrect": 0.0234,
+   "Unknown": 0.21999999999999997
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 736,
+   "output_tokens": 50
+  }
+ },
+ "81": {
+  "id": 81,
+  "gold": "Correct",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.20900000000000002,
+   "Incorrect": 0.341,
+   "Unknown": 0.44999999999999996
+  },
+  "confidence": 0.24,
+  "usage": {
+   "input_tokens": 805,
+   "output_tokens": 50
+  }
+ },
+ "82": {
+  "id": 82,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.9108,
+   "Incorrect": 0.0092,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 705,
+   "output_tokens": 50
+  }
+ },
+ "83": {
+  "id": 83,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.014099999999999998,
+   "Incorrect": 0.45589999999999997,
+   "Unknown": 0.53
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 671,
+   "output_tokens": 50
+  }
+ },
+ "84": {
+  "id": 84,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8722,
+   "Incorrect": 0.0178,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 720,
+   "output_tokens": 50
+  }
+ },
+ "85": {
+  "id": 85,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0049,
+   "Incorrect": 0.4851,
+   "Unknown": 0.51
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 824,
+   "output_tokens": 50
+  }
+ },
+ "86": {
+  "id": 86,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.013000000000000001,
+   "Incorrect": 0.117,
+   "Unknown": 0.87
+  },
+  "confidence": 0.8,
+  "usage": {
+   "input_tokens": 769,
+   "output_tokens": 50
+  }
+ },
+ "87": {
+  "id": 87,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.5852,
+   "Incorrect": 0.1748,
+   "Unknown": 0.24
+  },
+  "confidence": 0.54,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "88": {
+  "id": 88,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.5183,
+   "Incorrect": 0.21169999999999997,
+   "Unknown": 0.27
+  },
+  "confidence": 0.42,
+  "usage": {
+   "input_tokens": 749,
+   "output_tokens": 50
+  }
+ },
+ "89": {
+  "id": 89,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0094,
+   "Incorrect": 0.46059999999999995,
+   "Unknown": 0.53
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 736,
+   "output_tokens": 50
+  }
+ },
+ "90": {
+  "id": 90,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0144,
+   "Incorrect": 0.7056,
+   "Unknown": 0.28
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 756,
+   "output_tokens": 50
+  }
+ },
+ "91": {
+  "id": 91,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.051699999999999996,
+   "Incorrect": 0.4183,
+   "Unknown": 0.53
+  },
+  "confidence": 0.78,
+  "usage": {
+   "input_tokens": 749,
+   "output_tokens": 50
+  }
+ },
+ "92": {
+  "id": 92,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.882,
+   "Incorrect": 0.018000000000000002,
+   "Unknown": 0.09999999999999998
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 758,
+   "output_tokens": 50
+  }
+ },
+ "93": {
+  "id": 93,
+  "gold": "Incorrect",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.576,
+   "Incorrect": 0.22400000000000003,
+   "Unknown": 0.19999999999999996
+  },
+  "confidence": 0.44,
+  "usage": {
+   "input_tokens": 753,
+   "output_tokens": 50
+  }
+ },
+ "94": {
+  "id": 94,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.09000000000000001,
+   "Incorrect": 0.81,
+   "Unknown": 0.09999999999999998
+  },
+  "confidence": 0.8,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "95": {
+  "id": 95,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.024,
+   "Incorrect": 0.776,
+   "Unknown": 0.19999999999999996
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 805,
+   "output_tokens": 50
+  }
+ },
+ "96": {
+  "id": 96,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.16,
+   "Incorrect": 0.34,
+   "Unknown": 0.5
+  },
+  "confidence": 0.36,
+  "usage": {
+   "input_tokens": 703,
+   "output_tokens": 50
+  }
+ },
+ "97": {
+  "id": 97,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.11199999999999999,
+   "Incorrect": 0.588,
+   "Unknown": 0.30000000000000004
+  },
+  "confidence": 0.68,
+  "usage": {
+   "input_tokens": 726,
+   "output_tokens": 50
+  }
+ },
+ "98": {
+  "id": 98,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.76,
+   "Unknown": 0.24
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 710,
+   "output_tokens": 50
+  }
+ },
+ "99": {
+  "id": 99,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.97,
+   "Incorrect": 0.0,
+   "Unknown": 0.030000000000000027
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 728,
+   "output_tokens": 50
+  }
+ },
+ "100": {
+  "id": 100,
+  "gold": "Unknown",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0845,
+   "Incorrect": 0.5655,
+   "Unknown": 0.35
+  },
+  "confidence": 0.74,
+  "usage": {
+   "input_tokens": 706,
+   "output_tokens": 50
+  }
+ },
+ "101": {
+  "id": 101,
+  "gold": "Correct",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0798,
+   "Incorrect": 0.3402,
+   "Unknown": 0.5800000000000001
+  },
+  "confidence": 0.62,
+  "usage": {
+   "input_tokens": 741,
+   "output_tokens": 50
+  }
+ },
+ "102": {
+  "id": 102,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0156,
+   "Incorrect": 0.2444,
+   "Unknown": 0.74
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 837,
+   "output_tokens": 50
+  }
+ },
+ "103": {
+  "id": 103,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.76,
+   "Unknown": 0.24
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 832,
+   "output_tokens": 50
+  }
+ },
+ "104": {
+  "id": 104,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0183,
+   "Incorrect": 0.5917,
+   "Unknown": 0.39
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 740,
+   "output_tokens": 50
+  }
+ },
+ "105": {
+  "id": 105,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8827,
+   "Incorrect": 0.0273,
+   "Unknown": 0.08999999999999997
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 840,
+   "output_tokens": 50
+  }
+ },
+ "106": {
+  "id": 106,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0138,
+   "Incorrect": 0.2162,
+   "Unknown": 0.77
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 737,
+   "output_tokens": 50
+  }
+ },
+ "107": {
+  "id": 107,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0287,
+   "Incorrect": 0.3813,
+   "Unknown": 0.5900000000000001
+  },
+  "confidence": 0.86,
+  "usage": {
+   "input_tokens": 744,
+   "output_tokens": 50
+  }
+ },
+ "108": {
+  "id": 108,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0975,
+   "Incorrect": 0.6525,
+   "Unknown": 0.25
+  },
+  "confidence": 0.74,
+  "usage": {
+   "input_tokens": 724,
+   "output_tokens": 50
+  }
+ },
+ "109": {
+  "id": 109,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0084,
+   "Incorrect": 0.8316,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 739,
+   "output_tokens": 50
+  }
+ },
+ "110": {
+  "id": 110,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8929999999999999,
+   "Incorrect": 0.047,
+   "Unknown": 0.06000000000000005
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 808,
+   "output_tokens": 50
+  }
+ },
+ "111": {
+  "id": 111,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8644999999999999,
+   "Incorrect": 0.045500000000000006,
+   "Unknown": 0.08999999999999997
+  },
+  "confidence": 0.9,
+  "usage": {
+   "input_tokens": 753,
+   "output_tokens": 50
+  }
+ },
+ "112": {
+  "id": 112,
+  "gold": "Correct",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.10540000000000001,
+   "Incorrect": 0.5146,
+   "Unknown": 0.38
+  },
+  "confidence": 0.66,
+  "usage": {
+   "input_tokens": 723,
+   "output_tokens": 50
+  }
+ },
+ "113": {
+  "id": 113,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.020999999999999998,
+   "Incorrect": 0.6789999999999999,
+   "Unknown": 0.30000000000000004
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 734,
+   "output_tokens": 50
+  }
+ },
+ "114": {
+  "id": 114,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.89,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 710,
+   "output_tokens": 50
+  }
+ },
+ "115": {
+  "id": 115,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8924,
+   "Incorrect": 0.0276,
+   "Unknown": 0.07999999999999996
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 819,
+   "output_tokens": 50
+  }
+ },
+ "116": {
+  "id": 116,
+  "gold": "Unknown",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0356,
+   "Incorrect": 0.8543999999999999,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.92,
+  "usage": {
+   "input_tokens": 772,
+   "output_tokens": 50
+  }
+ },
+ "117": {
+  "id": 117,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8633,
+   "Incorrect": 0.026699999999999998,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 805,
+   "output_tokens": 50
+  }
+ },
+ "118": {
+  "id": 118,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.11699999999999999,
+   "Incorrect": 0.27299999999999996,
+   "Unknown": 0.61
+  },
+  "confidence": 0.4,
+  "usage": {
+   "input_tokens": 655,
+   "output_tokens": 50
+  }
+ },
+ "119": {
+  "id": 119,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.4774,
+   "Incorrect": 0.2926,
+   "Unknown": 0.22999999999999998
+  },
+  "confidence": 0.24,
+  "usage": {
+   "input_tokens": 729,
+   "output_tokens": 50
+  }
+ },
+ "120": {
+  "id": 120,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.1596,
+   "Incorrect": 0.12040000000000001,
+   "Unknown": 0.72
+  },
+  "confidence": 0.14,
+  "usage": {
+   "input_tokens": 739,
+   "output_tokens": 50
+  }
+ },
+ "121": {
+  "id": 121,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.2255,
+   "Incorrect": 0.3245,
+   "Unknown": 0.44999999999999996
+  },
+  "confidence": 0.18,
+  "usage": {
+   "input_tokens": 742,
+   "output_tokens": 50
+  }
+ },
+ "122": {
+  "id": 122,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.94,
+   "Incorrect": 0.0,
+   "Unknown": 0.06000000000000005
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 731,
+   "output_tokens": 50
+  }
+ },
+ "123": {
+  "id": 123,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.008199999999999999,
+   "Incorrect": 0.8118,
+   "Unknown": 0.18000000000000005
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "124": {
+  "id": 124,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0228,
+   "Incorrect": 0.7372,
+   "Unknown": 0.24
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 709,
+   "output_tokens": 50
+  }
+ },
+ "125": {
+  "id": 125,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0186,
+   "Incorrect": 0.2914,
+   "Unknown": 0.69
+  },
+  "confidence": 0.88,
+  "usage": {
+   "input_tokens": 709,
+   "output_tokens": 50
+  }
+ },
+ "126": {
+  "id": 126,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0074,
+   "Incorrect": 0.7326,
+   "Unknown": 0.26
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 710,
+   "output_tokens": 50
+  }
+ },
+ "127": {
+  "id": 127,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8722,
+   "Incorrect": 0.0178,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.96,
+  "usage": {
+   "input_tokens": 654,
+   "output_tokens": 50
+  }
+ },
+ "128": {
+  "id": 128,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.027999999999999997,
+   "Incorrect": 0.6719999999999999,
+   "Unknown": 0.30000000000000004
+  },
+  "confidence": 0.92,
+  "usage": {
+   "input_tokens": 740,
+   "output_tokens": 50
+  }
+ },
+ "129": {
+  "id": 129,
+  "gold": "Unknown",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.12249999999999998,
+   "Incorrect": 0.22749999999999998,
+   "Unknown": 0.65
+  },
+  "confidence": 0.3,
+  "usage": {
+   "input_tokens": 708,
+   "output_tokens": 50
+  }
+ },
+ "130": {
+  "id": 130,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0069,
+   "Incorrect": 0.6830999999999999,
+   "Unknown": 0.31000000000000005
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 705,
+   "output_tokens": 50
+  }
+ },
+ "131": {
+  "id": 131,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0237,
+   "Incorrect": 0.7663,
+   "Unknown": 0.20999999999999996
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 697,
+   "output_tokens": 50
+  }
+ },
+ "132": {
+  "id": 132,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.024599999999999997,
+   "Incorrect": 0.7953999999999999,
+   "Unknown": 0.18000000000000005
+  },
+  "confidence": 0.94,
+  "usage": {
+   "input_tokens": 724,
+   "output_tokens": 50
+  }
+ },
+ "133": {
+  "id": 133,
+  "gold": "Correct",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.081,
+   "Incorrect": 0.219,
+   "Unknown": 0.7
+  },
+  "confidence": 0.46,
+  "usage": {
+   "input_tokens": 659,
+   "output_tokens": 50
+  }
+ },
+ "134": {
+  "id": 134,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0043,
+   "Incorrect": 0.42569999999999997,
+   "Unknown": 0.5700000000000001
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 724,
+   "output_tokens": 50
+  }
+ },
+ "135": {
+  "id": 135,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.06999999999999999,
+   "Incorrect": 0.63,
+   "Unknown": 0.30000000000000004
+  },
+  "confidence": 0.8,
+  "usage": {
+   "input_tokens": 755,
+   "output_tokens": 50
+  }
+ },
+ "136": {
+  "id": 136,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.44079999999999997,
+   "Incorrect": 0.3192,
+   "Unknown": 0.24
+  },
+  "confidence": 0.16,
+  "usage": {
+   "input_tokens": 763,
+   "output_tokens": 50
+  }
+ },
+ "137": {
+  "id": 137,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0089,
+   "Incorrect": 0.8811,
+   "Unknown": 0.10999999999999999
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "138": {
+  "id": 138,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.44839999999999997,
+   "Incorrect": 0.3116,
+   "Unknown": 0.24
+  },
+  "confidence": 0.18,
+  "usage": {
+   "input_tokens": 780,
+   "output_tokens": 50
+  }
+ },
+ "139": {
+  "id": 139,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.3304,
+   "Incorrect": 0.2296,
+   "Unknown": 0.43999999999999995
+  },
+  "confidence": 0.18,
+  "usage": {
+   "input_tokens": 763,
+   "output_tokens": 50
+  }
+ },
+ "140": {
+  "id": 140,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7998000000000001,
+   "Incorrect": 0.060200000000000004,
+   "Unknown": 0.14
+  },
+  "confidence": 0.86,
+  "usage": {
+   "input_tokens": 733,
+   "output_tokens": 50
+  }
+ },
+ "141": {
+  "id": 141,
+  "gold": "Incorrect",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.49559999999999993,
+   "Incorrect": 0.3444,
+   "Unknown": 0.16000000000000003
+  },
+  "confidence": 0.18,
+  "usage": {
+   "input_tokens": 802,
+   "output_tokens": 50
+  }
+ },
+ "142": {
+  "id": 142,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0088,
+   "Incorrect": 0.8712,
+   "Unknown": 0.12
+  },
+  "confidence": 0.98,
+  "usage": {
+   "input_tokens": 762,
+   "output_tokens": 50
+  }
+ },
+ "143": {
+  "id": 143,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.41609999999999997,
+   "Incorrect": 0.1539,
+   "Unknown": 0.43000000000000005
+  },
+  "confidence": 0.46,
+  "usage": {
+   "input_tokens": 659,
+   "output_tokens": 50
+  }
+ },
+ "144": {
+  "id": 144,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.8096,
+   "Incorrect": 0.0704,
+   "Unknown": 0.12
+  },
+  "confidence": 0.84,
+  "usage": {
+   "input_tokens": 756,
+   "output_tokens": 50
+  }
+ },
+ "145": {
+  "id": 145,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.9,
+   "Unknown": 0.09999999999999998
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 727,
+   "output_tokens": 50
+  }
+ },
+ "146": {
+  "id": 146,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.7636,
+   "Incorrect": 0.0664,
+   "Unknown": 0.17000000000000004
+  },
+  "confidence": 0.84,
+  "usage": {
+   "input_tokens": 817,
+   "output_tokens": 50
+  }
+ },
+ "147": {
+  "id": 147,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.38,
+   "Incorrect": 0.38,
+   "Unknown": 0.24
+  },
+  "confidence": 0.0,
+  "usage": {
+   "input_tokens": 717,
+   "output_tokens": 50
+  }
+ },
+ "148": {
+  "id": 148,
+  "gold": "Incorrect",
+  "pred": "Incorrect",
+  "raw": "Incorrect",
+  "probabilities": {
+   "Correct": 0.0,
+   "Incorrect": 0.73,
+   "Unknown": 0.27
+  },
+  "confidence": 1.0,
+  "usage": {
+   "input_tokens": 838,
+   "output_tokens": 50
+  }
+ },
+ "149": {
+  "id": 149,
+  "gold": "Correct",
+  "pred": "Correct",
+  "raw": "Correct",
+  "probabilities": {
+   "Correct": 0.4758,
+   "Incorrect": 0.13419999999999999,
+   "Unknown": 0.39
+  },
+  "confidence": 0.56,
+  "usage": {
+   "input_tokens": 804,
+   "output_tokens": 50
+  }
+ },
+ "150": {
+  "id": 150,
+  "gold": "Incorrect",
+  "pred": "Unknown",
+  "raw": "Unknown",
+  "probabilities": {
+   "Correct": 0.0135,
+   "Incorrect": 0.1365,
+   "Unknown": 0.85
+  },
+  "confidence": 0.82,
+  "usage": {
+   "input_tokens": 660,
+   "output_tokens": 50
+  }
+ }
+}

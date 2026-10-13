@@ -1,0 +1,752 @@
+{
+ "21": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "12": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "13": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "1": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "16": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "28": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "15": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "25": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "11": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "10": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "27": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "14": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "18": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "3": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "7": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Unknown"
+ },
+ "9": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "38": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "19": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "35": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "4": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "8": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Unknown"
+ },
+ "40": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "41": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "23": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "5": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "48": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "52": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "45": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "49": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "51": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "34": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "20": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "53": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "17": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Incorrect"
+ },
+ "58": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "26": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "63": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "60": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "62": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "64": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "46": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "65": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "44": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "68": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "56": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "57": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "59": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "32": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "72": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "71": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "73": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "50": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "69": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "76": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "67": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "74": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "75": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "82": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "30": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "79": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "78": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "77": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "61": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Correct"
+ },
+ "80": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "86": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "66": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "54": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "87": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "91": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "94": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "99": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "88": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "98": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "92": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "47": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "103": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "93": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "84": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "105": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "106": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "100": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Unknown"
+ },
+ "107": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "108": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "111": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "83": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "109": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "114": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "55": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "36": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Incorrect"
+ },
+ "113": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "118": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "122": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "104": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "117": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "123": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "110": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "102": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "120": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "31": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "125": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "90": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "126": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "124": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "128": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "127": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "129": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "134": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "37": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "130": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "137": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "96": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "135": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "131": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "112": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "142": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "145": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "139": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "143": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "132": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "144": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "6": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need analyze user's guess: \"The shop owner had already been killed when I bought the snacks\". Need judge based on Surface and Bottom. Surface: bought discounted snacks at small shop, felt good deal. Next day watching news terrified. Botto",
+  "gold": "Correct"
+ },
+ "2": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"Experienced some things at sea and survived by eating fish\". Surface: used to be sailor, now sick/shake when see fish, afraid. Bottom: at sea companions died, survivors used flesh of dead companions as bait to ",
+  "gold": "Correct"
+ },
+ "22": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"Someone died\" based on Surface and Bottom. Need understand story. Surface: man returns home, TV news, faints. Bottom: works at haunted house, prop corpses, saw realistic prop corpse, news missing person photo w",
+  "gold": "Correct"
+ },
+ "24": {
+  "pred": "Incorrect",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"The train will have an accident at 12:00\". Surface: five minutes before midnight, man boards. Granny says she'll be 70 in 5 minutes. Bottom: realizes train will have accident within 5 minutes, killing everyone.",
+  "gold": "Unknown"
+ },
+ "29": {
+  "pred": "Incorrect",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need analyze user guess: \"The person who left the message is dead\". We have Surface: repeated message 'You've disappointed me so much, I'll never come back' six times, then \"Oh no, I think I'm in trouble.\" Bottom: I killed my wife and am ",
+  "gold": "Incorrect"
+ },
+ "148": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "33": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need analyze user guess: \"The reason the child feels terrified is the same as Xiaowang's\". We have Surface: park near programmer Xiao Wang's home. Every day when Xiao Wang passes park after working overtime, he sees a terrified child in p",
+  "gold": "Correct"
+ },
+ "95": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "133": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Correct"
+ },
+ "147": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "39": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"The parents' argument is due to the mother's abnormal behavior\". Surface: parents arguing, mother seems strange, distracted, secretly asking transfer money, silently waves hands ritual, sneaks out. Bottom: moth",
+  "gold": "Unknown"
+ },
+ "42": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"My boyfriend's parents and I are actually relatives who haven't met for a long time, but his parents have seen my photo\". Need understand Surface and Bottom. Surface: boyfriend and I alumni, he three years seni",
+  "gold": "Unknown"
+ },
+ "43": {
+  "pred": "Incorrect",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"The news is related to the man's home\". Surface: man returns home from work, turns on TV to watch news, faints. Bottom: works at haunted house, saw prop corpse, news missing person photo was prop. Need determin",
+  "gold": "Incorrect"
+ },
+ "141": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Incorrect"
+ },
+ "150": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Incorrect"
+ },
+ "136": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "119": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "70": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"The boy's body was donated\" based on Surface and Bottom. Need understand game. Surface: boy liked girl, poor grades, girl says if both enter same university she'll agree. He manages to do it, but girl goes insa",
+  "gold": "Correct"
+ },
+ "81": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"My adoptive parents know my boyfriend's parents\". Need analyze Surface and Bottom. Surface: My boyfriend and I are alumni. He's three years my senior and about to graduate. We feel strong connection and fell in",
+  "gold": "Correct"
+ },
+ "85": {
+  "pred": "Incorrect",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess based on Surface and Bottom. User: \"People who die at midnight turn into vengeful ghosts, and he knows the old lady will soon turn into a ghost and kill him\". Need determine if correct? The bottom says man forese",
+  "gold": "Incorrect"
+ },
+ "89": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Unknown"
+ },
+ "146": {
+  "pred": "Unknown",
+  "raw": "\n\nUnknown",
+  "gold": "Correct"
+ },
+ "97": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"I was mistaken for someone else\". Need understand surface and bottom. Surface: My sister chose a little red dress for me. I wore it to school, and when I came home that night, I found a dead body. Bottom: mothe",
+  "gold": "Incorrect"
+ },
+ "101": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"Someone unlocked my phone when it was lost\" based on Surface and Bottom. Need understand story. Surface: My phone disappeared. When I found it, I was shocked. Bottom: friend and I went clubbing. After drinking/",
+  "gold": "Correct"
+ },
+ "140": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ },
+ "116": {
+  "pred": "Incorrect",
+  "raw": "\n\nIncorrect",
+  "gold": "Unknown"
+ },
+ "115": {
+  "pred": "Unknown",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"I saw a person being killed\". Need understand Surface and Bottom. Surface: enter elevator to go to school. As it rises, realize never able to go to school again. Bottom: sees dead girl lying in pool of blood, w",
+  "gold": "Correct"
+ },
+ "121": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"My phone is now in someone else's hands\". Need understand Surface and Bottom. Surface: \"My phone disappeared. When I found it, I was shocked.\" Bottom: friend and I clubbing, after drinking/dancing sat down rest",
+  "gold": "Incorrect"
+ },
+ "138": {
+  "pred": "Correct",
+  "raw": " || reasoning: We need answer only Correct/Incorrect/Unknown. Need judge player's guess: \"My scalp tingles because of the person in the painting\". Need understand Surface and Bottom. Surface: beautiful painting, man distinct features lifelike. Next day saw painting again, scalp tingled, couldn't pra",
+  "gold": "Correct"
+ },
+ "149": {
+  "pred": "Correct",
+  "raw": "\n\nCorrect",
+  "gold": "Correct"
+ }
+}

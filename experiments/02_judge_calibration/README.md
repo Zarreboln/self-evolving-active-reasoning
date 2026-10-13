@@ -123,3 +123,40 @@ Puzzles numbers for reasons unrelated to the harness, and it is a closed hosted 
 story and guess would leave our infrastructure. Worth keeping for where its shape actually fits --
 a cheap filter, or a second opinion whose confidence tells us which verdicts to re-check.
 Predictions with probabilities: `turtle150_predictions/turtle150_jev.json`.
+
+
+## The ranking depends on which average you take (2026-10-13)
+
+Accuracy on this sample weights the classes as the gold does: Correct 55, Incorrect 76, Unknown 19.
+Unknown is a sixth of the Unknown-heavy decisions a referee actually has to make and an eighth of
+the sample, so a judge that never says it is barely penalised. Macro-averaged recall (each class
+counted once) and macro F1 reorder the field:
+
+| judge | accuracy | macro recall | macro F1 | recall C / I / U |
+|---|---|---|---|---|
+| Qwen3.8-Flash-Next (think) | 80.7% | **79.9%** | **76.0%** | 90.9 / 75.0 / 73.7 |
+| Qwen3.8-27B (think) | 78.7% | 75.4% | 72.5% | 85.5 / 77.6 / 63.2 |
+| Qwen3-235B-A22B-2507 | 74.0% | 72.2% | 68.6% | 83.6 / 69.7 / 63.2 |
+| Qwen3.8-Flash-Next | 79.3% | 69.8% | 70.1% | 90.9 / 81.6 / 36.8 |
+| **Llama-3.1-405B-INT4 (in use)** | **83.3%** | 69.6% | 70.9% | 89.1 / 93.4 / 26.3 |
+| Jev 1.13 (typed) | 78.7% | 68.3% | 69.8% | 80.0 / 88.2 / 36.8 |
+| Qwen3.6-35B-A3B | 72.7% | 66.4% | 65.9% | 87.3 / 69.7 / 42.1 |
+| Qwen3-32B | 74.0% | 62.6% | 63.6% | 80.0 / 81.6 / 26.3 |
+| Qwen3.8-27B | 64.0% | 62.1% | 60.0% | 74.5 / 59.2 / 52.6 |
+| Llama-3.3-70B | 73.3% | 60.5% | 60.8% | 76.4 / 84.2 / 21.1 |
+| gpt-oss-120b | 62.7% | 60.1% | 57.7% | 61.8 / 65.8 / 52.6 |
+
+The 405B is first on accuracy and fifth on macro recall. Its whole lead comes from the two majority
+classes; on the third it is next to last. Thinking moves Flash-Next from 36.8 to 73.7 on Unknown,
+which is what puts it 10 macro points above the 405B.
+
+**How much this matters for Situation Puzzles.** In the SP pilot (`sp_strict1_b10g3r2`, 180
+episodes, 4,500 referee answers) the referee said Unknown to 13.8% of the questions the 7B asked,
+against 58.5% No and 27.6% Yes. So roughly one question in seven lands in the class the 405B
+recovers worst. A referee that under-reports Unknown answers those with a forced Yes or No, which
+is noise injected into the game itself, not into our metric.
+
+This does not change the referee: AR-Bench's is the 405B, accuracy is what AR-Bench reports, and
+a swap would move the Situation Puzzles numbers for reasons unrelated to the harness. It does mean
+the macro numbers belong in the paper next to the accuracy, and that a robustness check of the SP
+results under Flash-Next (think) as referee is worth running once the main results are in.

@@ -437,3 +437,9 @@
   OpenJev (the open, Apache-2.0, wire-compatible server on DiffusionGemma 26B-A4B) was not run:
   installing it locally and pointing our code at codiv.ai were both refused by the permission
   classifier, and this mac (M3, 16 GB RAM, 16 GB free disk) cannot host the 4-bit weights anyway.
+- 15:3x macro-averaged the referee calibration: by macro recall the order inverts. Qwen3.8-Flash-Next
+  (think) 79.9 / macro F1 76.0 vs the 405B's 69.6 / 70.9, because the 405B's Unknown recall is 26.3.
+  The 405B is 1st on accuracy, 5th on macro. In the SP pilot the referee answered Unknown to 13.8%
+  of 4500 questions (No 58.5, Yes 27.6), so about one question in seven falls in that class.
+  Referee unchanged (official = 405B, AR-Bench reports accuracy), but the macro table goes in the
+  paper and an SP robustness check under Flash-Next(think) is queued.

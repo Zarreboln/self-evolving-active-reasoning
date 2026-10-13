@@ -1,0 +1,639 @@
+"""Premise checks, then narrowing down by splitting: the model names the most important open point of the story
+and splits it into a few mutually exclusive, broad possibilities (each a yes/no question, most likely first),
+asked in turn; a Yes drops the remaining siblings and the confirmed point is split one level deeper; a set with no
+Yes is shown at the next split (re-split differently, then move to another open point). The final answer is
+rewritten from a working story that must hold every confirmed fact.
+
+Every turn the model sees one fresh message: the puzzle, the referee's answers grouped as CONFIRMED (Yes) /
+RULED OUT (No) / NOT IN THE STORY (Unknown). A possibility that passes the question checks is sent as written;
+otherwise the model is asked for a question on it (FOCUS), with re-asks. Premises come first: assumptions the
+puzzle makes a reader take for granted (situation puzzles hinge on one of them being false).
+Each proposed question is checked (one short yes/no question about one fact, no "or", not about a
+character's beliefs, no names absent from the puzzle, not a near-repeat and not a re-wording of an answered
+question that adds nothing new); a failing reply is re-asked with the reason. The final answer is the
+model's story written from the confirmed facts and its last working story, the best-supported of three
+drafts, "A:" tag stripped.
+Working stories and final drafts that restate a RULED OUT or NOT-IN-THE-STORY question as true (most of its
+own words in one un-negated sentence) are re-asked with those items listed, like dropped confirmed facts.
+A question is never sent as a repeat of an answered one while the model can still be re-asked on a fresh,
+broad focus.
+A question that takes for granted ("the X", "someone's X") a person or thing the model itself brought up in a
+question the host answered No or Unknown -- and that neither the puzzle nor a Yes supports -- is re-asked with
+that answer shown, instead of building on an entity the host never confirmed.
+
+Synthesis of the splitting branch with the working-story branch:
+- splits are 3 possibilities; only a Yes on a split possibility or a story test is dug into (a premise Yes
+  mostly restates the puzzle); an OPEN point that repeats one already worked on is re-asked on the next aspect;
+- after a set with no Yes, one question tests the model's working story (its best explanation holding every
+  confirmed fact) before the next split, so the search is not stuck re-splitting one point;
+- a question whose every content word is already in the puzzle is re-asked (it only makes the host repeat it);
+- a name counts as known only if the puzzle or a Yes-answered question uses it (a made-up name asked about and
+  answered Unknown no longer becomes "known");
+- working stories and final drafts that keep an entity the host turned down in two or more questions (one No)
+  are re-asked without it;
+- the final answer is at most 90 words / MAX_CHARS characters (stored answers lose text beyond 600 characters);
+  a longer draft is re-asked shorter, then cut to its own leading sentences."""
+import re
+
+from sp_harness_base import SPHarness
+
+GUIDE = """
+How to ask well:
+- The host reads each question ALONE, with no memory of earlier ones. Name people and things fully; never write "this", "these", "that event" referring to an earlier question.
+- Ask about what actually happened (who did what, when, how, why), never about what a character believes, thinks, suspects or feels.
+- One short question (under 16 words) about ONE fact, answerable by Yes or No. No "or" alternatives, no "and" joining two claims, no "What/Why/How" questions.
+- Ask broad before narrow: first whether a kind of thing is true at all ("Was a family member involved?"), and only after a Yes ask for the specific detail.
+- Do not invent names or details; use only people and things from the puzzle or from confirmed facts.
+- Ask "Did ...?" / "Was ...?" about what happened, not "Could ...?" / "Is it possible ...?".
+- Do not ask about what the puzzle already states or what is already CONFIRMED, and do not chase minor details (exact times, counts, places, handwriting, weather) -- go for who is behind it, what really happened, how, and why.
+"""
+
+DIMENSIONS = [
+    "whether the main character of the puzzle did it or set it up themself",
+    "whether the key event of the puzzle really happened the way it is described (it may be staged, faked, mistaken or not what it seems)",
+    "whether it was done on purpose or happened by accident or mistake",
+    "what kind of person is behind it (family member, friend, stranger, official, the main character)",
+    "why it was done -- the motive or purpose behind it",
+    "how it was physically done -- the method",
+    "when it was set up -- long before the puzzle's events or just before",
+]
+
+ASPECTS = [
+    "WHAT REALLY HAPPENED -- the hidden event or fact behind the puzzle",
+    "WHO is behind it -- the person or thing that caused it",
+    "HOW it was done or came about -- the method or mechanism",
+    "WHY it happened -- the motive, purpose or reason",
+]
+
+STOP = set("a an the of to in on at for by with from and or is was were are be been did does do has had have it its "
+           "that this any as into about her his their them they he she him there someone something not else other than".split())
+BELIEF = re.compile(r"\b(believe|believes|believed|think|thinks|thought|suspect|suspects|suspected|feel|feels|felt|"
+                    r"consider|considers|considered|theor\w*|opinion|wonder\w*)\b", re.I)
+WH = re.compile(r"^(what|why|how|who|whom|whose|where|when|which)\b", re.I)
+SPEC = re.compile(r"^(could|might|may|can|would)\b|\b(is|was) it possible\b", re.I)
+PRON = re.compile(r"^(is|was|are|were|did|does|do|has|had|will|would)\s+(it|this|that|they|these|those)\b(?!\s+(true|possible|the case))", re.I)
+OR = re.compile(r"\bor\b|\beither\b|\brather than\b", re.I)
+POSS = re.compile(r"\b(?:the|her|his|their|[A-Z][a-z]+'s)\s+([a-z]+)")
+ROLE = re.compile(r"^(neighbou?rs?|friends?|colleagues?|co-?workers?|landlord|landlady|tenants?|roommates?|child|children|kids?|"
+                  r"sons?|daughters?|mother|father|mom|dad|parents?|sisters?|brothers?|siblings?|twins?|husband|wife|"
+                  r"spouse|partner|boyfriend|girlfriend|ex|boss|employer|employees?|assistant|secretary|doctors?|nurses?|"
+                  r"therapist|stranger|relatives?|cousins?|uncle|aunt|grand\w+|teacher|students?|classmates?|prankster|"
+                  r"clerk|editor|reporter|journalist|officer|police|detective|lawyer|agent|guard|servant|maid|butler|"
+                  r"housekeeper|caretaker|postman|mailman|courier|driver|pilot|\w+ists?|\w+ians?)$")
+HEDGE = re.compile(r"\b(likely|possibly|perhaps|maybe|might|may|probably|seems?|appears?)\b", re.I)
+NEG = re.compile(r"\b(not|no|never|without|nor|neither|none|nothing)\b|n't", re.I)
+ATAG = re.compile(r"^\s*\**\s*A\s*:\s*\**\s*")
+DEF = re.compile(r"(?=\b(?:the|her|his|their|its|[A-Za-z]+['’]s)\s+([a-z]+))", re.I)                # "the X": X taken for granted
+INDEF = re.compile(r"(?=\b(?:a|an|any|some)\s+([a-z]+(?:[ -][a-z]+)?))", re.I)                       # "a X": X brought up
+INTRO = re.compile(r"(?=\b(?:a|an|any|some|the|her|his|their|its|[A-Za-z]+['’]s)\s+([a-z]+(?:[ -][a-z]+)?))", re.I)
+
+
+def _words(q):
+    return {w for w in re.findall(r"[a-z0-9']+", q.lower()) if w not in STOP}
+
+
+def _strip_q(q):
+    return re.sub(r"^\s*Q\s*:\s*", "", q or "").strip()
+
+
+def _extract(reply):
+    """The model's question: the first line carrying a '?', 'Q:' tag removed, cut after the first '?'."""
+    lines = [l.strip() for l in (reply or "").strip().splitlines() if l.strip()]
+    pick = next((l for l in lines if "?" in l), lines[0] if lines else "")
+    pick = re.sub(r"^\**\s*(Q|Question)\s*\d*\s*[:.)-]\s*\**", "", pick, flags=re.I).strip().strip("*").strip()
+    if "?" in pick:
+        pick = pick[:pick.index("?") + 1]
+    return pick
+
+
+def _items(text, n):
+    """Numbered / bulleted lines of a model reply, markup removed."""
+    out = []
+    for l in (text or "").splitlines():
+        m = re.match(r"^\s*(?:\d+[.)]|[-*•])\s*(.+)$", l)
+        if m:
+            s = re.sub(r"\*\*|__", "", m.group(1)).strip()
+            s = re.sub(r"^[^:]{0,40}:\s+", "", s) if len(s.split(":")[0].split()) <= 5 and ":" in s[:45] else s
+            if len(s.split()) >= 3:
+                out.append(s[:220])
+    return out[:n]
+
+
+class Harness(SPHarness):
+    MAX_TRY = 4
+    SPLIT = 3
+    MAX_DEPTH = 2
+    MAX_CHARS = 590
+
+    # ---------------------------------------------------------------- views
+    def _kind(self, a):
+        al = (a or "").strip().lower()
+        al = al[2:].strip() if al.startswith("a:") else al
+        return "yes" if al.startswith("yes") else "no" if al.startswith("no") else "bad" if "not a question" in al else "unk"
+
+    def _facts(self):
+        if not self.env.history:
+            return "No questions asked yet."
+        groups = {"yes": [], "no": [], "unk": [], "bad": []}
+        for q, a in self.env.history:
+            k = self._kind(a)
+            groups[k].append(self.stmt.get(_strip_q(q), _strip_q(q)) if k == "yes" else _strip_q(q))
+        out = []
+        for key, title in [("yes", "CONFIRMED (host said Yes) -- these are true facts of the story"),
+                           ("no", "RULED OUT (host said No)"),
+                           ("unk", "NOT PART OF THE STORY (host said Unknown)"),
+                           ("bad", "REJECTED by the host as not a yes/no question")]:
+            if groups[key]:
+                out.append(title + ":\n" + "\n".join(f"- {q}" for q in groups[key]))
+        return "\n".join(out)
+
+    def _context(self):
+        n = len(self.env.history)
+        return (f"Puzzle: {self.env.surface}\n\n"
+                f"Answers so far ({n} of {self.env.budget} questions used, {self.env.remaining} left):\n{self._facts()}\n")
+
+    def _chat(self, prompt, temperature=0.7, max_tokens=300):
+        return self.llm([{"role": "system", "content": "You are a sharp solver of lateral-thinking situation puzzles."},
+                         {"role": "user", "content": prompt}], temperature=temperature, max_tokens=max_tokens) or ""
+
+    def _yes_no_words(self):
+        surf = _words(self.env.surface)
+        got = {"yes": set(), "no": set(), "unk": set(), "bad": set()}
+        for q, a in self.env.history:
+            got[self._kind(a)].update(_words(_strip_q(q)) - surf)
+        yes = got["yes"]
+        return yes, got["no"] - yes, got["unk"] - yes - got["no"]
+
+    def _statement(self, q):
+        """The model restates a question the referee answered Yes as a plain fact (shown instead of the question)."""
+        out = self._chat(f"A yes/no question was answered YES:\n{q}\n\nRewrite it as one plain statement of fact "
+                         "(same people and things, no question mark, no extra details).\nFormat:\nFACT: ...",
+                         temperature=0.2, max_tokens=60)
+        m = re.search(r"FACT\s*:\s*(.+)", out)
+        f = " ".join((m.group(1) if m else out).split()).strip("* ")
+        return f if f and "?" not in f and len(f.split()) <= 2 * len(q.split()) + 5 else q
+
+    def _missing(self, text):
+        """Confirmed facts a model-written story leaves out: under half of a fact's own words (beyond the puzzle's)
+        appear in it."""
+        surf, tw, out = _words(self.env.surface), _words(text), []
+        for q, a in self.env.history:
+            if self._kind(a) != "yes":
+                continue
+            q = _strip_q(q)
+            f = self.stmt.get(q, q)
+            cov = []
+            for src in (q, f):
+                need = _words(src) - surf
+                if need:
+                    cov.append(len(need & tw) / len(need))
+            if cov and max(cov) < 0.5:
+                out.append(f)
+        return out
+
+    def _contradicted(self, text):
+        """RULED OUT / NOT-IN-THE-STORY questions a model-written text states as true: one sentence holds 60% of
+        the question's own words (at least 2, beyond the puzzle's and the confirmed questions') and is not
+        negated more than the question is."""
+        st = lambda t: {w[:5] for w in _words(t)}
+        base = st(self.env.surface)
+        for q, a in self.env.history:
+            if self._kind(a) == "yes":
+                base |= st(q)
+        sents = [(st(x), len(NEG.findall(x))) for x in re.split(r"(?<=[.!?;])\s+", text or "")]
+        out, seen = [], set()
+        for q, a in self.env.history:
+            k, q = self._kind(a), _strip_q(q)
+            if k not in ("no", "unk") or q in seen:
+                continue
+            own, qneg = st(q) - base, len(NEG.findall(q))
+            if len(own) >= 2 and any(len(own & w) / len(own) >= 0.6 and n <= qneg for w, n in sents):
+                out.append((k, q))
+                seen.add(q)
+        for term, qs in self._rejected_terms().items():       # an entity the host turned down every time
+            if any(term in w and n == 0 for w, n in sents):
+                word = next((x for x in re.findall(r"[A-Za-z]+", text) if x.lower()[:5] == term), term)
+                out.append(("term", (word, qs)))
+        return out
+
+    def _rejected_terms(self):
+        """People / things the model brought up ("a X", "the X", "her X", a new name) in at least two questions
+        answered No or Unknown (one of them No), and in none answered Yes nor in the puzzle: {prefix: questions}."""
+        base = {w[:5] for w in _words(self.env.surface)}
+        for q, a in self.env.history:
+            if self._kind(a) == "yes":
+                base |= {w[:5] for w in _words(q) | _words(self.stmt.get(_strip_q(q), ""))}
+        hits = {}
+        for q, a in self.env.history:
+            k, q = self._kind(a), _strip_q(q)
+            if k not in ("no", "unk"):
+                continue
+            ents = {w.lower()[:5] for ph in INTRO.findall(q) for w in re.split(r"[ -]", ph)
+                    if len(w) >= 4 and w.lower() not in STOP and not re.search(r"(ly|ed|ing)$", w.lower())}
+            ents |= {n.lower()[:5] for n in re.findall(r"(?<=[a-z,;] )[A-Z][a-z]+", q)}
+            for e in ents - base:
+                hits.setdefault(e, []).append((k, q))
+        out = {}
+        for e, v in sorted(hits.items()):
+            qs = [f"{q} ({'No' if k == 'no' else 'Unknown'})" for k, q in v]
+            if len(v) >= 2 and any(k == "no" for k, _ in v) and qs not in out.values():
+                out[e] = qs
+        return out
+
+    @staticmethod
+    def _contra_note(contra):
+        no = [q for k, q in contra if k == "no"]
+        unk = [q for k, q in contra if k == "unk"]
+        terms = [q for k, q in contra if k == "term"]
+        return (("It states as true these RULED OUT points (the host said No, so they are FALSE -- drop them or "
+                 "replace them with something else):\n" + "\n".join(f"- {q}" for q in no) + "\n" if no else "") +
+                ("It states these points the host said are NOT PART OF THE STORY (Unknown) -- leave them out:\n" +
+                 "\n".join(f"- {q}" for q in unk) + "\n" if unk else "") +
+                "".join(f"It builds on \"{w}\", but the host never confirmed it and turned it down every time it was "
+                        "asked about:\n" + "\n".join(f"- {q}" for q in qs[:3]) +
+                        f"\nSo \"{w}\" is not part of the story: leave it out and explain the puzzle without it.\n"
+                        for w, qs in terms))
+
+    def _known_names(self):
+        """Capitalised words the puzzle uses or a question the host answered Yes used. A name the model made up
+        does not become known by being asked about and answered No / Unknown."""
+        return set(re.findall(r"[A-Za-z]+", self.env.surface)) | {
+            w for h, a in self.env.history if self._kind(a) == "yes" for w in re.findall(r"[A-Za-z]+", h)}
+
+    def _invented(self, text):
+        known = self._known_names()
+        return [w for w in re.findall(r"(?<=[a-z,;] )[A-Z][a-z]+", text) if w not in known]
+
+    def _support(self, story):
+        """How well a model-written story agrees with the referee: share of the confirmed questions' new words
+        it uses, minus words found only in ruled-out or not-in-the-story questions, minus hedging."""
+        yes, no, unk = self._yes_no_words()
+        sw = _words(story)
+        return (len(sw & yes) / max(1, len(yes)) - 0.3 * len(sw & no) / max(1, len(no))
+                - 0.3 * len(sw & unk) / max(1, len(unk)) - 0.02 * len(HEDGE.findall(story)))
+
+    # ---------------------------------------------------------------- agenda
+    def _premises(self):
+        out = self._chat(
+            f"Puzzle: {self.env.surface}\n\n"
+            "Situation puzzles hinge on a hidden twist: something the puzzle makes a reader take for granted is false. "
+            "Write down what a reader takes for granted, one short plain statement each (under 15 words), using only "
+            "people and things in the puzzle. Each must be something the puzzle does NOT say outright -- never just "
+            "repeat a fact the puzzle states:\n"
+            "1. WHO: who a reader assumes is behind it (is it really someone other than the main character?)\n"
+            "2. REAL: an event a reader assumes really happened as described (a death, an accident, a crime)\n"
+            "3. SAME: a person or object a reader assumes is exactly who or what it seems\n"
+            "4. TIME: when a reader assumes something was done, written or sent\n"
+            "5. CAUSE: the ordinary cause a reader assumes\n"
+            "Format:\n1. ...\n2. ...\n3. ...\n4. ...\n5. ...", temperature=0.5)
+        return _items(out, 5)
+
+    def _working_story(self):
+        """The model's single best explanation built on every confirmed fact, and its unconfirmed parts.
+        Re-asked once when it leaves out most of what the referee confirmed."""
+        prompt = (self._context() +
+                  "\nWrite your single best explanation of the hidden story so far.\n"
+                  "- It MUST contain every CONFIRMED fact (each one is true) and contradict no RULED OUT fact.\n"
+                  "- Where nothing is confirmed yet, fill the gap with the simplest realistic guess; no invented names.\n"
+                  "- 2-3 sentences: who is behind it, what really happened, how, and why.\n"
+                  "Then list the 3 most important parts of your story that are NOT confirmed yet, each a short plain "
+                  "statement (under 15 words), most important first: who is behind it, what really happened, why -- "
+                  "not minor details (training, background, appearance, exact place or time).\n"
+                  "Format:\nSTORY: ...\nUNSURE:\n1. ...\n2. ...\n3. ...")
+        best, user = None, prompt
+        for temp in (0.6, 0.8, 0.8):
+            out = self._chat(user, temperature=temp, max_tokens=350)
+            m = re.search(r"STORY\s*:\s*(.+?)(?=\n\s*\**\s*UNSURE|\Z)", out, flags=re.S | re.I)
+            story = " ".join((m.group(1) if m else out.split("UNSURE")[0]).split()).strip("* ")
+            tail = out[m.end():] if m else out
+            unsure = _items(tail, 3)
+            miss, contra = self._missing(story), self._contradicted(story)
+            score = (-len(miss) - len(contra), -len(self._invented(story)), self._support(story))
+            if best is None or score > best[0]:
+                best = (score, story, unsure)
+            if not miss and not contra:
+                break
+            user = (prompt + "\n\nYour previous attempt:\nSTORY: " + story + "\n" +
+                    ("It leaves out these CONFIRMED facts, which are TRUE and must be part of the story:\n" +
+                     "\n".join(f"- {f}" for f in miss) + "\n" if miss else "") + self._contra_note(contra) +
+                    "Rewrite it with these corrections.")
+        return best[1], best[2]
+
+    def _branch(self):
+        """The model names the most important point of the story still open and splits it into a few mutually
+        exclusive, broad possibilities, each written as a yes/no question. After a Yes it splits the confirmed
+        point one level deeper (at most MAX_DEPTH levels, then it must take another point); after a set with no
+        Yes it is shown that set and must take another point."""
+        done = [o for o in dict.fromkeys(self.opens) if o]
+        note = ""
+        if self.deeper and self.depth < self.MAX_DEPTH:
+            note = (f"The host just CONFIRMED: \"{self.deeper}\". Go one level deeper on it: split what is still "
+                    "open about it (exactly what, who, how or why) into possibilities.\n")
+            self.depth += 1
+        else:
+            if self.deeper:
+                note = (f"The host just CONFIRMED: \"{self.deeper}\". That point is settled enough -- do not dig into "
+                        "minor details of it.\n")
+            elif self.failed:
+                last_open, last = self.failed[-1]
+                note = (f"Last time you split \"{last_open}\" into these possibilities and NONE was confirmed:\n" +
+                        "\n".join(f"- {q} -> {a}" for q, a in last) + "\n")
+            if done:
+                self.aspect += 1                  # the harness moves the work to the next aspect of the story
+                note += ("Points you already worked on (do NOT pick these again):\n" +
+                         "\n".join(f"- {o}" for o in done[-4:]) + "\n")
+            self.depth = 0
+        for attempt in range(2):
+            out = self._split_reply(note + f"Work on this aspect of the story now: {ASPECTS[self.aspect % len(ASPECTS)]}.\n")
+            m = re.search(r"OPEN\s*:\s*(.+)", out)
+            self.open = " ".join((m.group(1) if m else "the main open point").split()).strip("* ")[:160]
+            ow = {x[:4] for x in _words(self.open)}
+            again = [o for o in done if ow and len(ow & {x[:4] for x in _words(o)}) / len(ow) >= 0.6]
+            if self.depth or not again:
+                break
+            self.aspect += 1                      # the same point again: the harness moves to the next aspect
+            note += f"You picked \"{self.open}\" again -- it was already worked on. Pick a DIFFERENT point.\n"
+        self.opens.append(self.open)
+        opts = []
+        for it in _items(out[m.end():] if m else out, self.SPLIT + 1):
+            it = _extract(it)
+            if it and it.lower() not in {o.lower() for o in opts}:
+                opts.append(it)
+        self.options, self.tried, self.deeper = opts[:self.SPLIT], [], ""
+
+    def _split_reply(self, note):
+        return self._chat(
+            self._context() +
+            "\nSituation puzzles are solved by narrowing down step by step, broad before narrow.\n" + note +
+            "Name the single most important point of the hidden story about this aspect that is still OPEN (not "
+            "settled by the answers above) -- the one that would explain the puzzle most.\n"
+            f"Then list {self.SPLIT} different possibilities for it that exclude each other and together cover the "
+            "realistic answers -- broad kinds of answer (e.g. \"a family member\", \"an illness\", \"by accident\"), "
+            "not specific details, most likely first. Include the plain readings the puzzle itself points to (for "
+            "example the main character themself, a mistake, the event not being what it seems).\n"
+            "Write each as one short yes/no question (under 14 words) that makes sense read ALONE: name the subject "
+            "in full (\"Was the caller a family member of Sarah?\", not \"Was it a family member?\"), using only people "
+            "and things from the puzzle or the confirmed facts.\n"
+            "Format:\nOPEN: ...\n1. ...?\n2. ...?\n3. ...?", temperature=0.7, max_tokens=250)
+
+    def _next_focus(self):
+        if self.premises:
+            p = self.premises.pop(0)
+            return f"Check whether this assumption is really true (it may be the twist): \"{p}\"."
+        if not self.options:
+            self._close_set()
+            self._branch()
+        if self.options:
+            o = self.options.pop(0)
+            return (f"The open point is: \"{self.open}\". Ask whether this possibility is true, as one short direct "
+                    f"question: \"{o}\".")
+        return "Ask about the most important fact of the hidden story that is still open."
+
+    def _close_set(self):
+        """A set of possibilities used up without a Yes is remembered and shown at the next split."""
+        if self.tried:
+            self.failed.append((self.open, self.tried))
+            self.tried = []
+            self.story_due = True
+
+    def _next_question(self, t):
+        """The next model-written possibility is sent as is when it passes the checks; otherwise the model is asked
+        for a question on it (with re-asks). After a set of possibilities with no Yes, one question first tests the
+        model's working story (its best explanation built on every confirmed fact) before the next split."""
+        self.src = "premise" if self.premises else "split"
+        if not self.premises:
+            if not self.options:
+                self._close_set()
+                if self.story_due:
+                    self.story_due = False
+                    focus = self._story_focus()
+                    if focus:
+                        self.src = "story"
+                        return self._ask_model(t, focus)
+                self._branch()
+            while self.options and self._check(self.options[0]) is None:
+                q = self.options.pop(0)
+                if not self._dup(q) and not self._settled(q):
+                    return q
+        return self._ask_model(t, self._next_focus())
+
+    def _story_focus(self):
+        """The most important unconfirmed part of the model's working story, as a focus (None if there is none)."""
+        story, unsure = self._working_story()
+        for u in unsure:
+            if not self._unconfirmed(u) and not self._dup(u):
+                return (f"Your current best story: \"{story}\"\nTest this part of it, which is not confirmed yet, "
+                        f"with one short direct question about its key fact: \"{u}\".")
+        return None
+
+    # ---------------------------------------------------------------- questions
+    def _check(self, q):
+        if not q or "?" not in q:
+            return 6, "Your reply was not a question. Write one yes/no question ending with '?'."
+        if WH.match(q):
+            return 6, "That is not a yes/no question. Rewrite it so it can be answered Yes or No (start with Is/Was/Did/Does...)."
+        if len(q.split()) > 18:
+            return 1, "Too long. Ask about ONE fact in under 16 words."
+        if PRON.match(q):
+            return 3, ("The host reads each question ALONE: name who or what you mean in full instead of starting "
+                       "with 'it', 'this', 'that' or 'they'.")
+        if OR.search(q):
+            return 3, "Do not offer alternatives with 'or'; ask about ONE possibility so Yes or No settles it."
+        if self._restates(q):
+            return 4, ("The puzzle already states that, so the answer tells nothing new. Ask about something the "
+                       "puzzle does NOT say: who is really behind it, what really happened, how, or why.")
+        if SPEC.search(q):
+            return 2, "Do not ask whether something could be possible; ask directly whether it happened (Did ...? / Was ...?)."
+        if BELIEF.search(q):
+            return 2, ("Do not ask what a character believes, thinks, suspects or feels -- the host only knows what happened. "
+                    "Ask about a concrete fact of the story.")
+        names = self._invented(q)
+        if names:
+            return 5, f"Do not invent names ({', '.join(names)}); refer to people only as the puzzle does or by their role."
+        known = {w[:4] for w in _words(self.env.surface)}
+        for h, a in self.env.history:
+            if self._kind(a) == "yes":
+                known |= {w[:4] for w in _words(h) | _words(self.stmt.get(_strip_q(h), ""))}
+        for noun in POSS.findall(q):
+            if ROLE.match(noun) and noun[:4] not in known:
+                return 2, (f"No {noun} is in the puzzle or the confirmed facts, so the host cannot answer a question that "
+                           f"takes one for granted. First ask whether any {noun} is involved at all (use \"a\" or "
+                           "\"any\", not \"the\" or a possessive).")
+        u = self._unconfirmed(q)
+        if u:
+            return 4, (f"You take \"the {u[0]}\" for granted, but the host never confirmed it: \"{u[1]}\" was answered "
+                       f"{u[2]}. Do not build on it; ask about a different possibility.")
+        d = self._dup(q)
+        if d:
+            return 4, f"You already asked almost the same thing: \"{d[0]}\" (answer: {d[1]}). Ask about something different."
+        return None
+
+    def _unconfirmed(self, text):
+        """A person or thing `text` takes for granted ("the X", "someone's X") that neither the puzzle nor a Yes
+        supports, and that the model itself brought up in a question answered No ("a/an/any/some X") or Unknown
+        (any determiner). Returns (phrase, that question, its answer) or None."""
+        known = {w[:4] for w in _words(self.env.surface)}
+        for h, a in self.env.history:
+            if self._kind(a) == "yes":
+                known |= {w[:4] for w in _words(h) | _words(self.stmt.get(_strip_q(h), ""))}
+        known3 = {w[:3] for w in known}
+        for noun in DEF.findall(text or ""):
+            noun = noun.lower()
+            n = noun[:4]
+            if n in known or n[:3] in known3 or noun.endswith("ly"):
+                continue
+            for h, a in self.env.history:
+                k = self._kind(a)
+                if k not in ("no", "unk"):
+                    continue
+                intro = {w.lower()[:4] for ph in (INDEF if k == "no" else INTRO).findall(_strip_q(h))
+                         for w in re.split(r"[ -]", ph) if w not in STOP}
+                if n in intro:
+                    return (re.search(rf"\b{noun}(?:[ -][a-z]+)?", text, re.I).group(0).lower(), _strip_q(h),
+                            "No" if k == "no" else "Unknown")
+        return None
+
+    def _restates(self, q):
+        """A question every content word of which (pronouns and 'someone else' / 'other' / 'not' counted) is already
+        in the puzzle: it only asks the host to repeat the puzzle."""
+        keep = {"someone", "something", "else", "other", "than", "not", "her", "his", "their", "them", "they", "he",
+                "she", "him"}
+        w = lambda t: {x[:4] for x in re.findall(r"[a-z0-9']+", t.lower()) if x not in STOP - keep}
+        return not NEG.search(q) and not (w(q) - w(self.env.surface))
+
+    def _settled(self, q):
+        """A possibility whose own words (beyond the puzzle's) are nearly all in one answered question: a re-wording
+        of something already settled, skipped instead of sent."""
+        surf = {x[:4] for x in _words(self.env.surface)}
+        w = {x[:4] for x in _words(q)} - surf
+        return bool(w) and any(len(w & ({x[:4] for x in _words(_strip_q(h))} - surf)) / len(w) >= 0.75
+                               for h, _ in self.env.history)
+
+    def _dup(self, q):
+        """A near-repeat of an answered question, or a re-wording of one that adds at most one new word
+        (words compared by their first four letters, so 'write' / 'written' match)."""
+        w = {x[:4] for x in _words(q)}
+        for h, a in self.env.history:
+            p = _strip_q(h)
+            pw = {x[:4] for x in _words(p)}
+            if q.lower() == p.lower():
+                return p, a
+            if not (w and pw):
+                continue
+            inter = len(w & pw)
+            if (inter / len(w | pw) >= 0.6 or inter / min(len(w), len(pw)) >= 0.85
+                    or (inter / len(pw) >= 0.7 and len(w - pw) <= 1)):
+                return p, a
+        return None
+
+    def _ask_model(self, t, focus):
+        def base_for(f):
+            return (self._context() + f"\nFOCUS for this question: {f}\n\n{self.env.turn_prompt(t)}\n"
+                    "Output exactly one line:\nQ: [your question]")
+        base = base_for(focus)
+        sys_msg = {"role": "system", "content": self.env.system_prompt + GUIDE}
+        cands, notes = [], []
+        for k in range(self.MAX_TRY):
+            user = base if not notes else base + "\n\nDo NOT repeat these rejected attempts:\n" + "\n".join(notes)
+            q = _extract(self.llm([sys_msg, {"role": "user", "content": user}],
+                                  temperature=0.7 if k == 0 else 1.0, max_tokens=80))
+            bad = self._check(q)
+            if bad is None:
+                return q
+            if q:
+                cands.append((bad[0], k, q))
+            notes.append(f"- \"{q}\" -> {bad[1]}")
+            if k == 1:                       # two failures on one focus: move to the next agenda item
+                base = base_for(self._next_focus())
+        fresh = [c for c in cands if c[0] != 4 and not self._dup(c[2])]
+        for k in range(2 if not fresh or min(fresh)[0] >= 5 else 0):   # only repeats / unconfirmed left: broad focus
+            d = self.dims.pop(0) if self.dims else "who is behind it, what really happened, or why"
+            user = (base_for("Your last attempts only repeated earlier questions or built on things the host did not confirm. Ask ONE broad, basic question "
+                             f"(under 12 words) about {d}, on something not asked about yet.") +
+                    "\n\nDo NOT repeat these rejected attempts:\n" + "\n".join(notes))
+            q = _extract(self.llm([sys_msg, {"role": "user", "content": user}], temperature=1.0, max_tokens=80))
+            bad = self._check(q)
+            if bad is None:
+                return q
+            if q:
+                cands.append((bad[0], self.MAX_TRY + k, q))
+            notes.append(f"- \"{q}\" -> {bad[1]}")
+            fresh = [c for c in cands if c[0] != 4 and not self._dup(c[2])]
+        pool = fresh or cands
+        return min(pool)[2] if pool else "(no question)"       # least serious failure, repeats last
+
+    # ---------------------------------------------------------------- episode
+    def solve(self):
+        env = self.env
+        self.premises = self._premises()
+        self.stmt = {}
+        self.dims = list(DIMENSIONS)
+        self.open, self.options, self.tried, self.failed, self.deeper = "", [], [], [], ""
+        self.opens, self.depth, self.aspect = [], 0, 0
+        self.src, self.story_due = "premise", False
+        t = 0
+        while env.remaining > 0:
+            t += 1
+            q = self._next_question(t)
+            a = env.ask("Q: " + _strip_q(q))
+            if self._kind(a) == "yes":
+                self.stmt[_strip_q(q)] = self._statement(_strip_q(q))
+                if self.src != "premise":                  # a premise Yes mostly restates the puzzle: no digging
+                    self.options, self.tried = [], []      # the other possibilities are excluded: go deeper
+                    self.deeper = self.stmt[_strip_q(q)]
+            elif self.src == "split" and self.open:
+                self.tried.append((_strip_q(q), "No" if self._kind(a) == "no" else "Unknown"))
+
+        story, _ = self._working_story()
+        user = (self._context() +
+                f"\nYour best explanation so far: {story}\n"
+                "\nThe questioning is over. Write the hidden story.\n"
+                "- Start from your best explanation and correct it where it disagrees with the answers: every CONFIRMED "
+                "fact must appear in the story, and nothing RULED OUT may appear.\n"
+                "- Tell it as the story itself in the past tense, 3-5 plain sentences and at most 90 words: who the people "
+                "are, what really happened, how it led to the situation in the puzzle, and why. Put the key facts first; "
+                "merge confirmed facts that say the same thing.\n"
+                "- No hedging (likely, possibly, perhaps, may, might), no invented names, no mention of questions, "
+                "answers or the host, and do not list what did NOT happen.\n- Write ONE story only.\n" + env.final_prompt)
+        msgs = [{"role": "system", "content": env.system_prompt}, {"role": "user", "content": user}]
+        stories = []
+        for temp in (0.3, 0.8, 0.8):
+            stories += self._drafts(self.llm(msgs, temperature=temp, max_tokens=400))
+        if not stories:
+            stories = self._drafts(self.llm(msgs, temperature=1.0, max_tokens=400)) or [story]
+        score = lambda s: (len(s) <= self.MAX_CHARS, -len(self._missing(s)) - len(self._contradicted(s)),
+                           -len(self._invented(s)), self._support(s))
+        best = max(stories, key=score)
+        miss, names, contra = self._missing(best), self._invented(best), self._contradicted(best)
+        long = len(best) > self.MAX_CHARS
+        if miss or names or contra or long:  # one repair round: the model rewrites its own draft
+            fix = ("\n\nYour draft:\n" + best + "\n" +
+                   (f"It is too long ({len(best.split())} words): the answer must be at most 90 words, so merge "
+                    "repeated facts and drop minor details.\n" if long else "") +
+                   ("It leaves out these CONFIRMED facts, which are TRUE and must be in the story:\n" +
+                    "\n".join(f"- {f}" for f in miss) + "\n" if miss else "") + self._contra_note(contra) +
+                   (f"It invents names ({', '.join(sorted(set(names)))}); refer to people by their role.\n" if names else "") +
+                   "Rewrite the whole story with these corrections.\n" + env.final_prompt)
+            for fixed in self._drafts(self.llm([msgs[0], {"role": "user", "content": user + fix}], temperature=0.3,
+                                               max_tokens=400)):
+                if score(fixed) > score(best):
+                    best = fixed
+        return self._fit(best)
+
+    def _fit(self, story):
+        """Answers longer than MAX_CHARS lose text when stored; keep the model's own leading sentences that fit."""
+        if len(story) <= self.MAX_CHARS:
+            return story
+        out = ""
+        for sent in re.split(r"(?<=[.!?])\s+", story):
+            if len(out) + len(sent) + 1 > self.MAX_CHARS:
+                break
+            out = (out + " " + sent).strip()
+        return out or story[:self.MAX_CHARS]
+
+    @staticmethod
+    def _drafts(reply):
+        """A model reply often holds a story and then a second "A: ..." story; each part is a separate draft."""
+        parts = re.split(r"\n\s*\**\s*A\s*:\s*\**", "\n" + (reply or "").strip())
+        out = [ATAG.sub("", " ".join(p.split())).strip() for p in parts]
+        return [p for p in out if len(p.split()) >= 8]

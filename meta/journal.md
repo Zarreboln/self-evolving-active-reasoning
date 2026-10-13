@@ -398,3 +398,23 @@
   (bare on batch 0: 0.64 / 0.55; bare's batch-1 number comes from the frozen evaluation later). One
   proposer (b1r0g1) discarded by the audit for a relative path to its scratchpad that resolved outside
   the folder given the shell's working directory; 9/10 sessions clean.
+- 06:34 SP batch 1 judged (2872 s): pool gold F1 — incumbent b0r1g2 0.745, b1r0g0 0.749, b1r0g2 0.697,
+  b1r1g0 0.674, b1r1g1 0.677 (two candidates discarded by the audit: b1r0g1 mis-counted scratch path,
+  b1r1g2 a `../logs/...` relative path — the running process predates the exists-check fix). The judge
+  called it "a judgement call, not a clear win" and committed b1r1g0 (0.674 < incumbent 0.745): on SP the
+  label-free proxies (repeats, chasing denied ideas, contradictions with referee replies) did not track
+  F1 this time. Prequential on batch 2 will show the cost.
+
+### 2026-10-13 07:17 EDT — SP strict pilot finished
+- Stream (30 test puzzles): prequential F1 (char) 0.727 (bare 0.637 on batch 0 -> 0.745 -> 0.799),
+  key-question recall 0.639; transductive 0.719 / 0.706. Commits: bare -> b0r1g2 -> b1r1g0 -> b2r1g0.
+  Batch 2 pool gold: incumbent b1r1g0 0.799, b2r0g1 0.802 (2163 tok), b2r0g0 0.755, b2r1g0 0.688
+  (chosen), b2r1g1 0.725, b2r1g2 0.630. The judge's label-free choices did not track F1 at batches 1
+  and 2 (10-puzzle batches, F1 noise), yet b1r1g0 scored 0.799 prequentially on batch 2. 18/21 sessions
+  clean (3 discards = relative-path miscounts, now handled by the exists-check).
+- 07:20 frozen SP evaluation launched: bare + 5 evolved harnesses on all 100 test puzzles (70 unseen),
+  12 workers, 405B referee.
+- 07:17 referee calibration round 2 (DeepGEMM off): Qwen3.8-Flash-Next-FP8 79.3 (best alternative),
+  Qwen3-235B-A22B-2507-FP8 74.0, Qwen3.6-35B-A3B-FP8 72.7, Qwen3.8-27B-FP8 64.0 (all thinking off).
+  None reaches the 405B's 82-83; the 405B stays the SP referee. Queued thinking-on variants of
+  Flash-Next and Qwen3.8-27B (reasoning parser qwen3, max_tokens 2048).

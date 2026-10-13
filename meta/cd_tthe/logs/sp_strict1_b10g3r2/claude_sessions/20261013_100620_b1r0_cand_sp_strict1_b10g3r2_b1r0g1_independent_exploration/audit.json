@@ -1,0 +1,13 @@
+{
+ "name": "b1r0_cand_sp_strict1_b10g3r2_b1r0g1_independent_exploration",
+ "session": "20261013_100620_b1r0_cand_sp_strict1_b10g3r2_b1r0g1_independent_exploration",
+ "clean": false,
+ "hits": [
+  {
+   "kind": "path outside the folder",
+   "match": "../../../../../../private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-tthe/6be203b3-e9ed-40ee-82ec-d1df11",
+   "tool": "Bash",
+   "input": "cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe/agents_sp; python3 - <<'EOF'\np='cand_sp_strict1_b10g3r2_b1r0g1.py'\ns=open(p).read()\na='''              \"stop install create design replace remain present return\".split())\n'''\nb=a+'''PREP = set(\"without within before after during while because near "
+  }
+ ]
+}

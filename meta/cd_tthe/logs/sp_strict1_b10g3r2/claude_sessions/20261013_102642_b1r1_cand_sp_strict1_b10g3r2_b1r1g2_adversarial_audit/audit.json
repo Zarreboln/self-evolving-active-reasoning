@@ -1,0 +1,13 @@
+{
+ "name": "b1r1_cand_sp_strict1_b10g3r2_b1r1g2_adversarial_audit",
+ "session": "20261013_102642_b1r1_cand_sp_strict1_b10g3r2_b1r1g2_adversarial_audit",
+ "clean": false,
+ "hits": [
+  {
+   "kind": "path outside the folder",
+   "match": "../logs/sp_strict1_b10g3r2/traces/b1/cand_sp_strict1_b10g3r2_b1r0g0__i9.json -> /Users/zarreboln/Desktop/ar_harness/meta",
+   "tool": "Bash",
+   "input": "cd /Users/zarreboln/Desktop/ar_harness/meta/cd_tthe; cat >> /private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-tthe/b5ed086a-6fa2-4492-88eb-f70d776b599a/scratchpad/t.py <<'EOF'\nprint(M._words(\"and did not fake her own death.\"), [M._stem(w) for w in M._words(\"Was Emily faking her own"
+  }
+ ]
+}

@@ -16,6 +16,7 @@ GitHub Release named in each README.
 | 07 | Situation Puzzles bare with the official-grade judge | Qwen2.5-7B + 405B-INT4 | f1_char 0.621 (the earlier 0.659 was self-judged by the 7B) |
 | 08 | Test-time harness evolution (TTHE port), pilot streams strict / labeled | Qwen2.5-7B + Opus proposer/judge | strict batch 0: zero-hint proposer rebuilds the hypothesis space, label-free judge picks it, 20/20 joint tables correct on batches 1–2; stream 30: circuit-wise accuracy 70.0 / joint 66.7 prequential; later batches not label-isolated (audit) → rerun |
 | 09 | Same streams with label isolation + session audit (`strict6` / `labeled6`), then frozen evaluation of the finished harnesses on 200 held-out | same | strict stream 0/10 → 9/10 → 10/10 (cwa 67.8 / joint 63.3 prequential), every judge clean; on 200 instances the label-free state-only harness reaches joint 98.5 / cwa 99.5, bare 0 / 11.8 |
+| 10 | Test-time harness evolution on AR-Bench Situation Puzzles (strict, 405B referee) | Qwen2.5-7B + Opus 5.5 | prequential F1 63.7 → 74.5 → 79.9; on 100 test puzzles the evolved harnesses reach F1 76–77 (bare 60.4), above every zero-shot model in AR-Bench's table |
 
 Common protocol for 03-06: Multi-Turn Puzzles Circuit Decoding, 300 released instances, 18
 queries + final guess, environment wording from the paper's transcript, Qwen2.5-7B-Instruct

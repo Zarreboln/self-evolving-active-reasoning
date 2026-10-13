@@ -1,0 +1,49 @@
+{
+ "final_harness": "cand_sp_strict1_b10g3r2_b2r1g0",
+ "n_instances": 30,
+ "prequential": {
+  "uniq_end": 0.0,
+  "f1_char": 0.7269095486183023,
+  "keypoint_recall": 0.638888888888889
+ },
+ "transductive": {
+  "uniq_end": 0.0,
+  "f1_char": 0.7189517286464013,
+  "keypoint_recall": 0.7055555555555556
+ },
+ "per_batch": [
+  {
+   "batch": 0,
+   "incoming": "bare",
+   "committed": "cand_sp_strict1_b10g3r2_b0r1g2",
+   "preq_uniq": 0.0,
+   "trans_uniq": 0.0,
+   "preq_f1_char": 0.6370194320819534,
+   "preq_keypoint_recall": 0.55,
+   "trans_f1_char": 0.7943642760305687,
+   "trans_keypoint_recall": 0.7
+  },
+  {
+   "batch": 1,
+   "incoming": "cand_sp_strict1_b10g3r2_b0r1g2",
+   "committed": "cand_sp_strict1_b10g3r2_b1r1g0",
+   "preq_uniq": 0.0,
+   "trans_uniq": 0.0,
+   "preq_f1_char": 0.7445486710594463,
+   "preq_keypoint_recall": 0.65,
+   "trans_f1_char": 0.6743309434880368,
+   "trans_keypoint_recall": 0.65
+  },
+  {
+   "batch": 2,
+   "incoming": "cand_sp_strict1_b10g3r2_b1r1g0",
+   "committed": "cand_sp_strict1_b10g3r2_b2r1g0",
+   "preq_uniq": 0.0,
+   "trans_uniq": 0.0,
+   "preq_f1_char": 0.7991605427135071,
+   "preq_keypoint_recall": 0.7166666666666667,
+   "trans_f1_char": 0.6881599664205985,
+   "trans_keypoint_recall": 0.7666666666666667
+  }
+ ]
+}

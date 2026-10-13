@@ -1,0 +1,29 @@
+{
+ "candidate": "cand_sp_strict1_b10g3r2_b0r0g0",
+ "parent": "bare",
+ "role": "conservative repair",
+ "hypothesis": "The 7B player's main question-phase failure is getting locked into long runs of near-identical questions that all get No/Unknown (bare: i16 18 straight No on 'delay/misunderstanding' variants, i72 13 No on where the note lay, i20/i36 Unknown chains), and its final answers contradict referee replies. If the turn prompt flags a 4-reply run without a Yes and asks for a different, more basic aspect (including whether a premise is really true), and the final prompt is preceded by the referee's Yes/No facts, then the Yes rate rises and the model reaches premise-level facts (e.g. 'is X actually dead/alive') it never asked in bare, giving final answers closer to the hidden story.",
+ "behavior_changes": [
+  "Turn prompt: when the last 4 referee replies contain no Yes, append a note saying that line is not working, not to ask another variation, and to ask about a different, more basic aspect such as whether something the puzzle states or assumes is really true. The model still writes every question; nothing is vetoed or rewritten.",
+  "Final prompt: before AR-Bench's final_prompt, show the questions answered YES (true) and NO (false), with the leading 'Q:' stripped, and instruct that the answer must agree with every YES, claim nothing answered NO, and give one concrete explanation rather than a list of possibilities.",
+  "Verdict parsing accepts the referee's occasional 'A: Yes' / 'A: No' form."
+ ],
+ "preserved_behaviors": [
+  "Official AR-Bench system prompt, 'Turn t' prompts, full chat history with raw referee replies, and AR-Bench's final prompt verbatim.",
+  "Model output is sent to the referee unchanged (the 'Q: ' prefix that the referee accepted at 0% not-a-question in bare); the final answer is the model's reply unchanged.",
+  "All 25 questions are used; temperature and max_tokens are unchanged; one LLM call per turn plus one final call (26 calls)."
+ ],
+ "verification": [
+  "Ran check_b0r0_cand_sp_strict1_b10g3r2_b0r0g0.py twice (before and after the 'A:' parsing fix): 10/10 status=ok, parsed_final_answer=True, 25 questions each, repeat 0%, not_a_question 0%, 26 calls each, no crashes.",
+  "Mean referee replies vs bare on the same 10 puzzles: yes 22.4% -> 32.0%, unknown 30.4% -> 22.0%, no 47.2% -> 45.2%.",
+  "Traces show the nudge redirecting the model to premise questions bare never asked: i16 'Is John still alive when he writes the letter? Yes' then a run of 9 Yes; i20 'Was Emily alive three days after the supposed plane crash? Yes' / 'Did Emily send the postcard herself? Yes'; i36 'Is Emma still alive? Yes'; i52 'Was Tom actually in the country? No'; i72 left the 13-question run on the note's location and moved to who left it (several Yes).",
+  "Longest run of replies without a Yes (bare -> candidate): i16 18->4, i20 15->4, i36 25->11, i5 20->10, i72 13->8, i82 12->4, i90 3->3, i93 5->4; worse on i52 5->15 and i94 4->14, where after an early lucky Yes (bare) the candidate's alternative hypotheses kept drawing No while the nudge fired every turn.",
+  "Final answers now build on the recapped Yes facts (i16: letter pre-written by someone close and sent exactly one week after the funeral; i72: left under the door by an acquaintance), but consistency is not guaranteed: i20 still asserts 'had access to Emily's identity' (answered No) and i94 asserts mind-reading (answered No)."
+ ],
+ "risks": [
+  "Once triggered, the nudge repeats every turn until a Yes arrives; on i52 and i94 the longest no-Yes run got longer than in bare (5->15, 4->14), so on some puzzles it can push the model off a line that a single follow-up would have confirmed.",
+  "The suggestion to question premises can draw trivially true Yes answers (i36 'Is Emma still alive?') that raise the Yes rate without adding information.",
+  "The recap lists whole questions, so the 7B sometimes copies NO-questions into the answer as if true (i20, i94) and writes long, list-like answers, which could hurt character-level F1.",
+  "Evidence comes from one batch of 10 puzzles with seeded/cached sampling; there is no outcome (F1) signal, so the Yes-rate gain is a proxy."
+ ]
+}

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -107,6 +108,46 @@ def agg(results):
             "tokens_out": sum((r.get("tokens") or {}).get("out", 0) for r in results) / n}
 
 
+def prepare_resume(run_dir, ctrl, rb, rr, group, labeled):
+    """Rebuild the loop state for batch rb, round rr from the controller store and the full logs:
+    discard log rows at/after that point, restore PUBLIC logs in the run dir (a finished run copied the
+    full logs there), reload every complete observation of batch rb, and the branch heads after round rr-1."""
+    import glob as _glob
+    run_dir = Path(run_dir)
+    full_opt, full_lin = ctrl / "opt_log_full.jsonl", ctrl / "branch_lineage_full.jsonl"
+    rows = [json.loads(l) for l in full_opt.read_text().splitlines() if l.strip()] if full_opt.exists() else []
+    lins = [json.loads(l) for l in full_lin.read_text().splitlines() if l.strip()] if full_lin.exists() else []
+    rows = [r for r in rows if r["batch"] < rb]
+    lins = [l for l in lins if l["batch"] < rb or (l["batch"] == rb and l["round"] < rr)]
+    full_opt.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    full_lin.write_text("".join(json.dumps(l) + "\n" for l in lins))
+    (run_dir / "opt_log.jsonl").write_text("".join(json.dumps({**r, "prequential": public_agg(r["prequential"], labeled),
+        "transductive": public_agg(r["transductive"], labeled), "pool": {n: public_agg(a, labeled) for n, a in r["pool"].items()}}) + "\n" for r in rows))
+    (run_dir / "branch_lineage.jsonl").write_text("".join(json.dumps({**l, "child_agg": public_agg(l["child_agg"], labeled) if l.get("child_agg") else None}) + "\n" for l in lins))
+    for stale in ("result.json", "trajectory.png"):
+        (run_dir / stale).unlink(missing_ok=True)
+    if (run_dir / "controller").exists():
+        shutil.rmtree(run_dir / "controller")          # private records must not sit in the run dir while sessions run
+    H = None
+    prev = [r for r in rows if r["batch"] == rb - 1]
+    if prev:
+        H = prev[-1]["committed"]
+    results = {}
+    by_name = {}
+    for f in _glob.glob(str(ctrl / "solve_jobs" / f"b{rb}_*_i*.result.json")):
+        name = re.sub(rf"^b{rb}_(.*)_i\d+$", r"\1", Path(f).name[:-len(".result.json")])
+        by_name.setdefault(name, []).append(json.loads(Path(f).read_text()))
+    for name, rs in by_name.items():
+        if all(r.get("status") in ("ok", "crash", "timeout", "worker_error", "harness_error") for r in rs):
+            results[name] = sorted(rs, key=lambda r: r["index"])
+    branches = None
+    if rr > 0:
+        heads = {l["branch"]: l["accepted"] for l in lins if l["batch"] == rb and l["round"] == rr - 1}
+        if len(heads) == group:
+            branches = [heads[g] for g in range(group)]
+    return {"batch": rb, "round": rr, "H": H, "results": results, "branches": branches}
+
+
 def log_line(path, obj):
     with open(path, "a") as f:
         f.write(json.dumps(obj) + "\n")
@@ -135,6 +176,10 @@ def main():
     ap.add_argument("--solve-timeout", type=int, default=600, help="wall-clock cap per episode")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--start-batch", type=int, default=0)
+    ap.add_argument("--resume-from", nargs=2, type=int, metavar=("BATCH", "ROUND"), default=None,
+                    help="continue an interrupted run at batch BATCH, round ROUND (ROUND == --rounds means: only the judge "
+                         "of that batch is still due). Everything already observed for that batch is reloaded from the "
+                         "controller store; rows at or after that point are discarded first.")
     args = ap.parse_args()
 
     global BUDGET_OVERRIDE
@@ -153,7 +198,13 @@ def main():
     ctrl = controller_dir(run_dir)
 
     H = args.initial_harness
-    if args.start_batch > 0:   # resume: the committed harness of the previous batch
+    resume = None
+    if args.resume_from is not None:
+        rb, rr = args.resume_from
+        resume = prepare_resume(run_dir, ctrl, rb, rr, args.group, P.LABELED)
+        args.start_batch = rb
+        H = resume["H"] or H
+    elif args.start_batch > 0:   # resume at a batch boundary: the committed harness of the previous batch
         rows = [json.loads(l) for l in opt_log.open()] if opt_log.exists() else []
         prev = [r for r in rows if r.get("batch") == args.start_batch - 1 and "committed" in r]
         if prev:
@@ -168,6 +219,12 @@ def main():
         t_batch = time.time()
         trace_dir = run_dir / "traces" / f"b{bi}"
         results = {}           # harness name -> results on this batch (observed once)
+        round_start = 0
+        branches_override = None
+        if resume is not None and bi == resume["batch"]:
+            results.update(resume["results"])
+            round_start, branches_override = resume["round"], resume["branches"]
+            print(f"[tthe] resuming batch {bi} at round {round_start}: reloaded {sorted(results)} from the controller store", flush=True)
 
         def ensure(name):
             if name not in results and loadable(name, args.arm):
@@ -178,8 +235,8 @@ def main():
         prequential = agg(results[H])          # the incoming harness, before adaptation
         print(f"\n===== batch {bi}/{len(batches)} ({len(batch)} inst) H={H}  prequential circuit-wise acc={100*prequential['circuit_wise_accuracy']:.0f}% "
               f"joint table correct={100*prequential['joint_truth_table_correct']:.0f}% (diag uniq_end={100*prequential['uniq_end']:.0f}%) =====", flush=True)
-        branches = [H] * args.group
-        for rnd in range(args.rounds):
+        branches = branches_override or [H] * args.group
+        for rnd in range(round_start, args.rounds):
             tag = f"b{bi}r{rnd}"
             active = list(dict.fromkeys(branches))
             children = []

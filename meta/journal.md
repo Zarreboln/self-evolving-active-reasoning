@@ -275,3 +275,52 @@
   Rule removed from NAME_RULES and the OFF-LIMITS text for future launches; strict6/labeled6 keep running
   with the old module loaded (label isolation unaffected; one round-0 candidate lost). Other 5 round-0
   sessions clean.
+
+### 2026-10-12 19:44 EDT — strict6 batch 0 decided (clean run), 2577 s
+- Sessions: 7 (6 proposers + judge); 5 clean, 2 proposer candidates discarded (r0g0: solver_cache name
+  rule, my false positive; r1g2: a stray `cat > …/tmp_unused` typo that wrote an empty file to the
+  Desktop, which the session itself removed — a real out-of-folder write by the rule). Judge clean.
+- Pool (controller gold, cwa / joint): bare .07/.00; r0g1 .57/.10; r0g2 1.00/1.00; r1g0 .43/.00;
+  r1g1 1.00/1.00. Public summary to the judge carried only health/tokens.
+- JUDGE -> b0r1g1. It built its own label-free checker (enumerate rule-allowed triples, filter by the
+  answers, check uniqueness and that the guess equals the unique solution) and tabulated all five.
+  r0g2 and r1g1 tied at 10/10; it rejected r0g2 because the model took the harness's top-ranked query
+  in 113 of 126 turns and 5 queries were refused ("the query-choosing the interface forbids"), and chose
+  r1g1: keeps bare's conversation, appends a board of observed / rule-forced / unknown outputs after each
+  answer, never ranks, suggests or rejects queries, stops when nothing is unknown, then has the model copy
+  the board circuit by circuit (tables contradicting board or rules are sent back). Transductive 100/100.
+  Note: this is a state-only harness (cf. veto_only / answer_grid in cd_evolve) reaching 100% with the
+  model choosing every query itself.
+
+### 2026-10-12 21:30 EDT — strict6 / labeled6 ended; the Max subscription hit its session limit at ~19:50
+- From ~19:50 EDT every `claude -p` call returned "You've hit your session limit · resets 11pm
+  (America/New_York)" immediately. The loop treated those as sessions that produced no candidate
+  (branches fell back to their parents) and judges that wrote no choice (incumbent kept), so the runs
+  "finished" with default decisions. Also one more audit false positive: strict6 b1r0g1 was discarded
+  because the docstring it was writing (inside a Bash heredoc) contained the text `../audit.py`; the path
+  scanner reads heredoc/text content of Bash commands.
+- strict6 valid parts: batch 0 (judge ran at 19:44, clean) chose b0r1g1 (deduction board, state-only);
+  prequential of that harness on batch 1 = 9/10 joint (cwa .97), on batch 2 = 10/10. Batch-1 round 0
+  ran (b1r0g0 .80, b1r0g2 1.00); round 1, the b1 judge, and all of batch 2 hit the limit. Stream:
+  prequential cwa 67.8 / joint 63.3 (bare 0/10 -> 9/10 -> 10/10), 19/20 on fresh instances with a
+  harness grown and selected label-free.
+- labeled6: batch-0 proposals ran (r0g2, r1g0, r1g2 at 10/10; all 6 sessions + judge audits clean) but
+  the b0 judge hit the limit -> bare kept; batches 1-2 entirely void. The arm must be rerun.
+- Lesson: the wrapper must detect the limit message and pause/abort instead of falling back silently.
+  Today's ~60 Opus sessions (pilots + 5 launches) consumed the 5-hour window.
+
+### 2026-10-12 21:38 EDT — resume support, limit handling, audit fixes; strict6/labeled6 resumed
+- New 7B server job 25690221 (node3204:8122), tunnel 18000 re-pointed; old job 25669627 expires 22:07.
+- optimize.py `--resume-from BATCH ROUND`: prunes log rows at/after that point (full + public), restores
+  public logs in the run dir, removes the stale controller copy, reloads every complete observation of
+  the batch from the controller store and the branch heads from the lineage; ROUND == --rounds means
+  judge-only. Verified on a mock run (resume mid-batch and judge-only).
+- proposer.py: sessions whose response is the subscription-limit message are renamed *_LIMIT, the loop
+  probes every 10 min with a one-word call and reruns the session once the limit lifts (up to 4 h).
+- Audit: heredoc bodies are text (a '../x' there counts only in an access-like context such as
+  open('../x'); absolute paths always count); the shell's working directory is tracked across a
+  session's Bash calls (Claude Code keeps it) — today's `python3 ../audit.py` from agents/ was inside
+  the folder; other runs' candidate files (agents/cand_<other>_*.py) are off-limits. Unit set 34 cases
+  + the real transcripts; no strict6/labeled6 session had touched the other arm's candidates.
+- Resumed: strict6 from batch 1 round 1 (heads b1r0g0 / b0r1g1 / b1r0g2), labeled6 from the batch-0
+  judge over its 6 candidates. Subscription window may still be tight before 23:00; the loop will pause.

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import json
 import os
+import time
+import subprocess
 import re
 import shutil
 import sys
@@ -114,7 +116,7 @@ def write_traces(results, trace_dir, labeled=False):
 
 OFF_LIMITS = ("\n\nOFF-LIMITS (your session transcript is audited automatically; a violation discards your work): "
               "do not read, list, grep or copy `~/.ar_harness_controller/`, `mt_puzzles/`, {stage0}other "
-              "runs under `logs/`, sessions under `claude_sessions/`, any `.claude/` directory (memory included), anything "
+              "runs under `logs/` and their candidates `agents/cand_<otherrun>_*.py`, sessions under `claude_sessions/`, any `.claude/` directory (memory included), anything "
               "outside `meta/cd_tthe/` (the rest of the repository, its README and experiments), or any file that contains "
               "truth tables; do not run git. Work from this run's trace files named above, the harness sources in `agents/`, "
               "the interface doc, your check script and your scratch directory.")
@@ -172,13 +174,36 @@ def _path_ok(resolved):
     return any(resolved == r.rstrip("/") or resolved.startswith(r if r.endswith("/") else r + "/") for r in ALLOWED_ROOTS)
 
 
+_HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n(.*?)\n\s*\1\s*(?=\n|$)", re.S)
+_ACCESS_CTX = re.compile(r"(?:open|Path|glob|iglob|listdir|scandir|exists|isfile|isdir|read_text|read_bytes|walk|"
+                         r"cat|ls|head|tail|sed|grep|cp|mv|rm|python3?|source)\s*\(?\s*['\"]?$")
+
+
+def _split_heredocs(text):
+    """-> (shell text with heredoc bodies removed, [heredoc bodies])"""
+    bodies = [m.group(2) for m in _HEREDOC.finditer(text)]
+    return _HEREDOC.sub(lambda m: f"<<{m.group(1)}\n{m.group(1)}", text), bodies
+
+
 def _escapes(text, cwd0, whole=False):
     """Paths in a command/field that resolve outside the allowed roots. Relative ones are resolved
-    against the command's `cd` target; a `cd` that itself lands outside is reported too."""
+    against the command's `cd` target; a `cd` that itself lands outside is reported too. Heredoc
+    bodies (scripts, docstrings, cards written through the shell) are text: a path there counts only
+    when it is absolute or sits in an access-like context such as open('../x')."""
     if whole:
         r = _resolve(text.strip(), cwd0)
         return [] if _path_ok(r) else [f"{text.strip()} -> {r}"]
+    text, bodies = _split_heredocs(text)
     bad = []
+    _escapes.cwd_after = cwd0
+    for body in bodies:
+        for m in _PATH_TOKEN.finditer(body):
+            t = m.group(1)
+            if t.startswith("../") and not _ACCESS_CTX.search(body[max(0, m.start() - 40):m.start()]):
+                continue
+            r = _resolve(t.rstrip("/"), cwd0)
+            if not _path_ok(r):
+                bad.append(f"{t} -> {r} (heredoc)")
     cwd = cwd0
     pos = 0
     segments = []
@@ -188,6 +213,7 @@ def _escapes(text, cwd0, whole=False):
         if not _path_ok(cwd):
             bad.append(f"cd {m.group(1)} -> {cwd}")
     segments.append((pos, len(text), cwd))
+    _escapes.cwd_after = cwd
     for a, b, c in segments:
         for t in _PATH_TOKEN.findall(text[a:b]):
             r = _resolve(t.rstrip("/"), c)
@@ -204,13 +230,15 @@ def audit_session(run_dir, name, arm):
         return {"name": name, "clean": True, "hits": [], "note": "no session dir"}
     sess = sessions[-1]; ev = sess / "events.jsonl"
     run_name = re.escape(Path(run_dir).name)
-    rules = [(k, re.compile(rx)) for k, rx in NAME_RULES] + [("other run's logs", re.compile(rf"logs/(?!{run_name}\b)[A-Za-z0-9_]+\b"))]
+    rules = [(k, re.compile(rx)) for k, rx in NAME_RULES] + [("other run's logs", re.compile(rf"logs/(?!{run_name}\b)[A-Za-z0-9_]+\b")),
+                                                             ("other run's candidates", re.compile(rf"cand_(?!{run_name}_)[A-Za-z0-9]+_[A-Za-z0-9_]*\.py"))]
     if arm != "lib":
         rules += [(k, re.compile(rx)) for k, rx in ORACLE_RULES]
     val_rx = [("instance truth", re.compile(VAL_TRUTH)), ("oracle signal value", re.compile(VAL_ORACLE))]
     if not LABELED:
         val_rx.append(("gold record", re.compile(VAL_GOLD)))
     uses, hits = {}, []
+    cwd = str(HERE)                     # Claude Code's Bash keeps its working directory between calls
     for line in (ev.read_text().splitlines() if ev.exists() else []):
         try:
             d = json.loads(line)
@@ -228,7 +256,9 @@ def audit_session(run_dir, name, arm):
                         m = rx.search(field)
                         if m:
                             hits.append({"kind": kind, "match": m.group(0)[:80], "tool": b["name"], "input": field[:300]})
-                    esc = _escapes(field, str(HERE), whole=(b["name"] != "Bash"))
+                    esc = _escapes(field, cwd, whole=(b["name"] != "Bash"))
+                    if b["name"] == "Bash":
+                        cwd = _escapes.cwd_after
                     if esc:
                         hits.append({"kind": "path outside the folder", "match": esc[0][:120], "tool": b["name"], "input": field[:300]})
         elif d.get("type") == "user":
@@ -471,7 +501,58 @@ def _move_memory(run_dir, tag):
                 shutil.move(str(f), str(dst / f.name))
 
 
+LIMIT_RX = re.compile(r"hit your (?:session|usage|weekly|daily) limit|usage limit reached|resets? (?:at )?\d{1,2}(?::\d{2})?\s*(?:am|pm)", re.I)
+
+
+def _newest_session_dir(run_dir, name):
+    ds = sorted((Path(run_dir) / "claude_sessions").glob(f"*_{name}"))
+    return ds[-1] if ds else None
+
+
+def _limit_hit(run_dir, name):
+    d = _newest_session_dir(run_dir, name)
+    if d is None:
+        return False
+    txt = (d / "response.md").read_text() if (d / "response.md").exists() else ""
+    return bool(LIMIT_RX.search(txt[:600]))
+
+
+def wait_for_subscription(model, poll_s=600, max_s=4 * 3600):
+    """The Max subscription answered with its limit message: probe with a one-word call every poll_s
+    seconds until it answers normally (or give up after max_s)."""
+    t0 = time.time()
+    while time.time() - t0 < max_s:
+        print(f"   SUBSCRIPTION LIMIT: waiting {poll_s // 60} min before probing again "
+              f"({(time.time() - t0) / 60:.0f} min so far)", flush=True)
+        time.sleep(poll_s)
+        env = {k: v for k, v in os.environ.items() if k not in ("CLAUDECODE", "ANTHROPIC_API_KEY")}
+        try:
+            out = subprocess.run(["claude", "-p", "Reply with the single word ok.", "--model", model, "--output-format", "json"],
+                                 capture_output=True, text=True, timeout=180, env=env).stdout
+            res = json.loads(out).get("result", "") if out.strip().startswith("{") else out
+        except Exception as e:                       # noqa: BLE001
+            res = f"probe failed: {e}"
+        if not LIMIT_RX.search(res or ""):
+            print("   SUBSCRIPTION LIMIT lifted, resuming", flush=True)
+            return True
+    return False
+
+
 def _session(prompt, name, run_dir, backend, model, timeout, effort):
+    for attempt in range(4):
+        code = _session_once(prompt, name, run_dir, backend, model, timeout, effort)
+        if backend != "claude" or not _limit_hit(run_dir, name):
+            return code
+        d = _newest_session_dir(run_dir, name)
+        if d is not None:
+            d.rename(d.with_name(d.name + "_LIMIT"))   # keep it out of the audit's "newest session" lookup
+        print(f"   SUBSCRIPTION LIMIT hit in session {name} (attempt {attempt + 1}); pausing", flush=True)
+        if not wait_for_subscription(model):
+            break
+    return 1
+
+
+def _session_once(prompt, name, run_dir, backend, model, timeout, effort):
     os.environ.pop("CLAUDECODE", None)
     _move_memory(run_dir, f"{name}_before")
     saved = {k: os.environ.pop(k, None) for k in ("ANTHROPIC_API_KEY",)}

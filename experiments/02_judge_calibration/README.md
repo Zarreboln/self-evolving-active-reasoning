@@ -36,6 +36,7 @@ Thinking off decodes 16 tokens; thinking on uses `--reasoning-parser qwen3` and 
 | Llama-3.3-70B-Instruct-FP8-dynamic | 25698273 | 73.3 | 76.4 / 84.2 / 21.1 | not run | |
 | Qwen3.6-35B-A3B-FP8 | 25718458 | 72.7 | 87.3 / 69.7 / 42.1 | not run | |
 | gpt-oss-120b | 25698271 | 62.7 | 61.8 / 65.8 / 52.6 | not run | |
+| Jev 1.13 (TypeSafe, hosted) | n/a | 78.7 | 80.0 / 88.2 / 36.8 | n/a | |
 
 Where the accuracy goes: every candidate is decent on Correct and Incorrect and bad on Unknown, the
 class that decides whether a player's question is actually answerable from the story. The 405B's lead
@@ -66,6 +67,7 @@ The 405B gets 125 right and 25 wrong.
 | Qwen3.6-35B-A3B | 72.7% | 77.3% | 8 | 24 |
 | Qwen3.8-27B | 64.0% | 65.3% | 9 | 38 |
 | gpt-oss-120b | 62.7% | 64.7% | 8 | 39 |
+| Jev 1.13 | 78.7% | 80.7% | 10 | 17 |
 
 No candidate is a drop-in: the best one disagrees with the 405B on 31 of 150 cases, and every one of
 them loses more of the 405B's correct answers than it repairs of its errors. Swapping the referee
@@ -73,3 +75,51 @@ would move the Situation Puzzles numbers for reasons unrelated to the harness, s
 
 Raw material: `turtle150_predictions/` holds the per-case predictions and each job's stdout
 (model repo, vLLM args, serve time, accuracy, prediction distribution, per-class recall).
+
+
+## A typed-decision model as referee: Jev 1.13 (2026-10-13)
+
+[Jev](https://typesafe.ai/blog/introducing-system-one-models-and-jev) is TypeSafe's "System One"
+model: it takes a state plus typed questions and returns a distribution over the declared options,
+reading them off the model rather than sampling text. That is this task's native shape, so it was
+worth one run. `runner/jev_judge_eval.py`, same 150 cases, same seed, the three judging rules
+verbatim as the question's `instructions` and the three labels as its `criteria`. It cannot take the
+official prompt byte-identically, because it has no system message -- that is the one caveat on the
+comparison.
+
+| | Jev 1.13 | Llama-3.1-405B-INT4 |
+|---|---|---|
+| accuracy | 78.7% | 83.3% |
+| recall Correct / Incorrect / Unknown | 80.0 / 88.2 / **36.8** | 89.1 / 93.4 / 26.3 |
+| wall for 150 cases | **12 s** (16 at a time) | ~15 s on 2×H200, after a 270 s load |
+| cost | **$0.0041** (98,480 input tokens at $0.042/MTok) | an H200 pair for the length of the run |
+| hosting | closed, hosted API | our own GPUs |
+
+It loses 4.6 points to the 405B overall and is not a drop-in: it agrees on 80.7% of cases, repairs
+10 of the 405B's 25 errors and breaks 17 of its 125 correct ones. But it beats the 405B on Unknown,
+the class every chat judge is worst at, and it is the only candidate that returns a usable
+distribution. Its confidence (`1 - H(p)/ln K`) is monotone in accuracy:
+
+| confidence | n | accuracy |
+|---|---|---|
+| 0.0–0.2 | 12 | 50.0% |
+| 0.2–0.4 | 26 | 61.5% |
+| 0.4–0.6 | 37 | 73.0% |
+| 0.6–0.8 | 30 | 86.7% |
+| 0.8–1.0 | 45 | 95.6% |
+
+So the verdicts can be filtered rather than trusted flat, which no other candidate here allows.
+Taking Unknown whenever its probability clears a threshold trades the two off:
+
+| threshold | accuracy | Unknown recall | times Unknown said |
+|---|---|---|---|
+| argmax (0.50 in practice) | 78.7% | 31.6% | 10 |
+| 0.40 | 76.7% | 36.8% | 17 |
+| 0.30 | 72.0% | 63.2% | 35 |
+| 0.25 | 66.7% | 68.4% | 48 |
+
+Not adopted as the SP referee: AR-Bench's referee is the 405B, swapping it would move the Situation
+Puzzles numbers for reasons unrelated to the harness, and it is a closed hosted API, so every
+story and guess would leave our infrastructure. Worth keeping for where its shape actually fits --
+a cheap filter, or a second opinion whose confidence tells us which verdicts to re-check.
+Predictions with probabilities: `turtle150_predictions/turtle150_jev.json`.

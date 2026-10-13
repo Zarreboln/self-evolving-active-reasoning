@@ -426,3 +426,14 @@
   restarted on node5200:9885, tunnel 18001 re-pointed): F1 73.0 / key-question recall 64.3 on 100
   (73.8 / 65.5 on the 70 unseen), 0 crashes, 4685 tok, 36 min. Weakest of the five evolved harnesses,
   still 12.6 F1 over bare. Experiment 10's table is now complete.
+- 15:1x Jev 1.13 (TypeSafe's hosted "System One" model) scored as a referee on the same
+  TurtleBench-150: 78.7% (405B-INT4 83.3), recall 80.0 / 88.2 / 36.8 -- it beats the 405B on
+  Unknown (26.3) and is the only candidate returning a distribution, whose confidence is monotone
+  in accuracy (50% at conf<0.2 up to 95.6% at conf>0.8). 150 cases in 12 s for $0.0041 against an
+  H200 pair for the 405B. Agrees with the 405B on 80.7%: fixes 10 of its 25 errors, breaks 17 of
+  its 125 rights, so not a drop-in; also closed and hosted, so SP data would leave our infra.
+  Not adopted; recorded in experiments/02. Adapter: runner/jev_judge_eval.py, key in the mac
+  keychain (service typesafe_token), never in the repo.
+  OpenJev (the open, Apache-2.0, wire-compatible server on DiffusionGemma 26B-A4B) was not run:
+  installing it locally and pointing our code at codiv.ai were both refused by the permission
+  classifier, and this mac (M3, 16 GB RAM, 16 GB free disk) cannot host the 4-bit weights anyway.

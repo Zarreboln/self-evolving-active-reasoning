@@ -418,3 +418,11 @@
   Qwen3-235B-A22B-2507-FP8 74.0, Qwen3.6-35B-A3B-FP8 72.7, Qwen3.8-27B-FP8 64.0 (all thinking off).
   None reaches the 405B's 82-83; the 405B stays the SP referee. Queued thinking-on variants of
   Flash-Next and Qwen3.8-27B (reasoning parser qwen3, max_tokens 2048).
+- 09:05 referee calibration round 3 (thinking on, reasoning parser qwen3, max_tokens 2048, TurtleBench-150):
+  Qwen3.8-Flash-Next-FP8 80.7 (79.3 with thinking off), Qwen3.8-27B-FP8 78.7 (64.0 off). Thinking helps,
+  but neither reaches the 405B-INT4's 83.3, so the official Llama-3.1-405B stays the SP referee and the
+  key-question judge. Round 3 cost: 10 min on 1xH200 each.
+- 09:38 re-ran the frozen SP evaluation of b1r0g0 after the 405B was preempted mid-run (job 25698041
+  restarted on node5200:9885, tunnel 18001 re-pointed): F1 73.0 / key-question recall 64.3 on 100
+  (73.8 / 65.5 on the 70 unseen), 0 crashes, 4685 tok, 36 min. Weakest of the five evolved harnesses,
+  still 12.6 F1 over bare. Experiment 10's table is now complete.

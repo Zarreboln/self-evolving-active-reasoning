@@ -48,17 +48,18 @@ AR-Bench Table 6 (zero-shot, char-level F1): Qwen-2.5-7B 51, Llama-3.1-405B 55, 
 | harness | F1 (char), 100 | F1 unseen 70 | key-question recall, 100 | recall unseen | tokens/ep | crashes |
 |---|---|---|---|---|---|---|
 | no harness (AR-Bench zero-shot loop) | 60.4 [56.8,63.9] | 61.4 | 59.7 [53.3,65.7] | 57.6 | 670 | 0 |
-| b0 commit: premise checks first, one working story that must keep every confirmed fact, question format checks, final answer rewritten from confirmed facts | 76.7 [74.5,79.1] | 75.7 | 59.0 [53.0,64.8] | 57.1 | 4486 | 0 |
+| b0 commit: premise checks, one working story keeping every confirmed fact, question-format checks, answer rewritten from confirmed facts | 76.7 [74.5,79.1] | 75.7 | 59.0 [53.0,64.8] | 57.1 | 4486 | 0 |
+| b1 candidate not chosen | 73.0 [70.0,76.0] | 73.8 | 64.3 [58.8,69.8] | 65.5 | 4685 | 0 |
 | b1 commit: + repeat / denied-lead vetoes, contradiction check on the final answer | 76.2 [73.4,78.8] | 75.9 | 63.2 [57.8,68.5] | 60.0 | 4944 | 0 |
-| b2 commit (final): + no entities denied twice, no 'the X' for unconfirmed guesses, invented-name check | 75.6 [73.4,77.8] | 75.4 | 68.7 [63.3,74.0] | 66.4 | 5263 | 0 |
 | b2 candidate not chosen (gold 0.802 on its batch), half the tokens | 76.3 [74.1,78.6] | 77.5 | 68.2 [63.3,73.3] | 67.6 | 2112 | 0 |
-| b1 candidate not chosen (first evaluation hit the referee's preemption; re-run pending) | 24.9 [18.3,31.9] | 21.2 | 49.2 [42.7,55.3] | 47.4 | 2405 | 66 |
+| b2 commit (final): + no entity denied twice, no 'the X' for unconfirmed guesses, invented-name check | 75.6 [73.4,77.8] | 75.4 | 68.7 [63.3,74.0] | 66.4 | 5263 | 0 |
 
-**Reading.** Label-free evolution from ten failure traces lifts the frozen 7B from 60.4 to 76–77 F1 on
+**Reading.** Label-free evolution from ten failure traces lifts the frozen 7B from 60.4 to 74–77 F1 on
 70 puzzles it never saw — above every zero-shot model in AR-Bench's own table, including GPT-4o (63),
 with the 7B still writing every question. Key-question recall rises from 60 to 68–69 only in the later
 generations (the first generation improves the *answer*, not the questioning). The cost is 3–8× more
-output tokens per puzzle. The unchosen b2r0g1 matches the committed harness at half the tokens.
+output tokens per puzzle. The unchosen b2r0g1 matches the committed harness at half the tokens. b1r0g0 (re-run on 10-13 after the
+405B referee was preempted mid-evaluation) is the weakest of the five at 73.0, still 13 points over bare.
 
 Files: `result.json`, `opt_log.jsonl`, `branch_lineage.jsonl`, `session_audits.jsonl`, `trajectory.png`,
 `judge_verdicts/`, `proposal_cards/`, `candidates/`, `eval_test100_scores.json`. Raw traces, transcripts,

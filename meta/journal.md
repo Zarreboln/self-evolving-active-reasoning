@@ -324,3 +324,20 @@
   + the real transcripts; no strict6/labeled6 session had touched the other arm's candidates.
 - Resumed: strict6 from batch 1 round 1 (heads b1r0g0 / b0r1g1 / b1r0g2), labeled6 from the batch-0
   judge over its 6 candidates. Subscription window may still be tight before 23:00; the loop will pause.
+- 21:37 labeled6 resumed (judge-only at batch 0, then on). 21:37 strict6 launch failed: zsh does not
+  word-split an unquoted $COMMON variable, argparse saw one argument; relaunched 21:38:46 with explicit
+  arguments: "resuming batch 1 at round 1: reloaded b0r1g1, b1r0g0, b1r0g2", stale controller copy removed.
+- 21:57 strict6 batch 1 judged (resumed run, all 4 sessions clean): pool b0r1g1 .90, b1r0g0 .80,
+  b1r0g2 1.00, b1r1g0 .90, b1r1g1 1.00, b1r1g2 1.00 (joint, controller gold). Judge REJECTED the three
+  10/10 candidates for choosing queries (b1r1g1: harness picks the best-splitting of 5 model-listed
+  queries; b1r0g2/b1r1g2: "closest to 50% now" hints followed ~95%), ranked the valid ones with its own
+  label-free checker (incumbent 9/10, b1r0g0 8/10 + a crash, b1r1g0 9/10) and committed b1r1g0 (board
+  harness; skips queries the board already knows; lists rule-allowed tables at the end; stops the
+  early-guess loop). Prequential on batch 2 pending.
+- 21:38 labeled6 batch 0 judged (resumed): b0r1g2 (joint-space enumerator + "reject a query that splits
+  less evenly than the best"); prequential on batch 1 = 10/10.
+- 22:1x user: after today's runs, (a) frozen evaluation of the finished harnesses on the full v2 held-out
+  (200 instances, no proposing, 7B only) -> meta/cd_tthe/evaluate.py written and mock-tested (reports
+  official metrics with bootstrap CIs on all 200 and on the 170 the stream never used); (b) then add
+  --regime open|state_only and run both regimes on the full set (config to be confirmed: 200 instances,
+  B=20, strict, sequential, state_only first).

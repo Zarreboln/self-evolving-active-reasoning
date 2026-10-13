@@ -1,0 +1,28 @@
+{
+  "candidate": "cand_labeled6_b10g3r2_b2r1g2",
+  "parent": "cand_labeled6_b10g3r2_b2r0g2",
+  "role": "adversarial audit and synthesis",
+  "hypothesis": "The parent's mechanisms (exact rule-derived joint hypothesis space, deduction board, observed/forced/weak-query vetoes restricting the model to best-balanced rows, labelled 8-bit final fields with contradiction veto + nearest-consistent repair) are each independently supported and sufficient on this batch; the parent behavior, kept unchanged, will again get 10/10 joint tables right with every episode ending with one table left in <=13 queries. It is falsified if any instance on this batch ends with >1 table alive, needs the repair path, or gets a wrong joint table.",
+  "behavior_changes": [
+    "None. Only the docstring changed: it now records the audit. The three active branches (b2r0g0, b1r0g2, b2r0g2) are the same code apart from docstrings and their traces agree query for query on all 10 instances, so there was no disagreement to adjudicate and nothing that differed between them to combine."
+  ],
+  "preserved_behaviors": [
+    "Joint-table enumeration from the inventory + rule text; elimination after every answer; early stop once a single table remains",
+    "Board showing observed / forced / open rows with outcome splits; free re-ask on observed, forced or weaker-than-best rows (BALANCE_TAU=1.0); model picks which best row",
+    "Final answer as <A>/<B>/<C> 8-bit fields (24-bit <guess> still accepted); contradiction/malformed veto with re-ask at T=0.2; nearest-consistent repair as last resort",
+    "Fallback to the benchmark's own final turn if the hypothesis space is empty"
+  ],
+  "verification": [
+    "Diffed the three branch sources: identical apart from docstrings. Hashed each trace's query + final-field sequence: identical across the three branches on all 10 instances.",
+    "Read the traces for vetoes and repairs: 0 already-observed vetoes, 0 forced-row vetoes, 1 weak-query veto (i266: model asked A(1,1,1) when the only best row was A(1,1,0); on the re-ask it took A(1,1,0)), 0 malformed/contradicting final answers, so the repair path never ran. Every episode stopped with exactly one table left (8-13 queries).",
+    "Checked the hypothesis space against an independent brute-force enumerator written from the system prompt's process text (multiset of signals; AND/OR consume two, NOT transforms one; NOT stacking allowed; non-constant): the sets match for every AND/OR split (0-2 AND) and 0-6 NOTs, 0 mismatches. So the elimination cannot drop the true table or keep impossible ones.",
+    "Offline best-row policy simulation (random pick among the listed best rows, 40 sampled truths per inventory, 6 binary gates): AND=0/NOT=1 |J|=21 worst 5; AND=0/NOT=2 |J|=202 worst 11; AND=0/NOT=3 |J|=1186 worst 13; AND=2/NOT=1 |J|=1899 worst 14; AND=2/NOT=2 |J|=13854 worst 17; AND=2/NOT=3 |J|=48684 worst 18; AND=3/NOT=1 |J|=3924 worst 16 (mean 13.0). 0 unresolved within 18 in every inventory tested. This batch's starting spaces are 3924 (6 instances), 2886 (2) and 252 (2); the real traces used at most 13 queries.",
+    "Ran check_b2r1_cand_labeled6_b10g3r2_b2r1g2.py: 10/10 status=ok, parsed_final_guess=True, joint truth table correct=True, 3/3 circuits on every instance; queries 8-13 (mean 11.1). Each instance's history and final guess text are identical to the parent's (cached solver, seed 0), so this re-run confirms there is no regression but adds no new sampling evidence."
+  ],
+  "risks": [
+    "Evidence comes from one seed with a cached solver: all three branch runs and this re-run are the same sample, so 10/10 is one draw, not three.",
+    "Inventories whose AND+OR count is not 6 (outside the stated rules) get an empty space and fall back to the bare benchmark turn, which this batch never tested.",
+    "If the model keeps naming non-best rows for MAX_RETRIES=4 re-asks, the harness falls back to its last informative query; if every reply was an observed or forced row, one query is wasted. Neither happened in these traces.",
+    "The 18-query margin is thin for larger spaces: in simulation, greedy best-balanced picking needed 16 queries on this batch's largest inventory (AND=3/NOT=1), 17 at AND=2/NOT=2 and exactly 18 at AND=2/NOT=3. Batches with more NOTs could leave >1 table at the end. A two-step lookahead restriction on the allowed rows is the natural next experiment, but no trace in this batch supports it yet, so it was not added."
+  ]
+}

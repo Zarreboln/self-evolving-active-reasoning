@@ -1,0 +1,1 @@
+Comparing the three branches' traces per instance to find where they disagree.The offline simulation is slow; checking whether it is stuck before tuning it.Lower bound check shows no forced failures (no table has single-row neighbours), so the >18 cases are a strategy weakness, not a property of the space. Now comparing criteria on the larger spaces.

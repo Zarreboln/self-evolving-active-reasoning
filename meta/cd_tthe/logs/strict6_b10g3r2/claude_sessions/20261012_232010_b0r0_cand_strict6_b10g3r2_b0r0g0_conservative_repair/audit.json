@@ -1,0 +1,13 @@
+{
+ "name": "b0r0_cand_strict6_b10g3r2_b0r0g0_conservative_repair",
+ "session": "20261012_232010_b0r0_cand_strict6_b10g3r2_b0r0g0_conservative_repair",
+ "clean": false,
+ "hits": [
+  {
+   "kind": "solver cache",
+   "match": "solver_cache",
+   "tool": "Bash",
+   "input": "S=/private/tmp/claude-501/-Users-zarreboln-Desktop-ar-harness-meta-cd-tthe/0383ff6e-75db-4fce-abc1-48406328f856/scratchpad; mkdir -p $S/run; cat > $S/par.py <<'EOF'\nimport json, subprocess, sys\nfrom pathlib import Path\nfrom concurrent.futures import ThreadPoolExecutor\nHERE = Path('/Users/zarreboln/D"
+  }
+ ]
+}

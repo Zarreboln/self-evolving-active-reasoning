@@ -341,3 +341,14 @@
   official metrics with bootstrap CIs on all 200 and on the 170 the stream never used); (b) then add
   --regime open|state_only and run both regimes on the full set (config to be confirmed: 200 instances,
   B=20, strict, sequential, state_only first).
+- 22:29 labeled6 finished (resumed run): prequential cwa 70.0 / joint 66.7 (0/10 -> 10/10 -> 10/10),
+  transductive 100/100; commits b0r1g2 -> b1r0g2 (batch 1) -> kept (batch 2).
+
+### 2026-10-12 22:33 EDT — strict6 finished (resumed run)
+- Batch 2 judge (clean): all six harnesses gave identical, answer-consistent guesses; chose b2r0g1 for
+  fewer queries (10 vs 16 on i206, 11 vs 15 on i238, 16 vs 17 on the hardest i266). Final harness
+  b2r0g1. Stream prequential: cwa 67.8 / joint 63.3 (0/10 -> 9/10 -> 10/10), uniq@end 80; transductive
+  98.9 / 96.7. Sessions: 32, 29 clean; the 3 discards: solver_cache (my over-broad rule, removed),
+  stray `cat >` write to ~/Desktop (real), `python3 ../audit.py` from agents/ (cwd not tracked, fixed).
+  Every judge session clean. labeled6: 36/36 clean, 0/10 -> 10/10 -> 10/10, cwa 70.0 / joint 66.7.
+- 22:35 frozen evaluation launched: 11 harnesses x 200 held-out (48 workers), logs/eval_heldout200.

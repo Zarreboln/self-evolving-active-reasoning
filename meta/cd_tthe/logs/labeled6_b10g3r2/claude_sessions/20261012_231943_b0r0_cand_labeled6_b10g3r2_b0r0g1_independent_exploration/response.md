@@ -1,0 +1,1 @@
+Analyzing the bare traces: checking whether final guesses even agree with the bits the model already observed (looks like they often don't).Early results: 2/3 circuits correct on each of the first three (bare: 0–1/3). Inspecting where the remaining circuit fails.

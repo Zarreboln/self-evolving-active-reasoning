@@ -1,0 +1,21 @@
+{"candidate": "cand_labeled6_b10g3r2_b1r0g0", "parent": "cand_labeled6_b10g3r2_b0r1g2", "role": "conservative repair",
+ "hypothesis": "Asked to write one 24-bit run, the 7B model sometimes miscounts while joining A, B and C (b0r1g2 i228: 32 bits on all 4 final-guess calls; it was correct only because a single table was left and the repair was forced). If the model instead copies the three 8-bit tables from the board as labelled fields <guess>A=........ B=........ C=........</guess> and the harness joins them, the first final-guess reply has 24 bits on every instance (calls == queries + 1), with no loss in accuracy.",
+ "behavior_changes": [
+   "Final prompt asks for <guess>A=xxxxxxxx B=xxxxxxxx C=xxxxxxxx</guess>, each field 8 bits, copied from the board",
+   "New parse_guess(): if the last <guess> block has all of A=/B=/C= (also ':' and spaces), the harness joins them in A, B, C order; otherwise it falls back to the parent's plain 24-bit <guess> parse",
+   "Wrong-length retry note now says A, B and C need exactly 8 bits each"
+ ],
+ "preserved_behaviors": [
+   "Rule-derived joint-table enumeration, deduction board, veto of observed/forced rows, best-balanced-row veto (BALANCE_TAU=1.0), early stop at one table",
+   "Final guess vetoed if it is not a consistent table; last-resort repair to the nearest consistent table",
+   "Model still writes every query and the final guess; no new solver calls beyond the parent's retry budget"
+ ],
+ "verification": [
+   "Unit-checked parse_guess on labelled, comma-separated, plain 24-bit, short-field (23 -> re-asked) and 32-bit inputs",
+   "Ran check_b1r0_cand_labeled6_b10g3r2_b1r0g0.py: 10/10 status=ok, parsed_final_guess=True, joint truth table correct=True, 3/3 circuit-wise on every instance; queries per episode unchanged from the parent (mean 11.4)",
+   "calls == queries + 1 on all 10, so the final guess was accepted on the first try; i228 went from 16 calls (3 rejected 32-bit guesses + forced repair) to 13, and the model replied in the labelled form on every instance"
+ ],
+ "risks": [
+   "The model could put a label on a wrong-length field; the joined string is then not 24 bits and is re-asked, as in the parent",
+   "On this batch the gain shows up only as fewer calls / less reliance on the repair. It matters for accuracy only when more than one table is left at the end, which never happened here"
+ ]}

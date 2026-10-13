@@ -1,0 +1,1 @@
+I'll start by reading the interface and the parent harness.Now I'll write the new docstring and Harness class, keeping the parent's rule enumeration as-is.You've hit your session limit · resets 11pm (America/New_York)

@@ -1,0 +1,1 @@
+While that runs, I'll set up the candidate file and read the check script.Now updating the docstring, then a quick offline check of what the board shows at the start.Board reads sensibly. Running the check on this batch."Ran fine" here is clearly not solved: 8 of 10 episodes sent zero queries. Investigating.

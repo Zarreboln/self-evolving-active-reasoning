@@ -1,0 +1,27 @@
+{
+ "candidate": "cand_strict6_b10g3r2_b2r0g0",
+ "parent": "cand_strict6_b10g3r2_b1r1g0",
+ "role": "conservative repair",
+ "hypothesis": "The parent's only remaining trace-visible weakness is the final-phase copy step: the 7B model miscopies a board row it was handed verbatim (5 of 30 first attempts on this batch; board 00010011 -> 00011111 on instances 0, 230, 266), and if every re-ask failed the parent's fallback would return the model's last, board-contradicting table. If the fallback instead keeps every observed/deduced board cell (taking only '?' cells from the model's last table), no episode can end with a table that contradicts the answers or the rule deductions, and on this batch the outcome is unchanged (all 10 guesses equal the unique triple the rules + answers allow).",
+ "behavior_changes": [
+  "Final-phase fallback (only reached when no FINAL_TRIES reply is accepted and no listed option was written): if none of the model's tables keeps every known cell, the circuit's table is the board's known values with '?' cells filled from the model's last table (zeros if it wrote none), instead of the model's last table verbatim."
+ ],
+ "preserved_behaviors": [
+  "Deduction board (observed / deduced / ?) appended to every answer in the model's own conversation",
+  "Veto of queries on already-known cells (VETO_MAX=2), early-<guess> re-ask naming the '?' cells, MISS_MAX exit",
+  "Query phase stops once the board has no '?'",
+  "Per-circuit final copy with board-contradiction and rule-impossibility re-asks, option listing (<= LIST_MAX) when '?' cells remain, preference for a listed option the model wrote",
+  "The model writes every query; the harness never chooses one"
+ ],
+ "verification": [
+  "Parent traces (b2, 10 instances) re-checked with the harness's own rule enumeration: every episode ends with exactly 1 alive (A,B,C) triple and the returned guess equals it; 0 crashes; 6-17 queries used; 1 zero-information query (instance 60, the 3rd try after 2 vetoes).",
+  "Counted final-phase 'disagrees with the board' re-asks in parent traces: 1 (i0), 2 (i230), 2 (i266); each fixed on the first retry. Found by reading the code that the parent's fallback returns said[-1] if every try failed.",
+  "Mock-env unit test (scratchpad): a solver that always inverts the board row in the final phase -> new harness returns the exact board (correct) guess; the parent would return the inverted rows.",
+  "Ran check_b2r0_cand_strict6_b10g3r2_b2r0g0.py: 10/10 status=ok, parsed_final_guess=True, queries 16,15,17,15,10,10,14,14,15,6 (mean 13.2), calls identical to parent; guesses identical to the parent's; all 10 equal the unique alive triple; the new fallback never fired (the solver is cached/deterministic, so the run follows the parent's path)."
+ ],
+ "risks": [
+  "The change is a safety net only: on this batch it does not change any output, so its benefit is unmeasured here and only matters for episodes where the model miscopies FINAL_TRIES times in a row.",
+  "Correctness of 'deduced' cells still rests on the harness's reading of the building rules (2 binary gates per circuit, NOT may apply anywhere including after the last binary gate, distinct operands, no constant circuit); if the oracle reads them differently, the fallback would preserve a wrong deduced cell rather than the model's value.",
+  "Veto passthrough after VETO_MAX still lets an occasional uninformative query through (1 on this batch); budget was not binding (max 17 of 18), so it was left unchanged."
+ ]
+}

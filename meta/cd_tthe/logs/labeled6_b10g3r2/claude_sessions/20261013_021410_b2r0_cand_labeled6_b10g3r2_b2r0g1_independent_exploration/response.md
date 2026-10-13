@@ -1,0 +1,1 @@
+Checking offline how many queries the parent's balanced-row strategy needs in the worst case, for each possible inventory.The worst-case search took too long and hit its time limit, so I stopped it. Now I'm running a lighter simulation that samples the true tables at random for each inventory.

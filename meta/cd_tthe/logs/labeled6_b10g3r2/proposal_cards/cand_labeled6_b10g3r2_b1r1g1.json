@@ -1,0 +1,21 @@
+{"candidate": "cand_labeled6_b10g3r2_b1r1g1", "parent": "cand_labeled6_b10g3r2_b1r0g1", "role": "independent explorer: retry fixed points",
+ "hypothesis": "The harness's safety net against model mistakes is mostly illusory: the frozen solver is deterministic for a given context (seeded and cached), so a stateless re-ask that rebuilds the same context returns the rejected reply verbatim. In b0r1g2 i228 the four final tries got byte-identical 32-bit replies at both temperatures. A query veto whose note repeats is also a fixed point, so the effective retry budget is one attempt and the outcome hangs on the nearest-table repair or a fallback query. Falsifiable claim: if every retry is a new conversational turn (the rejected reply kept as the model's own turn, followed by a specific correction), then (a) no retry ever repeats an earlier context, (b) a model that only errs on a fresh context gets its answer through the model instead of the repair or fallback, and (c) outcomes are unchanged when no retry is needed.",
+ "behavior_changes": [
+   "Query turn: a rejected query (no tag, already observed, forced, or weak) is appended as an assistant turn, followed by a user correction that says what was wrong (including the row's known value), lists the current best open rows, and asks again. The board prompt is not rebuilt with a prefixed note.",
+   "Final turn: a malformed or inconsistent answer is appended as an assistant turn, followed by a correction naming the faulty fields (bit counts, contradicted rows, which circuit's 8 bits fit no remaining table) and the required three-field format.",
+   "Retry temperature for the final answer is 0.2 from the second attempt on, as in the parent's note case."
+ ],
+ "preserved_behaviors": [
+   "The first ask of every query turn and of the final turn is byte-identical to the parent's, so episodes that need no retry reproduce the parent exactly (same cached replies).",
+   "Rule-space enumeration, deduction board, the best-balanced-row veto (BALANCE_TAU=1.0), early stop at one remaining table, the three 8-bit <A>/<B>/<C> fields, and the nearest-consistent-table repair as a last resort.",
+   "The model writes every query and the final fields. The harness only vetoes, re-asks, and assembles."
+ ],
+ "verification": [
+   "Ran check_b1r1_cand_labeled6_b10g3r2_b1r1g1.py: 10/10 status=ok, parsed_final_guess=True, joint truth table correct on 10/10 (3/3 circuits each). Queries per instance (8-15, mean 11.4) match the parent. calls = queries + 1 everywhere, and every LLM call had 2 messages, so the real model never triggered a retry on this batch and the new path was not exercised by the 7B here.",
+   "Scratch unit test with a fake env (tables drawn from the harness's own rule space, no instance data) and a deterministic mock solver that repeats a bad reply on any fresh context (re-asks an observed row; writes 10/7-bit fields): the new harness got 30/30 correct, mean 10.9 queries, no repeated queries, and the final answer fixed on the 2nd in-conversation try without the repair. The parent got 1/30, used all 18 queries every episode, and repeated queries in every episode. This mock is adversarial by construction: it shows the mechanism works, not how often the 7B hits this case."
+ ],
+ "risks": [
+   "Not exercised by the real 7B on this batch. The benefit is limited to episodes where the first ask fails, and it is unmeasured here.",
+   "A multi-turn correction might anchor the 7B on its own wrong reply (copying it again) more than a fresh prompt would. Even so, each retry is now a distinct context, unlike the parent's.",
+   "Context grows by about 2 short turns per retry (MAX_RETRIES=4), which is negligible against the board size."
+ ]}

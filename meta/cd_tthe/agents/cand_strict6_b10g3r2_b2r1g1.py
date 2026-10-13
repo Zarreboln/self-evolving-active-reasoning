@@ -1,0 +1,360 @@
+"""Branch b2r1g1 (parent: b2r0g1), independent exploration. Hypothesis: query efficiency is no longer where
+episodes can go wrong -- on this batch the parent's model-chosen queries match a greedy best-split policy within
+one query on every instance and the board pins a single circuit triple with 2-8 queries to spare. The remaining
+single point of failure is invisible from inside: every 'deduced' cell (often 10+ of the 24 output bits) rests
+only on the harness's reading of the task rules, and the parent stops querying as soon as the board has no '?',
+throwing the spare budget away. If that reading is wrong anywhere, the guess is wrong with nothing to show it.
+One mechanism: when the board has no '?' and queries remain, the query phase does not stop; the model is asked
+to spend the spare queries confirming 'deduced' cells (deduced cells listed, circuit with the fewest observed
+cells first; a query on an observed cell is vetoed as before; these turns are sent as a short conversation --
+system prompt + the current board -- so the longer episode does not overflow the model's context, and a failed
+model call is retried once in that short form instead of ending the query phase). An answer that disagrees with a deduction empties
+the rule-consistent set, so the parent's fallback takes over (board shows observed cells only, querying resumes
+on '?' cells, final phase lets the model fill). Everything else is the parent's.
+
+Branch b2r0g1 (parent: b1r1g0), independent exploration. Hypothesis: with the board, the parent pins all
+three circuits on every instance of this batch, but only with a thin margin (up to 17 of 18 queries) because the
+model picks '?' cells in reading order (A(0,0,0), A(0,0,1), ...) and spends queries on cells that barely split
+what is still possible (0-0.45 bits on several instances). The model cannot see WHICH unknown cell is worth
+asking. One mechanism: each '?' cell on the board carries its worth -- the share of the still-possible circuit
+combinations (rules + answers so far) that querying it is guaranteed to rule out, whichever bit comes back
+(min(n0, n1) / n; 50% is the best possible) -- the board says how many combinations are still possible, and one
+line lists the TOP_N highest-worth '?' cells across all three circuits (a first run showed the model comparing
+worth only inside the circuit it was sweeping).
+The model still chooses and writes every query. Everything else is the parent's.
+
+Branch b1r1g0 (parent: b1r0g0), conservative repair. Trace-visible failure of the parent: on one
+instance the model sent a <guess> mid-episode (3 cells still '?', 9 queries left) and repeated it through
+30 identical 'no query' re-asks until the conversation exceeded the model's context window -> crash, no
+guess. Repair: after a reply with no query, the re-ask names the board's '?' cells when the model tried to
+guess early; after MISS_MAX consecutive query-less replies (or if a model call fails) the query phase
+ends and the parent's final phase runs on the board as it stands. Everything else is the parent's.
+
+Branch b1r0g0 (parent: b0r1g1), conservative repair. Two trace-visible failures of the parent:
+(1) the model re-queries cells the board already marks observed/deduced (12 queries on this batch, 5 in one
+episode that then used 17 of 18), and (2) when the budget runs out with '?' cells left, the model fills them
+with a table the rules exclude (a constant circuit) and keeps it through every re-ask, so the parent's
+fallback returns a certainly-wrong circuit. Repairs: a query on an already-known cell is not sent to the
+environment; the model is told its value and asked for a '?' cell instead (at most VETO_MAX times in a row,
+then the query goes through). In the final phase, if a circuit still has '?' cells and the rules leave at
+most LIST_MAX complete tables for it, those tables are listed and the model copies one; the fallback prefers
+any listed table the model wrote. Everything else is the parent's.
+
+Parent (b0r1g1, parent: b0r0g1). Hypothesis: episodes go wrong because the model never SEES what the
+rules + answers already imply. It re-queries rows whose output is already forced (sweeping one circuit
+row by row), leaves other circuits under-probed, and at the end fills unqueried rows by guessing a gate
+formula -- even when the answers already pin every row. It does not need a query chooser or vetoes, only
+a visible knowledge state.
+
+One mechanism, a deduction board: after every answer the harness computes, from the task rules alone
+(inventory split without replacement across A, B, C; each AND/OR consumes two signals, NOT replaces one,
+until one signal is left; no constant circuit) and all answers so far, which of the 24 outputs are
+observed, which are forced (same value in every circuit triple still allowed), and which are open ('?').
+The board is appended to each answer in the model's own ongoing conversation (bare's query protocol
+otherwise). Querying stops when the board has no '?'. In the final phase the model copies each circuit's
+row of the board as <table>XXXXXXXX</table>, filling any '?' itself; a table that contradicts a known
+cell, or that no circuit allowed by the rules can produce, is sent back with the reason.
+If the rule enumeration ever explains no triple (rules read differently), the board shows observed
+cells only."""
+
+import itertools
+import re
+
+from harness_base import CDHarness
+
+QUERY_RE = re.compile(r"<query>\s*([A-Ca-c])\s*\(\s*([01])\s*,\s*([01])\s*,\s*([01])\s*\)\s*</query>")
+TABLE_RE = re.compile(r"<table>\s*([01](?:\s*[01]){7})\s*</table>")
+BITS8_RE = re.compile(r"(?<![01])[01]{8}(?![01])")
+ROWS = [(a, b, c) for a in (0, 1) for b in (0, 1) for c in (0, 1)]
+CIRCS = "ABC"
+MAX_CALLS = 60
+FINAL_TRIES = 4
+VETO_MAX = 2
+LIST_MAX = 8
+MISS_MAX = 2
+TOP_N = 4
+
+
+def _tables(n_and, n_or, n_not):
+    """Output tables (8-bit ints, bit r = output on row r, row r = a*4+b*2+c) of every circuit that uses
+    exactly these gates; constant circuits are excluded (task rules)."""
+    out, seen = set(), set()
+    x = [sum(((r >> (2 - k)) & 1) << r for r in range(8)) for k in range(3)]
+
+    def rec(sigs, a, o, n):
+        key = (sigs, a, o, n)
+        if key in seen:
+            return
+        seen.add(key)
+        if len(sigs) == 1 and a == o == n == 0:
+            out.add(sigs[0])
+            return
+        for i in range(len(sigs)):
+            if n:
+                rec(tuple(sorted(sigs[:i] + (255 ^ sigs[i],) + sigs[i + 1:])), a, o, n - 1)
+            for j in range(i + 1, len(sigs)):
+                rest = sigs[:i] + sigs[i + 1:j] + sigs[j + 1:]
+                if a:
+                    rec(tuple(sorted(rest + (sigs[i] & sigs[j],))), a - 1, o, n)
+                if o:
+                    rec(tuple(sorted(rest + (sigs[i] | sigs[j],))), a, o - 1, n)
+
+    rec(tuple(sorted(x)), n_and, n_or, n_not)
+    return {t for t in out if t not in (0, 255)}
+
+
+def _splits(total):
+    return [(i, j, total - i - j) for i in range(total + 1) for j in range(total - i + 1)]
+
+
+def _joint_space(inv):
+    """Every (tA, tB, tC) the task rules allow for this inventory."""
+    space, cache = set(), {}
+    for a3 in _splits(inv.get("AND", 0)):
+        for o3 in _splits(inv.get("OR", 0)):
+            for n3 in _splits(inv.get("NOT", 0)):
+                per = []
+                for k in range(3):
+                    g = (a3[k], o3[k], n3[k])
+                    if g not in cache:
+                        cache[g] = _tables(*g)
+                    per.append(cache[g])
+                if all(per):
+                    space.update(itertools.product(*per))
+    return space
+
+
+def _bits(t):
+    return "".join(str((t >> r) & 1) for r in range(8))
+
+
+def _row(a, b, x):
+    return a * 4 + b * 2 + x
+
+
+class Harness(CDHarness):
+    def solve(self):
+        env = self.env
+        self.calls = 0
+        try:
+            self.space = _joint_space(env.inventory)
+        except Exception:
+            self.space = set()
+        self._query_phase()
+        return self._final_phase()
+
+    def _call(self, msgs, **kw):
+        self.calls += 1
+        return self.llm(msgs, **kw) or ""
+
+    # ---- the deduction board ----
+    def _observed(self):
+        obs = {c: {} for c in CIRCS}
+        for (c, a, b, x), bit in self.env.history:
+            obs[c][_row(a, b, x)] = bit
+        return obs
+
+    def _alive(self, fixed=None):
+        fixed = fixed or {}
+        return [s for s in self.space
+                if all(((s[CIRCS.index(c)] >> _row(a, b, x)) & 1) == bit for (c, a, b, x), bit in self.env.history)
+                and all(s[CIRCS.index(c)] == t for c, t in fixed.items())]
+
+    def _board(self, fixed=None):
+        """{c: {row: (value or None, 'observed' | 'deduced' | 'open')}} and the alive triples."""
+        obs = self._observed()
+        alive = self._alive(fixed)
+        board = {}
+        for i, c in enumerate(CIRCS):
+            board[c] = {}
+            for r in range(8):
+                if r in obs[c]:
+                    board[c][r] = (obs[c][r], "observed")
+                elif alive and len({(s[i] >> r) & 1 for s in alive}) == 1:
+                    board[c][r] = ((alive[0][i] >> r) & 1, "deduced")
+                else:
+                    board[c][r] = (None, "open")
+        return board, alive
+
+    def _board_text(self, board, alive=None):
+        lines = ["KNOWLEDGE BOARD (observed = answered by a query; deduced = forced by your gate inventory, the "
+                 "building rules and all answers so far, so querying it would waste a query; ? = still unknown):"]
+        worth = {}
+        if alive:
+            n = len(alive)
+            lines.append(f"{n} combinations of circuits A, B, C are still possible. Each ? cell shows its worth: the "
+                         "share of those combinations that querying it is guaranteed to rule out, whatever the "
+                         "answer (50% is the best possible, near 0% is nearly wasted). Prefer a ? cell with high worth.")
+            for i, c in enumerate(CIRCS):
+                for r in range(8):
+                    if board[c][r][0] is None:
+                        n1 = sum((s[i] >> r) & 1 for s in alive)
+                        worth[(c, r)] = round(100 * min(n1, n - n1) / n)
+        for c in CIRCS:
+            cells = []
+            for a, b, x in ROWS:
+                r = _row(a, b, x)
+                v, kind = board[c][r]
+                if v is not None:
+                    cells.append(f"{c}({a},{b},{x})={v} {kind}")
+                elif (c, r) in worth:
+                    cells.append(f"{c}({a},{b},{x})=? worth {worth[(c, r)]}%")
+                else:
+                    cells.append(f"{c}({a},{b},{x})=?")
+            n_open = sum(1 for r in range(8) if board[c][r][0] is None)
+            lines.append(f"Circuit {c} ({n_open} unknown): " + ", ".join(cells))
+        if worth:
+            top = sorted(worth.items(), key=lambda kv: (-kv[1], CIRCS.index(kv[0][0]), kv[0][1]))[:TOP_N]
+            lines.append("Highest-worth ? cells across ALL circuits (compare circuits, not just the one you are on): "
+                         + ", ".join(f"{c}({r >> 2},{(r >> 1) & 1},{r & 1}) {w}%" for (c, r), w in top))
+        return "\n".join(lines)
+
+    # ---- query phase: bare's conversation, each answer followed by the board ----
+    def _confirm_note(self, board):
+        """Board complete, budget left: name the deduced cells, circuit with the fewest observed cells first."""
+        order = sorted(CIRCS, key=lambda k: (sum(1 for r in range(8) if board[k][r][1] == "observed"),
+                                             CIRCS.index(k)))
+        parts = []
+        for k in order:
+            ded = [f"{k}({a},{b},{x})" for a, b, x in ROWS if board[k][_row(a, b, x)][1] == "deduced"]
+            if ded:
+                parts.append(f"circuit {k}: " + ", ".join(ded))
+        return ("Every cell on the board is now known, but the deduced cells rest only on reading the gate rules, "
+                f"not on answers, and you still have {self.env.remaining} queries that are worth nothing if left "
+                "unused. Use them to CONFIRM deduced cells: query a cell marked 'deduced' (never one marked "
+                "'observed'). If an answer disagrees with a deduction, the board will drop the deductions. Deduced "
+                "cells, circuit with the fewest observed cells first: " + "; ".join(parts)
+                + ". Reply with exactly one <query>X(a, b, c)</query>.")
+
+    def _query_phase(self):
+        env = self.env
+        board, alive = self._board()
+        msgs = [{"role": "system", "content": env.system_prompt},
+                {"role": "user", "content": self._board_text(board, alive) + "\n\nPlease start with your first query."}]
+        vetoes = misses = 0
+        while env.remaining > 0 and self.calls < MAX_CALLS - 3 * FINAL_TRIES:
+            complete = all(board[k][r][0] is not None for k in CIRCS for r in range(8))
+            try:
+                reply = self._call(msgs)
+            except Exception:
+                # e.g. the conversation outgrew the context: the last board message is self-contained
+                msgs = [msgs[0], msgs[-1]]
+                try:
+                    reply = self._call(msgs)
+                except Exception:
+                    break
+            msgs.append({"role": "assistant", "content": reply})
+            m = QUERY_RE.findall(reply)
+            if not m:
+                misses += 1
+                if misses > MISS_MAX:
+                    break
+                open_cells = [f"{k}({a},{b},{x})" for k in CIRCS for a, b, x in ROWS
+                              if board[k][_row(a, b, x)][0] is None]
+                if complete:
+                    note = self._confirm_note(board)
+                elif "<guess>" in reply and open_cells:
+                    note = (f"It is not time to guess yet: the board still has {len(open_cells)} unknown cells ("
+                            + ", ".join(open_cells) + f") and you have {env.remaining} queries left. Query one "
+                            "of those cells. Reply with exactly one <query>X(a, b, c)</query>.")
+                else:
+                    note = ("Your message did not contain a query in the required format. Reply with exactly "
+                            "one <query>X(a, b, c)</query>.")
+                msgs.append({"role": "user", "content": note})
+                continue
+            misses = 0
+            c, a, b, x = m[-1][0].upper(), int(m[-1][1]), int(m[-1][2]), int(m[-1][3])
+            v, kind = board[c][_row(a, b, x)]
+            if (kind == "observed" if complete else v is not None) and vetoes < VETO_MAX:
+                vetoes += 1
+                want = "a cell marked 'deduced'" if complete else "a cell marked '?'"
+                msgs.append({"role": "user", "content": f"{c}({a},{b},{x}) is already known on the board: "
+                             f"{v} ({kind}). Querying it would waste a query, so it was not sent. Choose {want} "
+                             f"instead. {env.remaining} queries remaining. Reply with exactly one "
+                             f"<query>X(a, b, c)</query>."})
+                continue
+            vetoes = 0
+            bit = env.query(c, a, b, x)
+            clash = kind == "deduced" and v != bit
+            board, alive = self._board()
+            if all(board[k][r][1] == "observed" for k in CIRCS for r in range(8)) or env.remaining == 0:
+                break
+            head = env.format_answer(c, a, b, x, bit)
+            if clash:
+                head += (f"\n\nThis DISAGREES with the deduced value {v}: the gate rules were read wrongly, so the "
+                         "board no longer deduces anything and shows only observed answers. Query '?' cells.")
+            if all(board[k][r][0] is not None for k in CIRCS for r in range(8)):
+                # confirmation turns: a short conversation (the board carries everything) so the spare
+                # queries do not push the dialogue past the model's context
+                msgs = [msgs[0], {"role": "user", "content": f"{head}\n\n{self._board_text(board, alive)}\n\n"
+                                  + self._confirm_note(board)}]
+            else:
+                msgs.append({"role": "user", "content": f"{head}\n\n{self._board_text(board, alive)}\n\n"
+                             f"Please send your next query. {env.remaining} queries remaining."})
+
+    # ---- final phase: copy the board, one circuit at a time ----
+    def _final_phase(self):
+        fixed, final = {}, {}
+        use_rules = bool(self._alive())
+        for c in CIRCS:
+            board, alive = self._board(fixed if use_rules else None)
+            if not alive:
+                board, alive = self._board()
+            i = CIRCS.index(c)
+            cells = board[c]
+            known = {r: v for r, (v, _) in cells.items() if v is not None}
+            template = "".join("?" if cells[r][0] is None else str(cells[r][0]) for r in range(8))
+            listing = "\n".join(f"{c}({a},{b},{x}) = " + ("?" if cells[_row(a, b, x)][0] is None else
+                                                         f"{cells[_row(a, b, x)][0]} ({cells[_row(a, b, x)][1]})")
+                                for a, b, x in ROWS)
+            ask = (f"The queries are over. Circuit {c} on the knowledge board (rows 000..111):\n{listing}\n\n"
+                   f"Write circuit {c}'s 8 outputs in the order {c}(0,0,0), {c}(0,0,1), ..., {c}(1,1,1), "
+                   f"keeping every observed and deduced value"
+                   + (", and replacing each '?' with your best deduction from the gates" if len(known) < 8 else "")
+                   + f". Board row: {template}. Answer as <table>XXXXXXXX</table>.")
+            options = sorted({_bits(s[i]) for s in alive}) if use_rules and alive and len(known) < 8 else []
+            if not 1 < len(options) <= LIST_MAX:
+                options = []
+            if options:
+                ask += (f"\nThe gate rules together with all answers allow exactly these {len(options)} tables for "
+                        f"circuit {c}: " + ", ".join(options) + ". Copy the one you judge most likely.")
+            note, chosen, said = "", None, []
+            for k in range(FINAL_TRIES):
+                msgs = [{"role": "system", "content": self.env.system_prompt},
+                        {"role": "user", "content": ask + note}]
+                reply = self._call(msgs, temperature=0.2 if k == 0 else 0.7, max_tokens=600)
+                m = TABLE_RE.findall(reply)
+                bits = re.sub(r"\s", "", m[-1]) if m else None
+                if bits is None:
+                    loose = BITS8_RE.findall(reply)
+                    bits = loose[-1] if loose else None
+                if bits is None:
+                    note = "\n(Your last reply had no <table>XXXXXXXX</table> with 8 bits. Use exactly that format.)"
+                    continue
+                said.append(bits)
+                t = sum(int(ch) << r for r, ch in enumerate(bits))
+                bad = [r for r, v in known.items() if ((t >> r) & 1) != v]
+                if bad:
+                    note = (f"\n(Your table {bits} disagrees with the board at "
+                            + ", ".join(f"{c}({r >> 2},{(r >> 1) & 1},{r & 1})" for r in bad)
+                            + ". Keep every observed and deduced value.)")
+                    continue
+                if use_rules and alive and not any(s[i] == t for s in alive):
+                    note = (f"\n(Your table {bits} cannot be produced by any circuit the rules allow together "
+                            f"with the other circuits. "
+                            + (f"Copy one of: {', '.join(options)}.)" if options else "Change some '?' rows.)"))
+                    continue
+                chosen = bits
+                break
+            if chosen is None:
+                chosen = next((s for s in said if s in options), None)
+            if chosen is None:
+                chosen = next((s for s in said
+                               if all(((sum(int(ch) << r for r, ch in enumerate(s)) >> r) & 1) == v
+                                      for r, v in known.items())),
+                              said[-1] if said else template.replace("?", "0"))
+            final[c] = chosen
+            t = sum(int(ch) << r for r, ch in enumerate(chosen))
+            if use_rules and any(s[i] == t for s in alive):
+                fixed[c] = t
+        return "<guess>" + "".join(final[c] for c in CIRCS) + "</guess>"

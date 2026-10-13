@@ -1,0 +1,22 @@
+{"candidate": "cand_labeled6_b10g3r2_b1r0g1", "parent": "cand_labeled6_b10g3r2_b0r1g2", "role": "independent exploration: final-answer transcription",
+ "hypothesis": "Once the board pins down the tables, the remaining failure mode is not deduction or query choice but transcription: the 7B miscounts runs of equal bits when it must concatenate three 8-bit tables into one 24-bit string (parent trace i228: board said A=10000000, B=00000001 and the model wrote 32 bits on all 4 tries; identical retries got identical replies; only the harness's nearest-table repair saved it). If the model writes each circuit in its own 8-bit field and the harness concatenates them, the model's own final answer should be well-formed and consistent on the first call in every episode, with no retries and no repair.",
+ "behavior_changes": [
+   "Final prompt asks for three fields <A>8 bits</A> <B>8 bits</B> <C>8 bits</C>, each copied from that circuit's board line; the harness checks each field's length on its own and concatenates A, B, C in the benchmark's order.",
+   "A retry note names the faulty field and its bit count (e.g. 'field <A> had 9 bits') rather than a total count, so the retry prompt differs from the failed one and points at the error.",
+   "Fallback parsing: a 24-bit <guess> is still accepted. For the last-resort repair, malformed fields are cut or padded to 8 bits each so the nearest-table comparison stays aligned row by row."
+ ],
+ "preserved_behaviors": [
+   "The model writes every query; enumeration of joint tables from the rules, the deduction board, vetoes of observed/forced/weaker-than-best rows, and the early stop at one table are unchanged from the parent.",
+   "Final guesses that contradict an answer or fall outside the rule-consistent set are still vetoed; the nearest-consistent-table repair is still the last resort.",
+   "Frozen solver (self.llm only), label-free (env.query only), no branching on instance inventory or index."
+ ],
+ "verification": [
+   "Ran check_b1r0_cand_labeled6_b10g3r2_b1r0g1.py twice (before and after the repair-alignment fix): 10/10 status=ok, parsed_final_guess=True, joint correct=True, 3/3 circuits on every instance; queries per instance are the same as the parent's (mean 11.4).",
+   "Read the check result traces: every episode used exactly 1 final-answer call, and all 10 replies were three well-formed 8-bit fields. i228 went from 4 failed final calls plus repair (16 calls) to 1 accepted call (13 calls).",
+   "Offline unit check of parse_fields: correct fields, lowercase tags and inner spaces, a 9-bit field (flagged, cut to 8), a <guess> fallback, missing fields, and an empty or None reply all behave as intended."
+ ],
+ "risks": [
+   "The benchmark's system prompt asks for <guess>; the model might answer that way instead. This is handled by the 24-bit <guess> fallback and was not seen in the 10 runs.",
+   "Only 1 of the parent's 10 episodes showed the failure, so the gain is in robustness (fewer calls, less reliance on repair) and does not show up in the 10-instance accuracy, which was already 100%.",
+   "When more than one table remains, the model still has to pick an option; this change makes copying an option more reliable but does not change which one it picks."
+ ]}

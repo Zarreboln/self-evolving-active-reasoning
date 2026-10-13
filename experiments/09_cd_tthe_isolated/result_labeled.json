@@ -1,0 +1,49 @@
+{
+ "final_harness": "cand_labeled6_b10g3r2_b1r0g2",
+ "n_instances": 30,
+ "prequential": {
+  "uniq_end": 0.8,
+  "circuit_wise_accuracy": 0.7,
+  "joint_truth_table_correct": 0.6666666666666666
+ },
+ "transductive": {
+  "uniq_end": 1.0,
+  "circuit_wise_accuracy": 1.0,
+  "joint_truth_table_correct": 1.0
+ },
+ "per_batch": [
+  {
+   "batch": 0,
+   "incoming": "bare",
+   "committed": "cand_labeled6_b10g3r2_b0r1g2",
+   "preq_uniq": 0.4,
+   "trans_uniq": 1.0,
+   "preq_circuit_wise_accuracy": 0.1,
+   "trans_circuit_wise_accuracy": 1.0,
+   "preq_joint_truth_table_correct": 0.0,
+   "trans_joint_truth_table_correct": 1.0
+  },
+  {
+   "batch": 1,
+   "incoming": "cand_labeled6_b10g3r2_b0r1g2",
+   "committed": "cand_labeled6_b10g3r2_b1r0g2",
+   "preq_uniq": 1.0,
+   "trans_uniq": 1.0,
+   "preq_circuit_wise_accuracy": 1.0,
+   "trans_circuit_wise_accuracy": 1.0,
+   "preq_joint_truth_table_correct": 1.0,
+   "trans_joint_truth_table_correct": 1.0
+  },
+  {
+   "batch": 2,
+   "incoming": "cand_labeled6_b10g3r2_b1r0g2",
+   "committed": "cand_labeled6_b10g3r2_b1r0g2",
+   "preq_uniq": 1.0,
+   "trans_uniq": 1.0,
+   "preq_circuit_wise_accuracy": 1.0,
+   "trans_circuit_wise_accuracy": 1.0,
+   "preq_joint_truth_table_correct": 1.0,
+   "trans_joint_truth_table_correct": 1.0
+  }
+ ]
+}

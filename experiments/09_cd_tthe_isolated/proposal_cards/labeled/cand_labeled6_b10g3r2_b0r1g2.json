@@ -1,0 +1,25 @@
+{"candidate": "cand_labeled6_b10g3r2_b0r1g2", "parent": "cand_labeled6_b10g3r2_b0r0g2",
+ "role": "adversarial audit and synthesis",
+ "hypothesis": "b0r0g2's 10/10 comes from rule-based elimination of joint tables, not from the model's query choices: the 7B ignored the top-suggested row in ~40% of turns (69 first-suggestion picks vs 52 deviations over 10 traces). Limiting accepted queries to the equally-best-balanced rows (others are vetoed and re-asked; the model still chooses among them) keeps joint accuracy at 10/10 here and does not raise queries/episode (parent 12.0). Offline on the public rule space, with uniform random picks among allowed rows: allowing any open row leaves >1 table after 18 queries in 1.7% (AND1/NOT2), 3.7% (AND3/NOT1), 10.3% (AND3/NOT2) and 17.7% (AND2/NOT3) of episodes; allowing only best-balanced rows gave 0/300 in each.",
+ "behavior_changes": [
+   "Turn prompt lists every row tied for the best split ('equally good, pick any one of them'), not only the top 4 rows.",
+   "A query on an open row whose smaller outcome side is below BALANCE_TAU (1.0) x the best row's is vetoed with a note naming both outcome counts and the best rows, then re-asked. This does not spend budget.",
+   "If every retry fails, the fallback is the model's last still-informative query, not its last parsed one, which could be an already observed or forced row."
+ ],
+ "preserved_behaviors": [
+   "The rule-derived joint-table enumeration and the elimination after each answer are unchanged.",
+   "The deduction board, the vetoes on observed and forced rows, and the early stop once a single table remains are unchanged.",
+   "The model writes every query and the final guess. The final-guess veto and nearest-consistent repair are unchanged.",
+   "Not taken from g0/g1: having the model fill unqueried rows itself. Their traces score 53.3% circuit-wise and 0% joint on the same instances where g2 scores 100%, so the evidence goes against it."
+ ],
+ "verification": [
+   "Ran check_b0r1_cand_labeled6_b10g3r2_b0r1g2.py: 10/10 status=ok, parsed guess, joint truth table correct=True, 3/3 circuits on every instance. Queries 7-15, mean 11.6 (parent 12.0, max 15 in both).",
+   "Read res_*.json traces (fields: trace, signals, gold flags; they contain no tables): only 2 weak-query vetoes (i11 B(1,1,1) 6/20; i239 A(1,1,1) 16/42). After re-asking, the model picked a best row both times. No other vetoes. Every episode's final prompt said all circuits were determined exactly, i.e. one table was left.",
+   "Offline simulation (scratchpad, parent's public joint_tables only, no instances): with the parent's greedy policy, worst-case queries to a unique table are 15 (AND3/NOT0), 16 (AND1/NOT2 and AND3/NOT1), and 19 (AND3/NOT2, so 40 of 24996 tables do not fit in 18). This batch only uses the first three.",
+   "Also tried 2-step lookahead query ranking: worst case improved for AND3/NOT2 (19->18) but got worse for AND2/NOT3, so it was not adopted."
+ ],
+ "risks": [
+   "Inventories with 3 or more NOTs: even perfect greedy play sometimes needs more than 18 queries. The final pick among the remaining tables is still the model's choice from the shown options.",
+   "A strict tau=1.0 veto can use up retries if the model keeps choosing near-ties. The fallback then accepts its informative query, so budget is never wasted on known rows.",
+   "This batch was already at the 100% ceiling with the parent, so the gain on these instances is small (0.4 fewer queries/episode). The robustness claim for larger rule spaces rests on offline simulation, not on observed episodes."
+ ]}

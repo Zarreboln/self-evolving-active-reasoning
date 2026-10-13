@@ -1,0 +1,29 @@
+{
+  "candidate": "cand_strict6_b10g3r2_b2r1g1",
+  "parent": "cand_strict6_b10g3r2_b2r0g1",
+  "role": "independent exploration: verify the rule model with the spare budget",
+  "hypothesis": "Query efficiency is no longer where this batch can fail. Replaying the parent's traces through its own rule enumeration shows every episode ends with exactly one rule-consistent circuit triple, the guess equals it, and the model's query count matches a greedy best-split policy within 1 query (7-16 queries to pin, 2-11 to spare). The remaining single point of failure is invisible from inside: 10-17 of the 24 output bits are 'deduced', i.e. rest only on the harness's reading of the task rules, and the parent stops querying as soon as the board has no '?'. Falsifiable claim: if the rule reading is right, spending the spare queries on deduced cells will never produce a disagreement (and will not change any guess); if it is wrong on some instance, a confirmation query will disagree and the board falls back to observed cells instead of returning a silently wrong table.",
+  "behavior_changes": [
+    "When the board has no '?' and queries remain, the query phase continues: the model is asked to CONFIRM deduced cells (all deduced cells are listed, the circuit with the fewest observed cells first). The model still chooses and writes every query.",
+    "In that phase the veto applies only to cells already observed (deduced cells are now valid targets); the re-ask after a query-less reply repeats the confirmation note.",
+    "If a confirmation answer disagrees with the deduced value, the model is told so; the rule-consistent set becomes empty, so the parent's existing fallback takes over (board shows observed cells only, querying resumes on '?' cells, final phase lets the model fill).",
+    "Confirmation turns use a short conversation (system prompt + the self-contained current board message), and a failed model call is retried once in that short form instead of ending the query phase. The first run without this lost 5 spare queries on instance 60, where a call failed (17 calls, 16 traced) once the dialogue got long."
+  ],
+  "preserved_behaviors": [
+    "Everything up to the moment the board is complete is the parent's: board, worth annotations, top-N list, vetoes on known cells, early-guess re-ask, MISS_MAX. The re-run reproduced the parent's pin points on all 10 instances (pinned at 13,11,7,11,10,16,11,16,13,12 queries for i0,171,173,205,206,230,238,266,284,60).",
+    "Final phase unchanged (per-circuit table copy, contradiction/rule checks, option listing, fallbacks).",
+    "Frozen solver (self.llm only) and label-free (env.query only; the rule enumeration uses only the inventory from the task text)."
+  ],
+  "verification": [
+    "Ran check_b2r1_cand_strict6_b10g3r2_b2r1g1.py twice. Final run: 10/10 status=ok, parsed_final_guess=True, queries_used=18 on every instance, 21-23 model calls.",
+    "Replayed the final run's histories through the rule enumeration: 60 confirmation queries on deduced cells, 0 disagreements, 0 repeated cells; every episode ends with exactly 1 rule-consistent triple, and the submitted guess equals it on 10/10.",
+    "First run (before the short-conversation fix): instance 60 stopped at 13 queries because a model call failed after the first confirmation. Fixed and re-ran as above.",
+    "Offline mock (scratch script, fake env + scripted solver, never touching real instances): a rule-consistent truth gives 18 queries and a correct guess. Truths with one cell flipped to break the rules (96 cases): the violating cell was queried in 70 cases and a disagreement was flagged in 34; the fallback path ran without crashing. A solver that raises on every conversation longer than 8 messages still completes 18 queries and returns the correct table through the compact retry."
+  ],
+  "risks": [
+    "On a rule-consistent environment (everything seen on this batch) the mechanism cannot raise correctness; it only adds 2-11 model calls and queries per episode. Its value is insurance against a misread rule.",
+    "Coverage is partial: 18 queries cannot observe all 24 cells, so a rule misreading that only affects unqueried deduced cells still goes undetected (26 of 96 mock flips).",
+    "After a disagreement the fallback drops ALL rule deductions, and the model fills the remaining '?' cells itself, which the 7B does poorly. Detection does not imply a correct final table (in the mock, flagged cases still ended wrong because of the scripted fill).",
+    "The compact conversation drops the model's own earlier reasoning during confirmation turns; harmless here because the board carries the full state, but the model sees less context if a disagreement resumes normal querying."
+  ]
+}

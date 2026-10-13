@@ -1,0 +1,23 @@
+{"candidate": "cand_strict6_b10g3r2_b2r1g0", "parent": "cand_strict6_b10g3r2_b2r0g0", "role": "conservative repair",
+  "hypothesis": "When the model asks for a cell the board already knows, it picks another known cell after the veto because the veto only says 'choose a cell marked ?' without naming any. If the veto message lists the board's '?' cells, the model's next pick will be an open cell, so no query whose answer the board already forces gets through after VETO_MAX vetoes. Falsified if a re-run shows a sent query that leaves the alive-triple count unchanged, or a veto followed by another known-cell pick at the same rate as the parent.",
+  "behavior_changes": [
+    "The veto message for a query on an observed/deduced cell now ends with 'the unknown cells are: X(a,b,c), ...', listing every '?' cell on the current board. This is the same list the parent already builds for its early-guess re-ask. The rest of the wording is unchanged."
+  ],
+  "preserved_behaviors": [
+    "The deduction board after every answer (rule enumeration over inventory splits, observed/deduced/? cells), and the query phase stopping once the board is full",
+    "VETO_MAX=2 consecutive vetoes, after which the query goes through (so a stubborn model cannot loop)",
+    "Handling of query-less replies, including the early-guess re-ask that names the '?' cells, and ending the query phase after MISS_MAX misses",
+    "The final phase: the model copies each circuit's board row, gets re-asked if its table contradicts the board or no allowed circuit can produce it, sees listed options when a circuit has at most LIST_MAX allowed tables, and the fallback keeps the board's known cells",
+    "The frozen solver and label-free invariants: the model writes every query and the harness never chooses one"
+  ],
+  "verification": [
+    "Parent traces (b2r0g0, 10 instances): I replayed each history against the rule enumeration. All 10 end with 1 alive triple and the guess equal to it. One concrete failure: instance 60, where B and C were fully deduced and only A(1,0,1) and A(1,1,1) were open. The model was vetoed on B(1,1,1), then on B(1,0,0), then sent B(0,1,1), which went through. That query left the alive count at 2 -> 2 and wasted it (10 queries total).",
+    "Ran check_b2r1_cand_strict6_b10g3r2_b2r1g0.py: 10/10 status=ok, parsed_final_guess=True, no crashes. Queries per instance: 206:16, 238:15, 266:17, 0:15, 171:10, 60:9, 284:14, 205:14, 230:15, 173:6 (mean 13.1, parent 13.2).",
+    "Replayed the new histories: every episode ends with 1 alive triple, 0 open cells, and a guess consistent with that triple. Every sent query shrinks the alive set; there are no zero-information queries (the parent had 1).",
+    "Instance 60 in the new trace: the veto on B(1,1,1) listed 'A(1,0,1), A(1,1,1)'. The model's next reply queried A(1,0,1) and the episode finished in 9 queries. Veto events across the batch fell from 12 (parent) to 7."
+  ],
+  "risks": [
+    "Early in an episode the '?' list can be long (up to ~22 cells), which adds prompt length to veto turns. Vetoes are rare (at most 2 per episode on this batch), and the parent's early-guess note already does the same.",
+    "Queries spent on circuits whose remaining tables differ in a single cell (min-split 1, e.g. 6 -> 5 -> ... -> 1 on C in instances 0, 230 and 266) are untouched. Instance 266 still uses 17 of 18 queries, so a harder instance could still run out of budget. The parent's final-phase option listing and fallback cover that case, but they cannot guarantee correctness.",
+    "Correctness is judged only by consistency with the harness's own reading of the task rules (inventory split, no constant circuits). If that reading is wrong, a unique consistent triple might not be the truth. There is no gold signal to check against."
+  ]}

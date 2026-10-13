@@ -1,0 +1,23 @@
+{"candidate": "cand_strict6_b10g3r2_b1r1g0", "parent": "cand_strict6_b10g3r2_b1r0g0", "role": "conservative repair",
+ "hypothesis": "The parent's only crash (i130) comes from an unbounded 'no query in the required format' re-ask loop: the model sends a <guess> mid-episode while the board still has '?' cells, repeats it on every generic re-ask, and the growing conversation exceeds the 7B's 16k context. If the re-ask names the open '?' cells and says it is not time to guess, and query-less replies are capped at MISS_MAX=2 in a row (then the parent's final phase runs), the episode cannot crash this way and the model goes back to querying. Every other episode behaves exactly like the parent's.",
+ "behavior_changes": [
+  "When a query-phase reply has no <query> and contains <guess> while the board has '?' cells, the re-ask lists those cells and the remaining query count, and tells the model to query one of them. The harness still does not pick the query.",
+  "After more than MISS_MAX=2 consecutive query-less replies, the query phase ends and the parent's final phase (copy the board one circuit at a time) produces the guess.",
+  "If a model call raises during the query phase (e.g. a context-length error), the query phase ends instead of crashing the episode; the final phase uses fresh short prompts."
+ ],
+ "preserved_behaviors": [
+  "Deduction board from the inventory and gate rules, appended to each answer in the model's ongoing conversation",
+  "Veto of queries on already-known cells (VETO_MAX=2)",
+  "Query phase stops when the board has no '?'",
+  "Final phase: per-circuit <table> copy, rejection of tables that contradict the board or that the rules exclude, listing of <=8 allowed tables, and fallback preferring a listed table",
+  "Generic format re-ask wording when the reply simply lacks a query and is not an early guess"
+ ],
+ "verification": [
+  "Ran check_b1r1_cand_strict6_b10g3r2_b1r1g0.py on all 10 batch instances: status=ok and parsed_final_guess=True on 10/10 (parent: 1 crash, i130 context overflow after 41 calls).",
+  "i130 trace: the model sent an early <guess>; the new re-ask named C(1,0,0), C(1,0,1), C(1,1,0) and 9 queries left; the next reply was <query>C(1,0,0)</query>. After 11 queries the board was complete and the guess was 010101110001111100010101, which is identical to the guess from both sibling branches (b0r1g1, b1r0g2) on that instance. Total 16 calls.",
+  "The other 9 instances made the same queries and produced the same final guesses as the parent (solver cache is deterministic), so the change is inert when the failure does not occur."
+ ],
+ "risks": [
+  "If the model keeps refusing to query, the episode ends with '?' cells that the final phase fills from the rule-allowed list, which may be wrong. That is still better than a crash with no guess.",
+  "Not addressed (out of conservative scope): on i253 the model spends the budget sweeping A and B row by row and ends with 3 rule-allowed tables for C. It picks 11111000, which disagrees with both siblings' picks, so at least two of the three branches are wrong there. Fixing that needs a query-allocation change, not this repair."
+ ]}

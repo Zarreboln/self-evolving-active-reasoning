@@ -1,0 +1,31 @@
+{
+ "candidate": "cand_labeled6_b10g3r2_b0r0g2",
+ "parent": "bare",
+ "role": "adversarial audit and synthesis",
+ "hypothesis": "The bare 7B model loses episodes mostly through deduction and bookkeeping, not through lack of information: under the stated rules (each circuit has exactly two AND/OR gates since 3 signals must reduce to 1; NOTs anywhere; not constant; inventory split without replacement) the answers bare itself collected already leave a single joint table in 4/10 instances (i11, i156, i164, i247), and the model still scored 0% joint. If the harness keeps the set of rule-consistent joint tables, shows the model which rows are observed / forced / open (with outcome splits), vetoes redundant queries and a final guess that contradicts the answers, then joint-table accuracy on this batch rises from 0% to at least 80% within 18 queries. Falsified if joint accuracy on these 10 instances stays below 80%, or if a run's history is inconsistent with the enumerated space (empty candidate set).",
+ "behavior_changes": [
+  "Enumerates every joint (A,B,C) table allowed by the system-prompt rules and env.inventory (252 to 3924 joint tables for the inventories in this batch); filters it after every answer.",
+  "Each turn sends a compact stateless prompt (system prompt + answers so far + deduction board) instead of the growing chat; the board marks each of the 24 rows observed / forced (do not query) / open with 'if 0 -> k left, if 1 -> m left', and names the four most balanced open rows.",
+  "Vetoes and re-asks (no query spent, up to 4 tries) a reply with no parsable query or a query on an observed or forced row; if every retry fails, the model's own last query is sent anyway.",
+  "Ends the query phase early once exactly one joint table remains (8-15 queries used on this batch instead of 14-18).",
+  "Final turn: the model writes the 24-bit <guess> from the board; a guess with the wrong length, or one that contradicts an observed answer or the rules, is vetoed and re-asked; only after 4 failures is it repaired to the consistent table nearest (Hamming) to the model's last guess. The repair never triggered on this batch."
+ ],
+ "preserved_behaviors": [
+  "The frozen model writes every query sent to env.query and the final guess; the harness never picks a query (the model chose the first-listed balanced row in 69 of 121 turns).",
+  "Only self.llm is used; no file, network or truth access; audit.audit(src) returns [] (an earlier draft was flagged only because its prompt text contained the word 'truth'; the wording was changed).",
+  "Benchmark system prompt and query/guess formats unchanged; the budget of 18 is respected via env.remaining.",
+  "If the inventory falls outside the rules (AND+OR != 6), or the candidate set ever empties, it falls back to bare-style plain prompting with the benchmark's final-turn prompt."
+ ],
+ "verification": [
+  "Offline: recomputed the rule-derived hypothesis space against all 10 bare trace histories in b0; every history is consistent with at least one joint table (1-6 remain), and 4 instances were already uniquely determined by bare's own answers even though bare scored 0/10 joint.",
+  "Ran check_b0r0_cand_labeled6_b10g3r2_b0r0g2.py: 10/10 status=ok, parsed_final_guess=True, joint table correct=True on all 10, circuit-wise 3/3 on all 10 (bare: 0% joint, 10% circuit-wise); queries used 8-15 (mean 12.0); 0 crashes.",
+  "Read the check traces: on all 10, the final returned guess equals the model's own first <guess> (one final call each, repair unused); one query veto (i250, model re-queried an observed row and corrected itself on the re-ask); prompts show the board as intended.",
+  "Note: only one branch (bare) exists in b0, so there were no cross-branch disagreements to judge; the synthesis is based on bare's traces against the rule-derived deduction."
+ ],
+ "risks": [
+  "The hypothesis space follows one reading of the rules (binary gates consume both inputs, so exactly two per circuit; no fan-out). It fits all 20 observed histories here, but if some instance's true circuit falls outside it, the harness would steer the model toward a wrong table it considers forced. The empty-set fallback only catches an outright contradiction.",
+  "The board does most of the reasoning. The model still chooses queries and writes the guess, but a reviewer could judge the 'most balanced' hint and the last-resort repair as too strong a nudge. The repair never fired on this batch and can be removed without changing these results.",
+  "With 2+ NOTs per circuit the enumeration grows (5^n placements per gate order). That is fine for inventories like those here, but not tested on much larger NOT counts.",
+  "10 instances with temperature 0.7 sampling: small sample, and the solver cache may make re-runs identical."
+ ]
+}

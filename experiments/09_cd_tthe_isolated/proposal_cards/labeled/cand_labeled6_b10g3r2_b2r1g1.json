@@ -1,0 +1,25 @@
+{"candidate": "cand_labeled6_b10g3r2_b2r1g1", "parent": "cand_labeled6_b10g3r2_b1r0g2", "role": "independent exploration: perceptual load, not query strategy",
+ "hypothesis": "The parent's remaining errors come from perception, not query strategy. The 24-line board (one near-identical 'X(a, b, c) = ? (open: if 0 -> n ...)' line per row) makes the 7B mis-copy neighbouring rows: on i266 it asked A(1,1,1) instead of the suggested A(1,1,0) and was vetoed. If the board is replaced by three fixed/open bit strings plus a menu of the equally-best queries already written as <query> lines, the veto/retry count should drop to 0 (calls = queries + 1 on every instance) while joint correctness stays at 100%. A veto or a wrong final answer on this batch would falsify it.",
+ "behavior_changes": [
+   "Turn prompt: the 24 per-row board lines with outcome counts are replaced by 'A = 0??1????' style strings (observed or rule-forced bits, ? = open) and the number of joint tables left.",
+   "Turn prompt: the equally-best rows (max-min split, up to 6) are listed one per line as ready-to-copy <query>X(a, b, c)</query> strings, and the model is asked to reply with one of them only.",
+   "Final prompt: the board is dropped; with one table left the model sees A, B, C on separate lines; with several left it sees the fixed strings and up to 6 options."
+ ],
+ "preserved_behaviors": [
+   "Enumerating the joint rule space and filtering it by every answer, unchanged.",
+   "Vetoing already-observed, rule-forced and weak (non-best) rows and re-asking (MAX_RETRIES=4), with the same fallbacks.",
+   "Stopping early once a single joint table remains.",
+   "Labelled <A><B><C> final fields, validating the guess against the answers and rules, and repairing it to the nearest consistent table as a last resort.",
+   "The model writes every query and the final answer; nothing branches on an instance's inventory or index."
+ ],
+ "verification": [
+   "Ran check_b2r1_cand_labeled6_b10g3r2_b2r1g1.py on all 10 instances: 10/10 status=ok, parsed_final_guess=True, joint truth table correct=True, circuit-wise 3/3, no crashes.",
+   "calls = queries_used + 1 on all 10 instances, so there were 0 vetoes or retries (parent: 1 weak-row veto on i266, 2 extra calls).",
+   "Queries used: 13, 13, 15, 13, 10, 13, 14, 12, 10, 5 (mean 11.8, max 15; parent mean 11.1, max 13). Every episode ended with exactly one joint table left, and the model copied it into the final fields correctly on the first try.",
+   "Read the res_173 and res_266 traces: the prompts were compact, the replies were bare <query> lines, and the final replies matched the determined tables."
+ ],
+ "risks": [
+   "The model copied the first menu line on 105 of 118 query turns, so in practice the tie order (highest bit index first) mostly picks the query. The model still writes the query and the veto still enforces the best split, but tie-breaking is effectively ordering, and this order cost more queries than the parent's on this batch (i266: 15 vs 12). The margin to 18 is smaller.",
+   "With per-row outcome counts gone, the model has no reasoning signal of its own. If the menu were ever empty or wrong, it has less to fall back on than with the full board.",
+   "Correctness on this batch was already saturated (100% for parent and siblings), so the outcome cannot separate the hypotheses; the evidence is the change in veto count (1 to 0) and the change in queries used."
+ ]}

@@ -1,0 +1,34 @@
+{
+  "candidate": "cand_strict6_b10g3r2_b0r0g2",
+  "parent": "bare",
+  "role": "adversarial audit and synthesis",
+  "hypothesis": "Bare's failures are bookkeeping, not information: auditing its traces against the hypothesis space derived from the system-prompt rules (each AND/OR consumes two signals, NOT one; 3 signals -> 1 output; inventory shared across A/B/C; no constant circuit) shows 6/10 bare episodes had already pinned every circuit to a single table, yet all 7 parsed bare guesses contradict at least one of the model's OWN observed answers (and 3/10 produced no 24-bit guess at all, e.g. i156 emitted 22 bits). If the harness keeps the consistent-table books, vetoes zero-information/repeat queries, and has the model write each circuit's 8 bits separately with a consistency check, then every episode ends with each circuit uniquely determined within 18 queries and a 24-bit guess consistent with every environment answer -- falsifiable by any instance where the guess disagrees with an environment answer (including answers from other branches' traces on the same instance) or a circuit is left with >1 candidate.",
+  "behavior_changes": [
+    "Harness enumerates, from env.inventory and the rules text only, every output table each circuit can have under every allocation of the gates over A/B/C, and after each answer keeps only jointly consistent tables (cross-circuit: allocation is shared).",
+    "Each query turn the model gets a fresh, compact prompt (system prompt + one user message): all answers so far, queries remaining, per circuit how many tables remain / SOLVED table, the inputs still undecided, and the 4 inputs that split the remaining tables most evenly. The model writes the query.",
+    "A query whose answer is already forced by rules+answers, or that repeats a previous query, is vetoed with a reason and re-asked (not sent, no budget spent); up to 4 attempts per turn, global cap of 70 model calls.",
+    "Querying stops as soon as every circuit has exactly one consistent table (5-16 queries used on this batch instead of 12-18 wasted ones).",
+    "Final guess: three separate model calls, one per circuit, each showing that circuit's observed answers and the surviving table(s); the model replies <table>XXXXXXXX</table>; a reply contradicting an observed answer or outside the surviving set is rejected and re-asked; a choice fixes the allocation for later circuits. The harness concatenates the three model-written tables into <guess>...</guess>.",
+    "Fallback: if the enumeration ever leaves a circuit with zero candidates (rules read differently), the harness drops to observation-only checks (vetoes only repeats, validates tables only against observed answers)."
+  ],
+  "preserved_behaviors": [
+    "Frozen solver: only self.llm is called; benchmark system prompt passed unchanged as the system message.",
+    "Label-free: only env.query/history/inventory/system_prompt/format_answer are used; static audit.py passes.",
+    "The model chooses every query (harness never issues a query the model did not write) and writes every circuit table; harness only filters, re-asks and concatenates.",
+    "Queries use the benchmark wording <query>X(a, b, c)</query>; answers relayed via env.format_answer; never exceeds env.budget."
+  ],
+  "verification": [
+    "Scratch audit of bare traces (b0) with an independent re-implementation of the rules-derived space: 6/10 instances fully determined by bare's own answers, 0/7 parsed bare guesses consistent with bare's own answers, 3/10 unparsed.",
+    "Offline simulation of query policies on that space: vetoing zero-info queries + preferring even splits resolves all circuits within <=18 queries in every sampled case (max 15-18 depending on inventory); random non-forced queries overran 18 in ~1-3% of cases, motivating the split ranking.",
+    "Ran logs/strict6_b10g3r2/check_b0r0_cand_strict6_b10g3r2_b0r0g2.py: 10/10 status=ok, 10/10 parsed_final_guess, queries_used 5-16 (mean 12.1), 11-19 calls, no crashes.",
+    "Scratch audit of the check results: every circuit in every instance ended with exactly 1 consistent table and the returned guess equals it; guesses agree with all of the candidate's own answers.",
+    "Adversarial cross-trace check: each returned 24-bit guess was compared against the 165 environment answers recorded in the bare traces for the same instances (different query sets): 0 mismatches on 10/10 instances.",
+    "Read traces: model followed the format on first try for nearly all turns; 5 vetoes total, all for A/B/C(0,0,0) on monotone (no-NOT) circuits where the output is forced to 0 -- correct vetoes, re-asked query was informative."
+  ],
+  "risks": [
+    "Correctness depends on my reading of the rules (gates consume inputs; NOTs may appear anywhere incl. double NOT and on the output). If the generator allows something outside this space, candidates can be wrong; mitigated by the zero-candidate fallback and by the zero-mismatch cross-check against bare's independent answers, but a wrong-yet-nonempty space would not be detected.",
+    "The harness supplies heavy guidance (surviving tables, informative inputs); a stricter reading of 'the model must choose queries' could view the most-informative list as steering, though the model still selects and writes each query.",
+    "Instances with 2 NOTs on one circuit have larger spaces; the batch had only two such instances (both resolved in 10 and 14 queries), so the tail near 18 is less tested.",
+    "Correctness is judged label-free (consistency + cross-trace agreement), not by gold outcome."
+  ]
+}

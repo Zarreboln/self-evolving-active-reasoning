@@ -352,3 +352,7 @@
   stray `cat >` write to ~/Desktop (real), `python3 ../audit.py` from agents/ (cwd not tracked, fixed).
   Every judge session clean. labeled6: 36/36 clean, 0/10 -> 10/10 -> 10/10, cwa 70.0 / joint 66.7.
 - 22:35 frozen evaluation launched: 11 harnesses x 200 held-out (48 workers), logs/eval_heldout200.
+- 23:47 frozen evaluation done (11 harnesses x 200 held-out, 48 workers): bare cwa 11.8 / joint 0;
+  strict final b2r0g1 99.5 / 98.5 (unseen 98.2), b1r1g0 99.3 / 98.0, b0r1g1 97.0 / 92.0; labeled finals
+  100 / 100 at 215 tokens/ep; pilot r0g2 99.5 / 99.5; rejected query-steering ones 99.5 / 99.5 and
+  99.0 / 97.0. Experiment 09 written.

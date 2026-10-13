@@ -1,0 +1,18 @@
+{"candidate": "cand_labeled6_b10g3r2_b1r1g0", "parent": "cand_labeled6_b10g3r2_b1r0g0", "role": "conservative repair",
+  "hypothesis": "The parent has no trace-visible failure on this batch, so an unchanged harness keeps 100% joint-table accuracy here. This would be falsified if the re-run of the unchanged code gave any wrong table, crash, veto/re-ask, final-guess repair, or an episode that used all 18 queries.",
+  "behavior_changes": ["None. The only edit is a docstring paragraph recording the audit result."],
+  "preserved_behaviors": [
+    "Rule-derived enumeration of joint (A,B,C) tables, filtered after every answer",
+    "Deduction board showing observed, forced and open rows with split counts, plus a list of the equally-best rows",
+    "Free vetoes and re-asks for observed, forced, weak or unparseable queries; the model still picks every query",
+    "Early stop once one joint table remains",
+    "Labelled final guess <guess>A=.. B=.. C=..</guess>, concatenated by the harness; veto of inconsistent guesses; nearest-consistent repair as a last resort"
+  ],
+  "verification": [
+    "Audited all 30 sibling traces (b1r0g0/g1/g2 x 10 instances): 30/30 correct; calls = queries + 1 in every episode, so the model never needed a re-ask or a guess retry; 'weak query', 'already observed', 'already forced', 'had no <query>' and 'Your guess' appear 0 times; queries used were 8 to 15 of 18",
+    "Ran check_b1r1_cand_labeled6_b10g3r2_b1r1g0.py: 10/10 status=ok, parsed_final_guess=True, joint table correct, 3/3 circuits; queries used 8 to 15 (same counts per instance as the parent); calls = queries + 1 everywhere; no veto or repair text in the result files"
+  ],
+  "risks": [
+    "No new robustness: latent paths (multiple tables left at the final guess, a model that never emits a query) are still untested by these traces",
+    "Results on one 10-instance batch with seed 0 may not reflect harder inventories, where the most queries used was 15 of 18"
+  ]}

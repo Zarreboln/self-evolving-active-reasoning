@@ -1,0 +1,31 @@
+{
+ "candidate": "cand_strict6_b10g3r2_b0r1g1",
+ "parent": "cand_strict6_b10g3r2_b0r0g1",
+ "role": "independent exploration: visible-knowledge-state (deduction board) hypothesis",
+ "hypothesis": "Episodes fail because the 7B never sees what the task rules plus the answers already imply: it spends ~6 of 18 queries on rows whose output is already forced, under-probes the last circuit, and at the end invents gate formulas for unqueried rows (the parent produced rule-inconsistent guesses in 4 episodes whose answers already pinned a unique joint table). If the model's own ongoing conversation shows a board marking each of the 24 outputs as observed / deduced (forced by rules+answers) / '?', then WITHOUT any query veto, candidate list or suggested query the model will (a) stop asking forced rows, (b) pin all three circuits within 18 queries, (c) copy the pinned tables. Falsified if forced-row queries stay near the parent's level or episodes end with '?' cells / rule-inconsistent guesses.",
+ "behavior_changes": [
+  "After every answer, the harness enumerates the joint (A,B,C) table space allowed by the system-prompt rules (inventory split without replacement, AND/OR consume two signals, NOT replaces one, no constant circuit), filters by all answers, and appends a 24-cell board (observed / deduced / ?) to the answer message in the model's bare conversation; the initial user message also carries it.",
+  "Querying stops as soon as the board has no '?' cell (remaining budget unused).",
+  "A reply without a parsable query no longer consumes a query turn (loop on env.remaining with a call cap) -- the parent lost turns this way (i98 used only 12 queries).",
+  "Final phase: per circuit, a fresh short prompt lists that circuit's board rows and the board row string; the model answers <table>XXXXXXXX</table>; replaced the parent's per-row regex, which missed LaTeX-formatted rows and burned all retries (i156).",
+  "Final veto: a table disagreeing with an observed/deduced cell, or not producible by any rule-allowed triple given tables already accepted, is sent back with the reason (max 4 tries); fallback = first stated table consistent with known cells."
+ ],
+ "preserved_behaviors": [
+  "The model writes every query in its own continuing conversation with the benchmark system prompt (bare protocol); the harness never chooses, ranks, suggests or vetoes a query.",
+  "Label-free: only env.inventory, the system-prompt rules and env.history are used; frozen solver via self.llm only.",
+  "Parent's rule enumeration (_tables/_joint_space) and its fall-back to observation-only checks when the rule model explains no triple.",
+  "Final guess assembled from the model's per-circuit tables, A then B then C, as <guess>24 bits</guess>."
+ ],
+ "verification": [
+  "Ran logs/strict6_b10g3r2/check_b0r1_cand_strict6_b10g3r2_b0r1g1.py: 10/10 status=ok, parsed_final_guess=True, 0 crashes; queries used 8,13,18,12,12,13,14,13,9,17 (mean 12.9); solver calls 12-21/episode; tokens_out ~1.6-2.5k/episode (parent ~10k).",
+  "Label-free post-hoc analysis in scratch (same rule enumeration, history only): in all 10 episodes exactly one joint triple remains consistent with the rules and the answers, and the submitted 24-bit guess equals it. Parent on the same batch: unique in 5/10, guess rule-consistent in 3/10; bare: guess rule-consistent 0/10.",
+  "Queries whose answer was already forced by rules+earlier answers: 1.3/episode (13 total) vs parent 6.4/episode (64 total), with no veto in place.",
+  "Read i250 trace (the tightest, 18 queries): board was resolved by the last query; model copied the board row verbatim in the final phase."
+ ],
+ "risks": [
+  "All 'deduced' cells and the success measure rest on the harness's reading of the building rules; if the environment's generator differs (e.g. allows unused signals or other wiring), deduced cells could be wrong and the model will copy them. Mitigation only covers the case where no triple survives.",
+  "No query veto: the model still mostly sweeps rows in order (skipping deduced ones); i250 needed all 18 queries and i265 17, so harder inventories could end with '?' cells, where the model must guess (only the rule-consistency veto helps then).",
+  "Conversation grows with a 24-cell board per turn (input tokens 30-90k/episode); fine for Qwen2.5-7B context here but heavier than a stateless prompt.",
+  "Early stop leaves budget unused; harmless only if the rule enumeration is correct."
+ ]
+}

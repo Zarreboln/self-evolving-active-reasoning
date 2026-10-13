@@ -1,0 +1,24 @@
+{"candidate": "cand_labeled6_b10g3r2_b1r0g2", "parent": "cand_labeled6_b10g3r2_b0r1g2", "role": "adversarial audit and synthesis",
+  "hypothesis": "The parent's 10/10 is not fully earned by the model: on i228 the model wrote a 32-bit <guess> (A=10000000 B=00000001 C=00011111 joined with extra zeros) four times, identically at T=0.7 and T=0.2, and only the harness's nearest-table repair produced the right answer. That repair works only when exactly one table remains; with several tables left, the truncated string is misaligned and would pick the wrong table. If the model writes three labelled 8-bit fields that the harness joins, every final answer is accepted on the first call without repair. This is falsified if any episode needs a re-ask or the repair on this batch.",
+  "behavior_changes": [
+    "Final prompt asks for <A>8 bits</A> <B>8 bits</B> <C>8 bits</C> instead of one 24-bit <guess>; the harness joins the fields A, B, C in order.",
+    "A bare 24-bit <guess> is still accepted as a fallback when the fields are missing.",
+    "Re-ask feedback names the field with the wrong length (e.g. '<B> had 9 bits') instead of a generic total bit count, so the retry prompt differs in a way the model can act on.",
+    "When fields have the wrong length, each one is padded or truncated to 8 bits before the nearest-table repair, so A/B/C stay aligned."
+  ],
+  "preserved_behaviors": [
+    "Rule-derived enumeration of joint tables; consistency filtering after each answer.",
+    "Deduction board; queries on observed or forced rows are vetoed; only the best-balanced rows are accepted (BALANCE_TAU=1.0), the model chooses which one.",
+    "The episode stops early when one joint table remains.",
+    "The model writes every query and the final answer; a guess that contradicts the answers is vetoed; the nearest-consistent-table repair stays as a last resort."
+  ],
+  "verification": [
+    "Audited bare vs parent traces on all 10 instances: bare gets 0/10 joint correct (circuit-wise at most 1/3); parent gets 10/10, with 0 query vetoes and a single table left at the end of every episode (8-15 queries). The only weak point was the i228 final step (4 final calls, all a 32-bit guess, saved by the repair).",
+    "Ran check_b1r0_cand_labeled6_b10g3r2_b1r0g2.py: 10/10 status=ok, parsed_final_guess=True, joint correct 10/10, 3/3 circuits each; queries used per instance identical to the parent (mean 11.4).",
+    "Checked the result traces: every instance used exactly 1 final call; the model's field reply, joined, equals the returned guess (i228 now '<A>10000000</A> <B>00000001</B> <C>00011111</C>'); no repair, no query vetoes."
+  ],
+  "risks": [
+    "This batch never ended with more than one table left, so the multi-option final prompt and the field-aligned repair path were not exercised.",
+    "The field format has only been tested on Qwen2.5-7B on these 10 instances; a model that echoes the placeholder text '<A>8 bits of A</A>' would be caught by the length check and re-asked, but that path has not been observed.",
+    "The query phase is unchanged, so convergence within 18 queries still rests on the parent's offline balanced-row argument; the worst case here was 15 queries (i236)."
+  ]}

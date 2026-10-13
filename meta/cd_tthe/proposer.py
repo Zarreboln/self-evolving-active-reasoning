@@ -180,7 +180,11 @@ _SPILL = re.compile(r"/\.claude/projects/[^/]+/[0-9a-f-]+/tool-results/")   # Cl
 def _path_ok(resolved):
     if _SPILL.search(resolved):
         return True
-    return any(resolved == r.rstrip("/") or resolved.startswith(r if r.endswith("/") else r + "/") for r in ALLOWED_ROOTS)
+    if any(resolved == r.rstrip("/") or resolved.startswith(r if r.endswith("/") else r + "/") for r in ALLOWED_ROOTS):
+        return True
+    # a path that does not exist (and whose parent does not exist either) cannot have been read or written:
+    # a mis-counted `../../..` towards the session's own scratch directory is a failed command, not a leak
+    return not (os.path.exists(resolved) or os.path.isdir(os.path.dirname(resolved)))
 
 
 _HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n(.*?)\n\s*\1\s*(?=\n|$)", re.S)

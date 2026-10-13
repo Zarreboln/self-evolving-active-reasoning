@@ -392,3 +392,9 @@
   7B + 405B: 25 questions each, F1 (char) 0.73 / 0.68, key questions 6/6 and 3/6, ~35 s per episode.
 - 05:03 SP strict pilot launched: run sp_strict1_b10g3r2 (30 test puzzles, seed 0, B=10 G=3 R=2,
   budget 25, Opus 5.5 proposer/judge, 7B on node3206:8861 via tunnel 18000, 405B referee via 18001).
+- 05:47 SP strict pilot batch 0 (2623 s, 7/7 sessions clean): bare prequential F1 (char) 0.64, key-question
+  recall 0.55; judge -> b0r1g2, transductive F1 0.79, recall 0.70.
+- 06:05 SP batch 1 prequential (b0r1g2 on 10 fresh puzzles): F1 (char) 0.74, key-question recall 0.65
+  (bare on batch 0: 0.64 / 0.55; bare's batch-1 number comes from the frozen evaluation later). One
+  proposer (b1r0g1) discarded by the audit for a relative path to its scratchpad that resolved outside
+  the folder given the shell's working directory; 9/10 sessions clean.

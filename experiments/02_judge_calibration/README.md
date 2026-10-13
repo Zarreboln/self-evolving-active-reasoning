@@ -190,3 +190,49 @@ So the ceiling for Jev on this task is about 79 accuracy and about 70 macro reca
 exist on paper -- Cloudflare's Clef (Qwen3.8-27B with a joint schema head), CLM, JevK5, all served
 by the open [OpenJev](https://github.com/razorback16/openjev) -- but running any of them needs that
 server, which is not installed here.
+
+
+## The other judge, and the other rulers (2026-10-13)
+
+Everything above measures the **referee**: the model that answers the player's questions in
+Situation Puzzles. TurtleBench is the right ruler for it, and the one AR-Bench itself used.
+It is not the only judge in this paper, and TurtleBench is not the only ruler available.
+
+### The TTHE judge has its own ruler, and it needs no benchmark
+
+The loop's second judge reads a batch's traces and decides which candidate harness is deployed
+next. Nothing above measures it. It needs no external benchmark: every run records the pool's
+gold scores, which that judge never saw, next to the candidate it committed. `runner/judge_pick_eval.py`:
+
+| run | task | committed a best-scoring candidate | mean regret | worst | mean rank |
+|---|---|---|---|---|---|
+| `strict6_b10g3r2` | CD | 2/3 | 0.011 | 0.033 | 2.00 |
+| `labeled6_b10g3r2` | CD | 3/3 | 0.000 | 0.000 | 1.00 |
+| `sp_strict1_b10g3r2` | SP | 1/3 | 0.063 | 0.114 | 3.67 |
+
+Regret is in each task's own metric. On Circuit Decoding the pools saturate, so the measurement
+says little: six candidates at 1.000 make every pick correct. Situation Puzzles is where it bites.
+The judge gave up 0.075 and 0.114 F1 on its two bad calls, and at batch 1 it committed the pool's
+worst candidate of five. This belongs in the paper: the label-free judge is a component of the
+mechanism we claim, and on the harder task it is measurably noisy. (It is also partly an artefact
+of 10-puzzle batches, where those gold gaps are inside the noise -- which is itself the finding.)
+
+### External rulers that would fit, and what each would test
+
+The referee's decision is three-way grounded inference: given the story, is the guess entailed,
+contradicted, or neither. That is a well-benchmarked shape outside puzzle games.
+
+- **FEVER** -- SUPPORTED / REFUTED / NOT ENOUGH INFO over evidence sentences. The same three
+  labels as the referee, with NOT ENOUGH INFO playing Unknown. It would test whether the Unknown
+  collapse we measured (405B recall 26.3) is a property of these models or of puzzle stories.
+- **ANLI / MNLI** -- entailment / contradiction / neutral. Same shape, adversarial in ANLI's case,
+  and no story-game idiom at all, so it separates the reasoning from the format.
+- **SQuAD 2.0's unanswerable half** -- isolates the sub-decision alone: is this question settled by
+  the passage? That is exactly the `decidable` noul of the split variant above, so it would say
+  whether the two-step phrasing fails on the decomposition or on this task's stories.
+- **JudgeBench / RewardBench 2** -- these benchmark the *other* kind of judge, choosing between
+  candidate responses. Closer in spirit to the TTHE judge, but the decision differs: preference
+  between two answers is not "commit this harness to the next batch". The internal regret table
+  above is the better instrument, and the external ones would at most be a sanity check.
+
+None of these is run yet. The first three are public and need no login.

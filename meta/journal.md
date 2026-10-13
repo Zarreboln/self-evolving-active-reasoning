@@ -450,3 +450,10 @@
   78.7 / 80.0 / 79.3 / 80.0 / 78.0 accuracy, Unknown recall 26.3-36.8, probabilities moving too.
   So its ceiling here is ~79 acc / ~70 macro, under the 405B (83.3/69.6) and under
   Flash-Next-think (80.7/79.9). Variants + repeats cost about $0.03 in total.
+- 16:0x built a ruler for the TTHE judge (runner/judge_pick_eval.py): pick accuracy and regret
+  against the pool's gold, which the judge never saw. CD strict6 2/3 best, mean regret 0.011;
+  CD labeled6 3/3, 0.000; SP strict1 1/3, mean regret 0.063, worst 0.114 (at b1 it committed the
+  worst of five). CD pools saturate so the measure is uninformative there; SP is where it bites.
+  Also listed the external rulers that would fit the referee's three-way grounded-inference shape
+  (FEVER SUPPORTED/REFUTED/NOT ENOUGH INFO, ANLI/MNLI, SQuAD 2.0's unanswerable half) and noted
+  JudgeBench/RewardBench 2 measure a different judge role. None run yet. In experiments/02.

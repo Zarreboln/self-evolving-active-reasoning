@@ -151,8 +151,10 @@ class Solver:
                 # trust_env=False: the mac's system proxy must not intercept the SSH tunnel on 127.0.0.1
                 self._client = OpenAI(base_url=self.base_url, api_key="EMPTY", max_retries=3, timeout=600.0,
                                       http_client=httpx.Client(trust_env=False, timeout=600.0))
+            # Llama-3 checkpoints whose generation_config lacks <|eot_id|> run on past the end of turn
+            extra = {"stop_token_ids": [128001, 128008, 128009]} if "llama" in (self.model or "").lower() else {}
             r = self._client.chat.completions.create(model=self.model, messages=messages,
-                                                     temperature=temperature, max_tokens=max_tokens, seed=self.seed)
+                                                     temperature=temperature, max_tokens=max_tokens, seed=self.seed, extra_body=extra)
             text = r.choices[0].message.content or ""
             if r.usage:
                 u_in, u_out = r.usage.prompt_tokens or 0, r.usage.completion_tokens or 0

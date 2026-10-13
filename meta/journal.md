@@ -375,3 +375,20 @@
   rates, "not a question" rate). Both tasks run end to end on mocks (stub proposer); CD regression ok.
 - Downloads: the hf cache uses a content-addressed blobs/xx/ layout, so `du` on the model dir under-reports;
   the snapshots dereference to full sizes (Qwen3-32B 64 G). Calibration jobs released.
+- 01:15 user: newer Qwen exist (my knowledge ends 2026-06). HF listing: Qwen3.5 (Mar 2026), Qwen3.6 (Apr),
+  Qwen3.8 (Aug: 27B, Flash-Next, 2.4T-A95B). vLLM 0.31 on the cluster supports Qwen3_5ForConditionalGeneration,
+  Qwen3_5Moe and Qwen4ExpForConditionalGeneration. Added to the calibration: Qwen3.8-27B-FP8,
+  Qwen3.8-Flash-Next-FP8, Qwen3.6-35B-A3B-FP8 (each 1xH200, thinking off). Seven referee candidates total.
+
+### 2026-10-13 05:05 EDT — referee calibration round 1; SP strict pilot launched
+- TurtleBench-150 (same sample as before): Llama-3.1-405B-INT4 83.3 (82.0 on the earlier run; the referee
+  is sampled at T=0.7); Qwen3-32B (no think) 74.0; Llama-3.3-70B-FP8 73.3; gpt-oss-120b 62.7 (clean
+  labels, but it answers Unknown 47 times vs 19 gold: over-cautious, not a parsing problem). None of the
+  smaller models reaches the 82 bar. Qwen3-235B-FP8, Qwen3.8-27B-FP8, Qwen3.6-35B-A3B-FP8 died in vLLM's
+  DeepGEMM JIT (nvcc 13.4 header mismatch) -> VLLM_USE_DEEP_GEMM=0; Qwen3.8-Flash-Next needs
+  max_num_seqs <= 57 (Mamba cache) -> MAXSEQ=32; all four resubmitted (25718456-9).
+- 405B job 25698041 running on node5200 (12 h, until ~15:50), endpoint node5200:9736, tunnel 18001.
+  bridge.Solver passes Llama stop ids. Real smoke test of the SP environment: bare on 2 puzzles with the
+  7B + 405B: 25 questions each, F1 (char) 0.73 / 0.68, key questions 6/6 and 3/6, ~35 s per episode.
+- 05:03 SP strict pilot launched: run sp_strict1_b10g3r2 (30 test puzzles, seed 0, B=10 G=3 R=2,
+  budget 25, Opus 5.5 proposer/judge, 7B on node3206:8861 via tunnel 18000, 405B referee via 18001).

@@ -82,13 +82,22 @@ async def main_async(a):
     async def one(it):
         async with sem:
             extra = {"stop_token_ids": LLAMA3_STOP_IDS} if "llama" in a.model.lower() else {}
+            if a.no_think:      # Qwen3-style hybrid models: answer without a think block
+                extra["chat_template_kwargs"] = {"enable_thinking": False}
             r = await client.chat.completions.create(
                 model=a.model, temperature=a.temperature, top_p=a.top_p,
                 max_tokens=a.max_tokens, extra_body=extra,
                 messages=[{"role": "system", "content": it["system"]},
                           {"role": "user", "content": it["guess"]}])
-            raw = r.choices[0].message.content or ""
-            results[it["id"]] = {"pred": parse(raw), "raw": raw[:300], "gold": it["gold"]}
+            msg = r.choices[0].message
+            raw = msg.content or ""
+            pred = parse(raw)
+            if pred is None:    # reasoning models (gpt-oss): the final may sit after a reasoning channel
+                reasoning = getattr(msg, "reasoning_content", None) or getattr(msg, "reasoning", None) or ""
+                ms = list(LABEL_RE.finditer(reasoning))
+                pred = ms[-1].group(1).capitalize() if ms else None
+                raw = (raw + " || reasoning: " + reasoning)[:600]
+            results[it["id"]] = {"pred": pred, "raw": raw[:300], "gold": it["gold"]}
 
     await asyncio.gather(*(one(it) for it in items))
 
@@ -122,6 +131,7 @@ def main():
     p.add_argument("--max-tokens", type=int, default=16)
     p.add_argument("--concurrency", type=int, default=16)
     p.add_argument("--out", default="")
+    p.add_argument("--no-think", action="store_true", help="pass chat_template_kwargs enable_thinking=false (Qwen3 hybrids)")
     asyncio.run(main_async(p.parse_args()))
 
 

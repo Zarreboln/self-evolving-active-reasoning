@@ -36,16 +36,28 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import bridge          # noqa: E402
+import sp_bridge       # noqa: E402
 import proposer as P   # noqa: E402
 from audit import audit  # noqa: E402
 
+from tasks import SPECS  # noqa: E402
+
+TASK = "cd"
+SPEC = SPECS[TASK]
 AGENTS = HERE / "agents"
 BUDGET_OVERRIDE = 18
+ANSWERER_CFG = None          # SP only: {"base_url", "model", "mock", "seed"} for the referee
+
+
+def set_task(task):
+    global TASK, SPEC, AGENTS
+    TASK = task; SPEC = SPECS[task]; AGENTS = HERE / SPEC["agents"]
+    P.set_task(task)
 
 
 def loadable(name, arm):
     p = AGENTS / f"{name}.py"
-    return p.exists() and not audit(p.read_text(), arm)
+    return p.exists() and not audit(p.read_text(), arm, TASK)
 
 
 def controller_dir(run_dir):
@@ -58,7 +70,7 @@ def controller_dir(run_dir):
 
 
 def public_agg(a, labeled):
-    keys = ("n", "health", "tokens_out") + (("circuit_wise_accuracy", "joint_truth_table_correct") if labeled else ())
+    keys = ("n", "health", "tokens_out") + (tuple(m for m, _ in SPEC["metrics"]) if labeled else ())
     return {k: a[k] for k in keys if k in a}
 
 
@@ -67,7 +79,7 @@ def solve_one(run_dir, name, index, solver_cfg, arm, timeout, tag):
     task, out = jobs / f"{tag}.task.json", jobs / f"{tag}.result.json"
     out.unlink(missing_ok=True)
     task.write_text(json.dumps({"harness": name, "index": index, "output": str(out), "solver": solver_cfg, "arm": arm,
-                                "budget": BUDGET_OVERRIDE, "reveal": "controller"}))
+                                "budget": BUDGET_OVERRIDE, "reveal": "controller", "task": TASK, "answerer": ANSWERER_CFG}))
     proc = subprocess.Popen([sys.executable, "-u", str(HERE / "solve_worker.py"), "--task", str(task)],
                             cwd=str(HERE), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True,
                             start_new_session=True)
@@ -82,12 +94,12 @@ def solve_one(run_dir, name, index, solver_cfg, arm, timeout, tag):
         return {"harness": name, "index": index, "status": "timeout", "error": f"wall timeout {timeout}s",
                 "signals": {"health": False, "crashed": True, "n_queries": None, "uniq_end": False, "n_alive_end": None,
                             "zero_info": None, "repeat": None, "oracle_agree": None, "eff": None},
-                "gold": {"joint_truth_table_correct": False, "circuit_wise_accuracy": 0.0, "parsed_guess": False}, "history": [], "trace": [], "tokens": {}}
+                "gold": {m: 0.0 for m, _ in SPEC["metrics"]}, "history": [], "trace": [], "tokens": {}}
     if not out.exists():
         return {"harness": name, "index": index, "status": "worker_error", "error": (err or "")[-800:],
                 "signals": {"health": False, "crashed": True, "n_queries": None, "uniq_end": False, "n_alive_end": None,
                             "zero_info": None, "repeat": None, "oracle_agree": None, "eff": None},
-                "gold": {"joint_truth_table_correct": False, "circuit_wise_accuracy": 0.0, "parsed_guess": False}, "history": [], "trace": [], "tokens": {}}
+                "gold": {m: 0.0 for m, _ in SPEC["metrics"]}, "history": [], "trace": [], "tokens": {}}
     return json.loads(out.read_text())
 
 
@@ -103,8 +115,7 @@ def agg(results):
     return {"n": len(sig),
             "uniq_end": sum(1 for s in sig if s.get("uniq_end")) / n,
             "health": sum(1 for s in sig if s.get("health")) / n,
-            "circuit_wise_accuracy": sum(float((r.get("gold") or {}).get("circuit_wise_accuracy") or 0) for r in results) / n,   # record only
-            "joint_truth_table_correct": sum(1 for r in results if (r.get("gold") or {}).get("joint_truth_table_correct")) / n,   # record only
+            **{m: sum(float((r.get("gold") or {}).get(m) or 0) for r in results) / n for m, _ in SPEC["metrics"]},   # record only
             "tokens_out": sum((r.get("tokens") or {}).get("out", 0) for r in results) / n}
 
 
@@ -148,6 +159,13 @@ def prepare_resume(run_dir, ctrl, rb, rr, group, labeled):
     return {"batch": rb, "round": rr, "H": H, "results": results, "branches": branches}
 
 
+def fmt_metrics(a, nd=0):
+    s = " ".join(f"{label}={100*float(a.get(m) or 0):.{nd}f}%" for m, label in SPEC["metrics"])
+    if TASK == "cd" and a.get("uniq_end") is not None:
+        s += f" (diag uniq_end={100*a['uniq_end']:.{nd}f}%)"
+    return s
+
+
 def log_line(path, obj):
     with open(path, "a") as f:
         f.write(json.dumps(obj) + "\n")
@@ -176,20 +194,32 @@ def main():
     ap.add_argument("--solve-timeout", type=int, default=600, help="wall-clock cap per episode")
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--start-batch", type=int, default=0)
+    ap.add_argument("--task", choices=list(SPECS), default="cd")
+    ap.add_argument("--answerer-base-url", default=None, help="SP: the referee endpoint (AR-Bench: Llama-3.1-405B)")
+    ap.add_argument("--answerer-model", default=None); ap.add_argument("--answerer-mock", action="store_true")
     ap.add_argument("--resume-from", nargs=2, type=int, metavar=("BATCH", "ROUND"), default=None,
                     help="continue an interrupted run at batch BATCH, round ROUND (ROUND == --rounds means: only the judge "
                          "of that batch is still due). Everything already observed for that batch is reloaded from the "
                          "controller store; rows at or after that point are discarded first.")
     args = ap.parse_args()
 
-    global BUDGET_OVERRIDE
+    global BUDGET_OVERRIDE, ANSWERER_CFG
+    set_task(args.task)
+    if args.budget == 18 and TASK != "cd":
+        args.budget = SPEC["budget"]
     BUDGET_OVERRIDE = args.budget
+    if TASK == "sp":
+        ANSWERER_CFG = {"base_url": args.answerer_base_url, "model": args.answerer_model, "mock": bool(args.answerer_mock), "seed": args.solver_seed}
+        if not args.answerer_mock and not args.answerer_base_url:
+            sys.exit("--task sp needs --answerer-base-url/--answerer-model (or --answerer-mock)")
+    P.ANSWERER_CFG = ANSWERER_CFG
     P.BUDGET = args.budget
     P.STRICT = True                       # the oracle-derived signal arm was dropped (2026-10-12)
     P.LABELED = args.signals == "labeled"
     run_dir = HERE / "logs" / args.run_name
     run_dir.mkdir(parents=True, exist_ok=True)
-    stream = bridge.make_stream(args.split, args.split_file, args.stream_seed, args.limit)
+    stream = (sp_bridge.make_stream(args.split, args.split_file, args.stream_seed, args.limit) if TASK == "sp"
+              else bridge.make_stream(args.split, args.split_file, args.stream_seed, args.limit))
     batches = [stream[i:i + args.batch_size] for i in range(0, len(stream), args.batch_size)]
     solver_cfg = {"base_url": args.solver_base_url, "model": args.solver_model, "mock": args.solver_mock,
                   "seed": args.solver_seed, "cache_dir": str(run_dir / "solver_cache")}
@@ -233,8 +263,7 @@ def main():
 
         ensure(H)
         prequential = agg(results[H])          # the incoming harness, before adaptation
-        print(f"\n===== batch {bi}/{len(batches)} ({len(batch)} inst) H={H}  prequential circuit-wise acc={100*prequential['circuit_wise_accuracy']:.0f}% "
-              f"joint table correct={100*prequential['joint_truth_table_correct']:.0f}% (diag uniq_end={100*prequential['uniq_end']:.0f}%) =====", flush=True)
+        print(f"\n===== batch {bi}/{len(batches)} ({len(batch)} inst) H={H}  prequential {fmt_metrics(prequential)} =====", flush=True)
         branches = branches_override or [H] * args.group
         for rnd in range(round_start, args.rounds):
             tag = f"b{bi}r{rnd}"
@@ -281,8 +310,7 @@ def main():
         log_line(opt_log, {**row, "prequential": public_agg(row["prequential"], P.LABELED),
                            "transductive": public_agg(row["transductive"], P.LABELED),
                            "pool": {n: public_agg(a, P.LABELED) for n, a in row["pool"].items()}})
-        print(f"   JUDGE -> {H_next}   transductive circuit-wise acc={100*transductive['circuit_wise_accuracy']:.0f}% joint table correct={100*transductive['joint_truth_table_correct']:.0f}% "
-              f"(diag uniq_end={100*transductive['uniq_end']:.0f}%)   ({row['seconds']}s)", flush=True)
+        print(f"   JUDGE -> {H_next}   transductive {fmt_metrics(transductive)}   ({row['seconds']}s)", flush=True)
         H = H_next
 
     # the run is over: the private store becomes part of the record (full logs replace the public ones)
@@ -294,17 +322,16 @@ def main():
     rows = [json.loads(l) for l in opt_log.open()]
     def curve(key):
         n = sum(len(r["instances"]) for r in rows)
-        return {m: sum(r[key][m] * len(r["instances"]) for r in rows) / n for m in ("uniq_end", "circuit_wise_accuracy", "joint_truth_table_correct")}
+        return {m: sum(r[key].get(m, 0) * len(r["instances"]) for r in rows) / n for m in ("uniq_end",) + tuple(k for k, _ in SPEC["metrics"])}
     pq, tr = curve("prequential"), curve("transductive")
     summary = {"final_harness": H, "n_instances": sum(len(r["instances"]) for r in rows),
                "prequential": pq, "transductive": tr,
                "per_batch": [{"batch": r["batch"], "incoming": r["incoming"], "committed": r["committed"],
                               "preq_uniq": r["prequential"]["uniq_end"], "trans_uniq": r["transductive"]["uniq_end"],
-                              "preq_circuit_wise_accuracy": r["prequential"]["circuit_wise_accuracy"], "trans_circuit_wise_accuracy": r["transductive"]["circuit_wise_accuracy"],
-                              "preq_joint_truth_table_correct": r["prequential"]["joint_truth_table_correct"], "trans_joint_truth_table_correct": r["transductive"]["joint_truth_table_correct"]} for r in rows]}
+                              **{f"preq_{m}": r["prequential"].get(m) for m, _ in SPEC["metrics"]},
+                              **{f"trans_{m}": r["transductive"].get(m) for m, _ in SPEC["metrics"]}} for r in rows]}
     (run_dir / "result.json").write_text(json.dumps(summary, indent=1))
-    print(f"\n[tthe] final H={H}  prequential circuit-wise acc={100*pq['circuit_wise_accuracy']:.1f}% joint table correct={100*pq['joint_truth_table_correct']:.1f}% (uniq_end {100*pq['uniq_end']:.1f}%)  "
-          f"transductive circuit-wise acc={100*tr['circuit_wise_accuracy']:.1f}% joint table correct={100*tr['joint_truth_table_correct']:.1f}%  -> {run_dir / 'result.json'}", flush=True)
+    print(f"\n[tthe] final H={H}  prequential {fmt_metrics(pq, 1)}  transductive {fmt_metrics(tr, 1)}  -> {run_dir / 'result.json'}", flush=True)
 
 
 if __name__ == "__main__":

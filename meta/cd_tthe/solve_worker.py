@@ -28,27 +28,45 @@ from audit import audit  # noqa: E402
 
 
 def load_harness(name):
-    path = HERE / "agents" / f"{name}.py"
+    path = HERE / AGENTS_DIR / f"{name}.py"
     spec = importlib.util.spec_from_file_location(f"agents_{name}", path)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod.Harness
 
 
+AGENTS_DIR = "agents"
+
+
 def main():
+    global AGENTS_DIR
     ap = argparse.ArgumentParser(); ap.add_argument("--task", required=True)
     task = json.loads(Path(ap.parse_args().task).read_text())
-    out = {"harness": task["harness"], "index": task["index"], "status": "ok", "error": None}
+    kind = task.get("task", "cd")
+    from tasks import SPECS
+    spec = SPECS[kind]; AGENTS_DIR = spec["agents"]
+    out = {"harness": task["harness"], "index": task["index"], "status": "ok", "error": None, "task": kind}
     t0 = time.time()
     try:
-        src = (HERE / "agents" / f"{task['harness']}.py").read_text()
-        problems = audit(src, task.get("arm", "scratch"))
+        src = (HERE / AGENTS_DIR / f"{task['harness']}.py").read_text()
+        problems = audit(src, task.get("arm", "scratch"), kind)
         if problems:
             raise RuntimeError("audit: " + "; ".join(problems))
-        env = bridge.CDEnv(task["index"], budget=int(task.get("budget", bridge.BUDGET)))
         sv = task.get("solver", {})
-        solver = bridge.Solver(base_url=sv.get("base_url"), model=sv.get("model"), cache_dir=sv.get("cache_dir"),
-                               mock=sv.get("mock"), mock_game=bridge.game_for(env.inventory), seed=int(sv.get("seed", 0)))
+        if kind == "sp":
+            import sp_bridge, sp_signals
+            answerer = sp_bridge.make_answerer(task.get("answerer") or {"mock": True}, cache_dir=(sv.get("cache_dir") or "") + "_answerer")
+            env = sp_bridge.SPEnv(task["index"], budget=int(task.get("budget", sp_bridge.BUDGET)), answerer=answerer)
+            if sv.get("mock"):
+                solver = sp_bridge.SPMockSolver()
+            else:
+                solver = bridge.Solver(base_url=sv.get("base_url"), model=sv.get("model"), cache_dir=sv.get("cache_dir"), seed=int(sv.get("seed", 0)))
+            sigmod = sp_signals
+        else:
+            env = bridge.CDEnv(task["index"], budget=int(task.get("budget", bridge.BUDGET)))
+            solver = bridge.Solver(base_url=sv.get("base_url"), model=sv.get("model"), cache_dir=sv.get("cache_dir"),
+                                   mock=sv.get("mock"), mock_game=bridge.game_for(env.inventory), seed=int(sv.get("seed", 0)))
+            sigmod = signals
         H = load_harness(task["harness"])
         h = H(env, solver)
         guess_text, crashed = "", False
@@ -63,19 +81,28 @@ def main():
         #   outcome    + the episode's gold outcome (labeled arm: labels are shown by design)
         #   controller + oracle-derived signals and the full gold record, for the controller's private store
         reveal = task.get("reveal", "none")
-        parsed = bool(re.findall(r"[01]{24}", re.sub(r"\s", "", guess_text or "")))
-        seen, rep = set(), 0
-        for q, _ in env.history:
-            rep += q in seen; seen.add(q)
-        out["signals"] = {"health": (not crashed) and parsed, "crashed": crashed, "parsed_guess": parsed,
-                          "n_queries": len(env.history), "repeat": (rep / len(env.history)) if env.history else None}
-        if reveal == "controller":
-            out["signals"] = signals.compute(env, guess_text, crashed)
-            out["gold"] = env.score(guess_text)
-        elif reveal == "outcome":
-            g = env.score(guess_text)
-            out["gold"] = {k: g[k] for k in ("parsed_guess", "joint_truth_table_correct", "circuit_wise_accuracy")}
-        out["history"] = [[list(q), b] for q, b in env.history]
+        if kind == "sp":
+            out["signals"] = sigmod.compute(env, guess_text, crashed)      # all public (no oracle exists for SP)
+            if reveal == "controller":
+                out["gold"] = env.score(guess_text, judge_keypoints=True)
+            elif reveal == "outcome":
+                g = env.score(guess_text, judge_keypoints=False)
+                out["gold"] = {k: g.get(k) for k in spec["outcome_keys"]}
+            out["answerer_calls"] = getattr(answerer, "calls", None)
+        else:
+            parsed = bool(re.findall(r"[01]{24}", re.sub(r"\s", "", guess_text or "")))
+            seen, rep = set(), 0
+            for q, _ in env.history:
+                rep += q in seen; seen.add(q)
+            out["signals"] = {"health": (not crashed) and parsed, "crashed": crashed, "parsed_guess": parsed,
+                              "n_queries": len(env.history), "repeat": (rep / len(env.history)) if env.history else None}
+            if reveal == "controller":
+                out["signals"] = sigmod.compute(env, guess_text, crashed)
+                out["gold"] = env.score(guess_text)
+            elif reveal == "outcome":
+                g = env.score(guess_text)
+                out["gold"] = {k: g[k] for k in spec["outcome_keys"]}
+        out["history"] = [[q if isinstance(q, str) else list(q), b] for q, b in env.history]
         out["trace"] = h._trace
         out["guess_text"] = (guess_text or "")[-600:]
         out["solver_calls"] = solver.calls

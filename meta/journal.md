@@ -356,3 +356,22 @@
   strict final b2r0g1 99.5 / 98.5 (unseen 98.2), b1r1g0 99.3 / 98.0, b0r1g1 97.0 / 92.0; labeled finals
   100 / 100 at 215 tokens/ep; pilot r0g2 99.5 / 99.5; rejected query-steering ones 99.5 / 99.5 and
   99.0 / 97.0. Experiment 09 written.
+
+### 2026-10-13 00:30 EDT — referee candidates for SP (user: test all four on TurtleBench-150)
+- Deleted the never-used Llama-3.1-405B-Instruct-FP8 download (454 G) from scratch to make room.
+- New scripts engaging/dl_hf_scratch.sbatch (HF cache on scratch) and engaging/calib.sbatch (serve one
+  model with vLLM 0.31, run runner/turtle_judge_eval.py, exit). Downloads 25698267-70, calibrations
+  25698271/2/3/5 (dependency-chained): openai/gpt-oss-120b (1xH200, max_tokens 2048 for its reasoning
+  channel), Qwen/Qwen3-32B (1xH200, thinking off), RedHatAI/Llama-3.3-70B-Instruct-FP8-dynamic (1xH200),
+  Qwen/Qwen3-235B-A22B-Instruct-2507-FP8 (2xH200, PP=2). Bar: >= 82.0% (405B-INT4) / 82.7% (official).
+- 405B job 25698041 resubmitted on mit_preemptable (12 h) after the normal partition's 2-GPU cap.
+
+### 2026-10-13 01:00 EDT — SP ported into the TTHE loop; referee calibrations queued
+- meta/cd_tthe now has a task switch (`tasks.py`; `--task cd|sp` in optimize.py / evaluate.py; worker,
+  static audit, session audit, prompts, traces, summaries all task-aware). SP pieces: sp_bridge.py (SPEnv
+  over AR-Bench data; referee = any served model through the official referee prompt, cached; official
+  char-level F1 and key-question recall judged by the referee), sp_harness_base.py, agents_sp/bare.py
+  (the official zero-shot loop), sp_signals.py (public signals only: questions used, repeat, yes/no/unknown
+  rates, "not a question" rate). Both tasks run end to end on mocks (stub proposer); CD regression ok.
+- Downloads: the hf cache uses a content-addressed blobs/xx/ layout, so `du` on the model dir under-reports;
+  the snapshots dereference to full sizes (Qwen3-32B 64 G). Calibration jobs released.

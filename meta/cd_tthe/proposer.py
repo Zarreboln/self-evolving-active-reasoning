@@ -26,8 +26,19 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "cd_evolve"))
 import claude_wrapper  # noqa: E402  (copied verbatim from Meta-Harness, MIT)
 
+from tasks import SPECS, history_line, outcome_line  # noqa: E402
+
+TASK = "cd"
+SPEC = SPECS[TASK]
 AGENTS = HERE / "agents"
 BUDGET = 18          # set by optimize.py from --budget
+ANSWERER_CFG = None
+
+
+def set_task(task):
+    global TASK, SPEC, AGENTS, PUBLIC_SIGNALS, OUTCOME_KEYS
+    TASK = task; SPEC = SPECS[task]; AGENTS = HERE / SPEC["agents"]
+    PUBLIC_SIGNALS = SPEC["public_signals"]; OUTCOME_KEYS = SPEC["outcome_keys"]
 STRICT = False       # --signals strict: proposer/judge see only raw traces + run status; no oracle-derived
                      # signals (uniq_end, alive_end, zero_info, eff) and no prior about the model's habits
 LABELED = False      # --signals labeled: strict + each episode's gold outcome (joint truth table correct / circuit-wise accuracy)
@@ -57,11 +68,10 @@ def signal_line(r):
     s = r.get("signals") or {}
     f = lambda v: "-" if v is None else (f"{v:.2f}" if isinstance(v, float) else str(v))
     if STRICT:
-        line = (f"status={r.get('status')} parsed_final_guess={f(s.get('parsed_guess'))} queries_used={f(s.get('n_queries'))} "
-                f"calls={r.get('solver_calls')} tokens_out={(r.get('tokens') or {}).get('out')}")
+        line = f"status={r.get('status')} " + " ".join(f"{lab}={f(s.get(k))}" for lab, k in SPEC["status_fields"]) + \
+               f" calls={r.get('solver_calls')} tokens_out={(r.get('tokens') or {}).get('out')}"
         if LABELED:
-            g = r.get("gold") or {}
-            line += f" | OUTCOME: joint truth table correct={g.get('joint_truth_table_correct')} circuit-wise accuracy={round(3 * float(g.get('circuit_wise_accuracy') or 0))}/3"
+            line += outcome_line(TASK, r.get("gold"))
         return line
     return (f"status={r.get('status')} health={f(s.get('health'))} queries={f(s.get('n_queries'))} "
             f"uniq_end={f(s.get('uniq_end'))} alive_end={f(s.get('n_alive_end'))} zero_info={f(s.get('zero_info'))} "
@@ -76,8 +86,8 @@ def render_trace(r):
          f"status: {r.get('status')}   {signal_line(r)}"]
     if r.get("error"):
         L.append(f"## ERROR\n```\n{r['error'][-1200:]}\n```")
-    L.append("## Queries and answers (in order)")
-    L += [f"- {c}({a}, {b}, {x}) = {bit}" for (c, a, b, x), bit in r.get("history", [])]
+    L.append(f"## {SPEC['history_title']}")
+    L += [history_line(TASK, h) for h in r.get("history", [])]
     L.append("## Model calls (what the harness sent, what the model replied)")
     for i, st in enumerate(r.get("trace", []), 1):
         if st.get("step") != "llm":
@@ -135,7 +145,6 @@ NAME_RULES = [  # applied to path-bearing fields only
     ("controller store", r"ar_harness_controller"),
     ("memory / Claude Code state", r"/\.claude/(?!projects/[^/\s'\"]+/[0-9a-f-]+/tool-results/)"),
     ("session transcripts", r"claude_sessions"),
-    ("task data file", r"cd_test\.jsonl|mt_puzzles/[A-Za-z0-9_]+\.(?:jsonl|txt)"),
     ("git", r"(?:^|[;&|(\s])git\s+(?:log|status|diff|show|blame|grep|ls-files|stash|checkout)\b"),
 ]
 ORACLE_RULES = [("oracle code", r"stage0/|cd_oracle\.py|(?:from|import)\s+cd_oracle\b")]
@@ -230,9 +239,10 @@ def audit_session(run_dir, name, arm):
         return {"name": name, "clean": True, "hits": [], "note": "no session dir"}
     sess = sessions[-1]; ev = sess / "events.jsonl"
     run_name = re.escape(Path(run_dir).name)
-    rules = [(k, re.compile(rx)) for k, rx in NAME_RULES] + [("other run's logs", re.compile(rf"logs/(?!{run_name}\b)[A-Za-z0-9_]+\b")),
+    rules = [(k, re.compile(rx)) for k, rx in NAME_RULES] + [("task data file", re.compile(SPEC["data_rule"])),
+                                                             ("other run's logs", re.compile(rf"logs/(?!{run_name}\b)[A-Za-z0-9_]+\b")),
                                                              ("other run's candidates", re.compile(rf"cand_(?!{run_name}_)[A-Za-z0-9]+_[A-Za-z0-9_]*\.py"))]
-    if arm != "lib":
+    if arm != "lib" and TASK == "cd":
         rules += [(k, re.compile(rx)) for k, rx in ORACLE_RULES]
     val_rx = [("instance truth", re.compile(VAL_TRUTH)), ("oracle signal value", re.compile(VAL_ORACLE))]
     if not LABELED:
@@ -283,15 +293,18 @@ def summary_table(results_by_name):
     for name, rs in results_by_name.items():
         sig = [r.get("signals") or {} for r in rs]
         if STRICT:
-            parsed = sum(1 for x in sig if x.get("parsed_guess")) / max(1, len(sig))
-            q = sum(x.get("n_queries") or 0 for x in sig) / max(1, len(sig))
             toks = sum((r.get("tokens") or {}).get("out", 0) for r in rs) / max(1, len(rs))
-            line = (f"{name:<34} n={len(rs):<3} parsed_final_guess={100*parsed:5.1f}%  queries_used/ep={q:5.1f}  "
-                    f"tokens_out/ep={toks:7.0f}  crashes={sum(1 for r in rs if r.get('status') != 'ok')}")
+            counts = ("n_queries", "n_questions", "mean_q_words", "answer_words")
+            def mean_field(k):
+                vals = [x.get(k) for x in sig if x.get(k) is not None]
+                if not vals: return "-"
+                v = sum(float(x) for x in vals) / len(vals)
+                return f"{v:5.1f}" if k in counts else f"{100*v:5.1f}%"
+            line = (f"{name:<34} n={len(rs):<3} " + "  ".join(f"{lab}={mean_field(k)}" for lab, k in SPEC["status_fields"]) +
+                    f"  tokens_out/ep={toks:7.0f}  crashes={sum(1 for r in rs if r.get('status') != 'ok')}")
             if LABELED:
-                ex = sum(1 for r in rs if (r.get("gold") or {}).get("joint_truth_table_correct")) / max(1, len(rs))
-                ck = sum(float((r.get("gold") or {}).get("circuit_wise_accuracy") or 0) for r in rs) / max(1, len(rs))
-                line += f"  | OUTCOME: joint truth table correct={100*ex:5.1f}%  circuit-wise accuracy={100*ck:5.1f}%"
+                outs = [f"{lab}={100*(sum(float((r.get('gold') or {}).get(m) or 0) for r in rs) / max(1, len(rs))):5.1f}%" for m, lab in SPEC["metrics"]]
+                line += "  | OUTCOME: " + "  ".join(outs)
             rows.append(line)
             continue
         m = lambda k: (sum(1 for s in sig if s.get(k)) / len(sig)) if sig else 0.0
@@ -306,13 +319,15 @@ def summary_table(results_by_name):
 # ----------------------------------------------------------------------------- prompts
 
 def interface_doc():
-    return (HERE / "harness_base.py").read_text()
+    return (HERE / SPEC["base_file"]).read_text()
 
 
 def check_script(run_dir, tag, name, indices, solver_cfg, arm, timeout, budget=18):
     """A script the proposer can run: its candidate on the batch instances, label-free output."""
     p = Path(run_dir) / f"check_{tag}.py"
     reveal = "outcome" if LABELED else "none"
+    ANSWERER = globals().get("ANSWERER_CFG")
+    outcome_expr = 'f" | OUTCOME: joint truth table correct={g.get(\'joint_truth_table_correct\')} circuit-wise accuracy={round(3*float(g.get(\'circuit_wise_accuracy\') or 0))}/3"' if TASK == "cd" else 'f" | OUTCOME: F1 (char) vs the true story={round(float(g.get(\'f1_char\') or 0), 3)} key-question recall={g.get(\'keypoint_recall\')}"'
     p.write_text(f'''import json, subprocess, sys, os
 from pathlib import Path
 HERE = Path({str(HERE)!r})
@@ -320,7 +335,7 @@ name = {name!r}; idx = {list(indices)!r}; solver = {solver_cfg!r}; arm = {arm!r}
 out_dir = Path({str(run_dir)!r}) / "checks" / {tag!r}; out_dir.mkdir(parents=True, exist_ok=True)
 for i in idx:
     task = out_dir / f"task_{{i}}.json"; res = out_dir / f"res_{{i}}.json"
-    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm, "budget": {budget}, "reveal": {reveal!r}}}))
+    task.write_text(json.dumps({{"harness": name, "index": i, "output": str(res), "solver": solver, "arm": arm, "budget": {budget}, "reveal": {reveal!r}, "task": {TASK!r}, "answerer": {ANSWERER!r}}}))
     try:
         subprocess.run([sys.executable, str(HERE / "solve_worker.py"), "--task", str(task)], timeout={int(timeout)}, check=False)
     except subprocess.TimeoutExpired:
@@ -329,10 +344,10 @@ for i in idx:
         print(f"instance {{i}}: no result (worker died)"); continue
     r = json.loads(res.read_text()); s = r.get("signals") or {{}}
     if {STRICT!r}:
-        line = f"instance {{i}}: status={{r['status']}} parsed_final_guess={{s.get('parsed_guess')}} queries_used={{s.get('n_queries')}} calls={{r.get('solver_calls')}}"
+        line = f"instance {{i}}: status={{r['status']}} " + " ".join(f"{{lab}}={{s.get(k)}}" for lab, k in {list(SPEC["status_fields"])!r}) + f" calls={{r.get('solver_calls')}}"
         if {LABELED!r}:
             g = r.get("gold") or {{}}
-            line += f" | OUTCOME: joint truth table correct={{g.get('joint_truth_table_correct')}} circuit-wise accuracy={{round(3*float(g.get('circuit_wise_accuracy') or 0))}}/3"
+            line += {outcome_expr}
         print(line)
     else:
         print(f"instance {{i}}: status={{r['status']}} health={{s.get('health')}} queries={{s.get('n_queries')}} "
@@ -344,6 +359,8 @@ for i in idx:
 
 
 def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_path, arm, card_path, batch_indices):
+    if TASK == "sp":
+        return propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path)
     if STRICT:
         return propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path)
     lib_note = ("You MAY `from cd_oracle import CDGame` (the public hypothesis space implied by the inventory: "
@@ -439,6 +456,8 @@ Then write a proposal card to `{card_path}` as JSON:
 
 
 def judge_prompt(cands, incumbent, trace_dir, summary, choice_path, check_paths):
+    if TASK == "sp":
+        return judge_prompt_sp(cands, incumbent, trace_dir, summary, choice_path, check_paths)
     if STRICT:
         checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
         return f"""You are the JUDGE of a test-time harness-evolution loop for Circuit Decoding. {len(cands)} harnesses
@@ -644,3 +663,72 @@ def judge(cands, incumbent, trace_dir, results_by_name, run_dir, tag, batch_indi
         if picked in cands:
             return picked
     return incumbent
+
+
+# ----------------------------------------------------------------------------- SP prompts
+
+def propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path):
+    outcome_note = ("Each episode's OUTCOME (the character-level F1 of the final answer against the true story) is "
+                    "shown in the traces and the run summary; nothing else is evaluated for you."
+                    if LABELED else
+                    "You are given no evaluation of the episodes beyond whether they ran and what the referee replied. "
+                    "Decide what \"going well\" means from the task and the traces yourself.")
+    return f"""A FROZEN 7B chat model plays AR-Bench Situation Puzzles inside a HARNESS you control. You CANNOT see
+the hidden story. {outcome_note} GOAL: edit the harness so the model RELIABLY uncovers the hidden story within
+the {BUDGET} yes/no questions and writes a final answer that matches it (AR-Bench scores the final answer by
+character-level F1 against the true story; the referee answers Yes / No / Unknown from the story, and "This is
+not a question, please propose your next question." to anything that is not a yes/no question).
+
+READ FIRST:
+- `{HERE / SPEC['base_file']}` -- the interface and the two invariants (frozen solver, label-free).
+- `{AGENTS / (parent + '.py')}` -- your branch's CURRENT harness: copy it, then improve it.
+- `{trace_dir}` -- full traces of every active branch on this batch ({', '.join(active)}): one `.md` per
+  harness x puzzle (`<harness>__i<index>.md`): the puzzle, every question the model asked, every referee
+  reply, every message sent to the model and every reply, and the final answer. Nothing else is provided.
+- Run summary (what ran, what crashed, referee reply rates):
+{summary}
+
+Harness API: self.env.surface, self.env.system_prompt (AR-Bench's player instruction), self.env.turn_prompt(t),
+self.env.final_prompt, self.env.ask(question) -> referee reply (counts against self.env.budget = {BUDGET};
+BudgetExhausted after it), self.env.remaining, self.env.history ([(question, reply), ...]),
+self.llm(messages, temperature=0.7, max_tokens=512) -> str. The model must be the one writing every
+question you send and the final answer; the harness may re-ask it, change what it sees, veto a reply,
+keep and show notes, structure the final answer from what the model said -- but may not write a
+question or the answer itself. There is no helper library and no oracle: the only information about the
+story is what the referee replies.
+
+VERIFY BY RE-RUNNING -- do not guess, do not finish on a broken harness:
+  1. Edit `{AGENTS / (child + '.py')}` (start from the parent). Keep `{SPEC['base_import']}`
+     and `class Harness({SPEC['base_class']})`.
+  2. Run it on this batch's puzzles:  python {check_path}
+     It prints per-puzzle run status, whether a final answer was produced, questions used and the
+     referee reply rates. Read the traces it writes to judge the rest yourself.
+  3. If a puzzle crashes, fix and re-run. General mechanisms only: never branch on a puzzle's index
+     or text, never hard-code stories.
+
+Then write a proposal card to `{card_path}` as JSON:
+{{"candidate": "{child}", "parent": "{parent}", "role": "<your role name>",
+  "hypothesis": "<falsifiable claim>", "behavior_changes": ["..."], "preserved_behaviors": ["..."],
+  "verification": ["what you ran and saw"], "risks": ["..."]}}
+
+{role_text}"""
+
+
+def judge_prompt_sp(cands, incumbent, trace_dir, summary, choice_path, check_paths):
+    checks = "\n".join(f"  {n}: python {p}" for n, p in check_paths.items())
+    return f"""You are the JUDGE of a test-time harness-evolution loop for AR-Bench Situation Puzzles. {len(cands)} harnesses
+were run on the same batch of puzzles. The incumbent is `{incumbent}`; the others are this batch's
+candidates. Pick the ONE harness most likely to uncover the hidden story and answer it correctly on NEW
+puzzles. You cannot see the hidden stories. {"Each episode's OUTCOME (character-level F1 of the final answer against the true story) is in the summary and traces." if LABELED else "No evaluation beyond run status and the referee's replies is provided."} Judge from the traces
+(`{trace_dir}`, `<harness>__i<index>.md`) and the source files (`{AGENTS}`).
+
+Run summary:
+{summary}
+
+A harness that writes questions or the final answer itself violates the interface -- read the source and
+REJECT such candidates. Prefer general mechanisms over anything keyed to this batch. If no candidate is
+clearly better than the incumbent on this evidence, keep the incumbent. You may re-run any harness on the batch:
+{checks}
+
+Decide, then write ONLY the chosen harness name to `{choice_path}` (e.g. run: echo <name> > {choice_path}).
+Then STOP."""

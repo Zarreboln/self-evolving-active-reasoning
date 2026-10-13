@@ -10,8 +10,9 @@ import ast
 import re
 import sys
 
+from tasks import SPECS  # noqa: E402
+
 FORBIDDEN = [
-    (r"_truth|\btruth\b|INSTANCES|load_instances|cd_test|circuit_joint_lookup", "reads the truth / instance data"),
     (r"\bopen\(|\bPath\(|json\.load|\bglob\b|pickle|shelve|os\.|sys\.|subprocess|socket|urllib|requests|httpx",
      "file / process / network access"),
     (r"OpenAI\(|base_url|api_key|_solver\b|_client|bridge\.", "touches the solver client or the bridge directly"),
@@ -22,9 +23,10 @@ ALLOWED_IMPORTS = {"re", "math", "itertools", "collections", "functools", "rando
 LIB_ONLY = {"cd_oracle"}
 
 
-def audit(src, arm="scratch"):
+def audit(src, arm="scratch", task="cd"):
     problems = []
-    for pat, why in FORBIDDEN:
+    spec = SPECS[task]
+    for pat, why in [(spec["audit_forbidden"], "reads the truth / instance data")] + FORBIDDEN:
         if re.search(pat, src):
             problems.append(why)
     try:
@@ -38,7 +40,7 @@ def audit(src, arm="scratch"):
         elif isinstance(node, ast.ImportFrom):
             names = [(node.module or "").split(".")[0]]
         for n in names:
-            if n in ALLOWED_IMPORTS:
+            if n in ALLOWED_IMPORTS or n == spec["allowed_import"]:
                 continue
             if n in LIB_ONLY and arm == "lib":
                 continue
@@ -50,8 +52,8 @@ def audit(src, arm="scratch"):
 
 if __name__ == "__main__":
     import argparse
-    p = argparse.ArgumentParser(); p.add_argument("file"); p.add_argument("--arm", default="scratch")
+    p = argparse.ArgumentParser(); p.add_argument("file"); p.add_argument("--arm", default="scratch"); p.add_argument("--task", default="cd")
     a = p.parse_args()
-    probs = audit(open(a.file).read(), a.arm)
+    probs = audit(open(a.file).read(), a.arm, a.task)
     print("OK" if not probs else "INVALID: " + "; ".join(probs))
     sys.exit(0 if not probs else 1)

@@ -236,3 +236,53 @@ contradicted, or neither. That is a well-benchmarked shape outside puzzle games.
   above is the better instrument, and the external ones would at most be a sanity check.
 
 None of these is run yet. The first three are public and need no login.
+
+
+## Reading the labels off our own model instead of sampling a word (2026-10-14, H100)
+
+Jev's advantage over every chat judge here was not accuracy, it was that its verdicts arrive as a
+distribution. That mechanism is not proprietary: any served model can be constrained to the three
+labels and read at the first token. `runner/typed_judge_eval.py` does exactly that --
+`structured_outputs: {"choice": [...]}` plus the official referee prompt -- and
+`h100/typed_bench.sh` scores the same model three ways on the same 150 cases.
+
+| model | sampled, T=0.7 | sampled, T=0 | typed read | ECE | C / I / U recall (typed) |
+|---|---|---|---|---|---|
+| Qwen2.5-7B-Instruct | 36.0 / 37.3 / 34.7 | 35.3 / 34.7 | 36.0–36.7 | 0.56 | 50.9 / 17.1 / 68.4 |
+| Qwen3-32B-FP8 (no think) | 74.7 / 72.7 | 74.0 / 73.3 | 73.3 | 0.16 | 80.0 / 80.3 / 26.3 |
+
+**The typed read does not change the verdict.** It matches greedy sampling to within a point on
+both models, which is what it should do: the argmax is the same token. What it adds is the
+distribution, and that is only worth having when the distribution means something. On the 32B it
+does -- ECE 0.16 -- and the threshold becomes a real knob:
+
+| rule | accuracy | macro recall | C / I / U |
+|---|---|---|---|
+| argmax | 73.3% | 62.2% | 80.0 / 80.3 / 26.3 |
+| Unknown if P ≥ 0.30 | 72.7% | 64.4% | 80.0 / 76.3 / 36.8 |
+| Unknown if P ≥ 0.10 | 68.7% | 65.7% | 80.0 / 64.5 / 52.6 |
+
+Ten points of Unknown recall for six tenths of a point of accuracy. On the 7B it is worthless:
+mean P(argmax) 0.945 against accuracy 0.360, ECE 0.56. **Calibration comes from the model, not
+from the typed read** -- which is the honest reading of the Jev result too.
+
+**A separate finding about the 7B.** It answers Unknown to 99 of 150 cases. Forbid Unknown and it
+scores 68.0 instead of 36.0. Its collapse as a judge is one failure mode, over-abstention, not
+general incompetence.
+
+### Three ways this measurement was wrong before it was right
+
+Worth recording, because each failure looked like a result:
+
+1. **Temperature mismatch.** The sampled protocol runs at T=0.7, the typed read at 0. Measured:
+   worth 0.7–1.4 points, so the earlier comparison was not badly confounded, but it was luck.
+2. **The label is not at token 0 for a reasoning model.** Qwen3 opens with `<think>`. Scanning
+   later positions then matched the letter "I" of ordinary prose as a prefix of "Incorrect", and
+   the run reported 50.7% with every case answered Incorrect at confidence 1.000.
+3. **`guided_choice` is silently ignored by vLLM 0.19.** The request succeeds, nothing is
+   constrained, and the numbers are identical to the unconstrained run -- the failure is invisible
+   unless you compare against a run you know should differ. `runner/probe_guided.py` is the
+   five-line probe that settled it: `structured_outputs` constrains, `guided_choice` does not, and
+   `chat_template_kwargs: {"enable_thinking": false}` is what actually removes the thinking block.
+
+Predictions and the run log: `turtle150_predictions/typed_read/`.

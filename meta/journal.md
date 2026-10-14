@@ -457,3 +457,17 @@
   Also listed the external rulers that would fit the referee's three-way grounded-inference shape
   (FEVER SUPPORTED/REFUTED/NOT ENOUGH INFO, ANLI/MNLI, SQuAD 2.0's unanswerable half) and noted
   JudgeBench/RewardBench 2 measure a different judge role. None run yet. In experiments/02.
+- 2026-10-14 08:20-09:1x H100 (GPU 3 only) back in use. Implemented the typed read on our own
+  models (runner/typed_judge_eval.py + h100/typed_bench.sh): constrain to the three labels with
+  structured_outputs, read the first token's distribution. Qwen2.5-7B: sampled 34.7-37.3, typed
+  36.0-36.7, ECE 0.56 (mean P 0.945 vs accuracy 0.360) -> distribution useless; it answers Unknown
+  99/150 and scores 68.0 if Unknown is forbidden. Qwen3-32B-FP8: sampled 72.7-74.7, typed 73.3,
+  ECE 0.16, and the Unknown threshold buys +10.5 points of Unknown recall for -0.6 accuracy
+  (macro 62.2 -> 64.4 at P>=0.30). Conclusion: the typed read never changes the argmax, it only
+  exposes the distribution, and calibration is the model's property, not the mechanism's.
+  Three bugs on the way, all of which produced plausible-looking numbers: T=0.7 vs T=0 mismatch;
+  the label is not at token 0 for a reasoning model (prose "I" scored as Incorrect -> 50.7% all
+  Incorrect at confidence 1.000); and vLLM 0.19 silently ignores guided_choice (structured_outputs
+  is the field, chat_template_kwargs disables thinking). runner/probe_guided.py settled it.
+  Two operational traps repeated twice: a pgrep/pkill pattern that matches its own command line
+  (deadlocked waiter, then killed my own ssh session).

@@ -1,7 +1,10 @@
 # The standalone H100 box
 
-`ssh h100` (passwordless). Four H100 80GB cards, but **only GPU 3 is ours**: every command must set
-`CUDA_VISIBLE_DEVICES=3`. Code and data live under `/home/tmp_l`. No queue and no preemption, which
+`ssh h100` (passwordless). Four H100 80GB cards, **all shared with other users**. Pick a card at
+launch time rather than hard-coding one: `G=$(bash ~/data/ego4d_anno/handoff/tools/pick_gpu.sh)`
+chooses the one with the most free memory, then `CUDA_VISIBLE_DEVICES=$G`. (The scripts here still
+default to card 3, which was free all through 2026-10-14; check before reusing them -- cards 0 and
+1 were taken by a 41GB job later the same day.) Code and data live under `/home/tmp_l`. No queue and no preemption, which
 is what it is good for: a model that fits comes up in one to three minutes and a 150-case judge
 evaluation takes seconds, so it suits the fast iteration that ORCD's preemptable partition does not.
 
@@ -35,6 +38,9 @@ REPO=Qwen/Qwen3.8-27B-FP8 TAG=qwen38_27b_fp8 PORT=8141 \
   Check `config.json` → `architectures`, not the repo name.
 - **Never `pgrep -f` / `pkill -f` a pattern that your own command line contains.** It matches the
   shell running it: once this deadlocked a waiter against itself, once it killed the ssh session.
+- **The card is not guaranteed free.** Another user's job appeared on cards 0 and 1 mid-afternoon.
+  A 27B checkpoint plus its KV cache needs most of one card, so pick the emptiest one and check
+  `nvidia-smi` before a long run.
 - **Memory is the real gap against ORCD.** One 80GB card cannot hold Llama-3.1-405B-INT4 (needs two),
   Qwen3.8-Flash-Next (~126GB resident) or Qwen3-235B. Those stay on ORCD's H200s.
 

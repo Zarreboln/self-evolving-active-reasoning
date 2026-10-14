@@ -471,3 +471,14 @@
   is the field, chat_template_kwargs disables thinking). runner/probe_guided.py settled it.
   Two operational traps repeated twice: a pgrep/pkill pattern that matches its own command line
   (deadlocked waiter, then killed my own ssh session).
+- 09:5x Qwen3.8-27B-FP8 served on the H100 (one card, vLLM 0.19.1): sampled 64.7 at T=0.7, 70.0 at
+  T=0, typed read 70.7 with ECE 0.055 and macro recall 69.3 (C/I/U 76.4/68.4/63.2) -- the best
+  calibrated judge measured so far and level with the 405B on macro, 12.6 points below it on
+  accuracy. Correction to an earlier claim of mine: this box DOES support the Qwen3.8 generation.
+  Its HF architecture is Qwen3_5ForConditionalGeneration, which vLLM 0.19.1 already registers; I
+  had checked the arch list for the string "3.8" and concluded wrongly. One real blocker found and
+  fixed: the Gated DeltaNet kernel JIT-compiles on the first forward and needs `ninja`, which was
+  missing -- the server starts and passes /health, then every request 500s and the engine dies.
+  Version ceiling on this box: driver 570.195.03 = CUDA 12.8, cu128 torch tops out at 2.11, so the
+  newest installable vLLM is 0.26.0 (0.27+ require torch 2.13 = CUDA 13). Remaining hard gap vs
+  ORCD is memory only: 1x80GB here cannot hold 405B-INT4 (2 cards), Flash-Next (~126GB) or 235B.

@@ -1,0 +1,62 @@
+host=192-222-54-61 repo=Qwen/Qwen3.8-27B-FP8 start=2026-10-14T08:48:18+00:00 port=8141
+up after 75 s
+=== sampled word (the usual referee protocol) ===
+model: Qwen/Qwen3.8-27B-FP8
+ACCURACY: 97/150 = 64.7%   (unparsed 1)
+pred dist: [('Incorrect', 66), ('Correct', 44), ('Unknown', 39), (None, 1)]
+
+  gold=Correct    40/55 = 72.7%
+  gold=Incorrect  48/76 = 63.2%
+  gold=Unknown    9/19 = 47.4%
+
+reference on this exact sample:
+  Opus 5 88.0% | Llama-3.1-405B(0shot) 82.7% | Llama-3.1-70B(2shot) 74.0% | GPT-4o(2shot) 63.3%
+  (Llama-3.1-405B reference = TurtleBench's archived bf16 predictions; ours is the AWQ-INT4 checkpoint)
+
+-> /home/tmp_l/results/judge/turtle150_qwen38_27b_fp8_sampled.json
+
+=== sampled word, temperature 0 (matched to the typed read) ===
+model: Qwen/Qwen3.8-27B-FP8
+ACCURACY: 105/150 = 70.0%   (unparsed 1)
+pred dist: [('Incorrect', 58), ('Correct', 46), ('Unknown', 45), (None, 1)]
+
+  gold=Correct    42/55 = 76.4%
+  gold=Incorrect  50/76 = 65.8%
+  gold=Unknown    13/19 = 68.4%
+
+reference on this exact sample:
+  Opus 5 88.0% | Llama-3.1-405B(0shot) 82.7% | Llama-3.1-70B(2shot) 74.0% | GPT-4o(2shot) 63.3%
+  (Llama-3.1-405B reference = TurtleBench's archived bf16 predictions; ours is the AWQ-INT4 checkpoint)
+
+-> /home/tmp_l/results/judge/turtle150_qwen38_27b_fp8_sampled_t0.json
+
+=== typed read (label probabilities off the logits) ===
+model: Qwen/Qwen3.8-27B-FP8  (typed read: guided to the 3 labels, top-k logprobs renormalised)
+ACCURACY: 106/150 = 70.7%   (no label in top-k: 0)
+pred dist: [('Incorrect', 64), ('Correct', 46), ('Unknown', 40)]
+
+  gold=Correct    42/55 = 76.4%
+  gold=Incorrect  52/76 = 68.4%
+  gold=Unknown    12/19 = 63.2%
+
+  mean P(argmax) 0.665  accuracy 0.707  ECE 0.055
+
+  taking Unknown whenever P(Unknown) clears a threshold:
+     thresh  accuracy  Unknown recall  Unknown said
+     argmax     78.7%            0.0%             0
+       0.50     72.7%           57.9%            32
+       0.40     62.0%           78.9%            59
+       0.30     58.0%           84.2%            72
+       0.25     51.3%           89.5%            85
+       0.20     44.0%          100.0%           101
+       0.15     36.0%          100.0%           114
+       0.10     27.3%          100.0%           128
+
+  label found at token position: {0: 150}
+
+  wall 7s
+
+reference on this exact sample (sampled word, not typed read):
+  Llama-3.1-405B-INT4 83.3% | Opus 5 88.0% | Qwen3.8-Flash-Next(think) 80.7%
+-> /home/tmp_l/results/judge/turtle150_qwen38_27b_fp8_typed.json
+done 2026-10-14T08:49:58+00:00, total 100s

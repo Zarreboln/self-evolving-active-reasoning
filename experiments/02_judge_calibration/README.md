@@ -246,10 +246,11 @@ labels and read at the first token. `runner/typed_judge_eval.py` does exactly th
 `structured_outputs: {"choice": [...]}` plus the official referee prompt -- and
 `h100/typed_bench.sh` scores the same model three ways on the same 150 cases.
 
-| model | sampled, T=0.7 | sampled, T=0 | typed read | ECE | C / I / U recall (typed) |
-|---|---|---|---|---|---|
-| Qwen2.5-7B-Instruct | 36.0 / 37.3 / 34.7 | 35.3 / 34.7 | 36.0–36.7 | 0.56 | 50.9 / 17.1 / 68.4 |
-| Qwen3-32B-FP8 (no think) | 74.7 / 72.7 | 74.0 / 73.3 | 73.3 | 0.16 | 80.0 / 80.3 / 26.3 |
+| model | sampled, T=0.7 | sampled, T=0 | typed read | ECE | C / I / U recall (typed) | macro |
+|---|---|---|---|---|---|---|
+| Qwen2.5-7B-Instruct | 36.0 / 37.3 / 34.7 | 35.3 / 34.7 | 36.0–36.7 | 0.56 | 50.9 / 17.1 / 68.4 | 45.5 |
+| Qwen3-32B-FP8 (no think) | 74.7 / 72.7 | 74.0 / 73.3 | 73.3 | 0.16 | 80.0 / 80.3 / 26.3 | 62.2 |
+| Qwen3.8-27B-FP8 (no think) | 64.7 | 70.0 | 70.7 | **0.055** | 76.4 / 68.4 / 63.2 | **69.3** |
 
 **The typed read does not change the verdict.** It matches greedy sampling to within a point on
 both models, which is what it should do: the argmax is the same token. What it adds is the
@@ -265,6 +266,14 @@ does -- ECE 0.16 -- and the threshold becomes a real knob:
 Ten points of Unknown recall for six tenths of a point of accuracy. On the 7B it is worthless:
 mean P(argmax) 0.945 against accuracy 0.360, ECE 0.56. **Calibration comes from the model, not
 from the typed read** -- which is the honest reading of the Jev result too.
+
+**Qwen3.8-27B is the best-calibrated judge we have measured**: ECE 0.055, mean P(argmax) 0.665
+against accuracy 0.707, so it is mildly *under*-confident. It also reaches macro recall 69.3 at
+argmax, level with the 405B's 69.6, from a 27B checkpoint on one H100 -- because unlike every other
+candidate it does not collapse on Unknown (63.2 against the 405B's 26.3). Its accuracy is 12.6
+points lower, so it is not a replacement for a benchmark that reports accuracy; it is the candidate
+to use where the third class matters. Note also that it is the one model where sampling temperature
+is not free: T=0.7 costs it 5.3 points against T=0 (64.7 vs 70.0).
 
 **A separate finding about the 7B.** It answers Unknown to 99 of 150 cases. Forbid Unknown and it
 scores 68.0 instead of 36.0. Its collapse as a judge is one failure mode, over-abstention, not

@@ -157,6 +157,86 @@ answerer prompt was adapted: same three-way scheme, same two few-shot examples.
 # Stage A — the evaluation substrate
 
 <details>
+<summary><b>A1 Official definitions and names (10-12)</b></summary>
+
+<dl><dd>
+
+Before any number in this log is comparable to a published one, the metric it is computed under has
+to match the metric the benchmark defines. This node fixes that, and the result is
+[`experiments/OFFICIAL_DEFINITIONS.md`](../experiments/OFFICIAL_DEFINITIONS.md).
+
+**Circuit Decoding.** MTP Table 1 reports exactly one metric, *normalized circuit-wise accuracy*,
+and the normalization is never defined. The "Success Rate (%)" of its figures is defined per task
+and never stated. We therefore report `circuit_wise_accuracy`, the paper's metric, and
+`joint_truth_table_correct`, the paper's noun under our literal reading of a solved episode.
+Everything else we compute — `uniq@end`, `eff`, `zero%`, `oracle%`, `rep%` — is **(ours)** and is
+never placed in a column beside an official metric.
+
+**Situation Puzzles.** The official metric is character-level F1 against the hidden bottom
+(`arbench.utils.utils_sp.f1_score`), the official referee is Llama-3.1-405B, and the companion
+tasks use Detective Cases accuracy and Guess Number exact match. **Key-question recall is (ours)**,
+a process metric we added; it is reported beside F1 and never in place of it.
+
+**One correction this node produced.** An earlier sheet attributed a "successful end state" metric
+to Circuit Decoding; it belongs to Word Chaining. The sheet was rewritten and all column names and
+JSON keys were unified across the repository, with the stored score files migrated.
+
+**Standing rule.** Tasks, metrics and baselines are reported under their official definitions and
+official names. Limitations may be stated — [A7](#) and [A8](#) do exactly that — but the reported
+tables are not substituted with a metric of our own.
+
+<details>
+<summary>🔗 Traceability (A1)</summary>
+
+<dl><dd>
+
+- Definitions: 📁 [`experiments/OFFICIAL_DEFINITIONS.md`](../experiments/OFFICIAL_DEFINITIONS.md)
+- Scorers carrying the official keys: [`runner/cd_score.py`](../runner/cd_score.py) ·
+  [`runner/cd_summarize.py`](../runner/cd_summarize.py) ·
+  [`runner/cd_score_evoharness.py`](../runner/cd_score_evoharness.py)
+- Index of all runs under these names: 📁 [`experiments/README.md`](../experiments/README.md)
+
+</dd></dl>
+</details>
+
+</dd></dl>
+
+</details>
+
+<details>
+<summary><b>A2 Stage-0: hypothesis space, oracle and synthetic policies (10-06, CPU)</b></summary>
+
+<dl><dd>
+
+| policy | solved | queries | ex-ante eff | zero-information queries |
+|---|---|---|---|---|
+| greedy max-entropy (the oracle) | **300/300** | 11.60 | 1.000 | 0.0% |
+| greedy over 4 sampled queries | 250/300 | 13.92 | 0.775 | 18.1% |
+| random fresh entry | 156/300 | 16.51 | 0.629 | 27.7% |
+| sequential scan | 58/300 | 17.41 | 0.540 | 38.1% |
+| uniform random (repeats allowed) | 35/300 | 17.63 | 0.480 | 44.1% |
+
+**The 18-query budget is sufficient**: the oracle collapses the hypothesis space to one in 11.60
+queries on average. Every later failure must therefore be attributed to the policy, not to the
+budget. This is the precondition for everything that follows.
+
+
+<details>
+<summary>🔗 Traceability (A2)</summary>
+
+<dl><dd>
+
+- Details: 📁 [`experiments/01_stage0_oracle/`](../experiments/01_stage0_oracle/)
+- Oracle and synthetic policies: `stage0/cd_oracle.py` (CPU only, no model calls)
+
+</dd></dl>
+</details>
+
+</dd></dl>
+
+</details>
+
+<details>
 <summary><b>A3 Referee calibration on TurtleBench-150</b></summary>
 
 <dl><dd>
@@ -352,32 +432,7 @@ unconstrained run. The correct field is `structured_outputs`, and thinking is di
 </details>
 
 <details>
-<summary><b>A2 / A4 / A5 / A6 Task ceiling and baselines</b></summary>
-
-<dl><dd>
-
-<details>
-<summary>A2 Stage-0: hypothesis space, oracle and synthetic policies (10-06, CPU)</summary>
-
-<dl><dd>
-
-| policy | solved | queries | ex-ante eff | zero-information queries |
-|---|---|---|---|---|
-| greedy max-entropy (the oracle) | **300/300** | 11.60 | 1.000 | 0.0% |
-| greedy over 4 sampled queries | 250/300 | 13.92 | 0.775 | 18.1% |
-| random fresh entry | 156/300 | 16.51 | 0.629 | 27.7% |
-| sequential scan | 58/300 | 17.41 | 0.540 | 38.1% |
-| uniform random (repeats allowed) | 35/300 | 17.63 | 0.480 | 44.1% |
-
-**The 18-query budget is sufficient**: the oracle collapses the hypothesis space to one in 11.60
-queries on average. Every later failure must therefore be attributed to the policy, not to the
-budget. This is the precondition for everything that follows.
-
-</dd></dl>
-</details>
-
-<details>
-<summary>A4 Situation Puzzles without a harness, official-grade referee (10-10 21:29–21:36, 7 min)</summary>
+<summary><b>A4 Situation Puzzles without a harness, official-grade referee (10-10 21:29–21:36, 7 min)</b></summary>
 
 <dl><dd>
 
@@ -385,11 +440,25 @@ F1 **0.621**. ⚠️ The previously recorded 0.659 was obtained with the **7B ju
 withdrawn — which is the reason the whole of A3 exists. All historical SP numbers are rebased on the
 405B-INT4 referee.
 
+
+<details>
+<summary>🔗 Traceability (A4)</summary>
+
+<dl><dd>
+
+- Details: 📁 [`experiments/07_sp_bare_405judge/`](../experiments/07_sp_bare_405judge/)
+- Referee calibration that invalidated the earlier figure: [A3](#)
+- Raw traces: Release `sp405_traces.tar.gz`
+
 </dd></dl>
 </details>
 
+</dd></dl>
+
+</details>
+
 <details>
-<summary>A5 Actionability ladder: seven hand-written harnesses (10-10/11)</summary>
+<summary><b>A5 Actionability ladder: seven hand-written harnesses (10-10/11)</b></summary>
 
 <dl><dd>
 
@@ -409,11 +478,26 @@ collapses to one — yet joint accuracy reaches only 6.8. **The questioning is a
 the bottleneck is reading the collapsed state out as an answer.** T3-gated reaches a higher joint
 score with less information, pointing at the same place.
 
+
+<details>
+<summary>🔗 Traceability (A5)</summary>
+
+<dl><dd>
+
+- Details: 📁 [`experiments/03_cd_ladder/`](../experiments/03_cd_ladder/)
+- Scoring and the ladder figure: [`runner/cd_score.py`](../runner/cd_score.py) ·
+  [`runner/cd_ladder_plot.py`](../runner/cd_ladder_plot.py)
+- Raw traces: Release `cd_ladder_traces.tar.gz`
+
 </dd></dl>
 </details>
 
+</dd></dl>
+
+</details>
+
 <details>
-<summary>A6 EvoHarness-RL as an external baseline (10-11 06:28–07:36, 1 h 08)</summary>
+<summary><b>A6 EvoHarness-RL as an external baseline (10-11 06:28–07:36, 1 h 08)</b></summary>
 
 <dl><dd>
 
@@ -428,23 +512,16 @@ maintain it** (joint 62–65 against 0.7–1.7). The inline mode barely improves
 model tools and let it keep its own notes" does not hold for a frozen 7B on this task. Together with
 A5: the harness should maintain state for the model, but **must not reason for it**.
 
-</dd></dl>
-</details>
 
 <details>
-<summary>🔗 Traceability (A2 / A4 / A5 / A6)</summary>
+<summary>🔗 Traceability (A6)</summary>
 
 <dl><dd>
 
-- Details: 📁 [`01_stage0_oracle`](../experiments/01_stage0_oracle/) ·
-  [`07_sp_bare_405judge`](../experiments/07_sp_bare_405judge/) ·
-  [`03_cd_ladder`](../experiments/03_cd_ladder/) ·
-  [`06_evoharness_cd_baseline`](../experiments/06_evoharness_cd_baseline/)
-- Scoring: [`runner/cd_score.py`](../runner/cd_score.py) ·
-  [`runner/cd_summarize.py`](../runner/cd_summarize.py) ·
-  [`runner/cd_ladder_plot.py`](../runner/cd_ladder_plot.py)
-- Raw traces: Release `v0.1-experiments-2026-10-11` (`cd_ladder_traces`,
-  `evoharness_cd_trajectories`, `sp405_traces`)
+- Details: 📁 [`experiments/06_evoharness_cd_baseline/`](../experiments/06_evoharness_cd_baseline/)
+- Our Circuit Decoding adapter for the official framework: `baselines/evoharness_cd/`
+- Scoring: [`runner/cd_score_evoharness.py`](../runner/cd_score_evoharness.py)
+- Raw traces: Release `evoharness_cd_trajectories.tar.gz`
 
 </dd></dl>
 </details>

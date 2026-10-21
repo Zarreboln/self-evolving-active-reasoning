@@ -1,0 +1,26 @@
+500 episodes kept, 0 dropped (crashed or empty answer)
+
+correlation with character-level F1
+  answer length in words   r = +0.806
+  key-question recall      r = +0.050
+  output tokens            r = +0.403
+
+variance explained
+  length alone             R2 = 0.650
+  length + recall          R2 = 0.652   (recall coefficient +0.021)
+  recall vs F1, length partialled out:  r = +0.068
+
+mean F1 by answer length
+   25-50   words  n= 44  F1=0.458
+   50-75   words  n= 94  F1=0.634
+   75-100  words  n=190  F1=0.766
+  100-125  words  n=134  F1=0.826
+  125-150  words  n= 26  F1=0.868
+
+bare vs cand_sp_strict1_b10g3r2_b2r1g0, within the same length band
+        band  n base  F1 base  n evo  F1 evo     gap
+       25-50      28    0.459      6   0.464  +0.005
+       50-75      31    0.606     15   0.678  +0.072
+      75-100      24    0.734     45   0.777  +0.043
+     100-125       9    0.804     29   0.808  +0.004
+      pooled     100    0.604    100   0.756  +0.152   <- the headline gap

@@ -1,5 +1,10 @@
 # Experiments
 
+> **This folder is the backing store.** The readable entry point is the folded tree in
+> [`../notes/EXPERIMENTS_LOG.md`](../notes/EXPERIMENTS_LOG.md), where these same runs appear as
+> A1–A8 (evaluation substrate) and B1–B6 (harness evolution) with dates, wall times and caveats.
+> The numeric ids below are the folder names it links into.
+
 One folder per experiment: what was run, with which model / protocol / split, the exact
 command, timing, the result table, and the takeaway. Score files (`*.json`, figures) are
 committed; raw per-episode traces (`*.jsonl`, EvoHarness `trajectories/`) are attached to the

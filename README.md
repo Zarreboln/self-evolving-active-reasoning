@@ -25,9 +25,12 @@ a menu to pick from.
 
 ## What we ran
 
-Two task families, eleven experiments. Full index with commands, timings and CIs:
-[`experiments/`](experiments/). Traceable two-stage tree:
-[`notes/EXPERIMENTS_LOG.md`](notes/EXPERIMENTS_LOG.md).
+Two task families, thirteen nodes. **Start here: [`notes/EXPERIMENTS_LOG.md`](notes/EXPERIMENTS_LOG.md)**
+— one folded, traceable tree with every experiment's date, wall time, headline and caveats:
+**A1–A8** the evaluation substrate (official definitions, task ceiling, judge calibration, baselines,
+the metric audit, the independent replication) and **B1–B6** harness evolution (one-shot, test-time,
+label isolation, cross-task, the judge's own ruler). Each leaf links into
+[`experiments/`](experiments/), which holds the per-run commands, score files and traces.
 
 ### Circuit Decoding (Multi-Turn Puzzles, arXiv 2508.10142)
 

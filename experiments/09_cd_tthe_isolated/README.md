@@ -1,8 +1,8 @@
 # 09 — Test-time harness evolution with label isolation (2026-10-12 19:01–22:33 EDT)
 
-Same protocol as [08](../08_cd_tthe_pilot/README.md) (TTHE port, B = 10, G = 3, R = 2, 30 held-out
+TTHE port in `meta/cd_tthe/` (B = 10, G = 3, R = 2, 30 held-out
 instances, stream seed 0, Qwen2.5-7B-Instruct questioner, Claude Opus 5.5 proposer and judge inside
-Claude Code), rerun after the pilot's label leaks were closed: gold records and oracle-derived signals
+Claude Code), rerun after the label leaks of the withdrawn pilot were closed: gold records and oracle-derived signals
 live in a controller-private store outside the repository, the run directory holds public traces only,
 memory directories are emptied per session, the sandbox contains nothing but the current run, and every
 proposer/judge session is audited automatically (paths resolved against the shell's working directory;
@@ -61,7 +61,7 @@ used. CIs are bootstrap 95 %.
 | strict b0: deduction board (observed / rule-forced / open outputs), no ranking, no vetoes | 97.0 [95.5,98.3] | 92.0 [88.0,96.0] | 91.8 | 87.5 | 13.8 | 2519 | 1 |
 | labeled b1 (final): same + final answer in three 8-bit fields | 100.0 [100.0,100.0] | 100.0 [100.0,100.0] | 100.0 | 100.0 | 11.5 | 215 | 0 |
 | labeled b0: joint-space enumerator + reject queries that split worse than the best | 100.0 [100.0,100.0] | 100.0 [100.0,100.0] | 100.0 | 100.0 | 11.5 | 207 | 0 |
-| pilot strict b0 (experiment 08): candidate tables + menu of 8 | 99.5 [98.5,100.0] | 99.5 [98.5,100.0] | 99.4 | 99.0 | 12.6 | 653 | 1 |
+| withdrawn pilot, strict b0: candidate tables + menu of 8 | 99.5 [98.5,100.0] | 99.5 [98.5,100.0] | 99.4 | 99.0 | 12.6 | 653 | 1 |
 | strict b0, not chosen: candidate tables + split menu (top-1 taken 113/126 turns) | 97.5 [96.0,98.8] | 93.5 [90.0,97.0] | 92.4 | 99.5 | 12.0 | 406 | 1 |
 | strict b1, rejected as query-choosing: 'closest to 50 %' hints | 99.5 [98.5,100.0] | 99.5 [98.5,100.0] | 99.4 | 99.5 | 11.4 | 1284 | 0 |
 | strict b1, rejected: harness picks the best-splitting of 5 model-listed queries | 99.0 [98.2,99.7] | 97.0 [94.5,99.0] | 96.5 | 97.0 | 12.8 | 1195 | 0 |
@@ -79,3 +79,19 @@ Files: `result_*.json`, `opt_log_*.jsonl`, `branch_lineage_*.jsonl`, `session_au
 `trajectory_*.png`, `judge_verdicts/`, `proposal_cards/`, `candidates/`, `eval_heldout200_scores.json`.
 Raw traces, session transcripts, controller records and per-episode evaluation records: release asset
 `cd_tthe_isolated_raw.tar.zst`.
+
+
+## Why the isolation exists
+
+An earlier pilot of the same protocol (2026-10-12 16:14–17:51) was discarded and is not in this
+repository. Its batch 0 was clean and produced the result we still rely on: with no hint, the
+proposer reconstructed the hypothesis space by writing an enumerator, and the label-free judge
+selected it. Its later batches were not label-isolated — gold appeared in trace JSON, in lineage
+aggregates and in cross-session memory notes, and proposer candidates landed in `agents/` where the
+next round could read them — so every number from it was withdrawn and the stream was rerun here.
+
+Three remedies date from that discovery and are what this run tests: a controller-private store at
+`~/.ar_harness_controller/<run>/`; an automatic per-session audit (path resolution with cwd tracking
+across calls, heredoc bodies as text, value scans for gold strings), where a violation discards the
+candidate; and Claude Code's auto-memory isolated per repository-root slug and cleared each session.
+The audits for this run ship as `session_audits.jsonl`.

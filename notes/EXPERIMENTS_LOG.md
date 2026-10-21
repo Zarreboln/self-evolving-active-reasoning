@@ -86,10 +86,9 @@ answerer prompt was adapted: same three-way scheme, same two few-shot examples.
 | **A8** | 10-15–21 | — | **Independent preregistered replication (Yangzi Sun).** Fixed dialogue × two writers, 65 cases, 260 generations, 520 blind ratings, adding Semantic Correctness and Evidence Faithfulness. **82 strict F1-versus-semantic rank reversals across 29 cases**; the evidence-constrained writer did not improve semantic correctness (−0.0308 [−0.0577, −0.0058]). Two readings we do not adopt: it evaluates the **first** generation, whose recall we had already documented as flat, and its own data shows the evolved dialogue doubling fully-correct answers (15/65 against 7/65) while the ordinal mean moves the other way |
 | B1 | 10-10 20:30–23:10 | 2 h 40 | One-shot evolution `open1` (regime **open**): the proposer reaches the ceiling in one iteration; `copy_query` scores joint **80.4** and uniq@end 99.7 held out. ⚠️ Under this regime the harness may choose queries, so the score is a ceiling, not a claim |
 | B2 | 10-10 21:22 – 10-11 ~01:00 | ~3 h 38 | One-shot evolution `so1` (regime **state_only**: no information gain, no split counts, no recommended queries). `veto_only` scores **91.3 / 86.2** with uniq@end 96.7 **at the same token cost as bare**. This is the shape of the claim: remove what computes for the model, keep state and constraints, and the score still rises |
-| **B3** | 10-12 16:14–17:51 | 1 h 37 | **Test-time harness evolution, pilot streams.** In the strict stream's batch 0 the proposer **reconstructed the hypothesis space with no hint**, the label-free judge selected it, and batches 1–2 solved 20/20 joint truth tables. ⚠️ Later batches were **not label-isolated** (found by audit), so the stream was discarded and rerun |
-| **B4** | 10-12 19:01–22:33 | 3 h 32 | **Rerun with label isolation and per-session audits.** The strict stream goes **0/10 → 9/10 → 10/10**; 29/32 sessions clean and **every judge session clean**. Frozen evaluation on 200 held-out instances: bare 11.8 / 0.0, the label-free state-only harness **99.5 / 98.5** (98.2 on the unseen split), the labeled stream 100/100 at 215 tokens per episode. The judge rejected three harnesses that scored 10/10 because they handed the model a menu, enforcing that **the model writes every query** |
-| **B5** | 10-13 05:03–07:17 | 2 h 14 | **Transfer to AR-Bench Situation Puzzles** (strict, 405B referee). Prequential F1 **63.7 → 74.5 → 79.9** over the 30-puzzle stream. On all 100 test puzzles (70 unseen), **bare 60.4 → 73.0–76.7**, above every zero-shot model in AR-Bench Table 6 including GPT-4o at 63, with the 7B still writing every question. Cost: 3–8× output tokens; the unchosen `b2r0g1` matches at half the tokens. Read together with A7 |
-| **B6** | 10-13 | — | **A ruler for the TTHE judge, requiring no external benchmark.** Each run stores the candidate pool's gold, which that judge never saw. `strict6` selects a best-scoring candidate 2/3 with mean regret 0.011; `labeled6` 3/3 and 0.000; **`sp_strict1` 1/3, mean regret 0.063, worst 0.114**. The Circuit Decoding pools saturate, so the measurement is uninformative there; **on Situation Puzzles the judge is measurably noisy** |
+| **B3** | 10-12 19:01–22:33 | 3 h 32 | **Test-time evolution with label isolation.** The strict stream goes **0/10 → 9/10 → 10/10**; 29/32 sessions clean and **every judge session clean**. Frozen evaluation on 200 held-out instances: bare 11.8 / 0.0, the label-free state-only harness **99.5 / 98.5** (98.2 on the unseen split), the labeled stream 100/100 at 215 tokens per episode. The judge rejected three harnesses that scored 10/10 because they handed the model a menu, enforcing that **the model writes every query** |
+| **B4** | 10-13 05:03–07:17 | 2 h 14 | **Transfer to AR-Bench Situation Puzzles** (strict, 405B referee). Prequential F1 **63.7 → 74.5 → 79.9** over the 30-puzzle stream. On all 100 test puzzles (70 unseen), **bare 60.4 → 73.0–76.7**, above every zero-shot model in AR-Bench Table 6 including GPT-4o at 63, with the 7B still writing every question. Cost: 3–8× output tokens; the unchosen `b2r0g1` matches at half the tokens. Read together with A7 |
+| **B5** | 10-13 | — | **A ruler for the TTHE judge, requiring no external benchmark.** Each run stores the candidate pool's gold, which that judge never saw. `strict6` selects a best-scoring candidate 2/3 with mean regret 0.011; `labeled6` 3/3 and 0.000; **`sp_strict1` 1/3, mean regret 0.063, worst 0.114**. The Circuit Decoding pools saturate, so the measurement is uninformative there; **on Situation Puzzles the judge is measurably noisy** |
 
 > **Purpose.** Every experiment must be traceable from **conditions (task, model, regime, signals,
 > budget, split) → script → input → output and log → result**.
@@ -113,7 +112,7 @@ answerer prompt was adapted: same three-way scheme, same two few-shot examples.
 >   audit of the metric itself**, and **an independent replication**. This stage decides whether the
 >   numbers we report mean anything. A7's answer is that **the official F1 largely measures answer
 >   length**, so the main tables must be read beside it.
-> - **B1–B6, harness evolution** — one-shot evolution, test-time evolution, label isolation,
+> - **B1–B5, harness evolution** — one-shot evolution, test-time evolution, label isolation,
 >   cross-task transfer, and the judge's own quality. This stage decides whether the mechanism holds.
 >
 > **Metric definitions, uniform across this document.**
@@ -243,7 +242,7 @@ budget. This is the precondition for everything that follows.
 
 > What is calibrated here is the **referee**: the model that answers the player's questions in
 > Situation Puzzles. It is not the judge inside the evolution loop that commits harnesses; that one
-> has its own ruler in [B6](#). The two must be named separately throughout the paper.
+> has its own ruler in [B5](#). The two must be named separately throughout the paper.
 
 <details>
 <summary>A3.1–A3.2 Eleven candidates, thinking off and on (10-13)</summary>
@@ -669,7 +668,7 @@ and A6's always_on point the same way.
 </details>
 
 <details>
-<summary><b>B3 / B4 Test-time harness evolution and label isolation</b></summary>
+<summary><b>B3 / B3 Test-time harness evolution and label isolation</b></summary>
 
 <dl><dd>
 
@@ -679,30 +678,9 @@ and A6's always_on point the same way.
 > strict ≈ labeled is evidence for the label-free claim. The proposer and judge are Claude Opus 5.5
 > inside Claude Code; the questioner is a frozen Qwen2.5-7B.
 
-<details>
-<summary>B3 Pilot and label leakage (10-12 16:14–17:51, 1 h 37) ⚠️ results withdrawn</summary>
-
-<dl><dd>
-
-**What survives.** In the strict stream's batch 0, with no hint, the proposer **reconstructed the
-hypothesis space** by writing an enumerator; the label-free judge selected it; batches 1 and 2 solved
-20/20 joint truth tables. Over the 30-instance stream, prequential circuit-wise accuracy 70.0 and
-joint 66.7.
-
-**What is withdrawn.** An audit found that later batches were not label-isolated: gold appeared in
-trace JSON, in lineage aggregates and in cross-session memory notes, and the proposer's candidate
-files landed in `agents/` where the next round could read them. **The stream was rerun** (B4).
-
-Three remedies followed: a controller-private store at `~/.ar_harness_controller/<run>/`; an
-automatic per-session audit (path resolution with cwd tracking across calls, heredoc bodies as text,
-and value scans for gold strings); and Claude Code's auto-memory isolated per repository-root slug
-and cleared each session.
-
-</dd></dl>
-</details>
 
 <details>
-<summary>B4 Rerun with label isolation, then frozen evaluation (10-12 19:01–22:33, 3 h 32)</summary>
+<summary>B3 Stream, audit and frozen evaluation (10-12 19:01–22:33, 3 h 32)</summary>
 
 <dl><dd>
 
@@ -732,7 +710,7 @@ ceiling, and the strict one needs one additional batch.
 </details>
 
 <details>
-<summary>🔗 Traceability (B3 / B4)</summary>
+<summary>🔗 Traceability (B3 / B3)</summary>
 
 <dl><dd>
 
@@ -742,11 +720,10 @@ ceiling, and the strict one needs one additional batch.
   [`audit.py`](../meta/cd_tthe/audit.py) (static audit)
 - Evaluation: [`meta/cd_tthe/evaluate.py`](../meta/cd_tthe/evaluate.py) ·
   [`trajectory.py`](../meta/cd_tthe/trajectory.py)
-- Details: 📁 [`08_cd_tthe_pilot`](../experiments/08_cd_tthe_pilot/) ·
-  [`09_cd_tthe_isolated`](../experiments/09_cd_tthe_isolated/)
+- Details: 📁 [`09_cd_tthe_isolated`](../experiments/09_cd_tthe_isolated/)
 - Transcripts in each folder's `dialogues/`; verdicts in `judge_verdicts/`; audits in
   `session_audits.jsonl`
-- Raw traces: Release `cd_tthe_pilots_raw.tar.zst`, `cd_tthe_isolated_raw.tar.zst`
+- Raw traces: Release `cd_tthe_isolated_raw.tar.zst`
 
 </dd></dl>
 </details>
@@ -756,7 +733,7 @@ ceiling, and the strict one needs one additional batch.
 </details>
 
 <details>
-<summary><b>B5 Cross-task transfer: AR-Bench Situation Puzzles (10-13 05:03–07:17, 2 h 14)</b></summary>
+<summary><b>B4 Cross-task transfer: AR-Bench Situation Puzzles (10-13 05:03–07:17, 2 h 14)</b></summary>
 
 <dl><dd>
 
@@ -804,14 +781,14 @@ refused twice, and a ban on definite reference to unconfirmed guesses.
 
 ⚠️ **The judge is noisy here.** At batch 1 it committed the pool's lowest-F1 candidate (0.674 against
 the incumbent's 0.745) and at batch 2 it passed over the best (0.802). On ten-puzzle batches those
-gold differences are within noise, which **is itself the finding**; quantified in [B6](#). Session
+gold differences are within noise, which **is itself the finding**; quantified in [B5](#). Session
 audits: 18 of 21 clean, the three discards being miscounted relative paths that resolved outside the
 folder but did not exist; the audit now checks existence.
 
 </dd></dl>
 
 <details>
-<summary>🔗 Traceability (B5)</summary>
+<summary>🔗 Traceability (B4)</summary>
 
 <dl><dd>
 
@@ -832,7 +809,7 @@ folder but did not exist; the audit now checks existence.
 </details>
 
 <details>
-<summary><b>B6 A ruler for the judge inside the loop (10-13)</b></summary>
+<summary><b>B5 A ruler for the judge inside the loop (10-13)</b></summary>
 
 <dl><dd>
 

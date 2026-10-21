@@ -60,3 +60,6 @@ meta/cd_tthe/logs/*/traces/
 meta/cd_tthe/logs/*/claude_sessions/*/events.jsonl
 meta/cd_tthe/logs/*/claude_sessions/*/tools/
 meta/cd_tthe/logs/*/check_*.py
+
+# model-call caches of the SP referee (reproducible from the records)
+meta/cd_tthe/logs/*/solver_cache_answerer/

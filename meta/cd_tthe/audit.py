@@ -19,7 +19,10 @@ FORBIDDEN = [
     (r"\beval\(|\bexec\(|__import__|importlib", "dynamic code execution"),
 ]
 ALLOWED_IMPORTS = {"re", "math", "itertools", "collections", "functools", "random", "typing", "dataclasses",
-                   "statistics", "heapq", "numpy", "np", "harness_base"}
+                   "statistics", "heapq", "numpy", "np", "harness_base",
+                   # the context arm: a candidate subclasses the fixed loop and changes only PLAYBOOK
+                   # (ctx_audit.text_only enforces that separately)
+                   "ctx_harness"}
 LIB_ONLY = {"cd_oracle"}
 
 

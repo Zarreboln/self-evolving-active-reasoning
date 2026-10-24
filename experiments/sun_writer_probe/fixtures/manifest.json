@@ -1,0 +1,22 @@
+{
+  "format": "c2_manifest_v1",
+  "data_kind": "synthetic",
+  "version": "synthetic-dialogues-v1",
+  "source_run_id": "synthetic-run:v1",
+  "sources": [
+    {
+      "role": "bare",
+      "path": "bare.jsonl",
+      "sha256": "8672c8bfffb7054aec655b85065623fd5915bb0323650160c2ef31c231800771",
+      "source_id": "synthetic:bare:v1",
+      "source_run_id": "synthetic-run:v1"
+    },
+    {
+      "role": "first",
+      "path": "first.jsonl",
+      "sha256": "af1c43935300d83ab5614109551ada23468d7de68907cdfb5fb2cd4954e2cf40",
+      "source_id": "synthetic:first:v1",
+      "source_run_id": "synthetic-run:v1"
+    }
+  ]
+}

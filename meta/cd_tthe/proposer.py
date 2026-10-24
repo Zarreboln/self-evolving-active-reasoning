@@ -362,11 +362,38 @@ for i in idx:
     return p
 
 
-def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_path, arm, card_path, batch_indices):
+def archive_block(archive):
+    """Every candidate this run has already produced, with the public signals it was measured on.
+
+    Meta-Harness (arXiv 2603.28052) keeps every evaluated harness in a growing filesystem and imposes no
+    parent-selection rule: its proposer may inspect any prior harness and its traces. Our loop used to show
+    only the incumbent and the current batch, so a branch could not reuse what a sibling found two batches
+    ago, and a refuted idea could be proposed again. This block restores the archive. It contains no gold:
+    the rows are the same public aggregates written to opt_log.jsonl.
+    """
+    if not archive:
+        return ""
+    lines = ["", "ARCHIVE -- every harness this run has already produced and measured. You MAY read any of",
+             "them (`" + str(AGENTS) + "/<name>.py`) and reuse or combine what worked. A low row is still",
+             "useful: it tells you an idea was tried and did not pay off, so do not propose it again."]
+    def one(a):
+        out = []
+        for k, v in a.items():
+            if v is None or k == "n":
+                continue
+            out.append(f"{k}={100*float(v):.0f}%" if 0 <= float(v) <= 1 and k != "tokens_out"
+                       else f"{k}={float(v):.0f}")
+        return " ".join(out)
+    for name, rows in archive.items():
+        lines.append(f"  {name}  " + "; ".join(f"b{r['batch']}: " + one(r["agg"]) for r in rows))
+    return "\n".join(lines) + "\n"
+
+
+def propose_prompt(parent, child, role_text, trace_dir, active, summary, check_path, arm, card_path, batch_indices, archive=None):
     if TASK == "sp":
-        return propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path)
+        return propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path, archive)
     if STRICT:
-        return propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path)
+        return propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path, archive)
     lib_note = ("You MAY `from cd_oracle import CDGame` (the public hypothesis space implied by the inventory: "
                 "CDGame(inventory).H is an (N,24) 0/1 array, .feasible(history) / .expected_bits(q, alive) / "
                 ".available_bits(alive)); it contains no truth."
@@ -385,6 +412,7 @@ READ FIRST:
 - Signals of every active branch on this batch (label-free, computed from the inventory and the
   answers; uniq_end = the answers pin the circuits down to one configuration):
 {summary}
+{archive_block(archive)}
 
 Harness API: self.env.query(c, a, b, x) -> bit (c in "ABC"; self.env.budget per episode -- {BUDGET} in this run -- then BudgetExhausted),
 self.env.remaining, self.env.history, self.env.inventory, self.env.system_prompt,
@@ -415,7 +443,7 @@ Then write a proposal card to `{card_path}` as JSON:
 {role_text}"""
 
 
-def propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path):
+def propose_prompt_strict(parent, child, role_text, trace_dir, active, summary, check_path, card_path, archive=None):
     outcome_note = ("Each episode's OUTCOME (joint truth table correct?, and the circuit-wise accuracy: how many of the "
                     "three circuits' tables were right) is shown in the traces and the run summary; nothing else is evaluated for you."
                     if LABELED else
@@ -433,6 +461,7 @@ READ FIRST:
   environment gave, every message sent to the model and every reply. Nothing else is provided.
 - Run summary (what ran, what crashed):
 {summary}
+{archive_block(archive)}
 
 Harness API: self.env.query(c, a, b, x) -> bit (c in "ABC"; self.env.budget per episode -- {BUDGET} in this
 run -- then BudgetExhausted), self.env.remaining, self.env.history, self.env.inventory,
@@ -618,7 +647,7 @@ STRICT_ROLES = [   # the same three search roles, with no examples of failure ty
 
 
 def propose(parent, child, role_idx, trace_dir, active, results_by_name, run_dir, tag, batch_indices,
-            solver_cfg, arm, backend, model, timeout, solve_timeout, effort="high"):
+            solver_cfg, arm, backend, model, timeout, solve_timeout, effort="high", archive=None):
     """Returns True if agents/<child>.py exists afterwards (the loop re-audits it)."""
     (AGENTS / f"{child}.py").unlink(missing_ok=True)
     if backend == "stub":
@@ -627,7 +656,8 @@ def propose(parent, child, role_idx, trace_dir, active, results_by_name, run_dir
     summary = summary_table(results_by_name)
     check = check_script(run_dir, f"{tag}_{child}", child, batch_indices, solver_cfg, arm, solve_timeout, BUDGET)
     card = Path(run_dir) / "proposal_cards" / f"{child}.json"; card.parent.mkdir(parents=True, exist_ok=True)
-    prompt = propose_prompt(parent, child, role_text, trace_dir, active, summary, check, arm, card, batch_indices) + off_limits(arm)
+    prompt = propose_prompt(parent, child, role_text, trace_dir, active, summary, check, arm, card,
+                            batch_indices, archive) + off_limits(arm)
     _session(prompt, f"{tag}_{child}_{role_name}", run_dir, backend, model, timeout, effort)
     aud = audit_session(run_dir, f"{tag}_{child}_{role_name}", arm)
     if not aud["clean"]:
@@ -671,7 +701,7 @@ def judge(cands, incumbent, trace_dir, results_by_name, run_dir, tag, batch_indi
 
 # ----------------------------------------------------------------------------- SP prompts
 
-def propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path):
+def propose_prompt_sp(parent, child, role_text, trace_dir, active, summary, check_path, card_path, archive=None):
     outcome_note = ("Each episode's OUTCOME (the character-level F1 of the final answer against the true story) is "
                     "shown in the traces and the run summary; nothing else is evaluated for you."
                     if LABELED else
@@ -691,7 +721,7 @@ READ FIRST:
   reply, every message sent to the model and every reply, and the final answer. Nothing else is provided.
 - Run summary (what ran, what crashed, referee reply rates):
 {summary}
-
+{archive_block(archive)}
 Harness API: self.env.surface, self.env.system_prompt (AR-Bench's player instruction), self.env.turn_prompt(t),
 self.env.final_prompt, self.env.ask(question) -> referee reply (counts against self.env.budget = {BUDGET};
 BudgetExhausted after it), self.env.remaining, self.env.history ([(question, reply), ...]),

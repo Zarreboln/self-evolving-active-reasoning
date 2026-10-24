@@ -244,6 +244,8 @@ def main():
     print(f"[tthe] run={args.run_name} arm={args.arm} stream={len(stream)} batches={len(batches)} B={args.batch_size} "
           f"G={args.group} R={args.rounds} backend={args.proposer_backend} H0={H}", flush=True)
 
+    archive = {}          # name -> [{batch, public agg}]: everything this run has produced, readable by the
+                          # proposer (Meta-Harness keeps a growing filesystem and imposes no parent-selection rule)
     for bi in range(args.start_batch, len(batches)):
         batch = batches[bi]
         t_batch = time.time()
@@ -277,7 +279,7 @@ def main():
                         P.propose, parent, child, gi, trace_dir, active,
                         {n: results[n] for n in active if n in results}, run_dir, tag, batch,
                         solver_cfg, args.arm, args.proposer_backend, args.proposer_model,
-                        args.propose_timeout, args.solve_timeout, args.effort)))
+                        args.propose_timeout, args.solve_timeout, args.effort, archive)))
                 for gi, parent, child, fut in futs:
                     try:
                         ok = fut.result()
@@ -303,6 +305,8 @@ def main():
                          args.proposer_backend, args.proposer_model, args.judge_timeout, args.solve_timeout, args.effort)
         H_next = chosen if chosen in results else H
         transductive = agg(results[H_next])
+        for _n, _a in results.items():                      # the growing archive the proposer may read
+            archive.setdefault(_n, []).append({"batch": bi, "agg": public_agg(agg(_a), P.LABELED)})
         row = {"batch": bi, "instances": batch, "incoming": H, "committed": H_next,
                "prequential": prequential, "transductive": transductive,
                "pool": {n: agg(results[n]) for n in pool}, "seconds": round(time.time() - t_batch)}

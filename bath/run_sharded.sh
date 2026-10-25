@@ -13,9 +13,11 @@ TASK=${TASK:?gn|sp|dc|md}; METHOD=${METHOD:?few_shot|few_shot_inst|proactive_cot
 MODEL=${MODEL:-Qwen/Qwen2.5-7B-Instruct}
 MAX_TURN=${MAX_TURN:-25}
 NSHARD=${NSHARD:-16}
-# TAG keeps a second protocol's results beside the first instead of overwriting them: the
-# BALAR-aligned iCraft-MD run (10 questions, temperature 0.1, the reasoner allowed to stop) is a
-# different protocol from the 25-turn fixed-budget one, not a better version of it.
+# TAG keeps a second protocol's results beside the first instead of overwriting them. It is how the
+# self-stop probe (experiments/12) is kept apart from the main table: 10 questions with the reasoner
+# allowed to commit is a different question from the 25-turn fixed-budget protocol, and it is not a
+# BALAR setting -- BALAR gives every method 25 questions and stops on a computed belief, not on the
+# model saying so.
 TAG=${TAG:-}
 POLICY_TEMP=${POLICY_TEMP:-0.7}
 POLICY_TOPP=${POLICY_TOPP:-0.7}

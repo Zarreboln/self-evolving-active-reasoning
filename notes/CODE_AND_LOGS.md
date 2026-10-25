@@ -30,6 +30,7 @@ of *where is the code and where are the records*.
 | [`jev_judge_eval.py`](../runner/jev_judge_eval.py) | Score TypeSafe's Jev (a "System One" model) as an AR-Bench referee, on the same fixed TurtleBench sample as every other candidate in experiments/02. |
 | [`jev_judge_variants.py`](../runner/jev_judge_variants.py) | Does Jev do better on the referee task with the phrasings its own docs recommend? Three levers from docs.typesafe.ai/primitives/advanced: sharpen option boundaries with structured `what` / `not_for` / `examples` criteria, split a hard question into several, and keep supporting data as JSON. |
 | [`jev_referee_shim.py`](../runner/jev_referee_shim.py) | An OpenAI-compatible endpoint that answers AR-Bench's referee turns with Jev. |
+| [`jev_spend.py`](../runner/jev_spend.py) | Sum what Jev has actually been billed for, from the shim's own verdict log. |
 | [`judge_pick_eval.py`](../runner/judge_pick_eval.py) | A ruler for the other judge: the one inside the TTHE loop that commits a harness. |
 | [`make_index.py`](../runner/make_index.py) | Generate notes/CODE_AND_LOGS.md: every source file with one line of what it does, and every run with where its records live. |
 | [`md_evaluator.py`](../runner/md_evaluator.py) | iCraft-MD as a fourth active-reasoning task, in AR-Bench's shape and outside AR-Bench's code. |
@@ -43,6 +44,7 @@ of *where is the code and where are the records*.
 | [`sp_runner_async.py`](../runner/sp_runner_async.py) | Concurrent SP (Situation Puzzle / "turtle soup") runner, bare + belief_injected. |
 | [`sp_summarize.py`](../runner/sp_summarize.py) | SP gate table: bare vs belief_injected, read against run_arbench_sp.py's zero_shot numbers (same prompts, should match on 'bare' up to sampling noise). |
 | [`summarize.py`](../runner/summarize.py) | Read a runner JSONL and print the gate-step table. |
+| [`tests_shim_parse.py`](../runner/tests_shim_parse.py) | Cases for the referee-prompt parser, including the one that produced 50 meaningless verdicts. |
 | [`turtle_judge_eval.py`](../runner/turtle_judge_eval.py) | Measure any served model's referee accuracy on a fixed TurtleBench sample. |
 | [`typed_judge_eval.py`](../runner/typed_judge_eval.py) | Judge TurtleBench by reading the label probabilities off our own model, instead of sampling a word and parsing it. |
 

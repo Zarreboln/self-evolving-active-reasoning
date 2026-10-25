@@ -57,7 +57,7 @@ rewording one hypothesis.
 | base model | `Qwen/Qwen2.5-7B-Instruct`, frozen, temperature 0.7, top_p 0.7 **[confirmed]** |
 | serving | one vLLM instance on `bath` (`--max-model-len 8192`), shared by all candidates |
 | referee | **Jev** (`jev-latest`) through `runner/jev_referee_shim.py` **[confirmed]** |
-| question budget | 25 **[confirmed]** |
+| question budget | 25 **[confirmed]** — BALAR's paper sets the same 25 for every method |
 | scorer | AR-Bench's `f1_score` on characters, called from AR-Bench's own module |
 | test split | `AR-Bench/data/sp/test.json`, 100 instances, untouched until §6 |
 

@@ -1,0 +1,21 @@
+[submodule "AR-Bench"]
+	path = AR-Bench
+	url = https://github.com/tmlr-group/AR-Bench.git
+[submodule "balar_official"]
+	path = balar_official
+	url = https://github.com/AymenEcharghaoui/BALAR.git
+[submodule "tthe_official"]
+	path = tthe_official
+	url = https://github.com/junnie00/TTHE.git
+[submodule "meta_harness_official"]
+	path = meta_harness_official
+	url = https://github.com/stanford-iris-lab/meta-harness.git
+[submodule "meta_harness_repo"]
+	path = meta_harness_repo
+	url = https://github.com/stanford-iris-lab/meta-harness-tbench2-artifact.git
+[submodule "rrsi_official"]
+	path = rrsi_official
+	url = https://github.com/google-research/rrsi.git
+[submodule "evoharness_rl_official"]
+	path = evoharness_rl_official
+	url = https://github.com/EvoHarnessRL/EvoHarness-RL.git

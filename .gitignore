@@ -1,10 +1,4 @@
-# ---- third-party checkouts (pinned in THIRD_PARTY.md, not vendored) ----
-AR-Bench/
-meta_harness_official/
-meta_harness_repo/
-rrsi_official/
-evoharness_rl_official/
-tthe_official/
+# ---- third-party checkouts are git submodules, pinned in .gitmodules / THIRD_PARTY.md ----
 # ---- papers: PDFs/extracted text are not ours to redistribute (see RELATED_WORK.md for IDs) ----
 papers/
 # ---- raw per-episode traces: attached to GitHub Releases as tarballs, not committed ----

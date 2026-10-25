@@ -43,6 +43,7 @@ of *where is the code and where are the records*.
 | [`score_arbench_log.py`](../runner/score_arbench_log.py) | Apply the Stage 0 instrument offline to AR-Bench's own GuessNumbers logs. |
 | [`sp_runner_async.py`](../runner/sp_runner_async.py) | Concurrent SP (Situation Puzzle / "turtle soup") runner, bare + belief_injected. |
 | [`sp_summarize.py`](../runner/sp_summarize.py) | SP gate table: bare vs belief_injected, read against run_arbench_sp.py's zero_shot numbers (same prompts, should match on 'bare' up to sampling noise). |
+| [`stop_vs_accuracy.py`](../runner/stop_vs_accuracy.py) | Accuracy against the turn the reasoner chose to commit on. |
 | [`summarize.py`](../runner/summarize.py) | Read a runner JSONL and print the gate-step table. |
 | [`tests_shim_parse.py`](../runner/tests_shim_parse.py) | Cases for the referee-prompt parser, including the one that produced 50 meaningless verdicts. |
 | [`turtle_judge_eval.py`](../runner/turtle_judge_eval.py) | Measure any served model's referee accuracy on a fixed TurtleBench sample. |
@@ -199,6 +200,7 @@ of *where is the code and where are the records*.
 | [`baselines/evoharness_cd/prompts.py`](../baselines/evoharness_cd/prompts.py) | CircuitDecoding prompt text, in the three coordination modes. |
 | [`bath/check_shard_roundtrip.py`](../bath/check_shard_roundtrip.py) | Prove the shard merge reproduces a sequential run record for record. |
 | [`bath/count_incomplete.py`](../bath/count_incomplete.py) | Count baseline combos that do not yet hold their 100 episodes. |
+| [`bath/resume_after_uot.sh`](../bath/resume_after_uot.sh) | Pick the queue back up after its driver was killed while gn/uot was mid-flight. |
 | [`bath/run_all_baselines.sh`](../bath/run_all_baselines.sh) | Every baseline BALAR compares against, on AR-Bench, with our reasoner and Jev as the referee. |
 | [`bath/run_all_sharded.sh`](../bath/run_all_sharded.sh) | Every baseline BALAR compares against, on AR-Bench, sharded across the card. |
 | [`bath/run_baselines.sh`](../bath/run_baselines.sh) | Reproduce AR-Bench's official baselines with our reasoner and Jev as the referee. |

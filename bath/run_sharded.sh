@@ -13,9 +13,15 @@ TASK=${TASK:?gn|sp|dc|md}; METHOD=${METHOD:?few_shot|few_shot_inst|proactive_cot
 MODEL=${MODEL:-Qwen/Qwen2.5-7B-Instruct}
 MAX_TURN=${MAX_TURN:-25}
 NSHARD=${NSHARD:-16}
+# TAG keeps a second protocol's results beside the first instead of overwriting them: the
+# BALAR-aligned iCraft-MD run (10 questions, temperature 0.1, the reasoner allowed to stop) is a
+# different protocol from the 25-turn fixed-budget one, not a better version of it.
+TAG=${TAG:-}
+POLICY_TEMP=${POLICY_TEMP:-0.7}
+POLICY_TOPP=${POLICY_TOPP:-0.7}
 PY=$HOME/venv/bin/python
-OUT=$HOME/results/${TASK}_${METHOD}.json
-WORK=$HOME/results/shards/${TASK}_${METHOD}
+OUT=$HOME/results/${TASK}_${METHOD}${TAG}.json
+WORK=$HOME/results/shards/${TASK}_${METHOD}${TAG}
 DATA=$HOME/code/AR-Bench/data/$TASK/test.json
 
 # AR-Bench's three test sets hold 100 instances; iCraft-MD holds 140, so the target comes from the
@@ -66,29 +72,44 @@ kimi_responder() {
 
 case "$TASK" in
   gn)
-    ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7)
+    ARGS=(--model "$MODEL" --temperature "$POLICY_TEMP" --top_p "$POLICY_TOPP")
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
   sp)
     curl -sf -m 8 "http://127.0.0.1:8099/v1/models" >/dev/null || { echo "jev referee shim is down"; exit 1; }
     export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
     ARGS=(--policy_model "$MODEL" --response_model jev-latest
-          --policy_temperature 0.7 --policy_top_p 0.7
+          --policy_temperature "$POLICY_TEMP" --policy_top_p "$POLICY_TOPP"
           --response_temperature 0.7 --response_top_p 0.7)
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
   dc)
     kimi_responder
     ARGS=(--policy_model "$MODEL" --response_model "$KIMI_MODEL"
-          --policy_temperature 0.7 --policy_top_p 0.7
+          --policy_temperature "$POLICY_TEMP" --policy_top_p "$POLICY_TOPP"
           --response_temperature 1 --response_top_p 0.95)
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
   md)
-    kimi_responder
+    # BALAR runs the agent and the user simulator on the SAME model, in both of its configurations
+    # (gpt-5-nano for both, or one Qwen2.5-32B-Instruct per role). So the served policy answering as
+    # the patient is BALAR's design, not a shortcut -- it is Kimi that makes the responder stronger
+    # than the reasoner. Local is also ~0.3 s per call against Kimi's 3-8 s, and free.
+    if [ "${MD_RESPONDER:-kimi}" = local ]; then
+      export RESPONSE_BASE_URL="http://$EP/v1" RESPONSE_API_KEY=x
+      KIMI_MODEL="$MODEL"
+    else
+      kimi_responder
+    fi
+    if [ "${MD_RESPONDER:-kimi}" = local ]; then
+      RTEMP=0.7; RTOPP=0.7       # a local server has no fixed-sampling restriction
+    else
+      RTEMP=1; RTOPP=0.95        # kimi-k3 rejects anything else with a 400
+    fi
     ARGS=(--policy_model "$MODEL" --response_model "$KIMI_MODEL"
-          --policy_temperature 0.7 --policy_top_p 0.7
-          --response_temperature 1 --response_top_p 0.95)
+          --policy_temperature "$POLICY_TEMP" --policy_top_p "$POLICY_TOPP"
+          --response_temperature "$RTEMP" --response_top_p "$RTOPP")
+    [ "${MD_ALLOW_STOP:-0}" = 1 ] && ARGS+=(--allow_stop)
     export PYTHONPATH="$HOME/code/AR-Bench"
     RUN=("$PY" "$HOME/code/md_evaluator.py")
     ;;
@@ -98,7 +119,8 @@ esac
 mkdir -p "$WORK"
 [ -f "$WORK/blocks.json" ] || $PY "$HOME/code/shard_tool.py" split "$DATA" "$WORK" "$NSHARD" >/dev/null
 N=$($PY -c "import json;print(len(json.load(open('$WORK/blocks.json'))['blocks']))")
-echo "task=$TASK method=$METHOD model=$MODEL policy=$EP total=$TOTAL shards=$N start=$(date -Is)"
+echo "task=$TASK method=$METHOD${TAG} model=$MODEL policy=$EP total=$TOTAL shards=$N"
+echo "  max_turn=$MAX_TURN policy_temp=$POLICY_TEMP policy_top_p=$POLICY_TOPP allow_stop=${MD_ALLOW_STOP:-0} start=$(date -Is)"
 
 PIDS=()
 for j in $(seq 0 $((N - 1))); do

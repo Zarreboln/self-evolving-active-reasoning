@@ -23,6 +23,7 @@ of *where is the code and where are the records*.
 | [`cd_summarize.py`](../runner/cd_summarize.py) | Circuit Decoding gate table, read against the synthetic reference policies. |
 | [`check_context.py`](../runner/check_context.py) | Is the failure really the model's, or did the harness hide the history? A 95% dead-guess rate only means "cannot track its own belief" if the belief was actually in front of it. |
 | [`diagnose.py`](../runner/diagnose.py) | What is the model actually doing when it fails? The summary table says the taught-incremental prompt halves information efficiency but does NOT produce the Hamming-1 signature I predicted. |
+| [`gn_earlystop_audit.py`](../runner/gn_earlystop_audit.py) | Measure what AR-Bench's Guess Number metric costs the few-shot methods. |
 | [`gn_runner.py`](../runner/gn_runner.py) | Resumable GuessNumbers runner with Stage 0 scoring inline. |
 | [`gn_runner_async.py`](../runner/gn_runner_async.py) | Concurrent GuessNumbers runner. |
 | [`jev_judge_eval.py`](../runner/jev_judge_eval.py) | Score TypeSafe's Jev (a "System One" model) as an AR-Bench referee, on the same fixed TurtleBench sample as every other candidate in experiments/02. |

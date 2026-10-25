@@ -39,6 +39,7 @@ Two deviations from BALAR, both deliberate and both visible in the numbers:
 import json
 import os
 import re
+import time
 from typing import Dict, List, Optional, Tuple
 
 from fire import Fire
@@ -90,6 +91,17 @@ METHOD_PROMPT = {
 }
 
 TURN_PROMPT = "Turn {turn}: please ask your next question."
+
+# BALAR stops asking when its belief's entropy falls below a target set by alpha, capped by
+# --max_ask_rounds. We hold no belief state, so the faithful analogue is to let the reasoner itself
+# decide: on every turn it may ask, or commit. The turn it commits on is recorded, which is what
+# makes a stopping method comparable to a fixed-budget one -- accuracy alone would rate a method
+# that commits at turn 1 the same as one that earns the same answer at turn 9.
+TURN_PROMPT_STOPPABLE = (
+    "Turn {turn} of {max_turn}: ask your next question, or, if the answers so far already settle "
+    "which option is correct, commit now by replying with exactly \"Answer: X\" and nothing else.")
+
+COMMIT = re.compile(r"^\s*answer\s*[:\-]", re.I)
 
 FINAL_PROMPT = """You have no questions left. Choose the most likely diagnosis.
 
@@ -170,6 +182,25 @@ def text_of(response) -> Optional[str]:
         return None
 
 
+def ask(messages, model, temperature, top_p, api_key, base_url, tries=4):
+    """Call a role with bounded retries, and say so loudly if it never answers.
+
+    AR-Bench's `inference` swallows every exception and returns "{}", so a rate-limited or
+    timed-out call is indistinguishable from a short answer. Left alone that is worse than a
+    crash: the patient's turn would be quietly replaced by a placeholder and the episode would
+    still be scored. Retrying with backoff covers the 429s that come with running many shards
+    against a hosted API, and the caller can tell a real failure from an answer.
+    """
+    for attempt in range(tries):
+        r = inference(messages=messages, model=model, temperature=temperature, top_p=top_p,
+                      api_key=api_key, base_url=base_url)
+        t = text_of(r)
+        if t is not None:
+            return t, tokens_of(r), attempt
+        time.sleep(1.5 * (attempt + 1))
+    return None, (0, 0), tries
+
+
 def tokens_of(response) -> Tuple[int, int]:
     try:
         return response.usage.prompt_tokens, response.usage.completion_tokens
@@ -199,7 +230,8 @@ def parse_choice(reply: str, options: Dict[str, str]) -> Optional[str]:
 
 def run_episode(row: Dict, system_prompt: str, policy_model: str, response_model: str,
                 max_turn: int, policy_temperature: float, policy_top_p: float,
-                response_temperature: float, response_top_p: float) -> Dict:
+                response_temperature: float, response_top_p: float,
+                allow_stop: bool = False) -> Dict:
     context = patient_context(row)
     options = row.get("options") or {}
     physician = [{"role": "system", "content": system_prompt.format(turn=max_turn)},
@@ -207,14 +239,16 @@ def run_episode(row: Dict, system_prompt: str, policy_model: str, response_model
     record: List[Dict[str, str]] = list(physician)
     in_tok = out_tok = 0
     asked = 0
+    patient_failures = 0
 
+    committed = None
     for turn in range(1, max_turn + 1):
-        physician.append({"role": "user", "content": TURN_PROMPT.format(turn=turn)})
+        prompt = (TURN_PROMPT_STOPPABLE.format(turn=turn, max_turn=max_turn) if allow_stop
+                  else TURN_PROMPT.format(turn=turn))
+        physician.append({"role": "user", "content": prompt})
         record.append(physician[-1])
-        r = inference(messages=physician, model=policy_model, temperature=policy_temperature,
-                      top_p=policy_top_p, api_key=POLICY_API_KEY, base_url=POLICY_BASE_URL)
-        question = text_of(r)
-        a, b = tokens_of(r)
+        question, (a, b), _ = ask(physician, policy_model, policy_temperature, policy_top_p,
+                                  POLICY_API_KEY, POLICY_BASE_URL)
         in_tok, out_tok = in_tok + a, out_tok + b
         if question is None:
             physician.pop()
@@ -222,29 +256,37 @@ def run_episode(row: Dict, system_prompt: str, policy_model: str, response_model
             break
         physician.append({"role": "assistant", "content": question})
         record.append(physician[-1])
+        if allow_stop and COMMIT.match(question or ""):
+            committed = question
+            break
         asked += 1
 
-        r = inference(messages=[{"role": "system", "content": PATIENT_SYSTEM},
-                                {"role": "user", "content": PATIENT_USER.format(
-                                    context=context, question=question)}],
-                      model=response_model, temperature=response_temperature,
-                      top_p=response_top_p, api_key=RESPONSE_API_KEY, base_url=RESPONSE_BASE_URL)
-        answer = text_of(r)
-        a, b = tokens_of(r)
+        answer, (a, b), retried = ask(
+            [{"role": "system", "content": PATIENT_SYSTEM},
+             {"role": "user", "content": PATIENT_USER.format(context=context, question=question)}],
+            response_model, response_temperature, response_top_p,
+            RESPONSE_API_KEY, RESPONSE_BASE_URL)
         in_tok, out_tok = in_tok + a, out_tok + b
-        answer = (answer or "The record does not say.").strip()
+        if answer is None:
+            # The patient never answered. Record it rather than substituting a placeholder, so a
+            # degraded episode is visible in the results instead of being scored as a clean one.
+            patient_failures += 1
+            answer = "(the patient did not answer)"
+        answer = answer.strip()
         physician.append({"role": "user", "content": f"A: {answer}"})
         record.append(physician[-1])
 
-    opts = "\n".join(f"{k}. {v}" for k, v in options.items())
-    physician.append({"role": "user", "content": FINAL_PROMPT.format(options=opts)})
-    record.append(physician[-1])
-    r = inference(messages=physician, model=policy_model, temperature=policy_temperature,
-                  top_p=policy_top_p, api_key=POLICY_API_KEY, base_url=POLICY_BASE_URL)
-    final = text_of(r) or ""
-    a, b = tokens_of(r)
-    in_tok, out_tok = in_tok + a, out_tok + b
-    record.append({"role": "assistant", "content": final})
+    if committed is not None:
+        final = committed
+    else:
+        opts = "\n".join(f"{k}. {v}" for k, v in options.items())
+        physician.append({"role": "user", "content": FINAL_PROMPT.format(options=opts)})
+        record.append(physician[-1])
+        final, (a, b), _ = ask(physician, policy_model, policy_temperature, policy_top_p,
+                               POLICY_API_KEY, POLICY_BASE_URL)
+        final = final or ""
+        in_tok, out_tok = in_tok + a, out_tok + b
+        record.append({"role": "assistant", "content": final})
 
     pred = parse_choice(final, options)
     gold = row.get("answer", "")
@@ -258,13 +300,16 @@ def run_episode(row: Dict, system_prompt: str, policy_model: str, response_model
             "correctness": bool(pred) and pred.strip().lower() == gold.strip().lower(),
             "parsed": pred is not None,
             "round": asked,
+            "stopped_early": committed is not None,
+            "patient_failures": patient_failures,
             "input_token": in_tok,
             "output_token": out_tok}
 
 
 def main(method: str, data_path: str, output_path: str, policy_model: str, response_model: str,
          max_turn: int = 25, policy_temperature: float = 0.7, policy_top_p: float = 0.7,
-         response_temperature: float = 0.7, response_top_p: float = 0.7) -> None:
+         response_temperature: float = 0.7, response_top_p: float = 0.7,
+         allow_stop: bool = False) -> None:
     if method not in METHOD_PROMPT:
         raise SystemExit(f"method must be one of {sorted(METHOD_PROMPT)}; got {method!r}")
     system_prompt = METHOD_PROMPT[method]
@@ -277,13 +322,14 @@ def main(method: str, data_path: str, output_path: str, policy_model: str, respo
             logs = json.load(f)
 
     print(f"Policy Model: {policy_model}, Patient Model: {response_model}")
-    print(f"Max turn: {max_turn}, Method: {method}, instances: {len(dataset)}")
+    print(f"Max turn: {max_turn}, Method: {method}, instances: {len(dataset)}, "
+          f"allow_stop: {allow_stop}")
 
     # Resume from the log, exactly as AR-Bench's evaluators do, so a shard can be re-entered.
     for i in tqdm(range(len(logs), len(dataset))):
         rec = run_episode(dataset[i], system_prompt, policy_model, response_model, max_turn,
                           policy_temperature, policy_top_p,
-                          response_temperature, response_top_p)
+                          response_temperature, response_top_p, allow_stop)
         rec["idx"] = i
         logs.append(rec)
         with open(output_path, "w") as f:

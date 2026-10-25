@@ -18,14 +18,14 @@ try: print(len(json.load(open(sys.argv[1]))))
 except Exception: print(0)" "$1"; }
 for TASK in $TASKS; do
   for METHOD in $METHODS; do
-    OUT="$HOME/results/${TASK}_${METHOD}.json"
+    OUT="$HOME/results/${TASK}_${METHOD}${TAG:-}.json"
     DONE=$(count "$OUT")
     # AR-Bench's test sets hold 100 instances, iCraft-MD holds 140, so the target comes from data.
     TOTAL=$($PY -c "import json;print(len(json.load(open('$HOME/code/AR-Bench/data/$TASK/test.json'))))")
     if [ "$DONE" -ge "$TOTAL" ]; then echo "[skip] $TASK/$METHOD already has $DONE/$TOTAL"; continue; fi
-    echo "===== $TASK / $METHOD  (have $DONE/$TOTAL) $(date -Is)"
+    echo "===== $TASK / $METHOD${TAG:-}  (have $DONE/$TOTAL) $(date -Is)"
     TASK=$TASK METHOD=$METHOD MODEL=$MODEL NSHARD=$NSHARD bash run_sharded.sh \
-        >> "$HOME/logs/${TASK}_${METHOD}.sharded.out" 2>&1
+        >> "$HOME/logs/${TASK}_${METHOD}${TAG:-}.sharded.out" 2>&1
     echo "      -> $(count "$OUT") / $TOTAL $(date -Is)"
   done
 done

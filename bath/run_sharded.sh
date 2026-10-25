@@ -39,6 +39,19 @@ cd "$HOME/code/AR-Bench" || exit 1
 export POLICY_BASE_URL="http://$EP/v1"   POLICY_API_KEY=x
 export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
 
+# The three evaluators do not share a CLI. Guess Number takes one model and one temperature;
+# Situation Puzzles and Circuit Decoding separate the reasoner from the referee and take four
+# sampling arguments. Passing GN's flags to either of the others is rejected by Fire, so the
+# argument list is built per task. --response_model is only a label here: requests go to
+# RESPONSE_BASE_URL, which is the Jev shim, and it answers as itself whatever name is sent.
+case "$TASK" in
+  gn) ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7) ;;
+  sp|dc) ARGS=(--policy_model "$MODEL" --response_model jev-latest
+               --policy_temperature 0.7 --policy_top_p 0.7
+               --response_temperature 0.7 --response_top_p 0.7) ;;
+  *) echo "unknown task $TASK"; exit 1 ;;
+esac
+
 mkdir -p "$WORK"
 [ -f "$WORK/blocks.json" ] || $PY "$HOME/code/shard_tool.py" split "data/$TASK/test.json" "$WORK" "$NSHARD" >/dev/null
 N=$($PY -c "import json;print(len(json.load(open('$WORK/blocks.json'))['blocks']))")
@@ -48,9 +61,9 @@ PIDS=()
 for j in $(seq 0 $((N - 1))); do
   JJ=$(printf "%02d" "$j")
   $PY -m arbench.reasoner."$TASK"."${TASK}_evaluator" \
-      --model "$MODEL" --method "$METHOD" \
+      --method "$METHOD" \
       --data_path "$WORK/shard_$JJ.json" --output_path "$WORK/out_$JJ.json" \
-      --max_turn "$MAX_TURN" --temperature 0.7 --top_p 0.7 \
+      --max_turn "$MAX_TURN" "${ARGS[@]}" \
       > "$WORK/log_$JJ.out" 2>&1 &
   PIDS+=($!)
 done

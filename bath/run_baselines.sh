@@ -23,9 +23,20 @@ cd "$HOME/code/AR-Bench" || exit 1
 export POLICY_BASE_URL="http://$EP/v1"   POLICY_API_KEY=x
 export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
 OUT="$HOME/results/${TASK}_${METHOD}.json"
+
+# The three evaluators do not share a CLI: GN takes one model and one temperature, SP and DC
+# separate reasoner from referee and take four sampling arguments. Fire rejects the wrong set.
+case "$TASK" in
+  gn) ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7) ;;
+  sp|dc) ARGS=(--policy_model "$MODEL" --response_model jev-latest
+               --policy_temperature 0.7 --policy_top_p 0.7
+               --response_temperature 0.7 --response_top_p 0.7) ;;
+  *) echo "unknown task $TASK"; exit 1 ;;
+esac
+
 echo "task=$TASK method=$METHOD model=$MODEL policy=$EP referee=jev start=$(date -Is)"
 "$HOME/venv/bin/python" -m arbench.reasoner."$TASK"."${TASK}_evaluator" \
-  --model "$MODEL" --method "$METHOD" \
+  --method "$METHOD" \
   --data_path "data/$TASK/test.json" --output_path "$OUT" \
-  --max_turn "$MAX_TURN" --temperature 0.7 --top_p 0.7
+  --max_turn "$MAX_TURN" "${ARGS[@]}"
 echo "done=$(date -Is) -> $OUT"

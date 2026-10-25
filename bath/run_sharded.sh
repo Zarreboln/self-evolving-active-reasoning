@@ -77,6 +77,11 @@ case "$TASK" in
     ;;
   sp)
     curl -sf -m 8 "http://127.0.0.1:8099/v1/models" >/dev/null || { echo "jev referee shim is down"; exit 1; }
+    # A live shim is not a working referee. It once answered Unknown to every turn because it had
+    # extracted a fragment of the prompt's instructions as the story, and the only trace was in the
+    # verdict log. The parser is checked against all 100 real puzzles before 16 shards are launched.
+    $PY "$HOME/code/tests_shim_parse.py" >/dev/null 2>&1 \
+      || { echo "referee prompt parser failed its cases; refusing to start sp"; exit 1; }
     export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
     ARGS=(--policy_model "$MODEL" --response_model jev-latest
           --policy_temperature "$POLICY_TEMP" --policy_top_p "$POLICY_TOPP"

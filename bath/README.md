@@ -67,6 +67,12 @@ A merge with any shard short refuses to write, so a partial file can never be mi
 - **The system `nvcc` is CUDA 12.0 and torch is cu130.** Every runtime JIT path has to stay off, or
   vLLM dies compiling: `VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0
   VLLM_ATTENTION_BACKEND=FLASH_ATTN`. `ninja` and `fire` are needed and are not in the system image.
+- **Never overwrite a shell script that is running.** `bash` reads a script incrementally by byte
+  offset, so replacing the file in place (which is what `scp` does) makes the running shell resume
+  at that offset in the new contents. `gn/proactive_cot` lost its merge exactly this way: all 16
+  shards finished clean, and the next line read as `unexpected EOF while looking for matching '"'`.
+  Copy to a temporary name and `mv` it, which is atomic and leaves the running process on the old
+  inode; the data survives either way, so recover by running `shard_tool.py merge` by hand.
 - **`pgrep`/`pkill -f` match their own command line.** They have killed the ssh session running them.
   List with `ps … | grep '[p]attern'` and kill explicit PIDs.
 - **Background work needs `setsid`**, or it dies with the ssh connection.

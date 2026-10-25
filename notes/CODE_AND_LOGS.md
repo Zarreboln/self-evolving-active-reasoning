@@ -30,6 +30,7 @@ of *where is the code and where are the records*.
 | [`jev_referee_shim.py`](../runner/jev_referee_shim.py) | An OpenAI-compatible endpoint that answers AR-Bench's referee turns with Jev. |
 | [`judge_pick_eval.py`](../runner/judge_pick_eval.py) | A ruler for the other judge: the one inside the TTHE loop that commits a harness. |
 | [`make_index.py`](../runner/make_index.py) | Generate notes/CODE_AND_LOGS.md: every source file with one line of what it does, and every run with where its records live. |
+| [`md_evaluator.py`](../runner/md_evaluator.py) | iCraft-MD as a fourth active-reasoning task, in AR-Bench's shape and outside AR-Bench's code. |
 | [`metric_audit.py`](../runner/metric_audit.py) | What does AR-Bench's Situation Puzzles metric actually measure? Character-level F1 compares the model's answer to the hidden bottom. |
 | [`probe_guided.py`](../runner/probe_guided.py) | Which request shape actually constrains this server's output to the three labels? |
 | [`run_arbench_gn.py`](../runner/run_arbench_gn.py) | Run AR-Bench's OWN GuessNumbers evaluator, unmodified, against a local vLLM. |

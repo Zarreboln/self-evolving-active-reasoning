@@ -27,6 +27,7 @@ of *where is the code and where are the records*.
 | [`gn_runner_async.py`](../runner/gn_runner_async.py) | Concurrent GuessNumbers runner. |
 | [`jev_judge_eval.py`](../runner/jev_judge_eval.py) | Score TypeSafe's Jev (a "System One" model) as an AR-Bench referee, on the same fixed TurtleBench sample as every other candidate in experiments/02. |
 | [`jev_judge_variants.py`](../runner/jev_judge_variants.py) | Does Jev do better on the referee task with the phrasings its own docs recommend? Three levers from docs.typesafe.ai/primitives/advanced: sharpen option boundaries with structured `what` / `not_for` / `examples` criteria, split a hard question into several, and keep supporting data as JSON. |
+| [`jev_referee_shim.py`](../runner/jev_referee_shim.py) | An OpenAI-compatible endpoint that answers AR-Bench's referee turns with Jev. |
 | [`judge_pick_eval.py`](../runner/judge_pick_eval.py) | A ruler for the other judge: the one inside the TTHE loop that commits a harness. |
 | [`make_index.py`](../runner/make_index.py) | Generate notes/CODE_AND_LOGS.md: every source file with one line of what it does, and every run with where its records live. |
 | [`metric_audit.py`](../runner/metric_audit.py) | What does AR-Bench's Situation Puzzles metric actually measure? Character-level F1 compares the model's answer to the hidden bottom. |
@@ -46,6 +47,8 @@ of *where is the code and where are the records*.
 |---|---|
 | [`audit.py`](../meta/cd_tthe/audit.py) | Static invariant audit for candidate harnesses (TTHE's FROZEN SOLVER + LABEL-FREE), plus the arm-specific rule on the public hypothesis space. |
 | [`bridge.py`](../meta/cd_tthe/bridge.py) | Data, environment, frozen solver and trace bridge for the Circuit Decoding TTHE loop. |
+| [`ctx_audit.py`](../meta/cd_tthe/ctx_audit.py) | Enforce that a context-arm candidate changes text and nothing else. |
+| [`ctx_harness.py`](../meta/cd_tthe/ctx_harness.py) | The context-evolution arm: the harness is fixed, only the text evolves. |
 | [`evaluate.py`](../meta/cd_tthe/evaluate.py) | Frozen evaluation of finished cd_tthe harnesses: no proposer, no judge. |
 | [`harness_base.py`](../meta/cd_tthe/harness_base.py) | The HARNESS interface for Circuit Decoding, in the TTHE sense (arXiv 2607.08124): a harness is ARBITRARY PYTHON wrapping the FROZEN task model and playing one whole episode. |
 | [`optimize.py`](../meta/cd_tthe/optimize.py) | Test-time harness evolution (TTHE, arXiv 2607.08124) for Circuit Decoding. |
@@ -57,6 +60,7 @@ of *where is the code and where are the records*.
 | [`sp_harness_base.py`](../meta/cd_tthe/sp_harness_base.py) | The HARNESS interface for Situation Puzzles (AR-Bench), in the TTHE sense: arbitrary Python wrapping the FROZEN task model and playing one whole episode. |
 | [`sp_signals.py`](../meta/cd_tthe/sp_signals.py) | Label-free signals of one SP episode, computed by the controller from public information only (questions asked, referee replies, the final text). |
 | [`tasks.py`](../meta/cd_tthe/tasks.py) | Task registry for the TTHE loop: everything task-specific the controller, the worker, the prompts and the audits need. |
+| [`tests_ctx_audit.py`](../meta/cd_tthe/tests_ctx_audit.py) | Self-test for the context arm's audit: the legal shape passes, six smuggling attempts fail. |
 | [`trajectory.py`](../meta/cd_tthe/trajectory.py) | The evolution trajectory of one cd_tthe run (Circuit Decoding or Situation Puzzles): per batch, which harness governed, whether the judge committed a change, what the change was (from the proposal card), and the label-free and gold scores. |
 
 ### `meta/cd_tthe/agents/` — Circuit Decoding harnesses (seed and proposer-written)
@@ -97,6 +101,8 @@ of *where is the code and where are the records*.
 | [`cand_strict6_b10g3r2_b2r0g2.py`](../meta/cd_tthe/agents/cand_strict6_b10g3r2_b2r0g2.py) | Branch b2r0g2 (parent: b1r1g0), adversarial audit + synthesis. |
 | [`cand_strict6_b10g3r2_b2r1g0.py`](../meta/cd_tthe/agents/cand_strict6_b10g3r2_b2r1g0.py) | Branch b2r1g0 (parent: b2r0g0), conservative repair. |
 | [`cand_strict6_b10g3r2_b2r1g1.py`](../meta/cd_tthe/agents/cand_strict6_b10g3r2_b2r1g1.py) | Branch b2r1g1 (parent: b2r0g1), independent exploration. |
+| [`ctx_bare.py`](../meta/cd_tthe/agents/ctx_bare.py) | The context arm's seed for Circuit Decoding: an empty playbook, so it is the plain loop. |
+| [`ctx_demo.py`](../meta/cd_tthe/agents/ctx_demo.py) | A two-line playbook, to show the arm end to end: ask about entries that are still open. |
 
 ### `meta/cd_tthe/agents_sp/` — Situation Puzzles harnesses (seed and proposer-written)
 
@@ -118,6 +124,7 @@ of *where is the code and where are the records*.
 | [`cand_sp_strict1_b10g3r2_b2r1g0.py`](../meta/cd_tthe/agents_sp/cand_sp_strict1_b10g3r2_b2r1g0.py) | Premise checks, then one anchored working story instead of a spray of unrelated hypotheses; atomic, non-redundant questions; a final answer rewritten from the working story. |
 | [`cand_sp_strict1_b10g3r2_b2r1g1.py`](../meta/cd_tthe/agents_sp/cand_sp_strict1_b10g3r2_b2r1g1.py) | Premise checks, then narrowing down by splitting: the model names the most important open point of the story and splits it into a few mutually exclusive, broad possibilities (each a yes/no question, most likely first), asked in turn; |
 | [`cand_sp_strict1_b10g3r2_b2r1g2.py`](../meta/cd_tthe/agents_sp/cand_sp_strict1_b10g3r2_b2r1g2.py) | Premise checks, then narrowing down by splitting: the model names the most important open point of the story and splits it into a few mutually exclusive, broad possibilities (each a yes/no question, most likely first), asked in turn; |
+| [`ctx_bare.py`](../meta/cd_tthe/agents_sp/ctx_bare.py) | The context arm's seed: an empty playbook, so it is exactly AR-Bench's official zero-shot loop. |
 
 ### `meta/cd_evolve/` — The earlier one-shot evolution loop
 
@@ -183,6 +190,15 @@ of *where is the code and where are the records*.
 | [`baselines/evoharness_cd/domain.py`](../baselines/evoharness_cd/domain.py) | *(undocumented)* |
 | [`baselines/evoharness_cd/env.py`](../baselines/evoharness_cd/env.py) | CircuitDecoding (Multi-Turn Puzzles, arXiv 2508.10142) as an EvoHarness ``Env``. |
 | [`baselines/evoharness_cd/prompts.py`](../baselines/evoharness_cd/prompts.py) | CircuitDecoding prompt text, in the three coordination modes. |
+| [`bath/check_shard_roundtrip.py`](../bath/check_shard_roundtrip.py) | Prove the shard merge reproduces a sequential run record for record. |
+| [`bath/count_incomplete.py`](../bath/count_incomplete.py) | Count baseline combos that do not yet hold their 100 episodes. |
+| [`bath/run_all_baselines.sh`](../bath/run_all_baselines.sh) | Every baseline BALAR compares against, on AR-Bench, with our reasoner and Jev as the referee. |
+| [`bath/run_all_sharded.sh`](../bath/run_all_sharded.sh) | Every baseline BALAR compares against, on AR-Bench, sharded across the card. |
+| [`bath/run_baselines.sh`](../bath/run_baselines.sh) | Reproduce AR-Bench's official baselines with our reasoner and Jev as the referee. |
+| [`bath/run_sharded.sh`](../bath/run_sharded.sh) | One AR-Bench baseline, run as N concurrent shards against one served model. |
+| [`bath/serve_7b.sbatch`](../bath/serve_7b.sbatch) | Serve the reasoner under test (AR-Bench's POLICY_* role) on one H100, and publish its endpoint. |
+| [`bath/shard_tool.py`](../bath/shard_tool.py) | Split an AR-Bench test set into contiguous shards, and merge the shards' logs back. |
+| [`bath/sweep_baselines.sh`](../bath/sweep_baselines.sh) | Re-enter the baseline queue until every combo has its 100 episodes. |
 | [`experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g0.py`](../experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g0.py) | Conservative repair of `bare`: same query loop and wording, plus two fixes for trace-visible failures. |
 | [`experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g1.py`](../experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g1.py) | Ledger harness: the harness, not the 7B's context window, holds the episode state. |
 | [`experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g2.py`](../experiments/09_cd_tthe_isolated/candidates/cand_labeled6_b10g3r2_b0r0g2.py) | Deduction-board harness. |
@@ -262,6 +278,7 @@ repository in `~/.ar_harness_controller/<run>/` and are never committed.
 | `meta/cd_evolve/logs/open1` | — | — | 1 | — | — |
 | `meta/cd_evolve/logs/so1` | — | — | 2 | — | — |
 | `meta/cd_evolve/logs/wrapper_test` | — | — | — | — | — |
+| `meta/cd_tthe/logs/arch_test2` | result.json, opt_log.jsonl, branch_lineage.jsonl, config.json | — | — | 24 | — |
 | `meta/cd_tthe/logs/eval_heldout200` | scores.json, config.json | — | — | — | 11 |
 | `meta/cd_tthe/logs/eval_sp100` | scores.json, config.json | — | — | — | 6 |
 | `meta/cd_tthe/logs/eval_sp100_b1r0g0` | scores.json, config.json | — | — | — | 1 |

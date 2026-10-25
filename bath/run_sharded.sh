@@ -39,19 +39,37 @@ done
 cd "$HOME/code/AR-Bench" || exit 1
 export POLICY_BASE_URL="http://$EP/v1" POLICY_API_KEY=x
 
-# The evaluators do not share a CLI, and they do not share a second role either. Guess Number has
-# no second model at all and takes one temperature. Situation Puzzles and Circuit Decoding take a
-# referee, which is the Jev shim; --response_model is only a label there, since requests go to
-# RESPONSE_BASE_URL and the shim answers as itself whatever name is sent. iCraft-MD's second role is
-# a patient simulator, which has to generate free text, so it is the served model and NOT the shim --
-# the shim refuses anything that is not a referee turn, by design.
+# The four tasks differ in both their CLI and their second role, so each gets its own block.
+#
+#   gn  no second model at all -- the feedback is a pure function of the guess. One temperature.
+#   sp  the referee is a three-way typed decision, Yes / No / Unknown, which is what Jev is for.
+#       --response_model is only a label: requests go to RESPONSE_BASE_URL and the shim answers as
+#       itself whatever name is sent.
+#   dc  the second role plays a suspect and answers in a sentence (`respond_template`), and md's
+#       plays a patient. Both are free-text generation, which the Jev shim refuses by design, so
+#       they go to Kimi. Kimi is OpenAI-compatible, so no shim is needed -- but kimi-k3 accepts
+#       only temperature 1 and top_p 0.95 and rejects anything else with a 400, so the sampling
+#       arguments cannot be left at AR-Bench's 0.7.
+#
+# The key is read from a 0600 file into the environment rather than passed as an argument, so it
+# never appears in another user's `ps`.
+KIMI_MODEL=${KIMI_MODEL:-kimi-k3}
+KIMI_BASE=${KIMI_BASE:-https://api.moonshot.ai/v1}
+
+kimi_responder() {
+  [ -r "$HOME/.moonshot_token" ] || { echo "no ~/.moonshot_token"; exit 1; }
+  export RESPONSE_BASE_URL="$KIMI_BASE"
+  RESPONSE_API_KEY=$(cat "$HOME/.moonshot_token"); export RESPONSE_API_KEY
+  curl -sf -m 15 "$KIMI_BASE/models" -H "Authorization: Bearer $RESPONSE_API_KEY" >/dev/null \
+    || { echo "kimi api unreachable"; exit 1; }
+}
+
 case "$TASK" in
   gn)
-    export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
     ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7)
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
-  sp|dc)
+  sp)
     curl -sf -m 8 "http://127.0.0.1:8099/v1/models" >/dev/null || { echo "jev referee shim is down"; exit 1; }
     export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
     ARGS=(--policy_model "$MODEL" --response_model jev-latest
@@ -59,11 +77,18 @@ case "$TASK" in
           --response_temperature 0.7 --response_top_p 0.7)
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
-  md)
-    export RESPONSE_BASE_URL="http://$EP/v1" RESPONSE_API_KEY=x
-    ARGS=(--policy_model "$MODEL" --response_model "$MODEL"
+  dc)
+    kimi_responder
+    ARGS=(--policy_model "$MODEL" --response_model "$KIMI_MODEL"
           --policy_temperature 0.7 --policy_top_p 0.7
-          --response_temperature 0.7 --response_top_p 0.7)
+          --response_temperature 1 --response_top_p 0.95)
+    RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
+    ;;
+  md)
+    kimi_responder
+    ARGS=(--policy_model "$MODEL" --response_model "$KIMI_MODEL"
+          --policy_temperature 0.7 --policy_top_p 0.7
+          --response_temperature 1 --response_top_p 0.95)
     export PYTHONPATH="$HOME/code/AR-Bench"
     RUN=("$PY" "$HOME/code/md_evaluator.py")
     ;;

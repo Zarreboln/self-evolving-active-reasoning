@@ -51,6 +51,29 @@ and concatenating in shard order reproduces the single-process file. `check_shar
 verifies this against `gn_few_shot.json`, a known-good sequential run: identical record for record.
 A merge with any shard short refuses to write, so a partial file can never be mistaken for a result.
 
+## What the second role has to be, per task
+
+The four tasks do not share a second model, and the difference decides which judge can serve them.
+
+| Task | Second role | What it has to produce | Who serves it |
+|---|---|---|---|
+| `gn` | none | the feedback is a pure function of the guess | nobody |
+| `sp` | referee | one of Yes / No / Unknown | **Jev** (typed choice, calibrated) |
+| `dc` | a suspect | a sentence in character (`respond_template`) | **Kimi** (`kimi-k3`) |
+| `md` | a patient | a sentence from the case's fact list | **Kimi** (`kimi-k3`) |
+
+Only SP's role is a typed decision, which is the shape Jev answers; GN needs no judge at all. DC and
+iCraft-MD both need free text, and the Jev shim refuses anything that is not a referee turn — by
+design, so a silent fallback cannot put a different model's words in a transcript. Pointing DC at
+the shim would have failed every turn, which is what the per-task blocks in `run_sharded.sh` fix.
+
+Kimi is OpenAI-compatible, so it needs no shim, but **`kimi-k3` accepts only `temperature=1` and
+`top_p=0.95`** and rejects anything else with a 400; AR-Bench's 0.7 has to be overridden. Model
+choice matters for cost, not just quality: on the same three patient turns, `kimi-k2.6` spent
+1488 / 697 / 2434 completion tokens on one-sentence answers where `kimi-k3` spent 141 / 131 / 407,
+about seven times less, at the same fidelity. The key lives in `~/.moonshot_token` (0600) and is
+read into the environment rather than passed as an argument.
+
 ## Traps
 
 - **QOS, not `--time`, is what gets a job rejected.** `h100_1` allows `dev, short, mid, long,

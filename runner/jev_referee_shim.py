@@ -49,8 +49,29 @@ INSTRUCTIONS = (
     "the <Surface>, so they ask about the <Surface>. Answer Unknown for anything the story does not "
     "settle and that cannot be deduced from it."
 )
-SURFACE = re.compile(r"<Surface>\s*(.*?)\s*(?:<Bottom>|$)", re.S | re.I)
-BOTTOM = re.compile(r"<Bottom>\s*(.*?)\s*(?:##|$)", re.S | re.I)
+# AR-Bench's referee prompt (`system_prompt_with_2shots`) marks the instance under Markdown
+# headers, not the angle-bracket tags:
+#
+#     ## Question Content
+#     ### Surface
+#     {question}
+#
+#     ### Bottom
+#     {answer}
+#
+#     Now, please judge the following player questions:
+#
+# The angle-bracket form appears 7 times before that -- four in the rules prose ("you are given the
+# <Bottom>") and once per worked example -- so a pattern that matches `<Surface>` anywhere, or that
+# takes the first match, hands Jev a fragment of the instructions as the story. That is not a
+# cosmetic error: it made the referee answer Unknown to all 50 calls of a smoke test, because there
+# was nothing in the "story" to answer from. Anchor on `## Question Content` instead.
+INSTANCE = re.compile(
+    r"##\s*Question\s*Content\s*.*?###\s*Surface\s*(.*?)\s*###\s*Bottom\s*(.*?)"
+    r"\s*(?:Now,\s*please\s+judge|\Z)", re.S | re.I)
+# A second accepted shape, for callers that send one plain tagged pair (our own probes do). The
+# last pair wins, since a prompt that carries examples puts the live instance last.
+TAGGED = re.compile(r"<Surface>\s*(.*?)\s*<Bottom>\s*(.*?)\s*(?:\n##|\Z)", re.S | re.I)
 
 
 def api_key():
@@ -64,21 +85,49 @@ def api_key():
         sys.exit("no API key: set TYPESAFE_API_KEY or store it as keychain service 'typesafe_token'")
 
 
+def plausible_story(surface, bottom):
+    """Reject an extraction that is obviously a piece of the instructions rather than the story.
+
+    The failure this guards against produced a working server and meaningless verdicts, so it is
+    checked rather than assumed: a story fragment that still carries the prompt's own markup, or
+    that is too short to be a puzzle, means the pattern matched the wrong thing.
+    """
+    for part in (surface, bottom):
+        if len(part) < 40:
+            return False
+        low = part.lower()
+        if "<surface>" in low or "<bottom>" in low or "please judge" in low:
+            return False
+        if "judging rules" in low or "without any explanation" in low:
+            return False
+    return True
+
+
 def referee_turn(messages):
     """Pull (surface, bottom, question) out of a referee call, or None if this is not one."""
     system = " ".join(m.get("content") or "" for m in messages if m.get("role") == "system")
     joined = "\n".join((m.get("content") or "") for m in messages)
-    s, b = SURFACE.search(joined), BOTTOM.search(joined)
-    if not (s and b):
-        return None
     if "referee" not in system.lower() and "referee" not in joined.lower():
+        return None
+    pair = None
+    m = INSTANCE.search(joined)
+    if m:
+        pair = (m.group(1).strip(), m.group(2).strip())
+    else:
+        # The fallback is for a prompt carrying one plain tagged pair and nothing else. If several
+        # pairs are present they are worked examples, and picking one would have Jev answer about
+        # the wrong story -- the same failure as before, one level down. Refuse instead.
+        tagged = list(TAGGED.finditer(joined))
+        if len(tagged) == 1:
+            pair = (tagged[0].group(1).strip(), tagged[0].group(2).strip())
+    if not pair or not plausible_story(*pair):
         return None
     users = [m.get("content") or "" for m in messages if m.get("role") == "user"]
     question = (users[-1] if users else "").strip()
     # the last user turn may still carry the rules; keep only its final line, which is the question
     if len(question.splitlines()) > 1:
         question = question.splitlines()[-1].strip()
-    return (s.group(1).strip(), b.group(1).strip(), question) if question else None
+    return (pair[0], pair[1], question) if question else None
 
 
 def ask_jev(surface, bottom, question, key, model, retries=4):

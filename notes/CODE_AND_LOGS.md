@@ -22,6 +22,7 @@ of *where is the code and where are the records*.
 | [`cd_score_evoharness.py`](../runner/cd_score_evoharness.py) | Score EvoHarness-RL Circuit Decoding trajectories with ar_harness's metrics. |
 | [`cd_summarize.py`](../runner/cd_summarize.py) | Circuit Decoding gate table, read against the synthetic reference policies. |
 | [`check_context.py`](../runner/check_context.py) | Is the failure really the model's, or did the harness hide the history? A 95% dead-guess rate only means "cannot track its own belief" if the belief was actually in front of it. |
+| [`check_patient_placeholder.py`](../runner/check_patient_placeholder.py) | Count silently-substituted patient turns in the runs made before retries existed. |
 | [`diagnose.py`](../runner/diagnose.py) | What is the model actually doing when it fails? The summary table says the taught-incremental prompt halves information efficiency but does NOT produce the Hamming-1 signature I predicted. |
 | [`gn_earlystop_audit.py`](../runner/gn_earlystop_audit.py) | Measure what AR-Bench's Guess Number metric costs the few-shot methods. |
 | [`gn_runner.py`](../runner/gn_runner.py) | Resumable GuessNumbers runner with Stage 0 scoring inline. |
@@ -32,8 +33,10 @@ of *where is the code and where are the records*.
 | [`judge_pick_eval.py`](../runner/judge_pick_eval.py) | A ruler for the other judge: the one inside the TTHE loop that commits a harness. |
 | [`make_index.py`](../runner/make_index.py) | Generate notes/CODE_AND_LOGS.md: every source file with one line of what it does, and every run with where its records live. |
 | [`md_evaluator.py`](../runner/md_evaluator.py) | iCraft-MD as a fourth active-reasoning task, in AR-Bench's shape and outside AR-Bench's code. |
+| [`md_score.py`](../runner/md_score.py) | Score iCraft-MD runs: BALAR's exact match on the option text, plus parse health and chance. |
 | [`metric_audit.py`](../runner/metric_audit.py) | What does AR-Bench's Situation Puzzles metric actually measure? Character-level F1 compares the model's answer to the hidden bottom. |
 | [`probe_guided.py`](../runner/probe_guided.py) | Which request shape actually constrains this server's output to the three labels? |
+| [`question_repetition.py`](../runner/question_repetition.py) | Measure information self-lock: how often the questioner re-asks what it already asked. |
 | [`run_arbench_gn.py`](../runner/run_arbench_gn.py) | Run AR-Bench's OWN GuessNumbers evaluator, unmodified, against a local vLLM. |
 | [`run_arbench_sp.py`](../runner/run_arbench_sp.py) | Run AR-Bench's OWN SP (Situation Puzzle / 'turtle soup') evaluator, unmodified, against a local vLLM, sharded across subprocesses. |
 | [`score_arbench_log.py`](../runner/score_arbench_log.py) | Apply the Stage 0 instrument offline to AR-Bench's own GuessNumbers logs. |

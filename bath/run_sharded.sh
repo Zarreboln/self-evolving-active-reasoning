@@ -1,5 +1,5 @@
 #!/bin/bash
-# One AR-Bench baseline, run as N concurrent shards against one served model.
+# One active-reasoning baseline, run as N concurrent shards against one served model.
 #
 # AR-Bench's evaluator is sequential (no pool anywhere in the package), which leaves a 7B model on
 # an H100 with one request in flight -- gn/proactive_cot measured 121 s per instance, 3h20m for a
@@ -9,18 +9,22 @@
 #
 #   TASK=sp METHOD=few_shot NSHARD=16 bash run_sharded.sh
 set -uo pipefail
-TASK=${TASK:?sp|dc|gn}; METHOD=${METHOD:?few_shot|few_shot_inst|proactive_cot|uot|tot|zero_shot}
+TASK=${TASK:?gn|sp|dc|md}; METHOD=${METHOD:?few_shot|few_shot_inst|proactive_cot|uot|tot|zero_shot}
 MODEL=${MODEL:-Qwen/Qwen2.5-7B-Instruct}
 MAX_TURN=${MAX_TURN:-25}
 NSHARD=${NSHARD:-16}
 PY=$HOME/venv/bin/python
 OUT=$HOME/results/${TASK}_${METHOD}.json
 WORK=$HOME/results/shards/${TASK}_${METHOD}
+DATA=$HOME/code/AR-Bench/data/$TASK/test.json
 
+# AR-Bench's three test sets hold 100 instances; iCraft-MD holds 140, so the target comes from the
+# data rather than a constant.
+TOTAL=$($PY -c "import json;print(len(json.load(open('$DATA'))))") || exit 1
 DONE=$($PY -c "import json,sys
 try: print(len(json.load(open('$OUT'))))
 except Exception: print(0)")
-if [ "$DONE" -ge 100 ]; then echo "[skip] $TASK/$METHOD already has $DONE"; exit 0; fi
+if [ "$DONE" -ge "$TOTAL" ]; then echo "[skip] $TASK/$METHOD already has $DONE/$TOTAL"; exit 0; fi
 
 # Take whichever published endpoint is alive, so a server replaced at its time limit does not
 # strand the queue. All shards share it: vLLM batches them, which is the point.
@@ -31,36 +35,50 @@ for f in "$HOME"/results/serve_qwen25_7b*.endpoint; do
   if curl -sf -m 8 "http://$C/health" >/dev/null 2>&1; then EP="$C"; break; fi
 done
 [ -n "$EP" ] || { echo "no live policy endpoint"; exit 1; }
-if [ "$TASK" != gn ]; then
-  curl -sf -m 8 "http://127.0.0.1:8099/v1/models" >/dev/null || { echo "jev referee shim is down"; exit 1; }
-fi
 
 cd "$HOME/code/AR-Bench" || exit 1
-export POLICY_BASE_URL="http://$EP/v1"   POLICY_API_KEY=x
-export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
+export POLICY_BASE_URL="http://$EP/v1" POLICY_API_KEY=x
 
-# The three evaluators do not share a CLI. Guess Number takes one model and one temperature;
-# Situation Puzzles and Circuit Decoding separate the reasoner from the referee and take four
-# sampling arguments. Passing GN's flags to either of the others is rejected by Fire, so the
-# argument list is built per task. --response_model is only a label here: requests go to
-# RESPONSE_BASE_URL, which is the Jev shim, and it answers as itself whatever name is sent.
+# The evaluators do not share a CLI, and they do not share a second role either. Guess Number has
+# no second model at all and takes one temperature. Situation Puzzles and Circuit Decoding take a
+# referee, which is the Jev shim; --response_model is only a label there, since requests go to
+# RESPONSE_BASE_URL and the shim answers as itself whatever name is sent. iCraft-MD's second role is
+# a patient simulator, which has to generate free text, so it is the served model and NOT the shim --
+# the shim refuses anything that is not a referee turn, by design.
 case "$TASK" in
-  gn) ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7) ;;
-  sp|dc) ARGS=(--policy_model "$MODEL" --response_model jev-latest
-               --policy_temperature 0.7 --policy_top_p 0.7
-               --response_temperature 0.7 --response_top_p 0.7) ;;
+  gn)
+    export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
+    ARGS=(--model "$MODEL" --temperature 0.7 --top_p 0.7)
+    RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
+    ;;
+  sp|dc)
+    curl -sf -m 8 "http://127.0.0.1:8099/v1/models" >/dev/null || { echo "jev referee shim is down"; exit 1; }
+    export RESPONSE_BASE_URL="http://127.0.0.1:8099/v1" RESPONSE_API_KEY=x
+    ARGS=(--policy_model "$MODEL" --response_model jev-latest
+          --policy_temperature 0.7 --policy_top_p 0.7
+          --response_temperature 0.7 --response_top_p 0.7)
+    RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
+    ;;
+  md)
+    export RESPONSE_BASE_URL="http://$EP/v1" RESPONSE_API_KEY=x
+    ARGS=(--policy_model "$MODEL" --response_model "$MODEL"
+          --policy_temperature 0.7 --policy_top_p 0.7
+          --response_temperature 0.7 --response_top_p 0.7)
+    export PYTHONPATH="$HOME/code/AR-Bench"
+    RUN=("$PY" "$HOME/code/md_evaluator.py")
+    ;;
   *) echo "unknown task $TASK"; exit 1 ;;
 esac
 
 mkdir -p "$WORK"
-[ -f "$WORK/blocks.json" ] || $PY "$HOME/code/shard_tool.py" split "data/$TASK/test.json" "$WORK" "$NSHARD" >/dev/null
+[ -f "$WORK/blocks.json" ] || $PY "$HOME/code/shard_tool.py" split "$DATA" "$WORK" "$NSHARD" >/dev/null
 N=$($PY -c "import json;print(len(json.load(open('$WORK/blocks.json'))['blocks']))")
-echo "task=$TASK method=$METHOD model=$MODEL policy=$EP shards=$N start=$(date -Is)"
+echo "task=$TASK method=$METHOD model=$MODEL policy=$EP total=$TOTAL shards=$N start=$(date -Is)"
 
 PIDS=()
 for j in $(seq 0 $((N - 1))); do
   JJ=$(printf "%02d" "$j")
-  $PY -m arbench.reasoner."$TASK"."${TASK}_evaluator" \
+  "${RUN[@]}" \
       --method "$METHOD" \
       --data_path "$WORK/shard_$JJ.json" --output_path "$WORK/out_$JJ.json" \
       --max_turn "$MAX_TURN" "${ARGS[@]}" \

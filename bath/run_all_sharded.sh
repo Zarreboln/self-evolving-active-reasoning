@@ -20,11 +20,13 @@ for TASK in $TASKS; do
   for METHOD in $METHODS; do
     OUT="$HOME/results/${TASK}_${METHOD}.json"
     DONE=$(count "$OUT")
-    if [ "$DONE" -ge 100 ]; then echo "[skip] $TASK/$METHOD already has $DONE"; continue; fi
-    echo "===== $TASK / $METHOD  (have $DONE) $(date -Is)"
+    # AR-Bench's test sets hold 100 instances, iCraft-MD holds 140, so the target comes from data.
+    TOTAL=$($PY -c "import json;print(len(json.load(open('$HOME/code/AR-Bench/data/$TASK/test.json'))))")
+    if [ "$DONE" -ge "$TOTAL" ]; then echo "[skip] $TASK/$METHOD already has $DONE/$TOTAL"; continue; fi
+    echo "===== $TASK / $METHOD  (have $DONE/$TOTAL) $(date -Is)"
     TASK=$TASK METHOD=$METHOD MODEL=$MODEL NSHARD=$NSHARD bash run_sharded.sh \
         >> "$HOME/logs/${TASK}_${METHOD}.sharded.out" 2>&1
-    echo "      -> $(count "$OUT") / 100 $(date -Is)"
+    echo "      -> $(count "$OUT") / $TOTAL $(date -Is)"
   done
 done
 echo "ALL BASELINES DONE $(date -Is)"

@@ -195,7 +195,7 @@ of *where is the code and where are the records*.
 | [`bath/run_all_baselines.sh`](../bath/run_all_baselines.sh) | Every baseline BALAR compares against, on AR-Bench, with our reasoner and Jev as the referee. |
 | [`bath/run_all_sharded.sh`](../bath/run_all_sharded.sh) | Every baseline BALAR compares against, on AR-Bench, sharded across the card. |
 | [`bath/run_baselines.sh`](../bath/run_baselines.sh) | Reproduce AR-Bench's official baselines with our reasoner and Jev as the referee. |
-| [`bath/run_sharded.sh`](../bath/run_sharded.sh) | One AR-Bench baseline, run as N concurrent shards against one served model. |
+| [`bath/run_sharded.sh`](../bath/run_sharded.sh) | One active-reasoning baseline, run as N concurrent shards against one served model. |
 | [`bath/serve_7b.sbatch`](../bath/serve_7b.sbatch) | Serve the reasoner under test (AR-Bench's POLICY_* role) on one H100, and publish its endpoint. |
 | [`bath/shard_tool.py`](../bath/shard_tool.py) | Split an AR-Bench test set into contiguous shards, and merge the shards' logs back. |
 | [`bath/sweep_baselines.sh`](../bath/sweep_baselines.sh) | Re-enter the baseline queue until every combo has its 100 episodes. |

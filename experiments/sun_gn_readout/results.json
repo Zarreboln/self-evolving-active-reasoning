@@ -1,0 +1,2186 @@
+{
+  "schema": "gn_readout_public_results_v1",
+  "date": "2026-10-26",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "model_revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+  "decoding": {
+    "temperature": 0.7,
+    "top_p": 0.7
+  },
+  "context_evolution": {
+    "N": 100,
+    "conditions": [
+      {
+        "condition": "B0",
+        "n": 100,
+        "Q": 0.886680057620701,
+        "EM_count": 1,
+        "hit_any_count": 2,
+        "singleton_count": 92,
+        "cross_table": {
+          "singleton_False_correct_False": 8,
+          "singleton_False_correct_True": 0,
+          "singleton_True_correct_False": 91,
+          "singleton_True_correct_True": 1
+        },
+        "invalid_final": 3,
+        "invalid_interaction": 0,
+        "truncated_final": 65,
+        "truncated_outputs": 65,
+        "input_tokens": 3059917,
+        "output_tokens": 30757,
+        "actor_requests": 2600
+      },
+      {
+        "condition": "B1",
+        "n": 100,
+        "Q": 0.7667579946598831,
+        "EM_count": 0,
+        "hit_any_count": 1,
+        "singleton_count": 33,
+        "cross_table": {
+          "singleton_False_correct_False": 67,
+          "singleton_False_correct_True": 0,
+          "singleton_True_correct_False": 33,
+          "singleton_True_correct_True": 0
+        },
+        "invalid_final": 32,
+        "invalid_interaction": 0,
+        "truncated_final": 69,
+        "truncated_outputs": 69,
+        "input_tokens": 5428362,
+        "output_tokens": 30436,
+        "actor_requests": 2600
+      },
+      {
+        "condition": "S",
+        "n": 100,
+        "Q": 0.808280298671601,
+        "EM_count": 0,
+        "hit_any_count": 0,
+        "singleton_count": 71,
+        "cross_table": {
+          "singleton_False_correct_False": 29,
+          "singleton_False_correct_True": 0,
+          "singleton_True_correct_False": 71,
+          "singleton_True_correct_True": 0
+        },
+        "invalid_final": 3,
+        "invalid_interaction": 0,
+        "truncated_final": 31,
+        "truncated_outputs": 31,
+        "input_tokens": 3338263,
+        "output_tokens": 25549,
+        "actor_requests": 2600
+      },
+      {
+        "condition": "E",
+        "n": 100,
+        "Q": 0.852756327954247,
+        "EM_count": 0,
+        "hit_any_count": 2,
+        "singleton_count": 70,
+        "cross_table": {
+          "singleton_False_correct_False": 30,
+          "singleton_False_correct_True": 0,
+          "singleton_True_correct_False": 70,
+          "singleton_True_correct_True": 0
+        },
+        "invalid_final": 16,
+        "invalid_interaction": 0,
+        "truncated_final": 74,
+        "truncated_outputs": 74,
+        "input_tokens": 3371899,
+        "output_tokens": 32009,
+        "actor_requests": 2600
+      }
+    ],
+    "primary": {
+      "delta_Q": 0.04447602928264603,
+      "CI95": [
+        0.02023785993810182,
+        0.06873815416340767
+      ],
+      "paired_n": 100,
+      "wins": 66,
+      "losses": 34,
+      "ties": 0,
+      "bootstrap_seed": 62026,
+      "bootstrap_replicates": 10000
+    },
+    "memory": {
+      "attempts": 20,
+      "format_accepted": 19,
+      "actual_change_steps": [
+        2
+      ],
+      "M0_bytes": 466,
+      "M20_bytes": 519
+    },
+    "interpretation": "Single adaptation trajectory; E versus S improves Q, no final-accuracy gain. B0 higher Q descriptively. Curation failure/rejection amendments disclosed; not an unchanged original V7 execution.",
+    "cost": {
+      "S1_gpu_seconds": 570,
+      "S2_gpu_seconds": 789,
+      "S1_actor_requests": 1144,
+      "S1_curator_requests": 24,
+      "S2_actor_requests": 10400,
+      "API_USD": 0
+    }
+  },
+  "limited_feedback": {
+    "N": 50,
+    "conditions": {
+      "R0": {
+        "EM": 0,
+        "consistent": 0,
+        "input_tokens": 106852,
+        "invalid": 0,
+        "output_tokens": 5459,
+        "truncated": 32
+      },
+      "R1": {
+        "EM": 0,
+        "consistent": 0,
+        "input_tokens": 106852,
+        "invalid": 1,
+        "output_tokens": 9992,
+        "truncated": 5
+      },
+      "R2": {
+        "EM": 0,
+        "consistent": 0,
+        "input_tokens": 116552,
+        "invalid": 0,
+        "output_tokens": 400,
+        "truncated": 0
+      },
+      "R3": {
+        "EM": 0,
+        "consistent": 0,
+        "input_tokens": 118502,
+        "invalid": 0,
+        "output_tokens": 400,
+        "truncated": 0
+      }
+    },
+    "primary": {
+      "N": 50,
+      "bootstrap_CI95": [
+        0,
+        0
+      ],
+      "conservative_simultaneous_binomial_CI95": [
+        -0.08390987800799049,
+        0.08390987800799049
+      ],
+      "delta": 0,
+      "losses": 0,
+      "paired_exact_two_sided_p": 1,
+      "sparse_note": "Paired percentile bootstrap can degenerate at the floor; simultaneous exact binomial bounds remain nondegenerate. No null/equivalence inference.",
+      "ties": 50,
+      "wins": 0
+    },
+    "interaction": {
+      "Q": 0.8828220581097369,
+      "hit_any": 0,
+      "singleton": 44
+    },
+    "calls": 1550,
+    "input_tokens": 2093206,
+    "output_tokens": 29630,
+    "reserved_output_tokens": 244480,
+    "GPU_seconds": 295,
+    "audit_sha256": "af33a39713712ea0d2d1229b4124cdc3a333c274bf07310065d1e3717ad8b4a8",
+    "cases": [
+      {
+        "pair": 1,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 123,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9238433383192557
+      },
+      {
+        "pair": 2,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 280,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8808409192966031
+      },
+      {
+        "pair": 3,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2153,
+            "invalid": false,
+            "output_tokens": 70,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2153,
+            "invalid": false,
+            "output_tokens": 100,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2347,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2386,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.8506905305038155
+      },
+      {
+        "pair": 4,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 168,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9254307607312967
+      },
+      {
+        "pair": 5,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 281,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8848164351818828
+      },
+      {
+        "pair": 6,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 26,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 26,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8614543503167221
+      },
+      {
+        "pair": 7,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 512,
+            "truncated": true
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.8372649632776233
+      },
+      {
+        "pair": 8,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8845753092081073
+      },
+      {
+        "pair": 9,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 512,
+            "truncated": true
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8559424632508604
+      },
+      {
+        "pair": 10,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 364,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8886952055097264
+      },
+      {
+        "pair": 11,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 106,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 115,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8625761115619904
+      },
+      {
+        "pair": 12,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 117,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8675629798710651
+      },
+      {
+        "pair": 13,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 119,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 119,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9023413531436304
+      },
+      {
+        "pair": 14,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 192,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.7885290307820905
+      },
+      {
+        "pair": 15,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 60,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 296,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8563312201211067
+      },
+      {
+        "pair": 16,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 373,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9178792888270372
+      },
+      {
+        "pair": 17,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 177,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8471919289222961
+      },
+      {
+        "pair": 18,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 106,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 106,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9046211301699647
+      },
+      {
+        "pair": 19,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2141,
+            "invalid": false,
+            "output_tokens": 19,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2141,
+            "invalid": false,
+            "output_tokens": 42,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2335,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2374,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8704828488608344
+      },
+      {
+        "pair": 20,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 196,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.8253262113502452
+      },
+      {
+        "pair": 21,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 110,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 129,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9213882615337101
+      },
+      {
+        "pair": 22,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 178,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9024857335599697
+      },
+      {
+        "pair": 23,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 332,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8954373094211018
+      },
+      {
+        "pair": 24,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 512,
+            "truncated": true
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.922481333112046
+      },
+      {
+        "pair": 25,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2166,
+            "invalid": false,
+            "output_tokens": 51,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2166,
+            "invalid": false,
+            "output_tokens": 66,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2360,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2399,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.909585430950179
+      },
+      {
+        "pair": 26,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 186,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8667461770832343
+      },
+      {
+        "pair": 27,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 116,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9341527013179245
+      },
+      {
+        "pair": 28,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 72,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 72,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8815641932537683
+      },
+      {
+        "pair": 29,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 158,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8651323468703567
+      },
+      {
+        "pair": 30,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 199,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9011708844612621
+      },
+      {
+        "pair": 31,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 113,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9018748099650237
+      },
+      {
+        "pair": 32,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 102,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 121,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.8571873036051431
+      },
+      {
+        "pair": 33,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 321,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9509665481728221
+      },
+      {
+        "pair": 34,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 98,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 98,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9204204596483015
+      },
+      {
+        "pair": 35,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 512,
+            "truncated": true
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8909587457704305
+      },
+      {
+        "pair": 36,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 313,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.873745339049233
+      },
+      {
+        "pair": 37,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 65,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8788645885399795
+      },
+      {
+        "pair": 38,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 299,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8893217339094555
+      },
+      {
+        "pair": 39,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 137,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8825133540021256
+      },
+      {
+        "pair": 40,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 92,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 92,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9282008546760212
+      },
+      {
+        "pair": 41,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 163,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8468190222650067
+      },
+      {
+        "pair": 42,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 26,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 26,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9041855063342299
+      },
+      {
+        "pair": 43,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 103,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 80,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8463940880840406
+      },
+      {
+        "pair": 44,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 468,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8747131409346416
+      },
+      {
+        "pair": 45,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 42,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8784212745196454
+      },
+      {
+        "pair": 46,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 178,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8515989243849118
+      },
+      {
+        "pair": 47,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": true,
+            "output_tokens": 512,
+            "truncated": true
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8911274279232393
+      },
+      {
+        "pair": 48,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 74,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 73,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.9133308679062773
+      },
+      {
+        "pair": 49,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 121,
+            "truncated": false
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 124,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": true,
+        "Q": 0.8764095117544339
+      },
+      {
+        "pair": 50,
+        "arms": {
+          "R0": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 128,
+            "truncated": true
+          },
+          "R1": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2136,
+            "invalid": false,
+            "output_tokens": 200,
+            "truncated": false
+          },
+          "R2": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2330,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          },
+          "R3": {
+            "EM": false,
+            "consistent": false,
+            "input_tokens": 2369,
+            "invalid": false,
+            "output_tokens": 8,
+            "truncated": false
+          }
+        },
+        "singleton": false,
+        "Q": 0.847508653272174
+      }
+    ],
+    "interpretation": "Fresh train-derived internal holdout, not official test. R3-minus-R2 primary null; no equivalence or general incapacity claim."
+  },
+  "posthoc_symbolic": {
+    "N": 50,
+    "prospective": false,
+    "correct": 44,
+    "answered": 44,
+    "abstained": 6,
+    "wrong": 0,
+    "model_calls": 0,
+    "GPU_jobs": 0,
+    "elapsed_seconds": 0.7650000000139698,
+    "candidate_count_histogram": {
+      "1": 44,
+      "2": 5,
+      "3": 1
+    },
+    "named_constraint_satisfied": {
+      "R2": 1,
+      "R3": 7
+    },
+    "mean_violated_records": {
+      "draft": 22.66,
+      "R0": 22.48,
+      "R1": 22.489795918367346,
+      "R2": 22.6,
+      "R3": 21.88
+    },
+    "interpretation": "Tool-based offline replay on already observed cases. Abstentions count wrong in overall exact match. Not model learning, not a prospective validation, not a replacement for primary R3-R2."
+  },
+  "prospective_state_readout": {
+    "status": "SUBMITTED_NO_RESULTS_YET",
+    "N": 50,
+    "comparison": "answer-supplied tool-assisted final readout versus baseline",
+    "max_GPU_seconds": 2700,
+    "max_requests": 1350,
+    "protocol_sha256": "06710b7db3820b55e5668069f5c749902294beabf34565126895e8e11e324f2c",
+    "model_success_claim": false
+  },
+  "verification": "Independent reconstruction code was run by the same execution assistant. Research/Claude reviewed reported evidence, not a separate raw-data reproduction."
+}

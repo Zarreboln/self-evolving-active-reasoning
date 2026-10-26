@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "rows": "task, phase, arm, step, opaque case alias, status, metrics; no original-ID mapping exported",
+  "planned_matrix": "30 dev rows: 2 learners x 3 checkpoints x 5 reused cases; 140 final rows: 7 arms x 20 cases",
+  "metrics": {
+    "official_success": "Native method-specific correctness",
+    "harness_final_EM": "Last selected native guess exact match",
+    "actor_final_EM": "Identifiable final model answer; random fallback and early ToT selected candidate are not assigned actor correctness",
+    "hit_at_any": "At least one selected/logged guess correct, including final guess where present"
+  },
+  "null_semantics": "Unavailable or undefined; never zero. Failed-episode metrics remain null.",
+  "bootstrap": {
+    "draws": 10000,
+    "seed": "26102653+contrast_index",
+    "order": "Sorted zero-padded case aliases",
+    "quantile": "Linear interpolation at (draws-1)*p, p=.025/.975",
+    "interpretation": "Posthoc descriptive complete-pair intervals; no multiplicity-adjusted success test"
+  },
+  "verification_limit": "Public verifier checks arithmetic and file hashes, not private scoring, raw accounting or actual model execution"
+}

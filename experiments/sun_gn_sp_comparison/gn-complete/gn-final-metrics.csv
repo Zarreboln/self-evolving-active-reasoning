@@ -1,0 +1,8 @@
+arm,split,checkpoint,scheduled,execution_failures,official_success_successes,official_success_defined_n,official_success_missing,official_success_rate,harness_final_EM_successes,harness_final_EM_defined_n,harness_final_EM_missing,harness_final_EM_rate,actor_final_EM_successes,actor_final_EM_defined_n,actor_final_EM_missing,actor_final_EM_rate,hit_at_any_successes,hit_at_any_defined_n,hit_at_any_missing,hit_at_any_rate
+ZeroShot,final,6,20,0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0
+FewShot,final,6,20,0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0
+FewShotInst,final,6,20,0,1,20,0,0.05,1,20,0,0.05,1,20,0,0.05,1,20,0,0.05
+ToT_parser_repair01,final,6,20,0,2,20,0,0.1,2,20,0,0.1,0,18,2,0.0,2,20,0,0.1
+ProactiveCoT,final,6,20,0,1,20,0,0.05,1,20,0,0.05,1,19,1,0.05263157894736842,1,20,0,0.05
+DC_Cumulative,final,6,20,0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0,0,20,0,0.0
+ACE_Supervised,final,6,20,0,1,20,0,0.05,1,20,0,0.05,1,20,0,0.05,2,20,0,0.1

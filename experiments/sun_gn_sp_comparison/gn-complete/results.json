@@ -1,0 +1,1538 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "GN": {
+      "numeric_results": {
+        "descriptive_paired_contrasts": [
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShot"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102653
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShot"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102653
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShot"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102653
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShot"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102653
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShotInst"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102654
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShotInst"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102654
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShotInst"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102654
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "FewShotInst"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102654
+          },
+          {
+            "ci95": [
+              0.0,
+              0.25
+            ],
+            "difference": 0.1,
+            "differences": {
+              "0": 18,
+              "1": 2
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ToT_parser_repair01"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102655
+          },
+          {
+            "ci95": [
+              0.0,
+              0.25
+            ],
+            "difference": 0.1,
+            "differences": {
+              "0": 18,
+              "1": 2
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ToT_parser_repair01"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102655
+          },
+          {
+            "ci95": [
+              0.0,
+              0.25
+            ],
+            "difference": 0.1,
+            "differences": {
+              "0": 18,
+              "1": 2
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ToT_parser_repair01"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102655
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 18
+            },
+            "draws": 10000,
+            "excluded": 2,
+            "left": [
+              "final",
+              6,
+              "ToT_parser_repair01"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 18,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102655
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ProactiveCoT"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102656
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ProactiveCoT"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102656
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ProactiveCoT"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102656
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15789473684210525
+            ],
+            "difference": 0.05263157894736842,
+            "differences": {
+              "0": 18,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 1,
+            "left": [
+              "final",
+              6,
+              "ProactiveCoT"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 19,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102656
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102657
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102657
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102657
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 20
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102657
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102658
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102658
+          },
+          {
+            "ci95": [
+              0.0,
+              0.25
+            ],
+            "difference": 0.1,
+            "differences": {
+              "0": 18,
+              "1": 2
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102658
+          },
+          {
+            "ci95": [
+              0.0,
+              0.15
+            ],
+            "difference": 0.05,
+            "differences": {
+              "0": 19,
+              "1": 1
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "final",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 20,
+            "right": [
+              "final",
+              6,
+              "ZeroShot"
+            ],
+            "seed": 26102658
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102659
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102659
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102659
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102659
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102660
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102660
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102660
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "DC_Cumulative"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "DC_Cumulative"
+            ],
+            "seed": 26102660
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102661
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102661
+          },
+          {
+            "ci95": [
+              -0.6,
+              0.0
+            ],
+            "difference": -0.2,
+            "differences": {
+              "-1": 1,
+              "0": 4
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102661
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              3,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102661
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "official_success",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102662
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "harness_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102662
+          },
+          {
+            "ci95": [
+              -0.6,
+              0.0
+            ],
+            "difference": -0.2,
+            "differences": {
+              "-1": 1,
+              "0": 4
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "hit_at_any",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102662
+          },
+          {
+            "ci95": [
+              0.0,
+              0.0
+            ],
+            "difference": 0.0,
+            "differences": {
+              "0": 5
+            },
+            "draws": 10000,
+            "excluded": 0,
+            "left": [
+              "dev",
+              6,
+              "ACE_Supervised"
+            ],
+            "method": "posthoc descriptive paired-case percentile bootstrap; small N, no significance/success decision",
+            "metric": "actor_final_EM",
+            "paired_n": 5,
+            "right": [
+              "dev",
+              0,
+              "ACE_Supervised"
+            ],
+            "seed": 26102662
+          }
+        ],
+        "tables": [
+          {
+            "arm": "ACE_Supervised",
+            "checkpoint": 0,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.2,
+                "successes": 1
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "DC_Cumulative",
+            "checkpoint": 0,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "ACE_Supervised",
+            "checkpoint": 3,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "DC_Cumulative",
+            "checkpoint": 3,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "ACE_Supervised",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "DC_Cumulative",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 5,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 5,
+            "split": "dev"
+          },
+          {
+            "arm": "ACE_Supervised",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.1,
+                "successes": 2
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "DC_Cumulative",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "FewShot",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "FewShotInst",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "ProactiveCoT",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 19,
+                "missing": 1,
+                "rate": 0.05263157894736842,
+                "successes": 1
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.05,
+                "successes": 1
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "ToT_parser_repair01",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 18,
+                "missing": 2,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.1,
+                "successes": 2
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.1,
+                "successes": 2
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.1,
+                "successes": 2
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          },
+          {
+            "arm": "ZeroShot",
+            "checkpoint": 6,
+            "execution_failures": 0,
+            "metrics": {
+              "actor_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "harness_final_EM": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "hit_at_any": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              },
+              "official_success": {
+                "defined_n": 20,
+                "missing": 0,
+                "rate": 0.0,
+                "successes": 0
+              }
+            },
+            "scheduled": 20,
+            "split": "final"
+          }
+        ]
+      },
+      "whole_run_usage": {
+        "model_calls": 5128,
+        "input_tokens": 8019824,
+        "output_tokens": 362235,
+        "output_tokens_reserved": 2647040,
+        "cached_actual_prefix_responses": 4032,
+        "new_actual_suffix_responses": 1096,
+        "per_arm_role_calls": {
+          "ACE_Supervised/actor": 1378,
+          "ACE_Supervised/curator": 6,
+          "ACE_Supervised/reflector": 6,
+          "DC_Cumulative/actor": 1066,
+          "DC_Cumulative/curator": 6,
+          "FewShot/actor": 520,
+          "FewShotInst/actor": 520,
+          "ProactiveCoT/actor": 611,
+          "ToT_parser_repair01/actor": 495,
+          "ZeroShot/actor": 520
+        },
+        "scope": "Cumulative actual calls across both segments and all training/dev/final phases. Cached prefix is counted once, never as new inference."
+      },
+      "audit_sha256": "4d7f365446319c89cb1e4766f74b96755cc6adaf2bbcb8d8665639316d7688ea",
+      "auditor_sha256": "93c03f549d967d1566e464e94030f9f2a170952a4561cfa3b82d79d7c436c364",
+      "provenance": {
+        "segments": 2,
+        "original_allocation_remains_failed": true,
+        "integrity_status": "PASS_COMBINED_SUFFIX_INTEGRITY",
+        "scientific_success_claimed": false,
+        "prior_partial_report_sha256": "04ea84d9669cb216d2bced93f1ae90a11768ed93822b6733db87de2952905ad6",
+        "audit_sha256": "4d7f365446319c89cb1e4766f74b96755cc6adaf2bbcb8d8665639316d7688ea",
+        "auditor_sha256": "93c03f549d967d1566e464e94030f9f2a170952a4561cfa3b82d79d7c436c364",
+        "pure_scoring_auditor_sha256": "f6847c406ccf978e27ca2de7247a09f8ffd1c9d026d955a42d0b74804e20f219",
+        "original_result_sha256": "70ee180f60f8831f7c64571a557fef5ca9b8884d14caa38d607abfc5810aad37",
+        "combined_result_sha256": "6da5be815c291bbb198ac2a3d5127c5dd929977affe91552fd3bfb1ac6a3dd6a",
+        "original_runtime_sha256": "0a8f6505c275eb0c36042a86788677e0b1edc9935157fb122575988422fdc7b4",
+        "suffix_runtime_sha256": "aa33b1654d9c6726519930a66d9107f6b0ee9d762111eefcfd80312712f880c1",
+        "scheduler_time_independently_verified_by_this_auditor": false
+      },
+      "scope": "Post-interruption completed restricted pilot; descriptive metrics and complete-pair intervals, not a blinded follow-up or general method ranking."
+    }
+  }
+}

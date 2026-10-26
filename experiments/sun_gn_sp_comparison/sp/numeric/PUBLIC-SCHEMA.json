@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "case_aliases": "Opaque zero-padded ordinals; no original mapping or target hashes exported",
+  "GN_metrics": {
+    "official_success": "Native method-specific correctness",
+    "harness_final_EM": "Selected native last guess exact match",
+    "actor_final_EM": "Explicit final actor answer; PCoT random fallback and ToT early selection stay null",
+    "hit_at_any": "At least one selected/logged guess matches"
+  },
+  "null_semantics": "Unavailable/undefined; never false/zero. Failed GN row metrics are null.",
+  "bootstrap": {
+    "draws": 10000,
+    "seed": "26102653+contrast_index; same seed across metrics within contrast",
+    "order": "Sorted zero-padded aliases preserve original lexicographic ID order",
+    "quantile": "Linear interpolation at (draws-1)*p for p=.025,.975",
+    "interpretation": "Posthoc descriptive complete-pair percentile intervals; no multiplicity adjustment or success threshold"
+  },
+  "SP_metrics": "Character overlap F1 primary; word overlap F1 diagnostic; not semantic accuracy",
+  "usage_verification": "Whole-run usage is copied from the bound private audit; this numeric verifier does not replay raw token accounting",
+  "verification_limit": "Checks arithmetic and published file hashes; does not independently prove private scoring or actual model execution"
+}

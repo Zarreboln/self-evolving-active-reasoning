@@ -1,0 +1,35 @@
+{
+  "status": "PUBLICATION_CONSISTENCY_CHECKS_PASSED",
+  "manifest_sha256": "853407d0f98fb1155864df4fc4a622dd80180219f28745a191fd940207d6ef0a",
+  "original_result_sha256": "4477a2abe191d374d756411b61bd2c39b1a0f6a07b17beed1c62645e709cafe4",
+  "original_rows_sha256": "5b9d20b4343fb31e31fa23e44168000780bb713cf56ae0cb7f2cce6006dad77e",
+  "file_hashes_checked": 6,
+  "rows_schema_and_draw_checked": 1000,
+  "all_preserved_summary_statistics_recomputed": true,
+  "fixed_anchor_counts_recomputed": {
+    "E0_at_7": 2729,
+    "E1_at_7": 3199,
+    "E1_at_9": 4583
+  },
+  "random_partition_rows_recomputed": [
+    {
+      "sequence_index": 1,
+      "identified_at_7": 3583,
+      "identified_at_9": 4706
+    },
+    {
+      "sequence_index": 1000,
+      "identified_at_7": 3781,
+      "identified_at_9": 4408
+    }
+  ],
+  "full_random_partition_recomputation": false,
+  "upstream_native_validation_reexecuted": false,
+  "models": 0,
+  "network": 0,
+  "GPU": 0,
+  "learning_effect_p_value_computed": false,
+  "new_scientific_result_claimed": false,
+  "python": "3.11.9",
+  "wall_seconds": 0.09190659993328154
+}

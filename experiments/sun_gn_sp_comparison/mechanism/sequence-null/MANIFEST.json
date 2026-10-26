@@ -1,0 +1,93 @@
+{
+  "format": "gn_sequence_null_public_appendix_v1",
+  "status": "POSTHOC_ALGORITHMIC_DIAGNOSTIC_PUBLICATION",
+  "intended_public_directory": "mechanism/sequence-null",
+  "files": {
+    "README.md": {
+      "bytes": 5138,
+      "sha256": "0bebfa178535b3e5a80a3ab99312fb39aac8da97f3a9eede50a3646ec5e91715"
+    },
+    "analyze.py": {
+      "bytes": 7059,
+      "sha256": "00933c8ccbb30e1d43661af79a06431ae133eb5550597a1aa560447e1b0ae443"
+    },
+    "distribution.svg": {
+      "bytes": 40468,
+      "sha256": "1b0df9e0fb99d8a67a8e5db92bdfe7b83cea78095f80a4fa3abe3ba63f470897"
+    },
+    "random-sequences.json": {
+      "bytes": 273930,
+      "sha256": "5b9d20b4343fb31e31fa23e44168000780bb713cf56ae0cb7f2cce6006dad77e"
+    },
+    "result.json": {
+      "bytes": 5837,
+      "sha256": "4477a2abe191d374d756411b61bd2c39b1a0f6a07b17beed1c62645e709cafe4"
+    },
+    "verify.py": {
+      "bytes": 4377,
+      "sha256": "c5e5729ed0c8bf1bd7054b89a21cad5a41b09e23d344328af4dd3ac44cfb866f"
+    }
+  },
+  "excluded_from_content_map": [
+    "MANIFEST.json",
+    "verification.json"
+  ],
+  "exclusion_reason": "Manifest cannot hash itself; later verification binds this exact manifest without a cycle.",
+  "preserved_originals": {
+    "result.json": {
+      "bytes": 5837,
+      "sha256": "4477a2abe191d374d756411b61bd2c39b1a0f6a07b17beed1c62645e709cafe4"
+    },
+    "random-sequences.json": {
+      "bytes": 273930,
+      "sha256": "5b9d20b4343fb31e31fa23e44168000780bb713cf56ae0cb7f2cce6006dad77e"
+    }
+  },
+  "historical_provenance_note": "Native validation and execution entries in result.json describe the original diagnostic. No upstream source is distributed or reexecuted here.",
+  "new_verification_scope": {
+    "all_rows_schema_and_seeded_draws": 1000,
+    "recompute_all_stored_summary_statistics": true,
+    "fixed_anchors": [
+      "E0_at_7",
+      "E1_at_7",
+      "E1_at_9"
+    ],
+    "random_partition_sequence_indices": [
+      1,
+      1000
+    ],
+    "full_random_partition_rerun": false,
+    "upstream_native_validation_rerun": false,
+    "model_calls": 0,
+    "network_calls": 0,
+    "gpu_seconds": 0,
+    "learning_effect_p_value": false
+  },
+  "figure": {
+    "input": "random-sequences.json",
+    "panels_prefix_lengths": [
+      7,
+      9
+    ],
+    "x_axis": "100 * identified / 5040",
+    "histogram_bin_edges_percent": {
+      "start": 0,
+      "stop": 100,
+      "step": 2.5
+    },
+    "anchor_counts": {
+      "E0_at_7": 2729,
+      "E1_at_7": 3199,
+      "E1_at_9": 4583
+    },
+    "fitted_distribution": false,
+    "new_inference": false
+  },
+  "limitations": [
+    "Post hoc and outcome-informed; not a null distribution for adaptive learning or selection.",
+    "No LLM execution or adherence check; does not estimate a causal learning effect.",
+    "Does not retract the earlier reported approximately 31 percent experimental benefit.",
+    "Mathematical public universe; no private case IDs, labels, conversations or credentials.",
+    "Suggested future matched LLM controls are not authorized or executed by this appendix."
+  ]
+}

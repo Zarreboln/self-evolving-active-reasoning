@@ -1,0 +1,246 @@
+{
+  "condition": "EXPLORATORY_UNQUALIFIED_SAME_FAMILY_REFEREE",
+  "publication_ready": false,
+  "scope": "Descriptive final-answer length and paired-score supplement; no score correction or length-causal claim.",
+  "source_bindings": {
+    "audit_sha256": "96a5867d2328669f45dc6a994b2fd6809e1cca49e62c8dbbf074e68dcac391e5",
+    "anonymous_episodes_sha256": "03e8cbb9d5a4c1ecdefb188a01a68e7b39350fb22d4597dada9ef19460837443",
+    "audit_bound_role_journal_sha256": "eadf8453fad14fc780cc329eb78d4b79ef7dac02fc9abc26f592dbf3799f043d"
+  },
+  "length_definitions": {
+    "characters": "Python len of exact scored/raw final actor response, UTF-8 decoded, including whitespace and punctuation; Unicode code points, not bytes.",
+    "whitespace_words": "len(response.split()), not linguistic word segmentation.",
+    "completion_tokens": "Actual provider completion_tokens, cross-checked against saved episode and audit-bound runtime response.",
+    "case_aliases": "Exactly the existing numerical exporter aliases across all development/final cases; no source mapping exported."
+  },
+  "rows": [
+    {
+      "case": "SP-0002",
+      "arm": "ACE_Public_Feedback",
+      "official_f1_char": 0.8726635514018692,
+      "diagnostic_f1_word": 0.3806228373702422,
+      "final_answer_characters": 759,
+      "final_answer_whitespace_words": 134,
+      "final_answer_completion_tokens": 157,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0002",
+      "arm": "DC_Cumulative",
+      "official_f1_char": 0.8932893289328933,
+      "diagnostic_f1_word": 0.31292517006802717,
+      "final_answer_characters": 865,
+      "final_answer_whitespace_words": 139,
+      "final_answer_completion_tokens": 168,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0002",
+      "arm": "ZeroShot",
+      "official_f1_char": 0.8319123020706456,
+      "diagnostic_f1_word": 0.3271375464684015,
+      "final_answer_characters": 689,
+      "final_answer_whitespace_words": 114,
+      "final_answer_completion_tokens": 129,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0003",
+      "arm": "ACE_Public_Feedback",
+      "official_f1_char": 0.7746381805651276,
+      "diagnostic_f1_word": 0.37037037037037035,
+      "final_answer_characters": 571,
+      "final_answer_whitespace_words": 98,
+      "final_answer_completion_tokens": 122,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0003",
+      "arm": "DC_Cumulative",
+      "official_f1_char": 0.829300196206671,
+      "diagnostic_f1_word": 0.3875968992248062,
+      "final_answer_characters": 649,
+      "final_answer_whitespace_words": 113,
+      "final_answer_completion_tokens": 135,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0003",
+      "arm": "ZeroShot",
+      "official_f1_char": 0.7011661807580175,
+      "diagnostic_f1_word": 0.37554585152838427,
+      "final_answer_characters": 492,
+      "final_answer_whitespace_words": 84,
+      "final_answer_completion_tokens": 105,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0004",
+      "arm": "ACE_Public_Feedback",
+      "official_f1_char": 0.6647465437788018,
+      "diagnostic_f1_word": 0.17829457364341084,
+      "final_answer_characters": 590,
+      "final_answer_whitespace_words": 84,
+      "final_answer_completion_tokens": 103,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0004",
+      "arm": "DC_Cumulative",
+      "official_f1_char": 0.8935587026039287,
+      "diagnostic_f1_word": 0.26268656716417915,
+      "final_answer_characters": 1043,
+      "final_answer_whitespace_words": 161,
+      "final_answer_completion_tokens": 196,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0004",
+      "arm": "ZeroShot",
+      "official_f1_char": 0.5110246433203631,
+      "diagnostic_f1_word": 0.24267782426778242,
+      "final_answer_characters": 396,
+      "final_answer_whitespace_words": 65,
+      "final_answer_completion_tokens": 75,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0005",
+      "arm": "ACE_Public_Feedback",
+      "official_f1_char": 0.9089775561097256,
+      "diagnostic_f1_word": 0.35573122529644263,
+      "final_answer_characters": 781,
+      "final_answer_whitespace_words": 117,
+      "final_answer_completion_tokens": 141,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0005",
+      "arm": "DC_Cumulative",
+      "official_f1_char": 0.7597014925373134,
+      "diagnostic_f1_word": 0.3177570093457944,
+      "final_answer_characters": 517,
+      "final_answer_whitespace_words": 78,
+      "final_answer_completion_tokens": 101,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0005",
+      "arm": "ZeroShot",
+      "official_f1_char": 0.7413533834586465,
+      "diagnostic_f1_word": 0.409090909090909,
+      "final_answer_characters": 507,
+      "final_answer_whitespace_words": 84,
+      "final_answer_completion_tokens": 100,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0007",
+      "arm": "ACE_Public_Feedback",
+      "official_f1_char": 0.8787465940054497,
+      "diagnostic_f1_word": 0.31355932203389836,
+      "final_answer_characters": 678,
+      "final_answer_whitespace_words": 108,
+      "final_answer_completion_tokens": 126,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0007",
+      "arm": "DC_Cumulative",
+      "official_f1_char": 0.8005974607916354,
+      "diagnostic_f1_word": 0.2641509433962264,
+      "final_answer_characters": 549,
+      "final_answer_whitespace_words": 84,
+      "final_answer_completion_tokens": 106,
+      "finish_reason": "stop"
+    },
+    {
+      "case": "SP-0007",
+      "arm": "ZeroShot",
+      "official_f1_char": 0.6955810147299508,
+      "diagnostic_f1_word": 0.19999999999999998,
+      "final_answer_characters": 432,
+      "final_answer_whitespace_words": 62,
+      "final_answer_completion_tokens": 81,
+      "finish_reason": "stop"
+    }
+  ],
+  "means_by_arm": [
+    {
+      "arm": "ZeroShot",
+      "n": 5,
+      "official_f1_char": 0.6962075048675247,
+      "diagnostic_f1_word": 0.3108904262710954,
+      "final_answer_characters": 503.2,
+      "final_answer_whitespace_words": 81.8,
+      "final_answer_completion_tokens": 98.0
+    },
+    {
+      "arm": "DC_Cumulative",
+      "n": 5,
+      "official_f1_char": 0.8352894362144884,
+      "diagnostic_f1_word": 0.30902331783980663,
+      "final_answer_characters": 724.6,
+      "final_answer_whitespace_words": 115.0,
+      "final_answer_completion_tokens": 141.2
+    },
+    {
+      "arm": "ACE_Public_Feedback",
+      "n": 5,
+      "official_f1_char": 0.8199544851721947,
+      "diagnostic_f1_word": 0.3197156657428729,
+      "final_answer_characters": 675.8,
+      "final_answer_whitespace_words": 108.2,
+      "final_answer_completion_tokens": 129.8
+    }
+  ],
+  "all_phase_role_usage": [
+    {
+      "role": "actor",
+      "all_phase_generation_calls": 858,
+      "length_limited_responses": 1,
+      "prompt_tokens": 1072265,
+      "completion_tokens": 24880,
+      "uncached_generation_usage_price_estimate_usd": "1.11817175"
+    },
+    {
+      "role": "referee",
+      "all_phase_generation_calls": 825,
+      "length_limited_responses": 0,
+      "prompt_tokens": 827999,
+      "completion_tokens": 3300,
+      "uncached_generation_usage_price_estimate_usd": "0.79979905"
+    },
+    {
+      "role": "curator",
+      "all_phase_generation_calls": 6,
+      "length_limited_responses": 4,
+      "prompt_tokens": 20439,
+      "completion_tokens": 5367,
+      "uncached_generation_usage_price_estimate_usd": "0.04088505"
+    },
+    {
+      "role": "reflector",
+      "all_phase_generation_calls": 3,
+      "length_limited_responses": 3,
+      "prompt_tokens": 9227,
+      "completion_tokens": 3072,
+      "uncached_generation_usage_price_estimate_usd": "0.02105365"
+    }
+  ],
+  "generation_pricing": {
+    "input_per_million_usd": "0.95",
+    "output_per_million_usd": "4.00"
+  },
+  "interpretation_limits": [
+    "Five paired final cases, one learning trajectory per method; no significance or causal ranking.",
+    "Length associations do not isolate length as the cause of F1 changes.",
+    "Character/word F1 measure literal overlap; near-flat word F1 does not prove character F1 gain is spurious.",
+    "New arithmetic extraction from audit-bound artifacts, not an additional independent scientific audit.",
+    "Same-family referee remains unqualified; completed AI semantic review is not human qualification.",
+    "Per-role prices are uncached generation usage estimates, excluding unverified estimator fees, cache discounts and settlement effects.",
+    "All-phase role usage includes training/development/final work and updater calls; it is not matched inference-only cost."
+  ],
+  "raw_answers_exported": false,
+  "source_case_ids_exported": false
+}

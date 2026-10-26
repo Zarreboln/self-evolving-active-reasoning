@@ -1,0 +1,174 @@
+{
+  "status": "COMPLETE_POSTHOC_ALGORITHMIC_DIAGNOSTIC",
+  "plan_sha256": "3288cecb013dd57113671a588f8e11560a73c77c69e7474a6c480fbf27814414",
+  "analysis_sha256": "d4dd2a218d28268a5365db27b28a686c3d5bdafcad77df6922738685b3454216",
+  "random_rows_sha256": "5b9d20b4343fb31e31fa23e44168000780bb713cf56ae0cb7f2cce6006dad77e",
+  "source_sha256": {
+    "learned_policies": "62ce99f4cec27fce97cd08b16b1b8de648b14f7054784f022619694237ac3452",
+    "prior_exact_analysis": "028b2e3eab9f4dd66355cacdffaa04282ec091dd38476a5a4b9faa20ab7ea9c8",
+    "prior_exact_result": "9cc21977830ea9b5deab444e798d72b942b9fd0bb789c0795890af4e9160cbfa",
+    "native_feedback": "f57cc0a77615859ea44fad07a0e5b849aa95e6d428963d72d3c49405c20274e7"
+  },
+  "execution": {
+    "python": "3.11.9",
+    "numpy": "2.4.6",
+    "wall_seconds": 1.3912324999691918,
+    "process_cpu_seconds": 1.390625,
+    "random_sequences": 1000,
+    "universe_size": 5040,
+    "model_calls": 0,
+    "network_calls": 0,
+    "GPU_seconds": 0
+  },
+  "validation": {
+    "direct_native_pairs": 70560,
+    "all_pairs_checked_via_native_digit_relabeling": 25401600,
+    "digit_relabeling_justification": "Positional equality and Counter-intersection multiplicities are invariant under a digit bijection; canonical query0123 was directly checked against native code for all5040secrets.",
+    "anchors_match_frozen_and_reused_exact_implementation": {
+      "E0_at_7": 2729,
+      "E1_at_7": 3199,
+      "E1_at_9": 4583
+    }
+  },
+  "distributions": {
+    "7": {
+      "sequences": 1000,
+      "mean_identified": 3556.615,
+      "mean_fraction": 0.7056775793650794,
+      "population_sd_identified": 598.3681949895065,
+      "population_sd_fraction": 0.11872384821220366,
+      "nearest_rank_percentiles": {
+        "0": {
+          "identified": 801,
+          "fraction": 0.15892857142857142
+        },
+        "1": {
+          "identified": 1488,
+          "fraction": 0.29523809523809524
+        },
+        "5": {
+          "identified": 2379,
+          "fraction": 0.4720238095238095
+        },
+        "25": {
+          "identified": 3304,
+          "fraction": 0.6555555555555556
+        },
+        "50": {
+          "identified": 3701,
+          "fraction": 0.7343253968253968
+        },
+        "75": {
+          "identified": 3962,
+          "fraction": 0.7861111111111111
+        },
+        "95": {
+          "identified": 4257,
+          "fraction": 0.8446428571428571
+        },
+        "99": {
+          "identified": 4428,
+          "fraction": 0.8785714285714286
+        },
+        "100": {
+          "identified": 4659,
+          "fraction": 0.924404761904762
+        }
+      }
+    },
+    "9": {
+      "sequences": 1000,
+      "mean_identified": 4486.242,
+      "mean_fraction": 0.890127380952381,
+      "population_sd_identified": 387.4385440763477,
+      "population_sd_fraction": 0.07687272699927533,
+      "nearest_rank_percentiles": {
+        "0": {
+          "identified": 1589,
+          "fraction": 0.31527777777777777
+        },
+        "1": {
+          "identified": 3003,
+          "fraction": 0.5958333333333333
+        },
+        "5": {
+          "identified": 3822,
+          "fraction": 0.7583333333333333
+        },
+        "25": {
+          "identified": 4322,
+          "fraction": 0.8575396825396825
+        },
+        "50": {
+          "identified": 4554,
+          "fraction": 0.9035714285714286
+        },
+        "75": {
+          "identified": 4760,
+          "fraction": 0.9444444444444444
+        },
+        "95": {
+          "identified": 4889,
+          "fraction": 0.9700396825396825
+        },
+        "99": {
+          "identified": 4968,
+          "fraction": 0.9857142857142858
+        },
+        "100": {
+          "identified": 5002,
+          "fraction": 0.9924603174603175
+        }
+      }
+    }
+  },
+  "comparisons": [
+    {
+      "schedule": "E0",
+      "prefix": 7,
+      "anchor_identified": 2729,
+      "fraction_identified": 0.5414682539682539,
+      "random_strictly_below": 101,
+      "random_equal": 0,
+      "random_strictly_above": 899,
+      "empirical_fraction_less_or_equal": 0.101,
+      "empirical_midrank_percentile": 10.1,
+      "random_fraction_at_least_as_good": 0.899,
+      "meaning": "Descriptive random-sequence rank, not a learning-effect p-value"
+    },
+    {
+      "schedule": "E1",
+      "prefix": 7,
+      "anchor_identified": 3199,
+      "fraction_identified": 0.6347222222222222,
+      "random_strictly_below": 214,
+      "random_equal": 1,
+      "random_strictly_above": 785,
+      "empirical_fraction_less_or_equal": 0.215,
+      "empirical_midrank_percentile": 21.45,
+      "random_fraction_at_least_as_good": 0.786,
+      "meaning": "Descriptive random-sequence rank, not a learning-effect p-value"
+    },
+    {
+      "schedule": "E1",
+      "prefix": 9,
+      "anchor_identified": 4583,
+      "fraction_identified": 0.9093253968253968,
+      "random_strictly_below": 533,
+      "random_equal": 2,
+      "random_strictly_above": 465,
+      "empirical_fraction_less_or_equal": 0.535,
+      "empirical_midrank_percentile": 53.4,
+      "random_fraction_at_least_as_good": 0.467,
+      "meaning": "Descriptive random-sequence rank, not a learning-effect p-value"
+    }
+  ],
+  "limits": [
+    "Designed after observing E0/E1 and their exact outcomes; exploratory, not preregistered confirmatory inference.",
+    "A sequence randomization reference is not a null distribution for the adaptive learning/selection procedure; no adjustment for prior search or outcome selection is claimed.",
+    "No human-designed comparator or post-outcome control choice.",
+    "No LLM execution, adherence, learning, semantic reasoning or general improvement is established.",
+    "Uniform public5040universe is not the historical evaluation sample; no private labels or caseIDs are read."
+  ],
+  "no_capped25_extrapolation": true
+}

@@ -89,6 +89,12 @@ answerer prompt was adapted: same three-way scheme, same two few-shot examples.
 | **B3** | 10-12 19:01–22:33 | 3 h 32 | **Test-time evolution with label isolation.** The strict stream goes **0/10 → 9/10 → 10/10**; 29/32 sessions clean and **every judge session clean**. Frozen evaluation on 200 held-out instances: bare 11.8 / 0.0, the label-free state-only harness **99.5 / 98.5** (98.2 on the unseen split), the labeled stream 100/100 at 215 tokens per episode. The judge rejected three harnesses that scored 10/10 because they handed the model a menu, enforcing that **the model writes every query** |
 | **B4** | 10-13 05:03–07:17 | 2 h 14 | **Transfer to AR-Bench Situation Puzzles** (strict, 405B referee). Prequential F1 **63.7 → 74.5 → 79.9** over the 30-puzzle stream. On all 100 test puzzles (70 unseen), **bare 60.4 → 73.0–76.7**, above every zero-shot model in AR-Bench Table 6 including GPT-4o at 63, with the 7B still writing every question. Cost: 3–8× output tokens; the unchosen `b2r0g1` matches at half the tokens. Read together with A7 |
 | **B5** | 10-13 | — | **A ruler for the TTHE judge, requiring no external benchmark.** Each run stores the candidate pool's gold, which that judge never saw. `strict6` selects a best-scoring candidate 2/3 with mean regret 0.011; `labeled6` 3/3 and 0.000; **`sp_strict1` 1/3, mean regret 0.063, worst 0.114**. The Circuit Decoding pools saturate, so the measurement is uninformative there; **on Situation Puzzles the judge is measurably noisy** |
+| B6 | 10-26 | see children | GN capped-identification studies: negative note updates and selected-policy improvement; separate prior PR #2 |
+| B6.1 | 10-26 | 434 s allocation | Three-chain note updates worsened capped-query cost; negative result retained |
+| B6.2 | 10-26 | 784 s allocation | Two selected-policy learning blocks; paired evaluation, selection costs and limitations retained |
+| B7 | 10-26 | see children | Native GN and exploratory SP method-adapter pilots; neither establishes a general method ranking |
+| B7.1 | 10-26 | 5,648.25 s allocation | GN full run failed: 30/30 dev, 97/140 final, 43 missing; descriptive common prefix only |
+| B7.2 | 10-26 | 2,903.56 s active | SP completed: final N=5, character F1 not accuracy; same-family referee qualification UNMET |
 
 > **Purpose.** Every experiment must be traceable from **conditions (task, model, regime, signals,
 > budget, split) → script → input → output and log → result**.
@@ -848,6 +854,139 @@ and need no login.
 
 > ---
 
+<details>
+<summary><b>B6 2026-10-26, see children — GN context and information acquisition</b></summary>
+
+<dl><dd>
+
+```text
+B6 GN context / mechanism analysis — frozen Qwen2.5-7B-Instruct
+├── B6.1 Note updates without performance selection: negative result
+├── B6.2 Propose → evaluate → retain: selected-policy improvement
+│   ├── Two trace-guided learning blocks
+│   └── Paired fitness-only search controls
+└── GN/SP baseline and literature-method comparisons are reported separately in B7
+```
+
+**Metric boundary.** Capped identification turns **(ours)** means the first query after which exact public feedback leaves one possible secret, capped at 25; unresolved cases remain at 25. The actor does not see candidate lists/counts, and there is no final-answer call. This measures information sufficiency, not the actor's internal belief or AR-Bench's official final-answer exact match. It extends the questioning/readout distinction in A8 through a separate GN experiment; it does not reproduce the complete SP harness or resolve A8's full-system limitations.
+
+Wall times below are recorded scheduler parent allocation elapsed times on one L40S, including startup and shutdown. They exclude preparation and CPU audits; they are not researcher work time.
+
+<details>
+<summary>B6.1 2026-10-26, 434 s — three-chain note updates</summary>
+
+<dl><dd>
+
+Three chains share 18 training cases with different fixed orders/seeds; each makes six updates. All three final notes, no note and a separate rules-only note are tested on the same 100 internal evaluation cases. No performance-based update selection is used.
+
+| contrast | mean capped-query difference (ours; lower is better) | 95% paired interval | traceback: script → input → result/log |
+|---|---:|---|---|
+| mean(E0,E1,E2) − no note | **+1.7633** | [0.1933, 3.2767] | [verify_results.py](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_question_efficiency/verify_results.py) → [anonymous cases](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_question_efficiency/anonymous-cases.json) → [report, audit reference and figure](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_question_efficiency/README.md). Original execution journal is private. |
+
+The tested updates worsened efficiency and average identification coverage. The most favorable individual chain is not selected as a success. Intervals condition on three realized chains sharing one training set.
+
+</dd></dl>
+</details>
+
+<details>
+<summary>B6.2 2026-10-26, 784 s — selected text policies</summary>
+
+<dl><dd>
+
+Two learning blocks pair trace-guided E with fitness-only R. Each search has six proposal opportunities and uses its block's same 48-case selection bank; promotion requires at least one fewer mean capped query without reduced identification count. All four final policies and no note are then frozen and tested on two 100-case cohorts.
+
+| contrast | mean capped-query difference (ours; lower is better) | interval | traceback: script → input → result/log |
+|---|---:|---|---|
+| pooled mean(E0,E1) − no note | **−3.3175** | [−4.2150, −2.4575], 95% descriptive | [verify_results.py](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/verify_results.py) → [anonymous cases](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/anonymous-cases.json) → [results](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/results.json) / [verification log](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/verification-result.json). Original execution journal is private. |
+
+All four within-study primary 98.75% intervals favored E over no note or R. The two cohorts evaluate the same frozen policies, not additional learning runs. The notes are useful fixed query schedules, not evidence of broad adaptive reasoning. R also receives performance-based selection, although neither realized R search promoted a proposal. Training compute is not matched; lower evaluation query cost is not lower total cost. The cross-study change does not isolate selection alone as the cause, and current-study multiplicity control does not cover the earlier outcome-informed research history.
+
+</dd></dl>
+</details>
+
+<details>
+<summary>🔗 Traceability (B6)</summary>
+
+<dl><dd>
+
+- Reference branches: [negative study](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_question_efficiency/README.md) · [selected-policy study and figure](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/README.md).
+- Selection mechanism and frozen prompts: [portable code](https://github.com/sun-tze/self-evolving-active-reasoning/tree/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/code/) · [all proposal dispositions](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/learning-lineage.json) · [cost accounting](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/COSTS.md).
+- [Reproduction guide](https://github.com/sun-tze/self-evolving-active-reasoning/blob/c1defaf4a911d9973a43e424beb357d74f64379e/experiments/sun_gn_selected_policy/REPRODUCE.md) separates exact public arithmetic from fresh-data method replication. Execution audits and public arithmetic checks passed within the same team; neither is external replication. Public arithmetic does not independently reconstruct private run provenance.
+- Delivery: [team PR #2](https://github.com/Zarreboln/self-evolving-active-reasoning/pull/2), separate prior contribution; its files are not duplicated here.
+
+</dd></dl>
+</details>
+
+**Related comparison.** B7 records the later incomplete GN comparison and completed exploratory SP pilot. Their native final-answer/overlap metrics are separate from the capped-identification metric above.
+
+</dd></dl>
+</details>
+
+<details>
+<summary><b>B7 2026-10-26, see children — native GN and exploratory SP method-adapter pilots</b></summary>
+
+<dl><dd>
+
+```text
+B7 Native task algorithms plus DC/ACE memory cores
+├── B7.1 GN: failed full comparison; complete dev curve and partial final prefix
+└── B7.2 SP: completed small exploratory run; referee qualification remains UNMET
+```
+
+These bounded pilots use pinned upstream memory cores with task adapters. They do not reproduce the complete papers/CLIs or resolve the requirements for a full baseline matrix. Each method has one realized learning trajectory. This section is separate from B6's custom capped-identification studies and does not pool their metrics.
+
+<details>
+<summary>B7.1 2026-10-26, 5,648.25 s allocation — incomplete GN comparison</summary>
+
+<dl><dd>
+
+Qwen2.5-7B-Instruct compared ZeroShot, FewShot, FewShotInst, an explicitly repaired ToT parser, ProactiveCoT, DC-Cumulative and supervised ACE with a 512-token actor cap. DC receives public interactions; ACE's training reflector sees the target. The supervision conditions differ.
+
+The original run **failed** at request admission. All 30 development slots completed, but only **97/140 final slots** did: one final episode was interrupted and 42 never started. Missing scores are not zero. Separate partial forensic checks passed for available artifacts and native scoring; this is not a full-run audit PASS. Upstream DC/ACE merge was not independently reimplemented.
+
+| descriptive observation | denominator / boundary | traceback: script → input → result |
+|---|---|---|
+| DC and ACE final-actor exact match both 0/5 at updates 0, 3 and 6 | Same five reused development cases, one trajectory/method; not 15 independent cases | [verifier](../experiments/sun_gn_sp_comparison/gn/verify_results.py) → [anonymous rows](../experiments/sun_gn_sp_comparison/gn/anonymous-numerics.json) → [results and SVG](../experiments/sun_gn_sp_comparison/gn/README.md) |
+| Common final prefix: 13 cases × seven methods | Posthoc complete prefix; six additional completed rows remain in the coverage count; time/order censoring prevents clean ranking | [coverage and limits](../experiments/sun_gn_sp_comparison/gn/integrity-summary.json) |
+| DC: 6/6 curator outputs capped; after first update, 0/5 body changes excluding Version line | Descriptive extraction, not isolated cap/extractor/prompt/model diagnosis | [numeric diagnostics](../experiments/sun_gn_sp_comparison/gn/results.json) |
+| ACE: initial wrong → target-informed reflection correct → after update wrong, on all six training cases | Dependent supervised stages, not heldout gains and not proof that merging caused loss | [method/provenance](../experiments/sun_gn_sp_comparison/METHODS.md) |
+
+Native success, explicit final-actor exact match and any-time correct guesses are distinct. Unassessed final answers stay null. No significance test or confidence interval is assigned to the incomplete final prefix. Allocation time includes startup/shutdown and is not researcher work time.
+
+</dd></dl>
+</details>
+
+<details>
+<summary>B7.2 2026-10-26, 2,903.56 s active / 5,670.70 s full wall — unqualified SP pilot</summary>
+
+<dl><dd>
+
+All roles used Kimi K2.6. Three training, two development and five final cases were disjoint. DC/ACE development was measured at steps 0/1/3; final memories were fixed at step 3, not selected by the best development result. The run completed 33 episodes, six updates and 1,692 generation calls across three segments. Two earlier failures remain recorded; the active-time allowance was explicitly amended from 45 to 60 minutes. Active time excludes repair/wait time.
+
+| method | development character F1, step 0 → 1 → 3 (same N=2) | final character F1 (N=5) | diagnostic word F1 (N=5) |
+|---|---|---:|---:|
+| ZeroShot | not scheduled | 0.6962 | 0.3109 |
+| DC-Cumulative | 0.8855 → 0.8890 → 0.7134 | 0.8353 | 0.3090 |
+| ACE-Public-Feedback-SP | 0.8672 → 0.8313 → 0.8857 | 0.8200 | 0.3197 |
+
+Traceback: [standard-library verifier](../experiments/sun_gn_sp_comparison/sp/numeric/verify_results.py) → [27 anonymous evaluation rows](../experiments/sun_gn_sp_comparison/sp/numeric/anonymous-episodes.json) → [results, SVG and protocol](../experiments/sun_gn_sp_comparison/sp/README.md).
+
+Mechanical audit was PASS_WITH_LIMITS (38,260 checks, zero issues). **Referee qualification remains UNMET.** Character F1 measures literal overlap, not accuracy. Flat word F1 does not prove that the character difference is spurious or caused by length. Same-family judging, five final cases, one learning trajectory and source quality prevent general ranking/semantic-solving claims.
+
+Both learners see public interaction only. ACE-Public-Feedback-SP is a named adaptation: one no-ground-truth reflection and one curator/merge; no correctness-triggered regeneration. It is not the supervised ACE condition above. All three DC curators and ACE reflectors reached their caps, as did one ACE curator; truncations were retained.
+
+A fixed 30-reply post-run AI/source review found **23 supported, 1 contradicted, 6 unresolved**. It is not human gold, a random sample or an error-rate estimate; original scores are unchanged. [Aggregate review](../experiments/sun_gn_sp_comparison/sp/feedback-source-review.json). Generation usage-price estimate: **$1.97990950**, excluding unverified estimator fees and settlement effects; not an all-fee invoice. [Usage](../experiments/sun_gn_sp_comparison/sp/figures/sp-actual-usage.json).
+
+</dd></dl>
+</details>
+
+**Next falsifiable comparison, not yet run.** Freeze a finite bank of full ACE snapshots and compare the initial, latest and separately validation-selected snapshot on common fresh heldout cases with the same monitor and explicit total cost. The current observations motivate this test but do not establish why an update failed. Complete GN coverage, suitable SP feedback qualification and replicated learning trajectories remain outstanding.
+
+[Minimal result package and source references](../experiments/sun_gn_sp_comparison/README.md). Exact public arithmetic is reproducible; private run provenance was checked within the execution team, not externally replicated. Raw cases, targets, prompts, transcripts and coordination records are not published.
+
+</dd></dl>
+</details>
+
 # Operations: the two machines and the traps
 
 <details>
@@ -886,3 +1025,23 @@ Machine notes: 📁 [`h100/README.md`](../h100/README.md).
 </dd></dl>
 
 </details>
+
+
+<details>
+<summary>B7.3 2026-10-26, 2,161 s suffix allocation — GN final matrix completed</summary>
+
+<dl><dd>
+
+This addendum preserves B7.1's failed original and partial report. A separately authorized suffix completed only the previously unissued work: **30/30 development and 140/140 final slots**, with 12 updates. The final memories remain fixed at update 6. Cached original responses are not new inference: 4,032 original + 1,096 new = **5,128 actual calls**.
+
+DC-Cumulative scored **0/20** native final success and supervised ACE **1/20**. Both learners had **0/5 development exact match at updates 0, 3 and 6**, on the same five reused cases. Completing the missing cells resolves coverage, but does not establish a learning benefit. Full-text changes are not evidence of improved heldout behavior, and these small counts do not support general method ranking. The final-actor, native-success and singleton/query-efficiency endpoints must remain distinct.
+
+[Complete anonymous results and figures](../experiments/sun_gn_sp_comparison/gn-complete/README.md) · [Interpretation and limits](../experiments/sun_gn_sp_comparison/gn-complete/INTERPRETATION.md) · [Standard-library arithmetic verifier](../experiments/sun_gn_sp_comparison/gn-complete/verify_results.py). This was posthoc segmented completion after partial outcomes were visible, not a fresh replication. The original run and two earlier failed audit records remain unchanged; the separate corrected audit passed integrity checks.
+
+**Practical value of the negative result:** neither learner showed development exact-match improvement, so successful memory generation alone is not a reason to expand compute. The completed matrix also prevents the 43 previously missing final cells from being silently treated as zeros or omitted from the conclusion. It does not isolate a prompt, truncation, extraction, merge, or model cause.
+
+The historical [singleton/query studies in PR 2](https://github.com/Zarreboln/self-evolving-active-reasoning/pull/2) use different protocols and endpoints. UoT, SFT, DPO, qualified SP feedback and replicated learning trajectories remain outstanding. Existing SP results remain exploratory with an unqualified same-family referee. No new experiment or method-selection result is claimed by this addendum.
+
+</dd></dl>
+</details>
+

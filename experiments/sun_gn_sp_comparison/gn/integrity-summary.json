@@ -1,0 +1,34 @@
+{
+  "status": "PARTIAL_VERIFIED",
+  "source_status": "PARTIAL_FORENSIC_CHECKS_COMPLETED_WITH_LIMITS",
+  "full_audit_pass": false,
+  "original_run_remains_failed": true,
+  "report_sha256": "04ea84d9669cb216d2bced93f1ae90a11768ed93822b6733db87de2952905ad6",
+  "forensic_code_sha256": "ba17e11acfcc919871eea3af70d60f540b68e2e82ba672466602aa63b4001ce6",
+  "checks": 74187,
+  "issues": 0,
+  "completed_raw_calls": 4032,
+  "all_completed_call_ownership_checked": true,
+  "committed_updates": {
+    "DC_Cumulative": 6,
+    "ACE_Supervised": 6
+  },
+  "all_final_memories_frozen": true,
+  "coverage": {
+    "dev_planned": 30,
+    "dev_recorded": 30,
+    "final_planned": 140,
+    "final_recorded": 97,
+    "final_exported_common_prefix": 91,
+    "final_recorded_outside_prefix": 6,
+    "final_interrupted": 1,
+    "final_not_started": 42,
+    "full_comparison_complete": false
+  },
+  "limits": [
+    "Integrity and captured native scoring checked only for available evidence; full strict auditor was not invoked.",
+    "Update hashes, call ownership and target checks were checked; upstream DC/ACE merge logic was not independently reimplemented.",
+    "Public arithmetic replay cannot reconstruct private run provenance.",
+    "Runtime/order-dependent missingness prevents a clean seven-method ranking."
+  ]
+}

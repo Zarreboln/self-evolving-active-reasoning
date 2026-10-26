@@ -1,0 +1,122 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "GN": {
+      "task": "GN",
+      "arms": [
+        {
+          "name": "ZeroShot",
+          "kind": "baseline",
+          "baseline_method": "zero_shot"
+        },
+        {
+          "name": "FewShot",
+          "kind": "baseline",
+          "baseline_method": "few_shot"
+        },
+        {
+          "name": "FewShotInst",
+          "kind": "baseline",
+          "baseline_method": "few_shot_inst"
+        },
+        {
+          "name": "ToT_parser_repair01",
+          "kind": "baseline",
+          "baseline_method": "tot"
+        },
+        {
+          "name": "ProactiveCoT",
+          "kind": "baseline",
+          "baseline_method": "proactive_cot"
+        },
+        {
+          "name": "DC_Cumulative",
+          "kind": "DC",
+          "baseline_method": "zero_shot"
+        },
+        {
+          "name": "ACE_Supervised",
+          "kind": "ACE",
+          "baseline_method": "zero_shot"
+        }
+      ],
+      "evaluation_cases": {
+        "dev": [
+          "GN-0004",
+          "GN-0008",
+          "GN-0015",
+          "GN-0021",
+          "GN-0002"
+        ],
+        "final": [
+          "GN-0009",
+          "GN-0013",
+          "GN-0010",
+          "GN-0023",
+          "GN-0014",
+          "GN-0025",
+          "GN-0016",
+          "GN-0005",
+          "GN-0019",
+          "GN-0003",
+          "GN-0020",
+          "GN-0007",
+          "GN-0006",
+          "GN-0024",
+          "GN-0017",
+          "GN-0018",
+          "GN-0022",
+          "GN-0012",
+          "GN-0011",
+          "GN-0001"
+        ]
+      },
+      "training_case_count": 6,
+      "dev_checkpoints": [
+        0,
+        3,
+        6
+      ],
+      "final_checkpoint": 6,
+      "actor_model": "Qwen/Qwen2.5-7B-Instruct",
+      "actor": {
+        "max_tokens": 512,
+        "max_turn": 25,
+        "repair_mode": "gn-deterministic-parser-repair-01",
+        "simulate_depth": 3,
+        "temperature": 0.7,
+        "top_p": 0.7
+      },
+      "dc": {
+        "temperature": 0
+      },
+      "ace": {
+        "curator_frequency": 1,
+        "curator_max_tokens": 2048,
+        "max_num_rounds": 3,
+        "no_ground_truth": false,
+        "reflector_max_tokens": 2048,
+        "token_budget": 1024,
+        "use_json_mode": false
+      },
+      "budget": {
+        "default_uot_in_scope": false,
+        "max_calls": 7866,
+        "max_output_tokens": 4067328
+      },
+      "context_limit": 8192,
+      "DC_updater_output_cap": 1024,
+      "feedback_asymmetry": "ACE supervised training targets; DC public trajectory only",
+      "generation_seed_replay_available": false,
+      "alias_order": "Lexicographic original-ID order; zero-padded aliases preserve the audited bootstrap draw order",
+      "execution": "Two execution segments; failed original preserved; cached actual prefix followed by actual new suffix",
+      "suffix_planned_after_partial_outcomes_seen": true,
+      "unrun_methods": [
+        "UoT",
+        "SFT",
+        "DPO"
+      ]
+    }
+  },
+  "scope": "Anonymous scientific projection, not an exact private-case generative replay"
+}

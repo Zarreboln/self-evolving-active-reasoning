@@ -1,0 +1,7 @@
+arm,split,checkpoint,scheduled,execution_failures,official_success_successes,official_success_defined_n,official_success_missing,official_success_rate,harness_final_EM_successes,harness_final_EM_defined_n,harness_final_EM_missing,harness_final_EM_rate,actor_final_EM_successes,actor_final_EM_defined_n,actor_final_EM_missing,actor_final_EM_rate,hit_at_any_successes,hit_at_any_defined_n,hit_at_any_missing,hit_at_any_rate
+ACE_Supervised,dev,0,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,1,5,0,0.2
+DC_Cumulative,dev,0,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0
+ACE_Supervised,dev,3,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0
+DC_Cumulative,dev,3,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0
+ACE_Supervised,dev,6,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0
+DC_Cumulative,dev,6,5,0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0,0,5,0,0.0

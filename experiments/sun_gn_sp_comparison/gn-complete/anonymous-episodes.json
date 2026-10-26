@@ -1,0 +1,2387 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "GN": [
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 0,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 0,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 0,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": true,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 0,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 0,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 3,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 3,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 3,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 3,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 3,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0004",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0008",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0015",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0021",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "dev",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0002",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0009",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0013",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0010",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0023",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0014",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0025",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0016",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": null
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": true,
+          "harness_final_EM": true,
+          "hit_at_any": true,
+          "actor_final_EM": true
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": true,
+          "harness_final_EM": true,
+          "hit_at_any": true,
+          "actor_final_EM": null
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0005",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0019",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0003",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0020",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0007",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0006",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0024",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0017",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0018",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": true,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0022",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0012",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0011",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ProactiveCoT",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": true,
+          "harness_final_EM": true,
+          "hit_at_any": true,
+          "actor_final_EM": true
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ACE_Supervised",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShot",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": false,
+          "harness_final_EM": false,
+          "hit_at_any": false,
+          "actor_final_EM": false
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "FewShotInst",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": true,
+          "harness_final_EM": true,
+          "hit_at_any": true,
+          "actor_final_EM": true
+        }
+      },
+      {
+        "task": "GN",
+        "phase": "final",
+        "arm": "ToT_parser_repair01",
+        "step": 6,
+        "case": "GN-0001",
+        "status": "complete",
+        "metrics": {
+          "official_success": true,
+          "harness_final_EM": true,
+          "hit_at_any": true,
+          "actor_final_EM": null
+        }
+      }
+    ]
+  }
+}

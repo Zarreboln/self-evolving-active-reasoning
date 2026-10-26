@@ -1,0 +1,26 @@
+{
+  "status": "AI_SOURCE_REVIEW_COMPLETE_NOT_QUALIFICATION",
+  "qualification": "UNMET",
+  "publication_ready": false,
+  "source_review_sha256": "9eb420940f15e2f4412d8e71f7fd6c9cd0c4523573630409dff92ee7344cfcf3",
+  "audit_sha256": "96a5867d2328669f45dc6a994b2fd6809e1cca49e62c8dbbf074e68dcac391e5",
+  "selection": "First two final cases in the frozen order, first five actual referee replies per case, all three arms; 30 fixed items, no output-dependent replacement.",
+  "reviewer": "Execution-team AI; source-based interpretation after outcomes were frozen, not independent human gold.",
+  "counts": {
+    "source_unresolved": 6,
+    "source_supported": 23,
+    "source_contradicted": 1
+  },
+  "definitions": {
+    "source_supported": "Actual referee answer is supported or its Unknown appropriately preserves unspecified detail.",
+    "source_contradicted": "Actual answer conflicts with explicit source facts.",
+    "source_unresolved": "Question ambiguity or missing details prevent a grounded categorical judgment; not counted as a measured referee error."
+  },
+  "limitations": [
+    "This supplementary AI review does not qualify the referee or establish a population error rate.",
+    "Unresolved items are not measured referee errors; the small fixed subset is not a random sample.",
+    "No scores, prompts or model outputs were corrected after inspection.",
+    "The original mechanical audit retained its then-pending review status and remains unchanged.",
+    "Only aggregate counts are exported; raw review rows and source texts remain private."
+  ]
+}

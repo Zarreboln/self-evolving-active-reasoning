@@ -1,0 +1,14 @@
+split,checkpoint,arm,n,native_successes,actor_final_successes,actor_final_assessed,actor_final_unassessed,hit_at_any
+dev,0,ACE_Supervised,5,0,0,5,0,1
+dev,0,DC_Cumulative,5,0,0,5,0,0
+dev,3,ACE_Supervised,5,0,0,5,0,0
+dev,3,DC_Cumulative,5,0,0,5,0,0
+dev,6,ACE_Supervised,5,0,0,5,0,0
+dev,6,DC_Cumulative,5,0,0,5,0,0
+final_common_prefix,6,ACE_Supervised,13,1,1,13,0,1
+final_common_prefix,6,DC_Cumulative,13,0,0,13,0,0
+final_common_prefix,6,FewShot,13,0,0,13,0,0
+final_common_prefix,6,FewShotInst,13,0,0,13,0,0
+final_common_prefix,6,ProactiveCoT,13,0,0,0,13,0
+final_common_prefix,6,ToT_parser_repair01,13,1,0,12,1,1
+final_common_prefix,6,ZeroShot,13,0,0,13,0,0

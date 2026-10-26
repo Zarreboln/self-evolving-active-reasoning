@@ -1,0 +1,25 @@
+# Protocol and method provenance
+
+The protocol JSON files are readable public projections. They are not the original execution protocols and do not expose the private case-to-seed mapping. Exact public arithmetic is reproducible; the original model run cannot be reconstructed from anonymous aliases alone.
+
+## GN
+
+Qwen2.5-7B-Instruct ran five native algorithm variants (ZeroShot, FewShot, FewShotInst, an explicitly repaired ToT parser, ProactiveCoT) plus DC-Cumulative and supervised ACE. Actor output was capped at 512 tokens; native UoT, SFT and DPO were not run. A common internal split used six training, five reused development and 20 planned final cases. Development was scheduled at updates 0/3/6; final memory was fixed at update 6.
+
+DC sees public interactions and uses one curator update between episodes. Generated code execution is disabled. ACE uses the pinned supervised training loop: the training target is visible to its reflector, while development/final targets are not provided to the updater. This supervision difference is part of the condition, not a fair-information ablation. See [exact public settings](gn/protocol-summary.json).
+
+The complete run failed at request admission. All 30 development slots and 97 of 140 final slots completed. The exported common final prefix contains 13 cases × seven arms; six additional completed slots are retained in the coverage count but omitted from the paired display. One episode was interrupted and 42 final slots never started. Missingness depends on time/order, so the prefix is not an unbiased replacement for the planned comparison. Available artifacts and captured native scores passed partial forensic checks; no full-run audit PASS is claimed.
+
+The descriptive update observations are six capped DC curator outputs and no DC body changes after the first update when the Version line is ignored; supervised ACE's six training cases were wrong initially, correct after target-informed reflection and wrong after the update. This does not distinguish truncation, extraction, prompt or model causes, nor establish that the memory merge caused a loss. The included extraction utility requires separately supplied private evidence and is not part of the public arithmetic proof.
+
+## SP
+
+All roles use Kimi K2.6 with temperature 0.6/top-p 0.95, thinking disabled and no provider seed. The split is three training, two reused development and five final puzzles. DC and ACE are evaluated at updates 0/1/3; final states are fixed at step 3 rather than chosen by development performance. ZeroShot has five final episodes. Each episode allows 25 public questions/referee replies plus one final actor answer. Actor question/final caps are 128/512, referee 64, learner calls 1,024. The actual-token input limit remains 7,168 within an 8,192 context bound. Full settings and recovery timings are in [protocol-public.json](sp/numeric/protocol-public.json).
+
+ACE-Public-Feedback-SP is explicitly different from the supervised GN condition. A completed public episode feeds exactly one no-ground-truth reflection, then one curator and deterministic merge. The learner sees public surface/interactions, generated final answer and current playbook; it receives no hidden answer, F1 or gold-derived correctness. Final correctness is unassessed during learning. There is no correctness-triggered regeneration or post-curation actor replay. The upstream temperature-zero request is adapted to the shared 0.6/0.95 condition and recorded as such. The 1,024 memory budget is prompt guidance/provider-framing measurement, not a proven exact memory-token hard cap.
+
+The canonical referee prompt is retained, but the referee model is unqualified and from the same family as the actors. Label parsing is the declared strict whitespace-only label/refusal variant rather than native period stripping. Character F1 is literal overlap; word F1 is diagnostic, not a semantic gold score. Flat word F1 does not prove character-F1 differences spurious or isolate answer-length causality. Source-quality concerns and the supplementary AI feedback review remain limitations.
+
+Two failed execution segments remain failed. A third segment completed by replaying already saved requests/responses locally and issuing only unseen requests. Recoveries addressed Windows output encoding and a byte-size prefilter; every new request retained actual-token admission. The active-time allowance was explicitly amended from 2,700 to 3,600 seconds; 2,903.5563 active seconds and 5,670.7005 repair-inclusive wall seconds are distinct. Saved truncations were retained: DC curator 3/3, ACE reflector 3/3, ACE curator 1/3, and one training final answer. No development/final episode response was truncated.
+
+There were 1,692 generation calls. The uncached generation usage-price estimate is $1.97990950, excluding unverified estimator fees and settlement effects; it is not an all-fee invoice. A completed mechanical audit checks provenance and score computation, not the semantic correctness of the referee. Its original records are unchanged by the later fixed-subset AI review.

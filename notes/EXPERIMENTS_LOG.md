@@ -1025,3 +1025,23 @@ Machine notes: 📁 [`h100/README.md`](../h100/README.md).
 </dd></dl>
 
 </details>
+
+
+<details>
+<summary>B7.3 2026-10-26, 2,161 s suffix allocation — GN final matrix completed</summary>
+
+<dl><dd>
+
+This addendum preserves B7.1's failed original and partial report. A separately authorized suffix completed only the previously unissued work: **30/30 development and 140/140 final slots**, with 12 updates. The final memories remain fixed at update 6. Cached original responses are not new inference: 4,032 original + 1,096 new = **5,128 actual calls**.
+
+DC-Cumulative scored **0/20** native final success and supervised ACE **1/20**. Both learners had **0/5 development exact match at updates 0, 3 and 6**, on the same five reused cases. Completing the missing cells resolves coverage, but does not establish a learning benefit. Full-text changes are not evidence of improved heldout behavior, and these small counts do not support general method ranking. The final-actor, native-success and singleton/query-efficiency endpoints must remain distinct.
+
+[Complete anonymous results and figures](../experiments/sun_gn_sp_comparison/gn-complete/README.md) · [Interpretation and limits](../experiments/sun_gn_sp_comparison/gn-complete/INTERPRETATION.md) · [Standard-library arithmetic verifier](../experiments/sun_gn_sp_comparison/gn-complete/verify_results.py). This was posthoc segmented completion after partial outcomes were visible, not a fresh replication. The original run and two earlier failed audit records remain unchanged; the separate corrected audit passed integrity checks.
+
+**Practical value of the negative result:** neither learner showed development exact-match improvement, so successful memory generation alone is not a reason to expand compute. The completed matrix also prevents the 43 previously missing final cells from being silently treated as zeros or omitted from the conclusion. It does not isolate a prompt, truncation, extraction, merge, or model cause.
+
+The historical [singleton/query studies in PR 2](https://github.com/Zarreboln/self-evolving-active-reasoning/pull/2) use different protocols and endpoints. UoT, SFT, DPO, qualified SP feedback and replicated learning trajectories remain outstanding. Existing SP results remain exploratory with an unqualified same-family referee. No new experiment or method-selection result is claimed by this addendum.
+
+</dd></dl>
+</details>
+

@@ -66,7 +66,7 @@ The run completed in **218 GPU seconds**, using 1,350 requests, 1,641,690 input 
 
 When a record has one candidate, the tool has computed the answer. The gain is therefore **answer-supplied/tool-assisted readout**. It does not establish learned reasoning, memory evolution, solver novelty, or which component of state content, input length and presentation caused the gain. See [readout_settings.json](readout_settings.json) for the fixed settings and [results.svg](results.svg) for the result figure.
 
-The result supports a concrete engineering change: use public-feedback constraint checking for reliable final answers. A future research question is whether a learned question-selection policy reduces interaction cost with the solver held fixed. That next study has not run and no positive result is implied.
+The result supports a concrete engineering change: use public-feedback constraint checking for reliable final answers. A subsequent [prospective question-efficiency study](../sun_gn_question_efficiency/README.md) has now completed: three evolved-note chains averaged 1.76 more queries than no note on 100 new paired cases (95% CI [0.19,3.28]). This negative learning result is separate from the positive tool-assisted readout result. A different performance-selected policy method is under investigation; no further benefit is claimed.
 
 ## Use the adapter
 

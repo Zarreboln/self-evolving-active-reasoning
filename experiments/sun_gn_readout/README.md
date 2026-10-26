@@ -42,11 +42,31 @@ The allocation completed in 295 GPU seconds with 1,550 requests (50 discarded de
 
 The public-only solver recovered 44/50 answers correctly, abstained on six, and emitted no wrong answer. Candidate counts were 44 singletons, five pairs and one triple. Local replay took approximately 0.765 CPU wall seconds, without a model call. This was computed **after observing the null readout result**; it motivates a new test and does not rescue R3−R2.
 
-### 4. Prospective answer-supplied readout: pending
+### 4. Prospective answer-supplied readout: completed and audited
 
-A further disjoint internal N50 has been fixed and one bounded allocation submitted. No new score is claimed here. Baseline and assisted finals share the same new 25-turn history, 128-token cap and seed; execution order alternates. The assisted final receives an exact candidate-state block before the unchanged final instruction. The direct unique-only solver is a separate baseline.
+A further disjoint internal N50 was fixed before this run, with 1,996 eligible labels after declared exclusions. This is train-derived and not an official-test or pretraining-unseen claim. Baseline and assisted finals share the same new 25-turn history, 128-token cap and seed. Execution order alternates. The assisted final receives an exact candidate-state block before the unchanged final instruction. Raw model outputs are never replaced by solver answers.
 
-When a record has one candidate, the tool has computed the answer. Any gain must be called **answer-supplied/tool-assisted readout**, not learned reasoning, memory evolution or solver novelty. It also changes input length and presentation. The model's raw output is never replaced by the solver's answer. See [readout_settings.json](readout_settings.json) for fixed settings. The main comparison is all-case paired EM; candidate strata, parser interactions, truncation and costs are secondary descriptive analyses. The study reserves at most 1,350 requests /172,800 output tokens /10 million input tokens /45 GPU minutes, with no retry or reduced-N substitution.
+| Final procedure | Correct /50 | Wrong /50 | Abstained /50 | Record-consistent /50 |
+|---|---:|---:|---:|---:|
+| Baseline model | 0 | 50* | 0 | 0 |
+| State-assisted model | 46 | 4 | 0 | 49 |
+| Direct unique-only solver | 46 | 0 | 4 | 46 |
+
+*Baseline wrong includes one output with no parsed answer. Abstentions count as incorrect for all-case exact match. Direct-solver coverage is 46/50; its observed accuracy among answered cases is 46/46, not a universal guarantee.*
+
+The primary paired assisted−baseline gain is **+92 percentage points**: 46 wins, zero losses, four ties. Paired bootstrap 95% CI: **[84,98] pp**. Supplementary conservative simultaneous exact-binomial bounds: **[70.644,98.201] pp**. These are within-study estimates, without an adjustment for outcome-informed sequential method development.
+
+There were 46 singleton records and four ambiguous records (two to 64 candidates). The assisted model answered 45/46 singleton cases and 1/4 ambiguous cases correctly. The four ambiguous sets had sizes 3, 2, 4 and 2. Uniform selection would yield 1.583 expected correct answers across those four; the observed one correct does not demonstrate above-chance selection. No case exercised the above-64 count-only branch. Relative to the direct solver, one lost singleton and one gained ambiguous case offset exactly: **the model adds no aggregate EM on this sample**, while producing four wrong outputs instead of four abstentions. The practical routing choice depends on the cost of wrong answers versus abstention. The unique-only solver avoids a final model call, while still requiring the same preceding interaction history.
+
+Baseline final outputs truncated in 31/50 cases; assisted outputs in 0/50. Final output tokens fell from 5,489 to 536, while final input tokens increased from 106,802 to 111,837. Summed final-call elapsed times were 130.441 versus 15.001 seconds under concurrency, **not end-to-end wall-clock latency**. The resolver used 0.817 thread-CPU seconds in total. These timings do not imply that the whole system is model-free or equally fast on other hardware.
+
+Two assisted outputs mentioned multiple candidate numbers in prose and ended with an explicit final Guess. The retained diagnostic field named `state_JSON_marker_echo` only detects the substrings `candidate_count` or `candidates`; both hits are **prose mentions, not JSON echoes**. The two marker hits and the two multiple-span hits are the same two cases. Both have an explicit final Guess that agrees with the frozen parser: anonymous pair 28 was correct and pair 32 was wrong. No alternative parser was applied. The unchanged last-four-digit parser scored those explicit guesses. The parsed answer equaled the final listed candidate on 46/50 cases, 45 are correct singleton outputs and one is an ambiguous output; this is an equality check rather than proof of parser contamination or a cognitive mechanism.
+
+The run completed in **218 GPU seconds**, using 1,350 requests, 1,641,690 input and 16,027 output tokens. Experimental API cost was $0. The independent reconstruction checker passed once in 1.919 seconds and checked all requests, public feedback, states, seeds, caps and outcome scoring. It ran under the same executor, not an independent organization. The original null results remain above.
+
+When a record has one candidate, the tool has computed the answer. The gain is therefore **answer-supplied/tool-assisted readout**. It does not establish learned reasoning, memory evolution, solver novelty, or which component of state content, input length and presentation caused the gain. See [readout_settings.json](readout_settings.json) for the fixed settings and [results.svg](results.svg) for the result figure.
+
+The result supports a concrete engineering change: use public-feedback constraint checking for reliable final answers. A future research question is whether a learned question-selection policy reduces interaction cost with the solver held fixed. That next study has not run and no positive result is implied.
 
 ## Use the adapter
 

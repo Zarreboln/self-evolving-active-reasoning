@@ -16,6 +16,21 @@ Two earlier audit attempts also remain failed records. A separate corrected audi
 
 ACE used supervised training targets while DC used public trajectories. The pilot uses Qwen2.5-7B, a 512-token actor cap, and declared method/parser adaptations. Descriptive paired intervals are available in [results.json](results.json); no claim is made here about every pairwise interval. Neither text changes nor this matrix establish the earlier proposed readout/merge mechanism.
 
-UoT, SFT and DPO remain unrun. Qualified SP feedback, replicated learning trajectories, and a prospectively frozen matched random-schedule comparison of query efficiency remain open requirements. The existing SP result remains a small exploratory study with an unqualified same-family referee.
+Applicable UoT, SFT and DPO rows remain unrun in this contribution; SP baseline breadth and qualified feedback also remain gaps. The existing SP result is a small exploratory study with an unqualified same-family referee. Additional learning replications and a prospectively frozen matched random-schedule comparison are desirable future controls, not newly imposed requirements for delivering the completed evidence.
+
+## How this fits the team's research question
+
+The team's [main project claim](https://github.com/Zarreboln/self-evolving-active-reasoning/blob/main/README.md) allows state maintenance and vetoes while leaving question selection to the frozen actor. E0/E1 supply literal queries, so their **31.02% observed query-cost reduction is a separate policy-search comparator, outside that strict state-only condition**. A model printing a supplied query does not show that it selected the query. The result neither supports nor refutes the strict claim; it is not a matched ablation or demonstrated upper bound for it. Its singleton stopping rule and absence of a final-answer model call also differ.
+
+| Evidence delivered | Role in the project | Boundary |
+|---|---|---|
+| Complete seven-arm GN matrix | Existing-method comparison and failure analysis | 20 cases per arm, adapted methods and unmatched supervision; native and actor-final endpoints remain separate |
+| SP DC/ACE pilot | Exploratory evolution curves and metric/referee diagnostics | Five final cases, same-family referee qualification unmet; character F1 is not semantic accuracy |
+| Selected GN schedules | A separate question-policy search comparator | Supplies concrete queries; no direct evidence for strict state-only evolution |
+| Earlier C2 writer probe | Separates fixed-history answer writing from evidence acquisition | Uses first-generation histories; does not evaluate the team's later full SP harness |
+
+Two context-method adaptations, descriptive evolution curves, failure analysis, proposal material and slides have been delivered. This does not imply all applicable baselines are reproduced or that a reliable strict-compatible evolution gain has been established. The team's own CD and 405B-referee SP evidence remains theirs; it cannot fill unmatched cells in these experiments.
+
+A strict-compatible **future hypothesis**, not a result, is that a lossless numbered ledger of the same public query-feedback facts reduces exact repeated queries relative to chronological history. Hold actor, budget, decoding and veto/refinement rules fixed; supply no candidate queries, utility rankings or model-facing information gain. Report repeated queries and native final performance, disclose token-length differences, and keep offline information diagnostics separate. A hand-designed ledger would test state presentation, not by itself demonstrate evolution.
 
 The [public verifier](verify_results.py) reproduces anonymous arithmetic and file hashes; it does not reproduce private execution provenance. The 13 copied numeric/figure files are unchanged. This interpretation is deliberately outside their numeric manifest.

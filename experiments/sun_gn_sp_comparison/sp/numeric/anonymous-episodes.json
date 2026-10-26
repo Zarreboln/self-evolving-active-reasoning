@@ -1,0 +1,331 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "SP": [
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8675914249684743,
+          "diagnostic_f1_word": 0.32089552238805974
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 0,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.9033816425120772,
+          "diagnostic_f1_word": 0.32
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 0,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8635824436536179,
+          "diagnostic_f1_word": 0.32857142857142857
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 0,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8707692307692307,
+          "diagnostic_f1_word": 0.3906976744186046
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 1,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.9118028534370947,
+          "diagnostic_f1_word": 0.32000000000000006
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 1,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8661538461538462,
+          "diagnostic_f1_word": 0.36018957345971564
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 1,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8175074183976261,
+          "diagnostic_f1_word": 0.3669724770642202
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 1,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8451563691838292,
+          "diagnostic_f1_word": 0.35616438356164387
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.5902668759811617,
+          "diagnostic_f1_word": 0.24423963133640555
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8366300366300365,
+          "diagnostic_f1_word": 0.34977578475336324
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0001",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8813559322033898,
+          "diagnostic_f1_word": 0.3008130081300813
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "dev",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0006",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.889967637540453,
+          "diagnostic_f1_word": 0.36274509803921573
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 0,
+        "case": "SP-0002",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8319123020706456,
+          "diagnostic_f1_word": 0.3271375464684015
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0002",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8932893289328933,
+          "diagnostic_f1_word": 0.31292517006802717
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0002",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8726635514018692,
+          "diagnostic_f1_word": 0.3806228373702422
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0003",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.829300196206671,
+          "diagnostic_f1_word": 0.3875968992248062
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0003",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.7746381805651276,
+          "diagnostic_f1_word": 0.37037037037037035
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 0,
+        "case": "SP-0003",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.7011661807580175,
+          "diagnostic_f1_word": 0.37554585152838427
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0005",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.9089775561097256,
+          "diagnostic_f1_word": 0.35573122529644263
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 0,
+        "case": "SP-0005",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.7413533834586465,
+          "diagnostic_f1_word": 0.409090909090909
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0005",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.7597014925373134,
+          "diagnostic_f1_word": 0.3177570093457944
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 0,
+        "case": "SP-0004",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.5110246433203631,
+          "diagnostic_f1_word": 0.24267782426778242
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0004",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8935587026039287,
+          "diagnostic_f1_word": 0.26268656716417915
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0004",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.6647465437788018,
+          "diagnostic_f1_word": 0.17829457364341084
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "DC_Cumulative",
+        "step": 3,
+        "case": "SP-0007",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8005974607916354,
+          "diagnostic_f1_word": 0.2641509433962264
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ACE_Public_Feedback",
+        "step": 3,
+        "case": "SP-0007",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.8787465940054497,
+          "diagnostic_f1_word": 0.31355932203389836
+        }
+      },
+      {
+        "task": "SP",
+        "phase": "final",
+        "arm": "ZeroShot",
+        "step": 0,
+        "case": "SP-0007",
+        "status": "complete",
+        "metrics": {
+          "official_f1_char": 0.6955810147299508,
+          "diagnostic_f1_word": 0.19999999999999998
+        }
+      }
+    ]
+  }
+}

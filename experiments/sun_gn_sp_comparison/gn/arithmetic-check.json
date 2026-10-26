@@ -1,0 +1,16 @@
+{
+  "command": "python -B verify_results.py",
+  "exit_code": 0,
+  "elapsed_seconds_tool_reported": 0.1831274,
+  "stdout": {
+    "status": "ARITHMETIC_MATCH",
+    "rows": 121,
+    "full_comparison_complete": false,
+    "missing_final_slots": 43,
+    "provenance_independently_reverified_by_this_script": false
+  },
+  "new_model_calls": 0,
+  "verifier_sha256": "50f8dea92491779071304965a002d53adc47145822424642b8966abd77851429",
+  "anonymous_numerics_sha256": "afd1657cca5b0f0efce8cab6350561bfe784517d85d2a1202ee68eeba72931df",
+  "results_sha256": "e9b762f9e9709f7ee04bfcaf5ff4326feac19987affc7cf852b859e887b246d5"
+}

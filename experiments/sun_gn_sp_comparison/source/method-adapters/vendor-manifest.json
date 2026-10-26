@@ -1,0 +1,118 @@
+{
+  "dc_commit": "5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9",
+  "ace_commit": "82709de050e1db6e6ef2f07bcb0393560b94992a",
+  "files": [
+    {
+      "path": "dc/dynamic_cheatsheet/language_model.py",
+      "git_blob_sha": "e34fb5b54811d814c632129f73aa85a08bfb3373",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/dynamic_cheatsheet/language_model.py",
+      "sha256": "2ffd61a587a3effa8bbfa981f302e1a531526a8977cf419ae8c23e4103d4ba35",
+      "bytes": 33250
+    },
+    {
+      "path": "dc/prompts/curator_prompt_for_dc_cumulative.txt",
+      "git_blob_sha": "4ce3b822be749add83129a0aa5f7cab2136c5990",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/prompts/curator_prompt_for_dc_cumulative.txt",
+      "sha256": "2b93bd3347b4878fb50c0674cb642d3ba3939cf0442680a3978ab1449bfe3dc0",
+      "bytes": 6155
+    },
+    {
+      "path": "dc/LICENSE",
+      "git_blob_sha": "2f5d880f0689099bf148ce945ddc164cc9b7f5d1",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/LICENSE",
+      "sha256": "a4df4dc6609de8582e24c3bd5d69af28a7e836df9196a0685065bbc18af5ad72",
+      "bytes": 1069
+    },
+    {
+      "path": "dc/dynamic_cheatsheet/utils/extractor.py",
+      "git_blob_sha": "7fd6501f56a27c2c0aa39dd7d63e4d8ecc88eccc",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/dynamic_cheatsheet/utils/extractor.py",
+      "sha256": "72cfc4e4c02d47da11cecf9ebd01b8a2fb4d08f65e904515ac9220b02548dbb0",
+      "bytes": 3959
+    },
+    {
+      "path": "dc/prompts/generator_prompt.txt",
+      "git_blob_sha": "1a642546d08e73572f8fef5c407fca53d61ab664",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/prompts/generator_prompt.txt",
+      "sha256": "2e2024da6695120aab0e1bde08efff5193b75053814eb5bd18d67ce7ac00ca40",
+      "bytes": 2824
+    },
+    {
+      "path": "dc/run_benchmark.py",
+      "git_blob_sha": "eb39f7ef1b5a652495febdb8bac5c81d8a24bf53",
+      "url": "https://github.com/suzgunmirac/dynamic-cheatsheet/blob/5cfe3c37e8e52b1d858d0f3df46e7f17c50991b9/run_benchmark.py",
+      "sha256": "b7a48f706a647cbf6d94a52e7aceb99bd4e933b8df5240f9cad68c617a882a00",
+      "bytes": 14036
+    },
+    {
+      "path": "ace/LICENSE.txt",
+      "git_blob_sha": "261eeb9e9f8b2b4b0d119366dda99c6fd7d35c64",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/LICENSE.txt",
+      "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+      "bytes": 11357
+    },
+    {
+      "path": "ace/ace/core/generator.py",
+      "git_blob_sha": "3ceebecc439bae45686766ee401b3ea047123546",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/core/generator.py",
+      "sha256": "4b750a59752bd5bdb24b2f27b80938844d8a7b5d89e86d7d6bb726f3685c25f5",
+      "bytes": 3757
+    },
+    {
+      "path": "ace/ace/core/reflector.py",
+      "git_blob_sha": "134ea4c318a297550e07be6174f7169a26e7926f",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/core/reflector.py",
+      "sha256": "fe5ae8fb006fd16fdef7b8e7ad38dc746195a4bf0a366a82e69c473c9982b811",
+      "bytes": 5258
+    },
+    {
+      "path": "ace/ace/core/curator.py",
+      "git_blob_sha": "fcadcfbce1c9190bda7caa24d8250baa93902320",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/core/curator.py",
+      "sha256": "a22f7f233761acfb00852914d78112a776274c55bc022738af7defca95897617",
+      "bytes": 16474
+    },
+    {
+      "path": "ace/ace/prompts/generator.py",
+      "git_blob_sha": "3304ca76f851f335db881a706231f9326de40031",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/prompts/generator.py",
+      "sha256": "b8b12d4a6281ea4c422a2ee0bd919b50580d388027917e8740f82f97eb24eebb",
+      "bytes": 1532
+    },
+    {
+      "path": "ace/ace/prompts/reflector.py",
+      "git_blob_sha": "7b9f841b4133c2277f9c098ae334f4f0f6dbda7a",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/prompts/reflector.py",
+      "sha256": "72b343ce2781531dac2fd765543410b6abfc4817c39078dd4f83187c4d217e9c",
+      "bytes": 4823
+    },
+    {
+      "path": "ace/ace/prompts/curator.py",
+      "git_blob_sha": "11c53a37f5db6c395f7ab26e78b69cbed7fe30d3",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/prompts/curator.py",
+      "sha256": "eb03d59b3f3593832f730a798199b581ad797acd503c47d1737616c68cf26107",
+      "bytes": 7450
+    },
+    {
+      "path": "ace/playbook_utils.py",
+      "git_blob_sha": "a457ba967c02986a741a5fb7fc4910b1b472a42c",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/playbook_utils.py",
+      "sha256": "c67943f06cb0ee747be04d0599216e40d6c00e0cdf96ddc6af38fc26143e3a07",
+      "bytes": 13707
+    },
+    {
+      "path": "ace/utils.py",
+      "git_blob_sha": "d07a4e72fb955d44db36c9c0de96b6c5484582a9",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/utils.py",
+      "sha256": "7824aa262de2cd030b6914d1f7de698ec620dbec9c9e5f14ed1fe6322079570c",
+      "bytes": 10659
+    },
+    {
+      "path": "ace/ace/ace.py",
+      "git_blob_sha": "2d662adc8d2d01279f5969675a32af084d19943d",
+      "url": "https://github.com/ace-agent/ace/blob/82709de050e1db6e6ef2f07bcb0393560b94992a/ace/ace.py",
+      "sha256": "70f7af3ff9088498afa8d6939c5e142cd8b0046179516ee336c57586b92ec914",
+      "bytes": 45848
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+phase,arm,step,observed_n,planned_n,complete_denominator,mean_character_F1,mean_word_F1_diagnostic
+final,ZeroShot,0,5,5,True,0.6962075048675247,0.3108904262710954
+final,DC_Cumulative,3,5,5,True,0.8352894362144884,0.30902331783980663
+final,ACE_Public_Feedback,3,5,5,True,0.8199544851721947,0.3197156657428729

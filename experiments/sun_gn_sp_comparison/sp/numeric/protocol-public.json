@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "SP": {
+      "task": "SP",
+      "arms": [
+        "ZeroShot",
+        "DC_Cumulative",
+        "ACE_Public_Feedback"
+      ],
+      "evaluation_cases": {
+        "dev": [
+          "SP-0001",
+          "SP-0006"
+        ],
+        "final": [
+          "SP-0002",
+          "SP-0003",
+          "SP-0005",
+          "SP-0004",
+          "SP-0007"
+        ]
+      },
+      "training_case_count": 3,
+      "dev_checkpoints": [
+        0,
+        1,
+        3
+      ],
+      "final_memory_step": 3,
+      "all_roles_model": "kimi-k2.6",
+      "sampling": {
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "thinking": false,
+        "provider_seed": null
+      },
+      "role_output_caps": {
+        "actor_question": 128,
+        "actor_final": 512,
+        "referee": 64,
+        "DC_curator": 1024,
+        "ACE_reflector": 1024,
+        "ACE_curator": 1024
+      },
+      "input_cap": 7168,
+      "context_limit": 8192,
+      "max_question_turns": 25,
+      "max_total_generation_calls": 1692,
+      "memory_token_budget_prompt_guidance_only": 1024,
+      "training_feedback": "Both learners receive public interaction only; no bottom/target/F1/correctness flag",
+      "condition": "EXPLORATORY_UNQUALIFIED_SAME_FAMILY_REFEREE",
+      "qualification": "UNMET",
+      "production_qualification_claimed": false,
+      "metric": "Official character F1; diagnostic word F1; neither is semantic accuracy",
+      "ACE_variant": "ACE-Public-Feedback-SP",
+      "recovery": {
+        "segments": 3,
+        "failed_original_segments_preserved": 2,
+        "qualification": "UNMET",
+        "original_active_cap_seconds": 2700,
+        "amended_active_cap_seconds": 3600,
+        "active_seconds_total": 2903.556331464788,
+        "repair_idle_excluded": true,
+        "full_wall_clock_seconds_including_repair_and_wait": 5670.700517,
+        "diagnostic_extra_estimator_calls": 1,
+        "transport_amendment": "UTF-8 logging plus1MiB byte resource prefilter; every new request retains7168 actual-token admission; saved truncations retained"
+      }
+    }
+  },
+  "scope": "Anonymized scientific projection, not byte-identical execution protocol or original-case generative replay"
+}

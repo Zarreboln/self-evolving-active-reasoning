@@ -1,0 +1,18 @@
+{
+  "command": "python -B numeric/verify_results.py numeric",
+  "exit_code": 0,
+  "elapsed_seconds_tool_reported": 0.1538068,
+  "stdout": {
+    "episode_slots": {
+      "SP": 27
+    },
+    "model_calls": 0,
+    "private_provenance_reverified": false,
+    "status": "ARITHMETIC_AND_PUBLIC_FILE_HASHES_PASS",
+    "tasks": [
+      "SP"
+    ]
+  },
+  "verifier_sha256": "6e6933856ca032f199e1135c66b09d2ade227af5b27d17c76f0180f6c19f3dc7",
+  "numeric_manifest_sha256": "50352a69d2cd6ed749dff92f102be4367187686b028f6d18cfd9eb8647e113d8"
+}

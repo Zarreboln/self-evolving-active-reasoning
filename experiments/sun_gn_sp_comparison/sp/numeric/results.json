@@ -1,0 +1,135 @@
+{
+  "schema_version": 1,
+  "tasks": {
+    "SP": {
+      "numeric_results": {
+        "descriptive_curves_and_means": [
+          {
+            "phase": "dev",
+            "arm": "DC_Cumulative",
+            "step": 0,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.8854865337402757,
+            "mean_word_F1_diagnostic": 0.32044776119402985,
+            "complete_denominator": true
+          },
+          {
+            "phase": "dev",
+            "arm": "DC_Cumulative",
+            "step": 1,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.8889783497954704,
+            "mean_word_F1_diagnostic": 0.3400947867298578,
+            "complete_denominator": true
+          },
+          {
+            "phase": "dev",
+            "arm": "DC_Cumulative",
+            "step": 3,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.7134484563055992,
+            "mean_word_F1_diagnostic": 0.2970077080448844,
+            "complete_denominator": true
+          },
+          {
+            "phase": "dev",
+            "arm": "ACE_Public_Feedback",
+            "step": 0,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.8671758372114243,
+            "mean_word_F1_diagnostic": 0.35963455149501655,
+            "complete_denominator": true
+          },
+          {
+            "phase": "dev",
+            "arm": "ACE_Public_Feedback",
+            "step": 1,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.8313318937907277,
+            "mean_word_F1_diagnostic": 0.36156843031293207,
+            "complete_denominator": true
+          },
+          {
+            "phase": "dev",
+            "arm": "ACE_Public_Feedback",
+            "step": 3,
+            "observed_n": 2,
+            "planned_n": 2,
+            "mean_character_F1": 0.8856617848719215,
+            "mean_word_F1_diagnostic": 0.3317790530846485,
+            "complete_denominator": true
+          },
+          {
+            "phase": "final",
+            "arm": "ZeroShot",
+            "step": 0,
+            "observed_n": 5,
+            "planned_n": 5,
+            "mean_character_F1": 0.6962075048675247,
+            "mean_word_F1_diagnostic": 0.3108904262710954,
+            "complete_denominator": true
+          },
+          {
+            "phase": "final",
+            "arm": "DC_Cumulative",
+            "step": 3,
+            "observed_n": 5,
+            "planned_n": 5,
+            "mean_character_F1": 0.8352894362144884,
+            "mean_word_F1_diagnostic": 0.30902331783980663,
+            "complete_denominator": true
+          },
+          {
+            "phase": "final",
+            "arm": "ACE_Public_Feedback",
+            "step": 3,
+            "observed_n": 5,
+            "planned_n": 5,
+            "mean_character_F1": 0.8199544851721947,
+            "mean_word_F1_diagnostic": 0.3197156657428729,
+            "complete_denominator": true
+          }
+        ]
+      },
+      "whole_run_usage": {
+        "generation_calls": 1692,
+        "role_counts": {
+          "actor": 858,
+          "referee": 825,
+          "curator": 6,
+          "reflector": 3
+        },
+        "tokens": {
+          "actor": {
+            "prompt_tokens": 1072265,
+            "completion_tokens": 24880
+          },
+          "referee": {
+            "prompt_tokens": 827999,
+            "completion_tokens": 3300
+          },
+          "curator": {
+            "prompt_tokens": 20439,
+            "completion_tokens": 5367
+          },
+          "reflector": {
+            "prompt_tokens": 9227,
+            "completion_tokens": 3072
+          }
+        },
+        "generation_reserved_usd": "12.25989120",
+        "uncached_generation_usage_price_estimate_usd": "1.97990950",
+        "not_all_fee_invoice": true
+      },
+      "audit_sha256": "96a5867d2328669f45dc6a994b2fd6809e1cca49e62c8dbbf074e68dcac391e5",
+      "auditor_sha256": "f2ded91bb2370cd878e1f54e16271088b669bf15690e05cbbc3a35cdb5680b8d",
+      "recovery_validation_wrapper_sha256": "b7c3510c3d3f93619eac59b54728ae4b28b1d9e1eeefa679afbfa0bb336b3ea7",
+      "scope": "Unqualified same-family exploratory pilot,5 final/2 dev; no additional intervals or significance test; no causal ranking or query-efficiency claim."
+    }
+  }
+}

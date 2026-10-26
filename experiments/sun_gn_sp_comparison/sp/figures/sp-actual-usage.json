@@ -1,0 +1,32 @@
+{
+  "paired_generation_calls": 1692,
+  "role_counts": {
+    "actor": 858,
+    "referee": 825,
+    "curator": 6,
+    "reflector": 3
+  },
+  "token_usage_by_role": {
+    "actor": {
+      "prompt_tokens": 1072265,
+      "completion_tokens": 24880
+    },
+    "referee": {
+      "prompt_tokens": 827999,
+      "completion_tokens": 3300
+    },
+    "curator": {
+      "prompt_tokens": 20439,
+      "completion_tokens": 5367
+    },
+    "reflector": {
+      "prompt_tokens": 9227,
+      "completion_tokens": 3072
+    }
+  },
+  "generation_reserved_usd": "12.25989120",
+  "uncached_generation_usage_price_estimate_usd": "1.97990950",
+  "estimator_fees_included": false,
+  "currency_cost_is_not_all_fee_invoice": true,
+  "scope": "All training/development/final actor, referee and learner calls. Generation usage price is an estimate, not a settled invoice or an all-fee cost."
+}

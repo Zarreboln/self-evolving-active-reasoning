@@ -1,0 +1,87 @@
+{
+  "status": "PARTIAL_VERIFIED",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "actor": {
+    "max_tokens": 512,
+    "max_turn": 25,
+    "repair_mode": "gn-deterministic-parser-repair-01",
+    "simulate_depth": 3,
+    "temperature": 0.7,
+    "top_p": 0.7
+  },
+  "dc": {
+    "curator_max_tokens": 1024,
+    "temperature": 0,
+    "top_p": 1,
+    "generated_code_execution": false,
+    "training_feedback": "Public episode only; no target label supplied"
+  },
+  "ace": {
+    "curator_frequency": 1,
+    "curator_max_tokens": 2048,
+    "max_num_rounds": 3,
+    "no_ground_truth": false,
+    "reflector_max_tokens": 2048,
+    "token_budget": 1024,
+    "use_json_mode": false,
+    "temperature": 0,
+    "top_p": 1,
+    "training_feedback": "Training target visible to reflector; no dev/final targets supplied to updater"
+  },
+  "checkpoints": [
+    0,
+    3,
+    6
+  ],
+  "cases": {
+    "train": 6,
+    "dev_reused": 5,
+    "final_planned": 20,
+    "common_final_exported": 13
+  },
+  "arms": [
+    {
+      "baseline_method": "zero_shot",
+      "kind": "baseline",
+      "name": "ZeroShot"
+    },
+    {
+      "baseline_method": "few_shot",
+      "kind": "baseline",
+      "name": "FewShot"
+    },
+    {
+      "baseline_method": "few_shot_inst",
+      "kind": "baseline",
+      "name": "FewShotInst"
+    },
+    {
+      "baseline_method": "tot",
+      "kind": "baseline",
+      "name": "ToT_parser_repair01"
+    },
+    {
+      "baseline_method": "proactive_cot",
+      "kind": "baseline",
+      "name": "ProactiveCoT"
+    },
+    {
+      "baseline_method": "zero_shot",
+      "kind": "DC",
+      "name": "DC_Cumulative"
+    },
+    {
+      "baseline_method": "zero_shot",
+      "kind": "ACE",
+      "name": "ACE_Supervised"
+    }
+  ],
+  "learning_trajectories_per_method": 1,
+  "claims": "Compute-controlled native-algorithm/task-adapted memory-core pilot; not full paper/CLI reproduction",
+  "omitted_baselines": [
+    "native UoT",
+    "SFT",
+    "DPO"
+  ],
+  "protocol_sha256": "ad6dcbe18d3c58bbbf480993a63fcfa6d82cc5e5b0db4f9a3a4fa0ab8d06e682"
+}

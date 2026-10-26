@@ -1,0 +1,1201 @@
+{
+  "schema_version": 1,
+  "status": "PARTIAL_VERIFIED",
+  "coverage": {
+    "dev_planned": 30,
+    "dev_recorded": 30,
+    "final_planned": 140,
+    "final_recorded": 97,
+    "final_exported_common_prefix": 91,
+    "final_recorded_outside_prefix": 6,
+    "final_interrupted": 1,
+    "final_not_started": 42,
+    "full_comparison_complete": false
+  },
+  "source_sha256": {
+    "frozen_protocol": "ad6dcbe18d3c58bbbf480993a63fcfa6d82cc5e5b0db4f9a3a4fa0ab8d06e682",
+    "original_result": "70ee180f60f8831f7c64571a557fef5ca9b8884d14caa38d607abfc5810aad37",
+    "allocation_receipt": "e67724c47a3955a8baee85388c4a15430a177783fbb6512ec69a475654d649db",
+    "partial_integrity_report": "04ea84d9669cb216d2bced93f1ae90a11768ed93822b6733db87de2952905ad6",
+    "partial_integrity_code": "ba17e11acfcc919871eea3af70d60f540b68e2e82ba672466602aa63b4001ce6"
+  },
+  "rows": [
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "ACE_Supervised",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "DC_Cumulative",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "ACE_Supervised",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "DC_Cumulative",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "ACE_Supervised",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": true
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "DC_Cumulative",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "ACE_Supervised",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "DC_Cumulative",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "ACE_Supervised",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 0,
+      "arm": "DC_Cumulative",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "ACE_Supervised",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "DC_Cumulative",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "ACE_Supervised",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "DC_Cumulative",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "ACE_Supervised",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "DC_Cumulative",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "ACE_Supervised",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "DC_Cumulative",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "ACE_Supervised",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 3,
+      "arm": "DC_Cumulative",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "D01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "D02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "D03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "D04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "dev",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "D05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F01",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F02",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F03",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F04",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F05",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F06",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F07",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F08",
+      "native_success": true,
+      "actor_final_em": true,
+      "hit_at_any": true
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F08",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F08",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F08",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F08",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F08",
+      "native_success": true,
+      "actor_final_em": null,
+      "hit_at_any": true
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F08",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F09",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F10",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F11",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F12",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ACE_Supervised",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "DC_Cumulative",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShot",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "FewShotInst",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ProactiveCoT",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": null,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ToT_parser_repair01",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    },
+    {
+      "split": "final_common_prefix",
+      "checkpoint": 6,
+      "arm": "ZeroShot",
+      "case": "F13",
+      "native_success": false,
+      "actor_final_em": false,
+      "hit_at_any": false
+    }
+  ],
+  "dc_updates": [
+    {
+      "step": 1,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": null
+    },
+    {
+      "step": 2,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": false
+    },
+    {
+      "step": 3,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": false
+    },
+    {
+      "step": 4,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": false
+    },
+    {
+      "step": 5,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": false
+    },
+    {
+      "step": 6,
+      "finish_reason": "length",
+      "output_tokens": 1024,
+      "max_tokens": 1024,
+      "body_changed_after_removing_version_line": false
+    }
+  ],
+  "ace_training_stages": [
+    {
+      "step": 1,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    },
+    {
+      "step": 2,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    },
+    {
+      "step": 3,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    },
+    {
+      "step": 4,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    },
+    {
+      "step": 5,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    },
+    {
+      "step": 6,
+      "initial_correct": false,
+      "post_reflection_correct": true,
+      "post_curation_correct": false,
+      "reflector_target_visible": true
+    }
+  ]
+}

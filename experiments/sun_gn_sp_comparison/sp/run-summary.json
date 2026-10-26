@@ -1,0 +1,128 @@
+{
+  "condition": "EXPLORATORY_UNQUALIFIED_SAME_FAMILY_REFEREE",
+  "publication_ready": false,
+  "audit_status": "PASS_WITH_LIMITS",
+  "audit_sha256": "96a5867d2328669f45dc6a994b2fd6809e1cca49e62c8dbbf074e68dcac391e5",
+  "coverage": {
+    "episodes": 33,
+    "train": 6,
+    "dev": 12,
+    "final": 15,
+    "updates": 6,
+    "dev_unique_cases": 2,
+    "final_unique_cases": 5,
+    "one_learning_trajectory_per_method": true
+  },
+  "generation_calls": 1692,
+  "token_totals": {
+    "prompt_tokens": 1929930,
+    "completion_tokens": 36619
+  },
+  "truncation_by_arm_role": [
+    {
+      "arm": "ACE_Public_Feedback",
+      "role": "actor",
+      "actor_kind": "final",
+      "responses": 14,
+      "length": 0
+    },
+    {
+      "arm": "ACE_Public_Feedback",
+      "role": "actor",
+      "actor_kind": "question",
+      "responses": 350,
+      "length": 0
+    },
+    {
+      "arm": "ACE_Public_Feedback",
+      "role": "curator",
+      "actor_kind": "",
+      "responses": 3,
+      "length": 1
+    },
+    {
+      "arm": "ACE_Public_Feedback",
+      "role": "referee",
+      "actor_kind": null,
+      "responses": 350,
+      "length": 0
+    },
+    {
+      "arm": "ACE_Public_Feedback",
+      "role": "reflector",
+      "actor_kind": "",
+      "responses": 3,
+      "length": 3
+    },
+    {
+      "arm": "DC_Cumulative",
+      "role": "actor",
+      "actor_kind": "final",
+      "responses": 14,
+      "length": 1
+    },
+    {
+      "arm": "DC_Cumulative",
+      "role": "actor",
+      "actor_kind": "question",
+      "responses": 350,
+      "length": 0
+    },
+    {
+      "arm": "DC_Cumulative",
+      "role": "curator",
+      "actor_kind": "",
+      "responses": 3,
+      "length": 3
+    },
+    {
+      "arm": "DC_Cumulative",
+      "role": "referee",
+      "actor_kind": null,
+      "responses": 350,
+      "length": 0
+    },
+    {
+      "arm": "ZeroShot",
+      "role": "actor",
+      "actor_kind": "final",
+      "responses": 5,
+      "length": 0
+    },
+    {
+      "arm": "ZeroShot",
+      "role": "actor",
+      "actor_kind": "question",
+      "responses": 125,
+      "length": 0
+    },
+    {
+      "arm": "ZeroShot",
+      "role": "referee",
+      "actor_kind": null,
+      "responses": 125,
+      "length": 0
+    }
+  ],
+  "pending_semantic_review_rows": 0,
+  "referee_refusals": 0,
+  "limits": [
+    "All1692 calls counted, including actor/referee/updates. A syntactically accepted referee response is not a verified correct response.",
+    "Thirty prespecified replies received a supplementary AI source review (23 supported, 1 contradicted, 6 unresolved), not human qualification or an error-rate estimate; original scores are unchanged.",
+    "One learning trajectory per method; development checkpoints reuse two cases; five paired final cases do not justify a causal ranking.",
+    "Character F1 and diagnostic word F1 measure literal overlap, not semantic correctness.",
+    "Both learners see public interactions only; ACE-Public-Feedback-SP is a named adaptation, not the stock supervised ACE loop.",
+    "Input/time recovery amendments preserve both failed segments; actual elapsed active time and full repair-inclusive wall time are distinct."
+  ],
+  "supplementary_ai_source_review": {
+    "file": "feedback-source-review.json",
+    "reviewed": 30,
+    "counts": {
+      "source_unresolved": 6,
+      "source_supported": 23,
+      "source_contradicted": 1
+    },
+    "qualification_changed": false,
+    "original_audit_mutated": false
+  }
+}

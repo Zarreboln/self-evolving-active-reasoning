@@ -1,0 +1,42 @@
+{
+  "scope": "Observed local public arithmetic checks only; no models, remote execution or private scoring replay.",
+  "checks": [
+    {
+      "command": "python -B gn/verify_results.py --data gn/anonymous-numerics.json --results gn/results.json",
+      "exit_code": 0,
+      "elapsed_seconds_tool_reported": 0.1701323,
+      "status": "ARITHMETIC_MATCH",
+      "anonymous_rows": 121,
+      "full_comparison_complete": false,
+      "missing_final_slots": 43
+    },
+    {
+      "command": "python -B sp/numeric/verify_results.py sp/numeric",
+      "exit_code": 0,
+      "elapsed_seconds_tool_reported": 0.1419445,
+      "status": "ARITHMETIC_AND_PUBLIC_FILE_HASHES_PASS",
+      "anonymous_rows": 27
+    },
+    {
+      "command": "python -B sp/verify_supplements.py",
+      "exit_code": 0,
+      "elapsed_seconds_tool_reported": 0.1674805,
+      "status": "SUPPLEMENT_ARITHMETIC_AND_JOINS_MATCH",
+      "paired_final_rows": 15,
+      "fixed_review_items": 30,
+      "generation_calls": 1692,
+      "uncached_generation_usage_price_estimate_usd": "1.97990950"
+    }
+  ],
+  "verifier_sha256": {
+    "gn/verify_results.py": "50f8dea92491779071304965a002d53adc47145822424642b8966abd77851429",
+    "sp/numeric/verify_results.py": "6e6933856ca032f199e1135c66b09d2ade227af5b27d17c76f0180f6c19f3dc7",
+    "sp/verify_supplements.py": "d2dc1372d7db670ac6a14cb0a35a75014bf5557aeebf7e5d816c73c518a12941"
+  },
+  "new_model_calls": 0,
+  "publication_performed": false,
+  "limits": [
+    "Arithmetic checks do not verify private run provenance, raw scoring texts or semantic review labels.",
+    "GN is an incomplete failed full comparison; SP remains unqualified."
+  ]
+}

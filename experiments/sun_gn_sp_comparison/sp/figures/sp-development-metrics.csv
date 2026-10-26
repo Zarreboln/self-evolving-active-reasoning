@@ -1,0 +1,7 @@
+phase,arm,step,observed_n,planned_n,complete_denominator,mean_character_F1,mean_word_F1_diagnostic
+dev,DC_Cumulative,0,2,2,True,0.8854865337402757,0.32044776119402985
+dev,DC_Cumulative,1,2,2,True,0.8889783497954704,0.3400947867298578
+dev,DC_Cumulative,3,2,2,True,0.7134484563055992,0.2970077080448844
+dev,ACE_Public_Feedback,0,2,2,True,0.8671758372114243,0.35963455149501655
+dev,ACE_Public_Feedback,1,2,2,True,0.8313318937907277,0.36156843031293207
+dev,ACE_Public_Feedback,3,2,2,True,0.8856617848719215,0.3317790530846485

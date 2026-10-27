@@ -57,3 +57,9 @@ meta/cd_tthe/logs/*/check_*.py
 
 # model-call caches of the SP referee (reproducible from the records)
 meta/cd_tthe/logs/*/solver_cache_answerer/
+
+# arbench_mh evolution loops: run output and per-run virtualenvs stay local
+meta/arbench_mh/runs/*/logs/
+meta/arbench_mh/runs/*/results/
+meta/arbench_mh/runs/*/.venv/
+meta/arbench_mh/runs/*/.empty_plugins/

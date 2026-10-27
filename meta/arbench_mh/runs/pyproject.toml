@@ -1,0 +1,12 @@
+# The loop import-checks candidates from THIS directory (`cwd=EVOLVE_DIR.parent` in
+# validate_candidates), with `uv run`. Declaring the package here is what makes
+# `from arbench_mh.<task>.agents.<name> import *` resolve without anyone exporting PYTHONPATH --
+# the first run lost two forty-minute proposer sessions to exactly that gap.
+[project]
+name = "arbench-mh-runs"
+version = "0"
+requires-python = ">=3.10"
+dependencies = ["arbench-mh"]
+
+[tool.uv.sources]
+arbench-mh = { path = "../..", editable = true }

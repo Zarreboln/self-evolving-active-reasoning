@@ -1,0 +1,14 @@
+# Meta-Harness on AR-Bench gn. The loop reads models/datasets from here; the episode
+# work happens on the cluster, which is where AR-Bench, the splits and the served model live.
+models:
+  - model: Qwen/Qwen2.5-7B-Instruct
+datasets:
+  - gn
+benchmark:
+  seeds: [42]
+  concurrency: 16
+
+memory_systems:
+  baselines:
+    - baseline_no_questions
+  proposed: []  # meta_harness.py writes candidate files into agents/ at runtime

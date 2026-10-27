@@ -134,6 +134,19 @@ HOST = os.environ.get("MH_HOST", "")
 REMOTE = "code/arbench_mh"
 
 
+def _rename_for_test(d, split, rc):
+    """score_val writes val.json whatever the split, and load_results looks for test.json on the
+    test side. The remote path renames on the way back (see `evaluate`); the local path never had
+    to, because finalization had not run on this machine before. Without this the episodes all
+    run, the scores all land, and finalization reports every group missing.
+    """
+    if rc == 0 and split == "test":
+        src, dst = os.path.join(d, "val.json"), os.path.join(d, "test.json")
+        if os.path.exists(src):
+            os.replace(src, dst)
+    return rc
+
+
 def _evaluate_here(task, system, remote_split, d, split, workers, here):
     """Everything on one machine: no shipping, no copying back."""
     py = os.environ.get("MH_PYTHON", os.path.expanduser("~/venv/bin/python"))
@@ -146,7 +159,8 @@ def _evaluate_here(task, system, remote_split, d, split, workers, here):
                "--tier", os.environ.get("AMIGO_TIER", "tau06"),
                "--harness", system, "--split", remote_split, "--out", episodes,
                "--workers", str(workers), "--val-out", os.path.join(d, "val.json")]
-        return subprocess.run(cmd, env=os.environ.copy()).returncode
+        return _rename_for_test(d, split,
+                                subprocess.run(cmd, env=os.environ.copy()).returncode)
     cmd = [py, "-I", os.path.join(here, "benchmark.py"), "--task", task]
     if task == "sp":
         cmd = [py, "-I", os.path.join(here, "sp", "benchmark.py")]
@@ -154,11 +168,11 @@ def _evaluate_here(task, system, remote_split, d, split, workers, here):
             "--workers", str(workers)]
     if subprocess.run(cmd, env=os.environ.copy()).returncode != 0:
         return 1
-    return subprocess.run([py, "-I", os.path.expanduser("~/code/score_val.py"), episodes,
-                           "--task", task, "--system", system,
-                           "--logs-dir", os.path.dirname(os.path.dirname(
-                               os.path.dirname(d)))],
-                          env=os.environ.copy()).returncode
+    return _rename_for_test(d, split, subprocess.run(
+        [py, "-I", os.path.expanduser("~/code/score_val.py"), episodes,
+         "--task", task, "--system", system,
+         "--logs-dir", os.path.dirname(os.path.dirname(os.path.dirname(d)))],
+        env=os.environ.copy()).returncode)
 
 
 def evaluate(task, system, split, logs_dir, results_dir, workers):

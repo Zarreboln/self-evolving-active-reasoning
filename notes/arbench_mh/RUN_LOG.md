@@ -286,9 +286,44 @@ sessions hit the 40-minute cutoff and recorded nothing. After it, none did:
 | dc | 17.6 · 25.2 · 33.2 · 19.0 · 18.5 |
 | sp | 18.9 · 37.5 · **40.1 lost** · 22.6 · 16.9 · 19.8 |
 
+### Finalization, 2026-10-27 12:34-12:41
+
+The held-out splits, 100 instances each, read from `~/sealed/<task>/test.json`. One pass.
+
+| task | system | selection | test | gap | tokens/ep |
+|---|---|---|---|---|---|
+| gn | `packed_group_echo` | 100.0 | **100.0** | 0.0 | 7 |
+| gn | anchor | 0.0 | 0.0 | 0.0 | 226 |
+| dc | `lean_verify` | 80.0 | **63.0** | **-17.0** | 25,715 |
+| dc | `prior_verify_stop` | 57.0 | 57.0 | 0.0 | 18,308 |
+| dc | anchor | 37.0 | 36.0 | -1.0 | 847 |
+| sp | `atomic_audit` | 41.0 | **32.5** | -8.5 | 16,142 |
+| sp | `family_answer` | 36.5 | 31.5 | -5.0 | 10,913 |
+| sp | `coarse_first` | 39.0 | 30.5 | -8.5 | 14,183 |
+| sp | anchor | 12.0 | 10.5 | -1.5 | 215 |
+
+**The winners lose the most.** The anchor transfers within a point on all three tasks, and
+`prior_verify_stop` -- on the frontier but never the best -- transfers exactly. Every system that
+was the best on selection drops: dc by 17 points, sp by 5 to 8.5. At n=100 the standard error is
+about 5pp, so dc's drop is around three of them and not noise; sp's three drops are smaller
+individually but all point the same way. This is selection on the validation split showing up as
+it should: the frontier was chosen there, and part of the winner's edge was the choosing.
+
+Reporting rule that follows: the headline number is the test number, and the selection number is
+reported beside it rather than instead of it.
+
+### The local path had never run --test
+
+`score_val.py` writes `val.json` whatever the split, while `load_results` looks for `test.json` on
+the test side. The remote path renames on the way back; `_evaluate_here`, which is what we use,
+never did, because finalization had not run on this machine before. The first pass ran all nine
+systems, scored them all, and reported every group missing. Fixed in `mh_benchmark._rename_for_test`
+and re-run; the whole pass is about six minutes.
+
 ### Not yet done
 
-- **Finalization has not been run.** `supervise.sh` exits when five iterations are recorded; it
-  does not call `meta_harness.py --run-name run1 --test`. The held-out split in `~/sealed/` is
-  still untouched, and that run happens once.
+- **The published arms are on the wrong split.** `published_baselines.json` holds selection-split
+  numbers, so the figures currently compare our test-eligible systems against published arms
+  measured somewhere else. Nine runs of 100 episodes would put them on test too and make the
+  table test-against-test.
 

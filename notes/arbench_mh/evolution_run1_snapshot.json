@@ -44,7 +44,7 @@
 "tiers": null,
 "axis": "exploration",
 "delta": 0.0,
-"frontier": "yes",
+"frontier": "no",
 "hypothesis": "With cross-episode memory, verified_pool_memory's whole per-episode cost is one 22-token dictation, and the 8 template plus ~5 instruction tokens are paid again by every episode, although up to 16 episodes reach that step together in one process. Batch prompting across concurrent episodes fixes this"
 },
 {
@@ -98,6 +98,22 @@
 {
 "task": "Guess Number",
 "task_id": "gn",
+"iteration": 5,
+"system": "packed_group_echo",
+"kind": "candidate",
+"accuracy": 100.0,
+"tokens": 7.5,
+"calls": 8,
+"episodes": 100,
+"tiers": null,
+"axis": "exploitation",
+"delta": 0.0,
+"frontier": "yes",
+"hypothesis": "batched_echo_memory spends its whole per-episode cost on the group echo, one number per line (~10.8 tok/number in a group of 16). Qwen writes every digit as one token, so separators are a fifth of that, and answers often overlap by 1-3 digits. If the closing episode merges the group's numbers into o"
+},
+{
+"task": "Guess Number",
+"task_id": "gn",
 "iteration": 2,
 "system": "plan_table_endgame",
 "kind": "candidate",
@@ -130,6 +146,22 @@
 {
 "task": "Guess Number",
 "task_id": "gn",
+"iteration": 5,
+"system": "short_stream_packed_endgame",
+"kind": "candidate",
+"accuracy": 100.0,
+"tokens": 46.7,
+"calls": 200,
+"episodes": 100,
+"tiers": null,
+"axis": "exploitation",
+"delta": 0.0,
+"frontier": "no",
+"hypothesis": "With nothing kept or shared, digit_stream_windows (57.0) writes a 20-digit stream so that 99.7% of secrets end forced, because an unforced end costs a ranking call (54+ tok). If every survivor goes into one packed 'Repeat: <superstring>' call and the harness plays them down itself, an extra survivor"
+},
+{
+"task": "Guess Number",
+"task_id": "gn",
 "iteration": 2,
 "system": "static_cover_plan",
 "kind": "candidate",
@@ -158,6 +190,22 @@
 "delta": 0.0,
 "frontier": "no",
 "hypothesis": "Batching and memory are separable savings. Each episode keeps nothing and writes its own probes in its own stream call (digit_stream_windows), and only the forced answers of concurrent episodes go out in one coalesced call. That is batch prompting proper: one prompt carries several instances, and ea"
+},
+{
+"task": "Guess Number",
+"task_id": "gn",
+"iteration": 5,
+"system": "stream_packed_coalesced",
+"kind": "candidate",
+"accuracy": 100.0,
+"tokens": 35.3,
+"calls": 109,
+"episodes": 100,
+"tiers": null,
+"axis": "exploration",
+"delta": 0.0,
+"frontier": "no",
+"hypothesis": "Batching without memory: stream_coalesced_echo (50.2) pays 38 for a 20-digit per-episode stream and ~11 per coalesced line. With the packed group echo (~7.3/number) carrying each episode's whole survivor set, a survivor costs ~7 tokens and a stream digit 1, so a 10-digit stream is cheapest. Priced o"
 },
 {
 "task": "Guess Number",
@@ -466,17 +514,57 @@
 {
 "task": "Situation Puzzles",
 "task_id": "sp",
+"iteration": 4,
+"system": "assumption_flip",
+"kind": "candidate",
+"accuracy": 36.0,
+"tokens": 11649.4,
+"calls": 4236,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 72,
+"wrong": 28
+},
+"axis": "exploration",
+"delta": -5.0,
+"frontier": "no",
+"hypothesis": "On the hard puzzles (26 used 20+ questions) coarse_first's new lists stay inside the reading of the puzzle that made the first families wrong. Once 3 families are ruled out, asking the model what the ruled-out explanations all take for granted (who someone is, whether someone is really dead, when/wh"
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
+"iteration": 4,
+"system": "atomic_audit",
+"kind": "candidate",
+"accuracy": 41.0,
+"tokens": 12367.7,
+"calls": 4311,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 82,
+"wrong": 18
+},
+"axis": "exploitation",
+"delta": 0.0,
+"frontier": "yes",
+"hypothesis": "coarse_first's remaining failures are mostly early certifications whose full claim carries a detail (motive, means, epilogue) the lenient referee waved through but the bottom does not contain. Spending the unused budget after certification to split the answer sentence into its separate facts, asking"
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
 "iteration": 0,
 "system": "baseline_no_questions",
 "kind": "seed",
-"accuracy": 11.5,
-"tokens": 218.7,
+"accuracy": 12.0,
+"tokens": 216.4,
 "calls": 100,
 "episodes": 100,
 "tiers": {
 "equivalent": 0,
-"partial": 23,
-"wrong": 77
+"partial": 24,
+"wrong": 76
 },
 "axis": "",
 "delta": null,
@@ -540,8 +628,28 @@
 },
 "axis": "exploration",
 "delta": -6.5,
-"frontier": "yes",
+"frontier": "no",
 "hypothesis": "A paraphrase recheck cannot separate a lenient Yes from a true one (5 to 8 wrong cores were certified by two Yes answers in iteration 2); a rival can. Certifying a core by Yes to the claim plus a non-Yes to the most likely incompatible rival, and when the rival also gets Yes running a paraphrase due"
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
+"iteration": 5,
+"system": "diverse_pick",
+"kind": "candidate",
+"accuracy": 39.5,
+"tokens": 13716.8,
+"calls": 4841,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 79,
+"wrong": 21
+},
+"axis": "exploitation",
+"delta": -1.5,
+"frontier": "no",
+"hypothesis": "The 7B's lists are variants of one story in most-likely-first order, so after a family is ruled out the next candidates in model order are often near-duplicates that draw the same answer. Comparing each candidate with every ruled-out claim on hidden content only (words the puzzle does not contain, s"
 },
 {
 "task": "Situation Puzzles",
@@ -582,6 +690,66 @@
 "delta": -5.5,
 "frontier": "no",
 "hypothesis": "Zero-shot's 25 questions score below asking none (4.5% vs 9.5%) because the final answer carries unconfirmed detail and the growing transcript invites near-verbatim repeats. Replacing the transcript with a verdict-sorted fact ledger (ESTABLISHED / RULED OUT / DEAD ENDS), vetoing repeats with the ear"
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
+"iteration": 4,
+"system": "family_answer",
+"kind": "candidate",
+"accuracy": 36.5,
+"tokens": 8448.4,
+"calls": 3153,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 73,
+"wrong": 27
+},
+"axis": "exploration",
+"delta": -4.5,
+"frontier": "yes",
+"hypothesis": "At the 0.5 tier details never pay: answering with the family-level claim, certified by a differently worded family Yes (or, failing that, by the full claim's Yes as in coarse_first), and stopping there, will beat coarse_first (39.0%) at lower token cost. The full claim is the answer only when the fa"
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
+"iteration": 5,
+"system": "frame_diverse",
+"kind": "candidate",
+"accuracy": 41.0,
+"tokens": 14761.8,
+"calls": 5134,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 82,
+"wrong": 18
+},
+"axis": "exploration",
+"delta": 0.0,
+"frontier": "no",
+"hypothesis": "frame_gate (harness-supplied resolution frames once the model's lists run dry) and diverse_pick (novelty-first choice among the model's candidates) attack the narrow prior on hard puzzles at different stages, so their gains add: the combination beats both of them and atomic_audit (41.0%). Falsified "
+},
+{
+"task": "Situation Puzzles",
+"task_id": "sp",
+"iteration": 5,
+"system": "frame_gate",
+"kind": "candidate",
+"accuracy": 40.5,
+"tokens": 14412.6,
+"calls": 5043,
+"episodes": 100,
+"tiers": {
+"equivalent": 0,
+"partial": 81,
+"wrong": 19
+},
+"axis": "exploration",
+"delta": -0.5,
+"frontier": "no",
+"hypothesis": "On hard puzzles the 7B's lists stay inside one reading, so family Nos rule out little and some episodes never get a single Yes (they then answer with an unconfirmed guess). When the prior and first list leave no usable anchor (or the anchor goes stale), asking a harness-supplied menu of general reso"
 },
 {
 "task": "Situation Puzzles",

@@ -230,7 +230,65 @@ confirms it), and `sp_semantic_equivalence.py`, which it imports, needs nothing 
 vendoring into `arbench_mh/` so a cleanup of a scratch directory cannot take the scorer with it;
 not done now, with runs in flight.
 
-### Running
+### run1, finished
 
-All three relaunched 07:03 UTC, `supervise.sh run1 5`, iteration 1/5, policy
-`ml-16-node-002:9445`, referee shim `jev-1.14.0` on 8099.
+All three relaunched 07:03 UTC and recorded five iterations each by 09:43, policy
+`ml-16-node-002:9445`, referee shim `jev-1.14.0` on 8099. Selection split, 100 episodes a point,
+frozen Qwen2.5-7B-Instruct. Figures: `figures/evolution_frontier.*`, `figures/evolution_trajectory.*`;
+the numbers behind them in `evolution_run1_snapshot.json`, pulled by `meta/tools/pull_snapshot.py`.
+
+**No published AR-Bench method survives on the frontier of any of the three tasks.**
+
+| | frontier, cheapest first | published arms |
+|---|---|---|
+| gn | `packed_group_echo` 100.0% @ 7 | tot_fixed 6.0 @ 21,176 · zero_shot 0.0 @ 31,094 · proactive_cot 2.0 @ 46,161 |
+| dc | anchor 37.0 @ 863 → `prior_verify_stop` 57.0 @ 20,854 → `lean_verify` 80.0 @ 25,344 | tot 31.0 @ 95,518 · proactive_stop 35.0 @ 114,648 · few_shot_inst 34.0 @ 286,863 |
+| sp | anchor 12.0 @ 216 → `family_answer` 36.5 @ 8,448 → `coarse_first` 39.0 @ 12,261 → `atomic_audit` 41.0 @ 12,368 | tot_eval 12.5 @ 8,624 · zero_shot 4.5 @ 37,413 · few_shot_inst 3.5 @ 54,746 |
+
+Detective Cases moved every iteration: 37.0 → 60 → 64 → 71 → 76 → 80. All three published arms
+score below the anchor that asks no questions at all and answers for 863 tokens. Situation Puzzles
+went 12.0 → 10.5 (iteration 1 lost ground) → 36.5 → 39.0 → 41.0 → 41.0, and `family_answer` finally
+dominated `tot_eval`: more accurate and cheaper.
+
+### Guess Number is not a result, it is a measurement artifact
+
+`packed_group_echo` reaches 100.0% at **7 tokens an episode**, and the mechanism is worth stating
+plainly because it is not reasoning:
+
+- **0.08 model calls an episode. 92 of 100 episodes call the model zero times.**
+- The harness solves the game itself -- exact elimination over the 5040 candidates -- and the model
+  exists only to say the answer out loud.
+- The 8 calls that do happen each serve a *group of sixteen concurrently running episodes*: the
+  harness merges those sixteen answers into one digit string by overlapping their suffixes and
+  prefixes, asks "Repeat: <string>", and each episode reads its own four digits back out.
+- Its docstring explains the packing choice by Qwen2.5's tokenizer: every digit is one token, so
+  separators were a fifth of the cost, and sixteen answers pack into ~52 digits instead of 64.
+
+Two things follow. The search found that the cost axis is **per episode** while the evaluation
+runs episodes **concurrently**, so cost can be amortised across episodes that merely happen to be
+in flight together -- a property of our benchmark runner, not of the task. And the earlier
+convention that "every guess played, and the final answer, is a number the model wrote", which the
+iteration-1 candidates stated in their own docstrings, no longer holds.
+
+The honest reading: gn saturated at iteration 1, where three different candidates all hit 100.0%,
+and iterations 2-5 only drove cost from 6,283 tokens down to 7. Report gn as saturated, report the
+cost collapse as a finding about the metric, and do not use gn as evidence that the search improves
+reasoning. The two tasks that still carry a signal are dc and sp.
+
+### The anti-stall change worked
+
+Shipped after iteration 4 (dc) / 3 (gn) / 2 (sp). Before it, two of the first nine proposer
+sessions hit the 40-minute cutoff and recorded nothing. After it, none did:
+
+| | per-iteration wall clock |
+|---|---|
+| gn | 31.9 · **40.1 lost** · 7.3 · 25.2 · 21.2 · 18.5 |
+| dc | 17.6 · 25.2 · 33.2 · 19.0 · 18.5 |
+| sp | 18.9 · 37.5 · **40.1 lost** · 22.6 · 16.9 · 19.8 |
+
+### Not yet done
+
+- **Finalization has not been run.** `supervise.sh` exits when five iterations are recorded; it
+  does not call `meta_harness.py --run-name run1 --test`. The held-out split in `~/sealed/` is
+  still untouched, and that run happens once.
+

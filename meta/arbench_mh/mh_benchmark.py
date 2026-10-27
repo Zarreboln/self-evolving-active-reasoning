@@ -138,7 +138,15 @@ def _evaluate_here(task, system, remote_split, d, split, workers, here):
     """Everything on one machine: no shipping, no copying back."""
     py = os.environ.get("MH_PYTHON", os.path.expanduser("~/venv/bin/python"))
     episodes = os.path.join(d, "episodes.json")
-    runner = os.path.join(here, "sp" if task == "sp" else "", "benchmark.py")
+    if task == "amigo":
+        # amigo scores itself: accuracy is a plain exact match and the chance rate differs per
+        # gallery, so there is nothing for score_val's judge machinery to do, and keeping it in
+        # the package means a cleanup of a scratch directory cannot take the scorer with it.
+        cmd = [py, "-I", os.path.join(here, "amigo", "benchmark.py"),
+               "--tier", os.environ.get("AMIGO_TIER", "tau06"),
+               "--harness", system, "--split", remote_split, "--out", episodes,
+               "--workers", str(workers), "--val-out", os.path.join(d, "val.json")]
+        return subprocess.run(cmd, env=os.environ.copy()).returncode
     cmd = [py, "-I", os.path.join(here, "benchmark.py"), "--task", task]
     if task == "sp":
         cmd = [py, "-I", os.path.join(here, "sp", "benchmark.py")]
@@ -202,7 +210,7 @@ def evaluate(task, system, split, logs_dir, results_dir, workers):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--task", required=True, choices=("gn", "dc", "sp"))
+    ap.add_argument("--task", required=True, choices=("gn", "dc", "sp", "amigo"))
     ap.add_argument("--memory", help="evaluate this harness")
     ap.add_argument("--frontier", action="store_true")
     ap.add_argument("--results", action="store_true")

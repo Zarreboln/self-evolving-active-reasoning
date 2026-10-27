@@ -1,0 +1,18 @@
+# Meta-Harness on AMIGO (Guess My Preferred Dress), difficulty tier tau=0.6.
+#
+# tau=0.6 rather than the hardest tier: at tau=0.8 the paper's own player scores 14.0% against a
+# 14.7% chance rate, so there is no gradient for a search to climb. tau=0.6 has the clearest lift
+# over chance of the five (+16.1pp) and still leaves most of the budget on the floor. Transfer to
+# the other four tiers is measured at the end rather than assumed.
+models:
+  - model: Qwen/Qwen3.5-9B
+datasets:
+  - amigo
+benchmark:
+  seeds: [42]
+  concurrency: 16
+
+memory_systems:
+  baselines:
+    - baseline_blind_guess
+  proposed: []  # meta_harness.py writes candidate files into agents/ at runtime

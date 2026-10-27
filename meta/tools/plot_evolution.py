@@ -119,7 +119,7 @@ def place(ax, items, pad_pt=9.0, avoid=()):
                             math.sin(math.radians(a)) * pad * radius * 1.25))
 
     half = 7.0 * scale                       # the largest marker, in pixels
-    for x, y, _t, _c in items:
+    for x, y, _t, _c, _d in items:
         mx, my = ax.transData.transform((x, y))
         placed.append((mx - half, my - half, mx + half, my + half))
     for x, y in avoid:                       # points along the frontier line
@@ -129,7 +129,7 @@ def place(ax, items, pad_pt=9.0, avoid=()):
     area = ax.get_window_extent(renderer=rend)
     inside = (area.x0 + 1, area.y0 + 1, area.x1 - 1, area.y1 - 1)
 
-    for x, y, text, colour in sorted(items, key=lambda it: it[3] != FRONT):
+    for x, y, text, colour, droppable in sorted(items, key=lambda it: it[3] != FRONT):
         mx, my = ax.transData.transform((x, y))
         probe = ax.annotate(text, (0.5, 0.5), xycoords="axes fraction", fontsize=8.6, alpha=0)
         bb = probe.get_window_extent(renderer=rend)
@@ -149,6 +149,12 @@ def place(ax, items, pad_pt=9.0, avoid=()):
             chosen = (dx, dy)
             break
         if chosen is None:
+            # A panel fills up as the search adds candidates. The points that carry the result --
+            # the frontier and the published arms -- keep their labels whatever it costs; a
+            # dominated candidate with nowhere clear to go gives its label up and stays a marker,
+            # which is better than two names written over each other.
+            if droppable:
+                continue
             chosen = fallback if fallback is not None else (pad * 2.4, 0.0)
         dx, dy = chosen
         placed.append((mx + dx - hw, my + dy - hh, mx + dx + hw, my + dy + hh))
@@ -205,7 +211,8 @@ def figure_frontier(rows, out, stamp):
         labels = []
         for r in rs:
             colour = draw_point(ax, r["tokens"], r["accuracy"], r)
-            labels.append((r["tokens"], r["accuracy"], r["system"], colour))
+            labels.append((r["tokens"], r["accuracy"], r["system"], colour,
+                           not r["front"] and r["origin"] == "search"))
         pending.append((ax, labels, avoid))
 
     axes[0].set_ylabel("accuracy %")
@@ -214,7 +221,8 @@ def figure_frontier(rows, out, stamp):
     fig.text(0.006, 0.935, "filled = on the frontier, hollow = dominated   ·   circle = published "
              "method or the no-questions anchor, diamond = written by the search",
              fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.012, f"Uncertainty-of-Thoughts held out  ·  {stamp}",
+    fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
+             f"dominated candidate with no room for its name  ·  {stamp}",
              fontsize=8, color=MUTE)
     fig.tight_layout(rect=(0, 0.035, 1, 0.885))
     for ax, labels, avoid in pending:
@@ -241,7 +249,8 @@ def figure_trajectory(rows, out, stamp):
         labels = []
         for x, r in zip(xs, seq):
             colour = draw_point(ax, x, r["accuracy"], r)
-            labels.append((x, r["accuracy"], r["system"], colour))
+            labels.append((x, r["accuracy"], r["system"], colour,
+                           not r["front"] and r["origin"] == "search"))
 
         ax.set_xticks([])
         groups = {}
@@ -271,7 +280,8 @@ def figure_trajectory(rows, out, stamp):
     fig.text(0.006, 0.935, "filled = on the frontier against every published method too, hollow = "
              "dominated   ·   circle = anchor, diamond = written by the search",
              fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.012, f"Uncertainty-of-Thoughts held out  ·  {stamp}",
+    fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
+             f"dominated candidate with no room for its name  ·  {stamp}",
              fontsize=8, color=MUTE)
     fig.tight_layout(rect=(0, 0.04, 1, 0.885))
     for ax, labels in pending:

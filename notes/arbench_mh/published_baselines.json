@@ -1,0 +1,16 @@
+{
+  "_note": "AR-Bench's own reasoning methods on the selection split, 100 instances each, frozen Qwen2.5-7B-Instruct, measured 2026-10-24..26. Same protocol and same metrics as the evolution runs, so the two sets go on one frontier. tot_fixed and tot_eval are the repaired Tree-of-Thoughts arms: AR-Bench's gn/tot scores each candidate against the hidden answer and its sp/dc ToT leaves the state evaluator unassigned, both corrected in runner/. Uncertainty-of-Thoughts is held out of the seed sets and is not plotted.",
+  "rows": [
+    {"task_id": "gn", "system": "tot_fixed",      "accuracy": 6.0,  "tokens": 21176},
+    {"task_id": "gn", "system": "zero_shot",      "accuracy": 0.0,  "tokens": 31094},
+    {"task_id": "gn", "system": "proactive_cot",  "accuracy": 2.0,  "tokens": 46161},
+
+    {"task_id": "dc", "system": "tot",            "accuracy": 31.0, "tokens": 95518},
+    {"task_id": "dc", "system": "proactive_stop", "accuracy": 35.0, "tokens": 114648},
+    {"task_id": "dc", "system": "few_shot_inst",  "accuracy": 34.0, "tokens": 286863},
+
+    {"task_id": "sp", "system": "tot_eval",       "accuracy": 12.5, "tokens": 8624},
+    {"task_id": "sp", "system": "zero_shot",      "accuracy": 4.5,  "tokens": 37413},
+    {"task_id": "sp", "system": "few_shot_inst",  "accuracy": 3.5,  "tokens": 54746}
+  ]
+}

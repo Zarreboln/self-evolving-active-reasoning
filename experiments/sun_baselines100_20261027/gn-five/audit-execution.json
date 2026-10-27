@@ -1,0 +1,11 @@
+{
+  "job_id": "27042768",
+  "exit_code": 0,
+  "timed_out": false,
+  "elapsed_seconds": 19.047711635008454,
+  "auditor_sha256": "ccd79ff4675362af972ee388edccf5ef7c228062c8dcda1582881923747023c3",
+  "source_manifest_sha256": "f1f0b028fa9c3ed5ae56b0cc45be190775f14e70a92569946f78a018bc4c49e4",
+  "result_sha256": "20eeba191c89420925c8d534a5dee2e66f53df240c1c9806eab15f65df72ee66",
+  "model_calls": 0,
+  "gpu_jobs": 0
+}

@@ -1045,3 +1045,19 @@ The historical [singleton/query studies in PR 2](https://github.com/Zarreboln/se
 </dd></dl>
 </details>
 
+
+<details>
+<summary><b>B8 2026-10-27, 7,458 s allocation — five GN inference baselines, full official 100-case split</b></summary>
+
+<dl><dd>
+
+All five methods completed **100/100 cases each**, with **12,805 model responses**. Recorded-response replay passed; root separately checked completed parent/batch/extern scheduler records, process cleanup and the serving-model startup log. This is a new 2,048-token-cap run, separate from B7's 512-token pilot; the old records are unchanged.
+
+Native/harness successes: ZeroShot **0/100**, FewShot **0/100**, FewShotInst **2/100**, parser-repaired ToT **5/100**, ProactiveCoT **2/100**. ToT versus zero-shot has five paired wins, zero losses and exploratory two-sided exact McNemar p=0.0625 (uncorrected). These counts do not establish reliable task solving, a general method ranking or self-evolution benefit. ToT's successful harness endpoints must not be relabeled actor-final successes; selected-path query counts omit its branch-oracle evaluations.
+
+Conditions: Qwen2.5-7B-Instruct, original official100 test cases/order, one fixed seed schedule, 25-turn methods, explicit2,048-token output and16,384-context limits, disclosed ToT parser repair and concurrent serving. This adapts the upstream32B configuration. All13 output truncations and3 ProactiveCoT random fallbacks are retained. UoT, SFT/DPO, complete SP comparisons and qualified SP feedback remain separate unfinished requirements.
+
+Traceback: [method details, limitations and source pins](../experiments/sun_baselines100_20261027/gn-five/README.md) → [anonymous numeric rows](../experiments/sun_baselines100_20261027/gn-five/numeric-cases.csv) → [analysis](../experiments/sun_baselines100_20261027/gn-five/analysis.json), [independent audit](../experiments/sun_baselines100_20261027/gn-five/audit-result.json), [root provenance](../experiments/sun_baselines100_20261027/gn-five/provenance.json) and [public arithmetic verifier](../experiments/sun_baselines100_20261027/gn-five/verify_results.py). The public verifier does not rerun models or reconstruct private transcripts.
+
+</dd></dl>
+</details>

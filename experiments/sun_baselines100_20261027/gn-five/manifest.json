@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "analysis.json": "e883f49c6f7493357ec3b224c12579b077158216f4f7a59331bd35483282feec",
+    "audit-execution.json": "f635df4a8b642ac06b487d31b7ae918257a06fd19ed4fb1aebcc7978791c4bd7",
+    "audit-result.json": "20eeba191c89420925c8d534a5dee2e66f53df240c1c9806eab15f65df72ee66",
+    "numeric-cases.csv": "35dc316b7b0e5864960b55a4727f47d1b7a06320b2331b57f3ce918a6724c3ed",
+    "provenance.json": "cedcee10c7549f8784d1fc3108b30a7f506f0adf17fa1e9514c43f961b3bbd61",
+    "README.md": "fda5840d95b90dec922bcc9cae51759ece988069df56be34886e55222b2d989f",
+    "verify_results.py": "4211c51dc90bdd68ce2503279caca78d4e71b03c842b1faa94049760a94e3856"
+  }
+}

@@ -1,0 +1,158 @@
+{
+  "status": "DESCRIPTIVE_ANALYSIS_OF_AUDITED_BASELINES",
+  "job_id": "27042768",
+  "source_result_sha256": "242e39458414b690c2bb4fbaf046ce515924fdb5d59962784de5d8f38d75afe3",
+  "source_audit_sha256": "20eeba191c89420925c8d534a5dee2e66f53df240c1c9806eab15f65df72ee66",
+  "model": "Qwen2.5-7B-Instruct",
+  "reference_official_script_model": "Qwen2.5-32B-Instruct",
+  "summaries": [
+    {
+      "method": "zero_shot",
+      "cases": 100,
+      "official_successes": 0,
+      "success_rate": 0.0,
+      "success_wilson95": [
+        3.469446951953614e-18,
+        0.03699349820698568
+      ],
+      "harness_final_EM": 0,
+      "hit_at_any": 1,
+      "actor_final_EM_available": 100,
+      "selected_path_queries_mean": 25,
+      "logged_guesses_mean": 26,
+      "completed_model_calls": 2600,
+      "input_tokens": 3059701,
+      "output_tokens": 41396,
+      "truncated_responses": 0,
+      "proactive_random_fallbacks": 0
+    },
+    {
+      "method": "few_shot",
+      "cases": 100,
+      "official_successes": 0,
+      "success_rate": 0.0,
+      "success_wilson95": [
+        3.469446951953614e-18,
+        0.03699349820698568
+      ],
+      "harness_final_EM": 0,
+      "hit_at_any": 2,
+      "actor_final_EM_available": 100,
+      "selected_path_queries_mean": 25,
+      "logged_guesses_mean": 26,
+      "completed_model_calls": 2600,
+      "input_tokens": 4216700,
+      "output_tokens": 21020,
+      "truncated_responses": 0,
+      "proactive_random_fallbacks": 0
+    },
+    {
+      "method": "few_shot_inst",
+      "cases": 100,
+      "official_successes": 2,
+      "success_rate": 0.02,
+      "success_wilson95": [
+        0.00550196755016235,
+        0.07001179072854388
+      ],
+      "harness_final_EM": 2,
+      "hit_at_any": 3,
+      "actor_final_EM_available": 100,
+      "selected_path_queries_mean": 25,
+      "logged_guesses_mean": 26,
+      "completed_model_calls": 2600,
+      "input_tokens": 5428300,
+      "output_tokens": 58439,
+      "truncated_responses": 3,
+      "proactive_random_fallbacks": 0
+    },
+    {
+      "method": "tot",
+      "cases": 100,
+      "official_successes": 5,
+      "success_rate": 0.05,
+      "success_wilson95": [
+        0.02154367915436796,
+        0.11175046923191913
+      ],
+      "harness_final_EM": 5,
+      "hit_at_any": 5,
+      "actor_final_EM_available": 95,
+      "selected_path_queries_mean": 24.1,
+      "logged_guesses_mean": 24.1,
+      "completed_model_calls": 2505,
+      "input_tokens": 2107450,
+      "output_tokens": 48679,
+      "truncated_responses": 0,
+      "proactive_random_fallbacks": 0
+    },
+    {
+      "method": "proactive_cot",
+      "cases": 100,
+      "official_successes": 2,
+      "success_rate": 0.02,
+      "success_wilson95": [
+        0.00550196755016235,
+        0.07001179072854388
+      ],
+      "harness_final_EM": 2,
+      "hit_at_any": 2,
+      "actor_final_EM_available": 0,
+      "selected_path_queries_mean": 24.91,
+      "logged_guesses_mean": 24.91,
+      "completed_model_calls": 2500,
+      "input_tokens": 2661302,
+      "output_tokens": 2109884,
+      "truncated_responses": 10,
+      "proactive_random_fallbacks": 3
+    }
+  ],
+  "paired_success_comparisons": [
+    {
+      "method": "few_shot",
+      "reference": "zero_shot",
+      "paired_cases": 100,
+      "wins": 0,
+      "losses": 0,
+      "success_difference_percentage_points": 0,
+      "mcnemar_exact_two_sided_p_uncorrected": 1.0
+    },
+    {
+      "method": "few_shot_inst",
+      "reference": "zero_shot",
+      "paired_cases": 100,
+      "wins": 2,
+      "losses": 0,
+      "success_difference_percentage_points": 2,
+      "mcnemar_exact_two_sided_p_uncorrected": 0.5
+    },
+    {
+      "method": "tot",
+      "reference": "zero_shot",
+      "paired_cases": 100,
+      "wins": 5,
+      "losses": 0,
+      "success_difference_percentage_points": 5,
+      "mcnemar_exact_two_sided_p_uncorrected": 0.0625
+    },
+    {
+      "method": "proactive_cot",
+      "reference": "zero_shot",
+      "paired_cases": 100,
+      "wins": 2,
+      "losses": 0,
+      "success_difference_percentage_points": 2,
+      "mcnemar_exact_two_sided_p_uncorrected": 0.5
+    }
+  ],
+  "limits": [
+    "All five arms are inference baselines; none measures evolution.",
+    "Same official100 test cases; one seed schedule, not independent training replications.",
+    "Low success rates preclude interpreting fewer selected-path queries as reliable efficiency improvement.",
+    "Plain prompting logs25 answered questions plus a final prediction; logged guesses26 is not26 environment questions.",
+    "ToT uses candidate-oracle evaluations not included in selected-path query count; cross-method query-cost comparisons are incomplete.",
+    "ToT parser repair, 7B substitution, explicit2048-output/16384-context caps and concurrent serving are disclosed adaptations.",
+    "Wilson intervals are marginal95% descriptive intervals; paired exact tests are exploratory and not multiplicity-corrected.",
+    "Audit pass establishes recorded execution integrity, not successful task solving or new scientific improvement."
+  ]
+}

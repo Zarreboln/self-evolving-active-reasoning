@@ -1,0 +1,26 @@
+{
+  "status": "PASS_OFFLINE_GN_FIVE_INTEGRITY",
+  "cases_each": 100,
+  "methods": [
+    "zero_shot",
+    "few_shot",
+    "few_shot_inst",
+    "tot",
+    "proactive_cot"
+  ],
+  "completed_by_method": {
+    "zero_shot": 100,
+    "few_shot": 100,
+    "few_shot_inst": 100,
+    "tot": 100,
+    "proactive_cot": 100
+  },
+  "verified_model_responses": 12805,
+  "result_sha256": "242e39458414b690c2bb4fbaf046ce515924fdb5d59962784de5d8f38d75afe3",
+  "scheduler_and_model_identity_independently_verified": false,
+  "limits": [
+    "Offline replay does not establish hardware or scheduler state.",
+    "ToT parser repair and explicit output cap remain disclosed adaptations.",
+    "Actual served model identity requires independent root verification."
+  ]
+}

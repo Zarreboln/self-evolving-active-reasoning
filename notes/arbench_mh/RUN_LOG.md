@@ -216,6 +216,20 @@ registered. (Timestamps settled it: 10-26 12:10 and 12:30, eighteen hours before
 `sp/benchmark.py` also printed `<dirname>/episodes.json` regardless of `--out`, while writing to
 `--out` correctly. The file was always right and the message always wrong. Fixed.
 
+### The deletion broke the scoring step
+
+`mh_benchmark.py` scores every candidate by shelling out to `~/code/score_val.py`, and that file
+named the method in one docstring about the cost axis, so the sweep deleted it. The loops would
+have failed at evaluate, roughly an hour after launch, with the proposer's work already spent.
+Restored at the same path with that paragraph rewritten to state the 8.6x / 38x spread without
+naming which baseline it belongs to, then checked by scoring one real output per task:
+gn 0.000 / 21,146 tok, dc 0.333 / 38,107, sp 0.167 / 36,518 with the judge self-check passing.
+
+`score_val.py` is the loop's only dependency outside the package (`grep` over all of `~/meta`
+confirms it), and `sp_semantic_equivalence.py`, which it imports, needs nothing further. Worth
+vendoring into `arbench_mh/` so a cleanup of a scratch directory cannot take the scorer with it;
+not done now, with runs in flight.
+
 ### Running
 
 All three relaunched 07:03 UTC, `supervise.sh run1 5`, iteration 1/5, policy

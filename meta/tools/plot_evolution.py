@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import sys
 import datetime
 from pathlib import Path
@@ -29,7 +30,14 @@ import matplotlib.patheffects as pe
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, NullFormatter
 
-FRONT, DOM, RULE, MUTE, INK = "#b4530f", "#8b93a1", "#c9ced6", "#7b8290", "#1c1f26"
+# The slide deck this feeds is greyscale in Georgia, so the palette and the faces are switched
+# by SLIDES=1 rather than kept as a second copy of the script.
+SLIDES = os.environ.get("SLIDES") == "1"
+if SLIDES:
+    # the accent is the one the reference deck uses, kept to a single hue
+    FRONT, DOM, RULE, MUTE, INK = "#990000", "#8A8A8A", "#CFCFCF", "#555555", "#1D1D1D"
+else:
+    FRONT, DOM, RULE, MUTE, INK = "#b4530f", "#8b93a1", "#c9ced6", "#7b8290", "#1c1f26"
 
 TASKS = [("gn", "Guess Number", "exact match"),
          ("dc", "Detective Cases", "right suspect of five"),
@@ -40,7 +48,8 @@ PUBLISHED = Path("notes/arbench_mh/published_baselines.json")
 
 def style():
     plt.rcParams.update({
-        "font.family": "sans-serif",
+        "font.family": "serif" if SLIDES else "sans-serif",
+        "font.serif": ["Georgia", "Times New Roman", "DejaVu Serif"],
         "font.sans-serif": ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"],
         "font.size": 9.5, "axes.labelsize": 9.5,
         "axes.spines.top": False, "axes.spines.right": False,
@@ -227,8 +236,9 @@ def figure_frontier(rows, out, stamp):
     fig.tight_layout(rect=(0, 0.035, 1, 0.885))
     for ax, labels, avoid in pending:
         place(ax, labels, avoid=avoid)
+    tag = "_bw" if SLIDES else ""
     for ext in ("png", "pdf"):
-        fig.savefig(out / f"evolution_frontier.{ext}", bbox_inches="tight", facecolor="white")
+        fig.savefig(out / f"evolution_frontier{tag}.{ext}", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print("  evolution_frontier.png / .pdf")
 
@@ -244,8 +254,12 @@ def figure_trajectory(rows, out, stamp):
         for r in seq:
             run = max(run, r["accuracy"])
             best.append(run)
+        # The accent means one thing only: on the frontier. The running best is a different
+        # claim -- and this panel's x axis is the order candidates were written, not cost, so no
+        # frontier can be read off it at all. Drawing both in the accent made the line look like
+        # the frontier it is not.
         ax.step(xs + [xs[-1] + 0.5], best + best[-1:], where="post",
-                color=FRONT, lw=1.5, zorder=2, solid_capstyle="round")
+                color=INK, lw=1.5, zorder=2, solid_capstyle="round")
         labels = []
         for x, r in zip(xs, seq):
             colour = draw_point(ax, x, r["accuracy"], r)
@@ -277,7 +291,7 @@ def figure_trajectory(rows, out, stamp):
     axes[0].set_ylabel("accuracy %")
     fig.text(0.006, 0.975, "What each iteration produced   ·   the step line is the best selection "
              "accuracy reached so far", fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.935, "filled = on the frontier against every published method too, hollow = "
+    fig.text(0.006, 0.935, "filled = on the accuracy-cost frontier (see the other figure), hollow = "
              "dominated   ·   circle = anchor, diamond = written by the search",
              fontsize=10, color="#454b56", va="top")
     fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
@@ -286,8 +300,9 @@ def figure_trajectory(rows, out, stamp):
     fig.tight_layout(rect=(0, 0.04, 1, 0.885))
     for ax, labels in pending:
         place(ax, labels)
+    tag = "_bw" if SLIDES else ""
     for ext in ("png", "pdf"):
-        fig.savefig(out / f"evolution_trajectory.{ext}", bbox_inches="tight", facecolor="white")
+        fig.savefig(out / f"evolution_trajectory{tag}.{ext}", bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print("  evolution_trajectory.png / .pdf")
 

@@ -1,0 +1,45 @@
+% Main comparison. Everything on the SAME split (selection, 100 episodes) so the columns are
+% comparable; the held-out numbers for our systems are in the note, since the published arms have
+% not been re-measured there yet. Frozen Qwen2.5-7B-Instruct throughout; no gradient step.
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\caption{Accuracy and cost on AR-Bench, selection split, 100 episodes per cell, with a frozen
+Qwen2.5-7B-Instruct. Cost is mean input plus output tokens per episode. Guess Number is reported
+for completeness but is saturated by the harness search and is not evidence about reasoning
+(\S\ref{sec:gn}).}
+\label{tab:main}
+\begin{tabular}{l rr rr rr}
+\toprule
+ & \multicolumn{2}{c}{Guess Number} & \multicolumn{2}{c}{Detective Cases}
+ & \multicolumn{2}{c}{Situation Puzzles} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Method & Acc. & Tok/ep & Acc. & Tok/ep & Acc. & Tok/ep \\
+\midrule
+Zero-shot                      &  0.0 & 31,094 &   -- &      -- &  4.5 & 37,413 \\
+Few-shot with instruction      &   -- &     -- & 34.0 & 286,863 &  3.5 & 54,746 \\
+Tree of Thoughts$^{\dagger}$   &  6.0 & 21,176 & 31.0 &  95,518 & 12.5 &  8,624 \\
+Proactive CoT                  &  2.0 & 46,161 & 35.0 & 114,648 &   -- &     -- \\
+\addlinespace[2pt]
+Ask nothing (anchor)           &  0.0 &    226 & 37.0 &     863 & 12.0 &    216 \\
+\midrule
+\textbf{Ours}, cost-efficient  & \textbf{100.0} & \textbf{12} & 57.0 & 20,854 & 36.5 &  8,448 \\
+\textbf{Ours}, best            & \textbf{100.0} & \textbf{7}  & \textbf{80.0} & 25,344 & \textbf{41.0} & 12,368 \\
+\bottomrule
+\end{tabular}
+
+\vspace{2pt}
+\footnotesize
+$^{\dagger}$ Repaired. AR-Bench's \texttt{gn/tot} scores each candidate guess against the hidden
+answer and its \texttt{sp/dc} ToT never assigns the state evaluator Yao et al.\ specify; both are
+corrected here. Uncertainty-of-Thoughts is held out of the seed set and is not reported.
+A dash marks a method AR-Bench does not provide for that task.
+
+\vspace{1pt}
+\footnotesize
+\textbf{Held-out split.} Our systems were finalised once on the sealed test split: Guess Number
+100.0, Detective Cases 63.0 (cost-efficient variant 57.0), Situation Puzzles 32.5; the anchor
+moves by at most 1.5 points. The published arms have not yet been re-measured there, so the table
+above keeps every method on the split they share.
+\end{table}

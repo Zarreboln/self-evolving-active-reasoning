@@ -45,6 +45,15 @@ Exploitation axes: A=Guess generation, B=State maintained across turns, C=Choosi
 - **Never hardcode a particular number** in harness code, prompts, or comments.
 - **General patterns are OK.** Rules like "never play a guess inconsistent with earlier feedback" apply broadly.
 
+## The clock
+
+The session is cut off after 40 minutes, and nothing you have not written to disk survives it.
+
+So write the three harness files **and `pending_eval.json`** as soon as the three mechanisms are
+decided, before any further prototyping or polishing. The outer loop reads the files from disk
+after the session ends, so whatever you improve afterwards is still picked up, and being cut off
+then costs you the refinement instead of the whole iteration.
+
 ## WORKFLOW
 
 **Do ALL steps yourself in the main session.**
@@ -60,12 +69,19 @@ For each past iteration with results in `evolution_summary.jsonl` but NO report,
 
 ### Step 2: Prototype — MANDATORY
 
-**You MUST prototype your mechanism before writing the final harness.** Candidates that skip prototyping tend to have bugs or produce no improvement.
+**You MUST prototype your mechanism before writing the final harness.** Candidates that skip prototyping tend to have bugs or produce no improvement. But the session has a hard cutoff (see **The clock** above) and a prototype that runs the real benchmark will reach it.
 
 1. Write a test script in `/tmp/` exercising the core state/selection logic in isolation, with the oracle replaced by a stub computing feedback against a secret you choose.
 2. Pull real records from `logs/` to test against.
-3. Try 2-3 variants and compare before picking the best one.
-4. Delete scripts when done.
+3. Where the question is about the **model's** behaviour rather than the harness's logic -- can
+   the frozen model write this format, does it follow this instruction, what does it do when the
+   state is ambiguous -- a stub cannot answer it, so ask the real model. Keep that to **at most 20
+   episodes and about 10 minutes**, and record what you measured in the harness's docstring.
+4. **Never run a whole split.** The outer loop benchmarks all three candidates on it the moment you
+   return. Running it yourself pays for the same episodes twice, and the second payment comes out
+   of your own clock -- this is what cost two of the first four iterations.
+5. Try 2-3 variants and compare before picking the best one.
+6. Delete scripts when done.
 
 ### Step 3: Implement
 

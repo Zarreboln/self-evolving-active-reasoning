@@ -191,6 +191,14 @@ def propose_claude(task_prompt, iteration, timeout=2400):
         print(f"  {_red('proposer failed')} exit={result.exit_code}")
         if result.stderr:
             print(f"  {_dim(result.stderr[:500])}")
+        # A non-zero exit is usually the 40-minute cutoff (124), which says the clock ran out,
+        # not that the work is bad. The caller deletes pending_eval.json before every proposal,
+        # so a file here was written by this session: evaluate it rather than losing the
+        # iteration. Two of the first four stalls were exactly this -- the candidates were on
+        # disk, one of them the harness that now leads Guess Number.
+        if PENDING_EVAL.exists():
+            print(f"  {_dim('pending_eval.json reached disk before the cutoff; using it')}")
+            return True
         return False
     result.show()
     return PENDING_EVAL.exists()

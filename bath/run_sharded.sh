@@ -91,10 +91,20 @@ case "$TASK" in
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
   dc)
-    kimi_responder
-    ARGS=(--policy_model "$MODEL" --response_model "$KIMI_MODEL"
+    # The suspects can be played by the served model instead of Kimi. Measured on iCraft-MD, the
+    # responder barely moves the score -- 91.7 against 90.7 across three methods and 140 instances,
+    # one instance of difference -- while Kimi spends about six times the output tokens and leaves
+    # the card idle waiting on the network. DC_RESPONDER=local is the default for that reason.
+    if [ "${DC_RESPONDER:-local}" = local ]; then
+      export RESPONSE_BASE_URL="http://$EP/v1" RESPONSE_API_KEY=x
+      RMODEL="$MODEL"; RTEMP=0.7; RTOPP=0.7
+    else
+      kimi_responder
+      RMODEL="$KIMI_MODEL"; RTEMP=1; RTOPP=0.95   # kimi-k3 rejects anything else
+    fi
+    ARGS=(--policy_model "$MODEL" --response_model "$RMODEL"
           --policy_temperature "$POLICY_TEMP" --policy_top_p "$POLICY_TOPP"
-          --response_temperature 1 --response_top_p 0.95)
+          --response_temperature "$RTEMP" --response_top_p "$RTOPP")
     RUN=("$PY" -m "arbench.reasoner.$TASK.${TASK}_evaluator")
     ;;
   md)
@@ -143,4 +153,16 @@ echo "launched ${#PIDS[@]} shard workers: ${PIDS[*]}"
 FAIL=0
 for p in "${PIDS[@]}"; do wait "$p" || FAIL=$((FAIL + 1)); done
 echo "shards finished, $FAIL non-zero exits $(date -Is)"
-$PY "$HOME/code/shard_tool.py" merge "$WORK" "$OUT"
+$PY "$HOME/code/shard_tool.py" merge "$WORK" "$OUT" || exit 0
+
+# Situation Puzzles carries two metrics, because the two papers we compare against do not use the
+# same one. AR-Bench scores character F1; BALAR reports non-strict semantic equivalence. The second
+# is a property of the prediction, not of the rollout, so it is computed here from the merged file
+# rather than by running anything again. Both land in the table; neither replaces the other.
+if [ "$TASK" = sp ]; then
+  echo "scoring semantic equivalence (BALAR's metric) $(date -Is)"
+  POLICY_BASE_URL="http://$EP/v1" POLICY_API_KEY=x \
+    $PY "$HOME/code/sp_semantic_equivalence.py" "$OUT" \
+      --judge policy --model "$MODEL" --temperature 0 \
+      --out "$HOME/results/${TASK}_${METHOD}${TAG}_equiv.json"
+fi

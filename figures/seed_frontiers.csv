@@ -1,0 +1,13 @@
+task,system,status,accuracy_pct,total_tokens_per_episode,input_tokens,output_tokens,note
+gn,baseline_tot_fixed,pareto,6.0,21176,21176,0,output not recoverable; total is a lower bound
+gn,baseline_proactive_cot,dominated,2.0,46161,26343,19166,
+gn,baseline_zero_shot,dominated,0.0,31094,30597,497,
+gn,uot,held_out,100.0,801262,181290,619971,test split; not re-run on selection
+dc,baseline_proactive_stop,pareto,35.0,114648,97068,17580,
+dc,baseline_few_shot_inst,dominated,34.0,286863,286863,0,output not recoverable; total is a lower bound
+dc,baseline_tot,pareto,31.0,95518,95214,304,
+dc,uot,held_out,30.0,50144,48328,1816,test split; not re-run on selection
+sp,baseline_tot_eval,pareto,12.5,8624,8012,612,partial-correct rate; equivalent tier is 0/100
+sp,baseline_zero_shot,dominated,4.5,37413,36895,518,
+sp,baseline_few_shot_inst,dominated,3.5,54746,53921,825,
+sp,uot,held_out,5.0,21872,19798,2074,test split; not re-run on selection

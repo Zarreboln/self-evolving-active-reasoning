@@ -207,7 +207,9 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--port", type=int, default=8099)
-    p.add_argument("--model", default="jev-latest")
+    p.add_argument("--model", default="jev-1.14.0",
+                   help="pinned, not jev-latest: the alias rolls forward and the "
+                        "referee would change under a finished table without notice")
     p.add_argument("--log", default=None, help="append every verdict, with Jev's confidence")
     a = p.parse_args()
     Handler.key, Handler.model = api_key(), a.model

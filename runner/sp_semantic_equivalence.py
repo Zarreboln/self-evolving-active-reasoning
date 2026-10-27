@@ -34,6 +34,7 @@ import argparse
 import json
 import os
 import sys
+import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 
@@ -55,7 +56,7 @@ EQUIV_MAP = {"entailment": 2, "neutral": 1, "contradiction": 0}
 
 
 def ask_policy(base_url, api_key, model, user_prompt, temperature=0.0, retries=4):
-    body = {"model": model, "temperature": temperature, "top_p": 1.0, "max_tokens": 512,
+    body = {"model": model, "temperature": temperature, "top_p": 1.0, "max_tokens": 2048,
             "messages": [{"role": "system", "content": EQUIVALENCE_SYSTEM_PROMPT},
                          {"role": "user", "content": user_prompt}],
             "response_format": {"type": "json_schema",
@@ -76,6 +77,45 @@ def ask_policy(base_url, api_key, model, user_prompt, temperature=0.0, retries=4
     raise RuntimeError(f"judge failed: {last}")
 
 
+JEV_API = "https://api.typesafe.ai/v1/systemone"
+JEV_MODEL = "jev-1.14.0"
+JEV_CRITERIA = {
+    "entailment": "Possible Answer 1 semantically entails Possible Answer 2.",
+    "neutral": "Neither entails the other; they are compatible but say different things.",
+    "contradiction": "They cannot both be true of the same situation.",
+}
+
+
+def ask_jev(user_prompt, token, model=JEV_MODEL, retries=4):
+    """The same judgment BALAR asks for, asked of a model built to return typed choices.
+
+    Why this exists. The policy judge is BALAR's design -- the agent grades its own answer -- and
+    it was kept for that reason. But measured on the selection split's gold texts, asked whether a
+    text entails ITSELF, Qwen2.5-7B answers `neutral` on 4 of 10, deterministically, and the two
+    servers agree label for label. That is not noise to average away: non-strict equivalence is
+    then depressed on those instances in a known direction, whatever the answer was. BALAR's prompt
+    wording is kept verbatim and only the judge changes, so the comparison is judge-to-judge.
+    """
+    body = {"model": model,
+            "state": {"evaluation": user_prompt},
+            "questions": {"verdict": {"type": "choice", "criteria": JEV_CRITERIA,
+                                      "instructions": "Answer the question posed in `evaluation`."}}}
+    req = urllib.request.Request(JEV_API, method="POST", data=json.dumps(body).encode(),
+                                 headers={"Authorization": "Bearer %s" % token,
+                                          "Content-Type": "application/json"})
+    last = None
+    for a in range(retries):
+        try:
+            d = json.load(urllib.request.urlopen(req, timeout=120))
+            v = d["answers"]["verdict"]
+            if v.get("choice") in EQUIV_MAP:
+                return v["choice"], json.dumps(v.get("probabilities") or {})
+        except Exception as e:
+            last = e
+            time.sleep(1.5 * (a + 1))
+    raise RuntimeError("jev judge failed: %s" % last)
+
+
 def implication(judge, a, b, question):
     """Does a entail b, in the context of the puzzle? Returns one of the three labels."""
     prompt = EQUIVALENCE_USER_PROMPT.format(question=question, text1=a, text2=b)
@@ -83,6 +123,12 @@ def implication(judge, a, b, question):
 
 
 def score_episode(rec, judge):
+    """Score one episode. A judge that will not answer marks this episode, not the whole run.
+
+    The first version let a RuntimeError out of here, and one truncated JSON reply killed the
+    scoring of all 100 episodes of sp/proactive_cot after the run itself had finished. A metric
+    that is computed after the fact must degrade one row at a time.
+    """
     pred = (rec.get("pred") or "").strip()
     gold = (rec.get("answer") or "").strip()
     # BALAR's context for SP is "Question: Explain the following puzzle: <surface>"
@@ -90,8 +136,12 @@ def score_episode(rec, judge):
     question = f"Explain the following puzzle: {surface}"
     if not pred or not gold:
         return {"equiv_strict": False, "equiv_nonstrict": False, "skipped": "empty prediction"}
-    l2r, t1 = implication(judge, pred, gold, question)
-    r2l, t2 = implication(judge, gold, pred, question)
+    try:
+        l2r, t1 = implication(judge, pred, gold, question)
+        r2l, t2 = implication(judge, gold, pred, question)
+    except Exception as e:
+        return {"equiv_strict": False, "equiv_nonstrict": False,
+                "judge_failed": f"{type(e).__name__}: {str(e)[:160]}"}
     a, b = EQUIV_MAP[l2r], EQUIV_MAP[r2l]
     return {"equiv_strict": (a == 2) and (b == 2),
             "equiv_nonstrict": (0 not in (a, b)) and ([a, b] != [1, 1]),
@@ -99,23 +149,40 @@ def score_episode(rec, judge):
             "left2rightImplication": t1, "right2leftImplication": t2}
 
 
-def judge_is_usable(judge, sample):
+def judge_is_usable(judge, samples, need=0.9):
     """Refuse to score with a judge that cannot call a text equivalent to itself.
 
-    Measured on Qwen2.5-7B-Instruct: given two identical explanations it reasons correctly --
+    The failure this guards against is a systematically neutral-biased judge. Measured on
+    Qwen2.5-7B-Instruct early on: given two identical explanations it reasons correctly --
     "Both possible answers describe the same scenario with identical details" -- and then labels
     the pair `neutral`, five times out of six across diagnostic cases. Under BALAR's rule
-    (not both neutral) a neutral-biased judge marks nearly everything inequivalent, so the column
-    would read as near-zero regardless of answer quality. That is a broken measurement, not a hard
-    task, and it is cheap to detect: ask whether a text entails itself.
+    (not both neutral) such a judge marks nearly everything inequivalent, so the column would read
+    as near-zero regardless of answer quality. That is a broken measurement, not a hard task.
+
+    The first version asked ONE text three times and demanded three entailments. That is the wrong
+    shape: it tests three correlated draws on a single input, so a judge that is merely imperfect
+    trips it by chance. Measured here: 20 distinct gold texts asked once each gave 20/20
+    entailment, and the single text whose three-try check had just failed gave 5/5 on a retest.
+    A ~5% per-call slip becomes a ~14% chance of a spurious refusal under 3-of-3.
+
+    So the check now spreads over distinct texts and allows a slip: `need` of them must come back
+    entailment. A biased judge still fails -- it would miss nearly all of them -- while one bad
+    draw no longer discards a finished run.
     """
-    q = f"Explain the following puzzle: {sample.get('question', '')}"
-    gold = (sample.get("answer") or "").strip()
-    if not gold:
+    golds = []
+    for s_ in samples:
+        g = (s_.get("answer") or "").strip()
+        if g:
+            golds.append((f"Explain the following puzzle: {s_.get('question', '')}", g))
+        if len(golds) >= 10:
+            break
+    if not golds:
         return True, "no gold text to check with"
-    labels = [implication(judge, gold, gold, q)[0] for _ in range(3)]
-    ok = all(EQUIV_MAP[x] == 2 for x in labels)
-    return ok, f"identical texts judged {' / '.join(labels)} over three tries"
+    labels = [implication(judge, g, g, q)[0] for q, g in golds]
+    hits = sum(EQUIV_MAP[x] == 2 for x in labels)
+    ok = hits >= need * len(labels)
+    return ok, "identical texts judged entailment %d/%d (need %.0f%%)" % (
+        hits, len(labels), need * 100)
 
 
 def main():
@@ -137,13 +204,19 @@ def main():
     a = ap.parse_args()
 
     if a.judge == "jev":
-        sys.exit("--judge jev is not wired yet: the shim answers AR-Bench referee turns, not "
-                 "entailment pairs. Add an entailment question type to it first.")
-    if not a.base_url:
-        sys.exit("set POLICY_BASE_URL or pass --base-url")
+        tok = os.environ.get("TYPESAFE_API_KEY") or \
+            open(os.path.expanduser("~/.typesafe_token")).read().strip()
+        judge_name = JEV_MODEL
 
-    def judge(prompt):
-        return ask_policy(a.base_url, a.api_key, a.model, prompt, a.temperature)
+        def judge(prompt):
+            return ask_jev(prompt, tok)
+    else:
+        if not a.base_url:
+            sys.exit("set POLICY_BASE_URL or pass --base-url")
+        judge_name = a.model
+
+        def judge(prompt):
+            return ask_policy(a.base_url, a.api_key, a.model, prompt, a.temperature)
 
     first = None
     for path in a.files:
@@ -152,11 +225,11 @@ def main():
         except Exception:
             continue
         if rows:
-            first = rows[0]
+            first = rows
             break
-    if first is not None:
+    if first:
         ok, why = judge_is_usable(judge, first)
-        print(f"judge self-check ({a.model}): {'PASS' if ok else 'FAIL'} -- {why}")
+        print(f"judge self-check ({judge_name}): {'PASS' if ok else 'FAIL'} -- {why}")
         if not ok and not a.force:
             sys.exit("refusing to score: this judge does not call a text equivalent to itself, so "
                      "the column would measure the judge's neutral bias rather than the answers. "
@@ -174,10 +247,12 @@ def main():
             rows = list(ex.map(lambda r: score_episode(r, judge), d))
         ns = sum(1 for r in rows if r["equiv_nonstrict"])
         st = sum(1 for r in rows if r["equiv_strict"])
+        failed = sum(1 for r in rows if r.get("judge_failed"))
         f1 = [r.get("f1_score_char") for r in d if r.get("f1_score_char") is not None]
-        print("%-30s %10d %9d/%-4d %9d/%-4d   (char F1 %.3f)"
+        print("%-30s %10d %9d/%-4d %9d/%-4d   (char F1 %.3f)%s"
               % (os.path.basename(path), len(d), ns, len(d), st, len(d),
-                 sum(f1) / len(f1) if f1 else float("nan")))
+                 sum(f1) / len(f1) if f1 else float("nan"),
+                 f"  [{failed} judge failures]" if failed else ""))
         all_rows[os.path.basename(path)] = [{**r, "idx": rec.get("idx")} for r, rec in zip(rows, d)]
     if a.out:
         json.dump({"judge": a.judge, "model": a.model, "runs": all_rows}, open(a.out, "w"), indent=2)

@@ -63,3 +63,8 @@ meta/arbench_mh/runs/*/logs/
 meta/arbench_mh/runs/*/results/
 meta/arbench_mh/runs/*/.venv/
 meta/arbench_mh/runs/*/.empty_plugins/
+
+# cd_tthe episode logs: ~600MB of per-episode jsonl, reproducible from the agents and the runner
+meta/cd_tthe/logs/*/results/
+meta/cd_tthe/logs/eval_*/
+meta/cd_tthe/logs/arch_test*/

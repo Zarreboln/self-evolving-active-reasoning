@@ -1,0 +1,249 @@
+<title>AR-Bench Seed Frontiers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a header band, then three equal panels that stack to one column on a phone. */
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --ink: #171a20;
+  --ink-soft: #5c636f;
+  --ink-faint: #949aa6;
+  --rule: #d9dde3;
+  --grid: #e7eaef;
+  --pareto: #b4530f;
+  --dominated: #8b93a1;
+  --heldout: #2f6f6b;
+  --chance: #c0c5ce;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121418;
+    --surface: #1a1d23;
+    --ink: #e8eaee;
+    --ink-soft: #a0a7b4;
+    --ink-faint: #6d7481;
+    --rule: #2b3038;
+    --grid: #262b33;
+    --pareto: #e8843a;
+    --dominated: #767e8c;
+    --heldout: #4fa89f;
+    --chance: #3a4049;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121418;
+  --surface: #1a1d23;
+  --ink: #e8eaee;
+  --ink-soft: #a0a7b4;
+  --ink-faint: #6d7481;
+  --rule: #2b3038;
+  --grid: #262b33;
+  --pareto: #e8843a;
+  --dominated: #767e8c;
+  --heldout: #4fa89f;
+  --chance: #3a4049;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--font-sans); line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 56px; }
+
+header { border-bottom: 1px solid var(--rule); padding-bottom: 20px; margin-bottom: 28px; }
+h1 { font-size: 1.45rem; font-weight: 600; letter-spacing: -0.015em; margin: 0 0 6px; text-wrap: balance; }
+.sub { color: var(--ink-soft); font-size: 0.9rem; max-width: 62ch; margin: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 14px;
+        font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-faint); }
+.meta b { color: var(--ink-soft); font-weight: 500; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 0 0 22px;
+          font-size: 0.78rem; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.key { width: 11px; height: 11px; border-radius: 50%; flex: none; }
+.key.p { background: var(--pareto); }
+.key.d { background: transparent; border: 1.5px solid var(--dominated); }
+.key.h { background: transparent; border: 1.5px dashed var(--heldout); }
+
+.panels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px;
+         padding: 16px 16px 12px; min-width: 0; }
+.panel h2 { font-size: 0.95rem; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.panel .metric { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-faint);
+                 margin: 3px 0 12px; }
+.chart { width: 100%; height: auto; display: block; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 12px;
+        font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 500; font-size: 0.66rem; letter-spacing: 0.06em;
+     text-transform: uppercase; color: var(--ink-faint); padding: 0 0 5px; }
+th.n, td.n { text-align: right; }
+td { padding: 4px 0; border-top: 1px solid var(--grid); }
+td.sys { font-family: var(--font-mono); font-size: 0.73rem; }
+tr.pareto td { color: var(--ink); }
+tr.pareto td.sys { color: var(--pareto); font-weight: 500; }
+tr.dom td { color: var(--ink-soft); }
+tr.held td { color: var(--heldout); font-style: italic; }
+
+.note { margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--rule);
+        color: var(--ink-soft); font-size: 0.84rem; max-width: 72ch; }
+.note p { margin: 0 0 9px; }
+.note strong { color: var(--ink); font-weight: 600; }
+.note code { font-family: var(--font-mono); font-size: 0.86em; color: var(--ink); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>AR-Bench Seed Frontiers</h1>
+    <p class="sub">Where the published baselines sit before any harness search runs. Each point is
+      one method over the same 100 instances of the selection split, on a frozen Qwen2.5-7B.</p>
+    <div class="meta">
+      <span><b>split</b> selection, 100 / task, carved from train</span>
+      <span><b>cost</b> input + output tokens per episode</span>
+      <span><b>referee</b> jev-1.14.0 (SP only)</span>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span><i class="key p"></i>on the frontier</span>
+    <span><i class="key d"></i>dominated</span>
+    <span><i class="key h"></i>UoT, held out of the seeds</span>
+  </div>
+
+  <div class="panels" id="panels"></div>
+
+  <div class="note">
+    <p><strong>UoT is deliberately absent from every seed set.</strong> On Guess Number it reaches
+      100% — the known best — by keeping the candidate set in Python and playing the last survivor.
+      Seeded, a proposer could read it and copy it, and the search would prove nothing. Held out, it
+      becomes the target: the question is whether a searched harness finds that mechanism on its
+      own, and at what cost.</p>
+    <p>Its position is drawn from the test split, since it was not re-run here. On Guess Number that
+      is 801,262 tokens an episode, of which 619,971 are generated — the model writes the surviving
+      candidates out turn after turn, which is why one run over 100 episodes takes about nine hours.
+      Cost is counted as input plus output for exactly this reason: by input alone UoT looks 8.6×
+      the cheapest seed when it is really 38×.</p>
+    <p>Accuracy means a different thing per task: exact match on Guess Number, naming the right
+      suspect out of five on Detective Cases (chance is 20%), and the share of explanations an
+      independent judge calls partially correct on Situation Puzzles. Full equivalence on SP is
+      <code>0/100</code> for every method, so the usable signal is the partial tier.</p>
+  </div>
+</div>
+
+<script>
+const TASKS = [
+  { id: "gn", name: "Guess Number", metric: "exact match · 25 guesses",
+    chance: null, ceiling: 100,
+    rows: [
+      { sys: "baseline_tot_fixed",     acc: 6.0,  tok: 21176,  pareto: true },
+      { sys: "baseline_zero_shot",     acc: 0.0,  tok: 31094,  pareto: false },
+      { sys: "baseline_proactive_cot", acc: 2.0,  tok: 46161,  pareto: false },
+      { sys: "uot",                    acc: 100.0, tok: 801262, held: true }
+    ] },
+  { id: "dc", name: "Detective Cases", metric: "right suspect of five · 25 turns",
+    chance: 20, ceiling: null,
+    rows: [
+      { sys: "baseline_proactive_stop", acc: 35.0, tok: 114648, pareto: true },
+      { sys: "baseline_tot",            acc: 31.0, tok: 95518,  pareto: true },
+      { sys: "baseline_few_shot_inst",  acc: 34.0, tok: 286863, pareto: false },
+      { sys: "uot",                     acc: 30.0, tok: 50144,  held: true }
+    ] },
+  { id: "sp", name: "Situation Puzzles", metric: "partially correct · judged by jev-1.14.0",
+    chance: null, ceiling: 60,
+    rows: [
+      { sys: "baseline_tot_eval",      acc: 12.5, tok: 8624,  pareto: true },
+      { sys: "baseline_zero_shot",     acc: 4.5,  tok: 37413, pareto: false },
+      { sys: "baseline_few_shot_inst", acc: 3.5,  tok: 54746, pareto: false },
+      { sys: "uot",                    acc: 5.0,  tok: 21872, held: true }
+    ] }
+];
+
+const W = 360, H = 250, L = 42, R = 14, T = 16, B = 40;
+const fmt = n => n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1).replace(/\.0$/, "") + "k"
+                           : String(n);
+
+function chart(task) {
+  const toks = task.rows.map(r => r.tok);
+  const accs = task.rows.map(r => r.acc).concat(task.ceiling ? [task.ceiling] : []);
+  const lo = Math.log10(Math.min(...toks) * 0.65), hi = Math.log10(Math.max(...toks) * 1.5);
+  const top = Math.max(10, Math.ceil(Math.max(...accs) / 10) * 10 * 1.08);
+  const x = v => L + (Math.log10(v) - lo) / (hi - lo) * (W - L - R);
+  const y = v => T + (1 - v / top) * (H - T - B);
+
+  let s = `<svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${task.name} frontier">`;
+
+  // y grid and labels
+  const step = top > 60 ? 25 : top > 20 ? 10 : 5;
+  for (let v = 0; v <= top; v += step) {
+    s += `<line x1="${L}" y1="${y(v)}" x2="${W - R}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<text x="${L - 7}" y="${y(v) + 3.5}" text-anchor="end" font-size="9"
+           font-family="var(--font-mono)" fill="var(--ink-faint)">${v}</text>`;
+  }
+  // x ticks at decades
+  for (let e = Math.ceil(lo); e <= Math.floor(hi); e++) {
+    const v = Math.pow(10, e);
+    s += `<line x1="${x(v)}" y1="${T}" x2="${x(v)}" y2="${H - B}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<text x="${x(v)}" y="${H - B + 14}" text-anchor="middle" font-size="9"
+           font-family="var(--font-mono)" fill="var(--ink-faint)">${fmt(v)}</text>`;
+  }
+  s += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle" font-size="9.5"
+         fill="var(--ink-faint)">tokens per episode</text>`;
+  s += `<text x="11" y="${(T + H - B) / 2}" text-anchor="middle" font-size="9.5"
+         fill="var(--ink-faint)" transform="rotate(-90 11 ${(T + H - B) / 2})">accuracy %</text>`;
+
+  if (task.chance !== null) {
+    s += `<line x1="${L}" y1="${y(task.chance)}" x2="${W - R}" y2="${y(task.chance)}"
+           stroke="var(--chance)" stroke-width="1.2" stroke-dasharray="4 3"/>`;
+    s += `<text x="${W - R - 3}" y="${y(task.chance) - 5}" text-anchor="end" font-size="8.5"
+           font-family="var(--font-mono)" fill="var(--ink-faint)">chance ${task.chance}%</text>`;
+  }
+
+  // step line through the frontier, cheapest first
+  const front = task.rows.filter(r => r.pareto).sort((a, b) => a.tok - b.tok);
+  if (front.length > 1) {
+    let d = `M ${x(front[0].tok)} ${y(front[0].acc)}`;
+    for (let i = 1; i < front.length; i++) {
+      d += ` L ${x(front[i].tok)} ${y(front[i - 1].acc)} L ${x(front[i].tok)} ${y(front[i].acc)}`;
+    }
+    s += `<path d="${d}" fill="none" stroke="var(--pareto)" stroke-width="1.4"
+           stroke-dasharray="3 3" opacity="0.75"/>`;
+  }
+
+  for (const r of task.rows) {
+    const cx = x(r.tok), cy = y(r.acc);
+    if (r.held) {
+      s += `<circle cx="${cx}" cy="${cy}" r="5" fill="none" stroke="var(--heldout)"
+             stroke-width="1.6" stroke-dasharray="2.6 2.2"/>`;
+      s += `<text x="${cx}" y="${cy - 10}" text-anchor="${cx > W - 70 ? "end" : "middle"}"
+             font-size="9" font-family="var(--font-mono)" fill="var(--heldout)">uot</text>`;
+    } else if (r.pareto) {
+      s += `<circle cx="${cx}" cy="${cy}" r="4.6" fill="var(--pareto)"/>`;
+    } else {
+      s += `<circle cx="${cx}" cy="${cy}" r="4.2" fill="var(--surface)"
+             stroke="var(--dominated)" stroke-width="1.5"/>`;
+    }
+  }
+  return s + "</svg>";
+}
+
+function table(task) {
+  const sorted = task.rows.slice().sort((a, b) => b.acc - a.acc);
+  let s = `<table><thead><tr><th>system</th><th class="n">acc</th><th class="n">tokens/ep</th>
+           </tr></thead><tbody>`;
+  for (const r of sorted) {
+    const cls = r.held ? "held" : r.pareto ? "pareto" : "dom";
+    const label = r.held ? r.sys + " (held out)" : r.sys.replace(/^baseline_/, "");
+    s += `<tr class="${cls}"><td class="sys">${label}</td>
+          <td class="n">${r.acc.toFixed(1)}%</td>
+          <td class="n">${r.tok.toLocaleString("en-US")}</td></tr>`;
+  }
+  return s + "</tbody></table>";
+}
+
+document.getElementById("panels").innerHTML = TASKS.map(t =>
+  `<section class="panel"><h2>${t.name}</h2><p class="metric">${t.metric}</p>
+   ${chart(t)}${table(t)}</section>`).join("");
+</script>

@@ -120,7 +120,8 @@ def run_one(item, harness_cls, total, budget=None):
         POLICY, MODEL, msgs, temperature, 0.7, max_tokens, counter)
     referee = lambda msgs, temperature=0.7, max_tokens=None: _post(
         REFEREE, REFEREE_MODEL, msgs, temperature, 0.7, max_tokens, counter)
-    env = SPEnv(item, referee, method=getattr(harness_cls, "METHOD", "zero_shot"))
+    env = SPEnv(item, referee, budget=budget or BUDGET,
+                method=getattr(harness_cls, "METHOD", "zero_shot"))
     try:
         pred = harness_cls(env, policy).solve()
     except Exception as e:                           # a candidate that crashes scores zero, and

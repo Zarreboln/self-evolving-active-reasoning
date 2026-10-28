@@ -1,8 +1,15 @@
 """Separate what the questions were worth from what the harness did with them.
 
-AREW (ICML 2026) defines AS informativeness as the belief quality a *Bayesian* updater would
-reach when driven by the harness's own action-selection kernel, and BT as how much of that
-progress the agent actually absorbs. Both are stated over an oracle belief, which on Guess Number
+AREW (ICML 2026) splits active reasoning into action selection and belief tracking, and defines
+AS informativeness as the belief quality a *Bayesian* updater would reach when driven by the
+harness's own action-selection kernel, with BT as how much of that progress the agent absorbs.
+
+We name the first ability INFORMATION ACQUISITION rather than action selection, because that is
+what the measurement below is of: how much the questions a harness actually asked were worth. A
+clean action-selection measure would have to re-draw the actions under a correct belief, as AREW
+does; ours does not, so a harness whose belief tracking is broken asks worse questions and the
+cost lands here. Under the name "information acquisition" that is the right behaviour, not a
+confound. Belief tracking keeps its name: it predates AREW and means the same thing here. Both are stated over an oracle belief, which on Guess Number
 is exact and free: the feedback is deterministic, so the set of targets consistent with a
 transcript is computable from the transcript alone -- no label, no model call.
 
@@ -15,10 +22,8 @@ So, per episode, with H_t the consistent set and a uniform prior over it,
 and accuracy = yield x uptake identically. One number for each ability, and they multiply back to
 the headline. Run it on a seed and on an evolved harness and the two columns say which one moved.
 
-The names are ours, deliberately. `yield` is the on-policy counterpart of AREW's I_AS -- the same
-potential Psi, but conditioned on the questions the harness actually asked rather than on actions
-re-drawn under an oracle belief, so a harness whose belief tracking is broken asks worse questions
-and pays for it here. `uptake` is not their C_BT: that one reads the agent's own belief every turn
+The metric names are ours too. `yield` is the on-policy counterpart of AREW's I_AS -- the same
+potential Psi, conditioned on the realized question stream. `uptake` is not their C_BT: that one reads the agent's own belief every turn
 and sums the positive increments, which needs a belief readout -- and requiring a harness to
 maintain and report a belief vector installs the very scaffold we are trying to measure. AREW also
 calls its positive increments "absorbed", so that word is spoken for.

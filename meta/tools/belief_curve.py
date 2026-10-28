@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
-from as_bt import ALL, feedback  # noqa: E402
+from ia_bt import ALL, feedback  # noqa: E402
 
 
 def curves(prefix):

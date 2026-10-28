@@ -35,7 +35,7 @@ def loop():
         ax.text(x + w / 2, 1.45, body, ha="center", fontsize=11, color=MID, linespacing=1.5)
     ax.add_patch(FancyArrowPatch((3.8, 2.25), (6.2, 2.25), arrowstyle="-|>",
                                  mutation_scale=16, lw=1.3, color=ACCENT))
-    ax.text(5.0, 2.45, "AS  ·  chooses the question", ha="center", fontsize=11.5, color=ACCENT)
+    ax.text(5.0, 2.45, "IA  ·  chooses the question", ha="center", fontsize=11.5, color=ACCENT)
     ax.add_patch(FancyArrowPatch((6.2, 1.25), (3.8, 1.25), arrowstyle="-|>",
                                  mutation_scale=16, lw=1.3, color=MID))
     ax.text(5.0, 0.95, "answer  ·  one turn spent", ha="center", fontsize=11.5, color=MID)
@@ -50,8 +50,9 @@ def loop():
 
 
 def failures():
-    """Left: the candidate set over a Guess Number episode. Right: how long the vision model
-    goes without learning anything."""
+    """Left: the candidate set over a Guess Number episode -- belief tracking failing while the
+    information is already in hand. Right: how long the vision model goes without learning
+    anything -- information acquisition failing."""
     fig, (a1, a2) = plt.subplots(1, 2, figsize=(11.6, 3.5))
 
     # Most episodes pin the answer down early and then keep playing. That -- not a plateau at

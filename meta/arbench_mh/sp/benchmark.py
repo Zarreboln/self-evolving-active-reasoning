@@ -127,6 +127,10 @@ def run_one(item, harness_cls, total, budget=None):
         pred = ""                                    # the loop keeps going
         print("    episode failed: %s: %s" % (type(e).__name__, str(e)[:120]), flush=True)
     r = env.score(pred)
+    # The transcript, so the information-acquisition curve can be replayed offline. SP has no
+    # consistent set, so its proxy is T3's (ICLR 2026) own: a turn whose referee answer is
+    # "Unknown" taught nothing. That needs the answers, and scoring throws them away.
+    r["history"] = [list(h) for h in getattr(env, "history", [])]
     r["input_token"] = counter.in_tok
     r["output_token"] = counter.out_tok
     r["total_token"] = counter.in_tok + counter.out_tok

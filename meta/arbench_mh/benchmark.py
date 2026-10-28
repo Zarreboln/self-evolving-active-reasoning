@@ -104,19 +104,19 @@ def install_interceptor(counter):
             m.inference = patched
 
 
-def make_env(task, item, counter):
+def make_env(task, item, counter, budget=None):
     llm = lambda msgs, temperature=0.7, max_tokens=None: post(   # noqa: E731
         msgs, temperature, 0.7, max_tokens, counter)
     if task == "gn":
-        from arbench_mh.gn.env import GNEnv
-        return GNEnv(item), llm
-    from arbench_mh.dc.env import DCEnv
-    return DCEnv(item, llm), llm
+        from arbench_mh.gn.env import GNEnv, BUDGET
+        return GNEnv(item, budget or BUDGET), llm
+    from arbench_mh.dc.env import DCEnv, BUDGET
+    return DCEnv(item, llm, budget or BUDGET), llm
 
 
-def run_one(task, item, cls, total):
+def run_one(task, item, cls, total, budget=None):
     counter = Counter(parent=total)                  # this episode's own tally
-    env, llm = make_env(task, item, counter)
+    env, llm = make_env(task, item, counter, budget)
     try:
         out = cls(env, llm).solve()
     except Exception as e:                           # a candidate that crashes scores zero and
@@ -141,6 +141,12 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--limit", type=int, default=0)
+    # Ending the episode at turn T and taking the system's answer is the only way to read the
+    # belief of harness-plus-model without installing a readout: whatever state the harness keeps
+    # -- a ledger, a surviving set, a grid -- is in the answer by construction. Sweeping T gives
+    # the belief trajectory. Its one cost is that the harness sees a shorter budget, so T equal to
+    # the full budget must reproduce the ordinary run; that is the control.
+    ap.add_argument("--budget", type=int, default=0)
     a = ap.parse_args()
 
     # The held-out split lives outside the directory the proposer works in. Upstream keeps its
@@ -158,7 +164,7 @@ def main():
     install_interceptor(counter)
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
-        rows = list(ex.map(lambda it: run_one(a.task, it, cls, counter), items))
+        rows = list(ex.map(lambda it: run_one(a.task, it, cls, counter, a.budget or None), items))
     acc = 100.0 * sum(1 for r in rows if r.get("correctness")) / len(rows)
 
     out = a.out or os.path.expanduser(

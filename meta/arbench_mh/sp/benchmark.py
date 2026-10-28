@@ -30,11 +30,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 sys.path.insert(0, os.path.expanduser("~/code/AR-Bench"))
 
 import arbench.utils.inference as ar_inf  # noqa: E402
-from arbench_mh.sp.env import SPEnv  # noqa: E402
+from arbench_mh.sp.env import SPEnv, BUDGET  # noqa: E402
 
 MODEL = os.environ.get("POLICY_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 POLICY = os.environ["POLICY_BASE_URL"].rstrip("/")
 REFEREE = os.environ.get("RESPONSE_BASE_URL", "http://127.0.0.1:8099/v1").rstrip("/")
+# The referee was pinned to the metered endpoint's model name. Overridable so the same pair of
+# columns can be produced against a locally served judge when the metered one is not wanted --
+# AR-Bench's own judge ablation (Table 12) validates nothing below 70B, so the local stand-in is
+# Qwen2.5-72B-Instruct-AWQ, not the 7B policy.
+REFEREE_MODEL = os.environ.get("REFEREE_MODEL", "jev-latest")
 NO_THINK = os.environ.get("DISABLE_THINKING", "0") == "1"
 
 
@@ -109,12 +114,12 @@ def install_interceptor(counter):
             m.inference = patched
 
 
-def run_one(item, harness_cls, total):
+def run_one(item, harness_cls, total, budget=None):
     counter = Counter(parent=total)                  # this episode's own tally
     policy = lambda msgs, temperature=0.7, max_tokens=None: _post(
         POLICY, MODEL, msgs, temperature, 0.7, max_tokens, counter)
     referee = lambda msgs, temperature=0.7, max_tokens=None: _post(
-        REFEREE, "jev-latest", msgs, temperature, 0.7, max_tokens, counter)
+        REFEREE, REFEREE_MODEL, msgs, temperature, 0.7, max_tokens, counter)
     env = SPEnv(item, referee, method=getattr(harness_cls, "METHOD", "zero_shot"))
     try:
         pred = harness_cls(env, policy).solve()
@@ -137,6 +142,9 @@ def main():
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--limit", type=int, default=0)
+    # See benchmark.py: ending the episode at turn T and reading the system's answer is how the
+    # belief of harness-plus-model is read without installing a readout.
+    ap.add_argument("--budget", type=int, default=0)
     ap.add_argument("--out", default=None,
                     help="write the episodes here instead of the derived path; the loop's "
                          "evaluate() passes it so the file lands where score_val.py expects")
@@ -153,7 +161,7 @@ def main():
     install_interceptor(counter)
     t0 = time.time()
     with ThreadPoolExecutor(max_workers=a.workers) as ex:
-        rows = list(ex.map(lambda it: run_one(it, cls, counter), items))
+        rows = list(ex.map(lambda it: run_one(it, cls, counter, a.budget or None), items))
     runtime = time.time() - t0
 
     out = a.out or os.path.join(a.logs_dir, "sp", a.harness, MODEL.split("/")[-1],

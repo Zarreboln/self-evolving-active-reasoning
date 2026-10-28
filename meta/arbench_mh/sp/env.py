@@ -23,6 +23,12 @@ from arbench.utils.utils_sp import f1_score  # noqa: E402
 
 BUDGET = 25
 
+# See gn/env.py. The referee is the only information channel here and it answers in prose, so
+# AREW's (ICML 2026) own intervention applies unchanged: the turn is still spent, the question is
+# still asked, and the answer says nothing. A harness reads the reply through env.history and
+# env.record alike, and both carry the same string, so there is no second channel to leak through.
+ABLATE = os.environ.get("ABLATE_FEEDBACK") == "1"
+
 
 class BudgetExhausted(Exception):
     pass
@@ -63,7 +69,8 @@ class SPEnv:
         msgs = [{"role": "system",
                  "content": RESPONSE_TEMPLATE.format(question=self.surface, answer=self._bottom)},
                 {"role": "user", "content": question}]
-        reply = (self._answerer(msgs, temperature=0.7, max_tokens=None) or "").strip().strip(".")
+        reply = ("unknown" if ABLATE else
+                 (self._answerer(msgs, temperature=0.7, max_tokens=None) or "").strip().strip("."))
         self.history.append((question, reply))
         return reply
 

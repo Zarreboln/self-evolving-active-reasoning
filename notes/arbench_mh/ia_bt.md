@@ -87,46 +87,68 @@ it -- which is the point -- but the row is about a harness-as-solver.
 Under ablation, `IA` is computed against the decoy's feedback, so it measures consistency with
 the decoy, not information about the target. Ignore that column on ablated rows.
 
-## 3. Belief trajectory
+## 3. Both abilities, per turn, on all three benchmarks
 
-The belief that matters is the system's, harness state included. Instructing a harness to maintain
-and report a belief vector -- AREW's method -- installs the scaffold the search is meant to invent,
-and probing the frozen model with the raw transcript reads the bare model with the scaffold
-stripped off. So the belief at turn t is read by **ending the episode at turn t and taking the
-system's answer**: whatever state the harness keeps is in that answer by construction.
+The two quantities are processes, as AREW states them: I_AS telescopes a sum of one-step oracle
+gains and C_BT sums the agent's own positive one-step gains. So they are read per turn, not once
+at the end.
 
-Two costs, run as controls rather than assumed away. The harness sees a shorter budget, so the
-full budget must reproduce the ordinary run. And the runs are independent samples at temperature
-0.7, so the full budget is run twice and that disagreement rate is the floor under any drift
-number. n = 30.
+**Belief tracking** is read by ending the episode at turn t and taking the system's answer.
+Instructing a harness to maintain and report a belief vector -- AREW's method -- installs the
+scaffold the search is meant to invent, and probing the frozen model with the raw transcript reads
+the bare model with the scaffold stripped off. Ending the episode early keeps whatever state the
+harness holds, by construction. Its two costs are run as controls: the harness sees a shorter
+budget, so the full budget must reproduce the ordinary run, and the runs are independent samples at
+temperature 0.7, so the full budget is run twice and that disagreement rate floors any drift claim.
 
-Guess Number, oracle `1/|H_t|` against the system's answer:
+**Information acquisition** is the same measurement only on Guess Number. Elsewhere it takes a task
+proxy, the way T3 instantiates one criterion per task from whatever the transcript makes
+observable:
 
-| turn | before: oracle / system | after: oracle / system |
+| | proxy | why |
 |---|---|---|
-|  3 |  9.0 /  3.3 |  14.2 /   6.7 |
-|  5 | 42.8 /  3.3 |  83.7 /  33.3 |
-|  8 | 79.4 /  3.3 | 100.0 / 100.0 |
-| 16 | 95.0 /  6.7 | 100.0 / 100.0 |
-| 25 | 95.0 /  6.7 | 100.0 / 100.0 |
+| gn | the oracle's posterior mass, mean `1/\|H_t\|` | exact: deterministic feedback, and the target is always in `H_t` |
+| dc | distinct suspects interrogated, of five | a suspect never heard cannot be ruled in or out |
+| sp | turns that got a decisive answer, share of budget | T3's own SP rule: a referee "unknown" taught nothing |
 
-Before, the gap opens to -88.3 and never closes: the information arrives turn after turn and the
-belief does not move. After, it is zero from turn 8.
+All three are bounded and monotone within an episode and that is all they share. Across budget
+points they need not be monotone, because those are independent runs, not one episode observed
+repeatedly.
 
-Detective Cases has no oracle column, so only the system curve:
+Figure: `figures/fig_ia_bt.png`, numbers in `notes/arbench_mh/ia_bt_curves.json`. n = 30.
 
-| turn | 1 | 2 | 3 | 5 | 8 | 12 | 16 | 20 | 25 |
-|---|---|---|---|---|---|---|---|---|---|
-| `template_zero_shot` (before) | 33.3 | 43.3 | 26.7 | 43.3 | 26.7 | 20.0 | 46.7 | 30.0 | 40.0 |
-| `lean_verify` (after)         | 20.0 | 30.0 | 33.3 | 26.7 | 43.3 | 43.3 | 60.0 | 70.0 | 83.3 |
+| at turn 25 | IA before → after | BT before → after |
+|---|---|---|
+| Guess Number       |  95.0 → 100.0  (+5.0)  |   6.7 → 100.0  (+93.3) |
+| Detective Cases    | 100.0 → 100.0  (+0.0)  |  40.0 →  83.3  (+43.3) |
+| Situation Puzzles  |  52.9 →  40.1  (-12.8) |  10.0 →  36.7  (+26.7) |
 
-Flat against monotone. Episodes right at some turn and wrong at the end: 43.3% before against a
-36.7% noise floor, 10.0% after against 16.7% -- the evolved harness is *below* its own floor, so
-there is no measurable self-destructive drift in it.
+**On all three, information acquisition did not improve, and belief tracking is what moved.** On
+Guess Number both conditions pin the answer down; the before harness then answers wrong anyway, its
+belief flat at 3-7 across all 25 turns while the oracle's climbs to 95. On Detective Cases the
+before harness covers all five suspects by turn 5 and the after one not until turn 12 -- it spends
+its first twenty turns on four rounds of testimony and only then asks the weapon probe -- and still
+ends at 83.3 against 40.0. On Situation Puzzles the after harness collects *fewer* decisive answers
+(40.1 against 52.9), because it stops at certification, and scores three times better.
+
+Shapes differ. Guess Number is a step: nothing until turn 3, everything by turn 8. Detective Cases
+accumulates gradually and is the only one still climbing at turn 25. Situation Puzzles is front
+loaded -- the evolved harness reaches 40.0 by turn 8 and then holds flat, so turns 9-25 buy it
+nothing.
+
+The before-evolution curves also differ in a way worth naming. On Detective Cases the before
+harness is not flat because it never learns; it churns, +33.3, +10.0, -16.7, +16.7, -16.7, -6.7,
++26.7, -16.7, +10.0, with 38 absorbed steps against 36 destroyed ones per episode, at a 36.7% noise
+floor. It is not accumulating, it is resampling. After evolution: 48 absorbed, 29 destroyed, at a
+16.7% floor.
 
 ## What is missing
 
-- SP has no IA/BT columns and DC has none either; §1 and §3 cover all three, §2 covers GN only.
+- §2's exact decomposition is GN-only. §1 and §3 cover all three, but §3's IA column is one exact
+  measure and two task proxies, which are not the same quantity and are never averaged.
+- The dc proxy is coarse: suspect coverage saturates by turn 12 in both conditions, so it can say
+  that coverage was never the bottleneck and nothing finer. It cannot see a change in *which*
+  suspect gets *which* probe, which is what lean_verify's own docstring says it changed.
 - DC's "before" is `template_zero_shot`, not a published method: the three published DC arms were
   scored through AR-Bench's own evaluator and were never wrapped on the harness interface, so they
   cannot take the ablation switch. `template_zero_shot` scores 31.0, inside the published band of

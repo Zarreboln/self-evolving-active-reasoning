@@ -75,7 +75,7 @@ def main(root):
         # Per budget, not all-or-nothing: a run written before transcripts were recorded leaves
         # a gap in the curve rather than deleting it.
         rec["ia"] = [(sum(ia(task, r["history"]) for r in runs[T][0][:n]) / n
-                      if all(r.get("history") for r in runs[T][0][:n]) else None) for T in Ts]
+                      if all("history" in r for r in runs[T][0][:n]) else None) for T in Ts]
         if not any(v is not None for v in rec["ia"]):
             rec["ia"] = None
         out[pref] = rec

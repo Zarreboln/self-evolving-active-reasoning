@@ -1,0 +1,165 @@
+{
+  "status": "POSTHOC_AGGREGATE_DIAGNOSTIC_OF_EXISTING_RUN_NO_NEW_EXPERIMENT",
+  "design": {
+    "task": "GN",
+    "shared_test_cases": 100,
+    "traditional_methods": [
+      "zero_shot",
+      "few_shot",
+      "few_shot_inst"
+    ],
+    "trajectories": 300,
+    "question_turns_per_trajectory": 25,
+    "separate_terminal_prediction": true,
+    "model": "Qwen2.5-7B-Instruct",
+    "official_script_model": "Qwen2.5-32B-Instruct",
+    "model_substitution_disclosed": true,
+    "native_candidate_universe_size": 5040,
+    "leading_zero_allowed": true,
+    "candidate_reconstruction_uses_hidden_answers": false,
+    "training_or_tuning_on_test_traces": false,
+    "distinct_test_puzzles": 100
+  },
+  "totals": {
+    "trajectories": 300,
+    "environment_questions": 7500,
+    "native_final_correct": 2,
+    "any_explicit_hit": 6,
+    "uniquely_identified_by_turn25": 164,
+    "uniquely_identified_but_final_wrong": 162,
+    "uniquely_identified_without_explicit_hit": 158,
+    "still_ambiguous_by_turn25": 136,
+    "final_inconsistent_with_feedback": 298,
+    "repeated_known_wrong_questions": 1318,
+    "all_repeated_questions": 1348,
+    "repeated_correct_questions": 30,
+    "prior_explicit_hit_but_final_wrong": 4
+  },
+  "by_method": [
+    {
+      "method": "zero_shot",
+      "trajectories": 100,
+      "environment_questions": 2500,
+      "native_final_correct": 0,
+      "any_explicit_hit": 1,
+      "uniquely_identified_by_turn25": 83,
+      "uniquely_identified_but_final_wrong": 83,
+      "uniquely_identified_without_explicit_hit": 82,
+      "still_ambiguous_by_turn25": 17,
+      "final_inconsistent_with_feedback": 100,
+      "repeated_known_wrong_questions": 300,
+      "all_repeated_questions": 300,
+      "repeated_correct_questions": 0,
+      "prior_explicit_hit_but_final_wrong": 1
+    },
+    {
+      "method": "few_shot",
+      "trajectories": 100,
+      "environment_questions": 2500,
+      "native_final_correct": 0,
+      "any_explicit_hit": 2,
+      "uniquely_identified_by_turn25": 52,
+      "uniquely_identified_but_final_wrong": 52,
+      "uniquely_identified_without_explicit_hit": 50,
+      "still_ambiguous_by_turn25": 48,
+      "final_inconsistent_with_feedback": 100,
+      "repeated_known_wrong_questions": 460,
+      "all_repeated_questions": 460,
+      "repeated_correct_questions": 0,
+      "prior_explicit_hit_but_final_wrong": 2
+    },
+    {
+      "method": "few_shot_inst",
+      "trajectories": 100,
+      "environment_questions": 2500,
+      "native_final_correct": 2,
+      "any_explicit_hit": 3,
+      "uniquely_identified_by_turn25": 29,
+      "uniquely_identified_but_final_wrong": 27,
+      "uniquely_identified_without_explicit_hit": 26,
+      "still_ambiguous_by_turn25": 71,
+      "final_inconsistent_with_feedback": 98,
+      "repeated_known_wrong_questions": 558,
+      "all_repeated_questions": 588,
+      "repeated_correct_questions": 30,
+      "prior_explicit_hit_but_final_wrong": 1
+    }
+  ],
+  "original_five_method_successes_per100_unchanged": {
+    "zero_shot": 0,
+    "few_shot": 0,
+    "few_shot_inst": 2,
+    "tot": 5,
+    "proactive_cot": 2
+  },
+  "four_prior_hit_terminal_failures": {
+    "count": 4,
+    "correct_response_retained_in_final_input": 4,
+    "unambiguous_success_feedback_retained": 4,
+    "normal_stop_not_truncated": 4,
+    "one_distinct_wrong_number_in_final_text": 4,
+    "parser_matches_recorded_prediction": 4,
+    "repeats_previously_refuted_guess": 3,
+    "raw_examples_or_case_identifiers_included": false
+  },
+  "reconstruction_checks": {
+    "empty_feasible_sets": 0,
+    "singleton_correctness_identity_mismatches": 0,
+    "source_reports_agree_on_controller_result": true,
+    "aggregate_arithmetic_crosschecked": true
+  },
+  "provenance": {
+    "controller_result_sha256": "242e39458414b690c2bb4fbaf046ce515924fdb5d59962784de5d8f38d75afe3",
+    "existing_execution_integrity_audit_sha256": "20eeba191c89420925c8d534a5dee2e66f53df240c1c9806eab15f65df72ee66",
+    "native_source_pins": {
+      "gn-five/vendor/arbench/arbench/reasoner/gn/gn_evaluator.py": "aa6643d004ed7b510452ce9fe581b371112616a6702dfee3a26132759cb221a9",
+      "gn-five/vendor/arbench/arbench/utils/utils_gn.py": "f57cc0a77615859ea44fad07a0e5b849aa95e6d428963d72d3c49405c20274e7"
+    },
+    "source_reports": [
+      {
+        "name": "traditional-trace-diagnostic-01.json",
+        "sha256": "a6eec3e9141f36ffedecfa54d473be23dc4407425fe2edf35aa2f57fefc38b7d",
+        "public_raw_source_included": false
+      },
+      {
+        "name": "native-feasible-set-diagnostic-01.json",
+        "sha256": "8f0149c37c179eae190505068bc22912561658d8605af1350e5c5e04867fc749",
+        "public_raw_source_included": false
+      },
+      {
+        "name": "failure-accounting-summary.json",
+        "sha256": "fbceecea3118c3fd642633b3ccfd2b38eaf56551ef4bd3bd1d9bcfac152ef9a5",
+        "public_raw_source_included": false
+      },
+      {
+        "name": "analysis.json",
+        "sha256": "e883f49c6f7493357ec3b224c12579b077158216f4f7a59331bd35483282feec",
+        "public_raw_source_included": false
+      },
+      {
+        "name": "research-cp72-complete-observed.txt",
+        "sha256": "8d7bbd3a9449521676edea43b9905b0d6b28cbe7a9662552c0dd7a3f54b635d8",
+        "public_raw_source_included": false
+      }
+    ],
+    "review_role": "Research CP72 reviewed the reported interpretation, not raw-data integrity. No independent re-audit was performed for this publication delta."
+  },
+  "limits": [
+    "This is a retrospective reconstruction of recorded public feedback, not measurement of model internal beliefs or knowledge.",
+    "Identifiability coverage is not corrected accuracy. Original native scores and outputs remain unchanged.",
+    "The three methods share100 test cases;300 trajectories are not300 independent puzzles.",
+    "The fixed25-turn loop continues after an explicit hit or uniquely identifying history; repeat and zero-reduction counts are not separated before versus after resolution here.",
+    "Candidate-inconsistent questions may still gather useful information. No zero-reduction count is used to rank acquisition quality.",
+    "No learned method, causal repair, improved questioning efficiency, reproducible evolution benefit or mechanism of forgetting has been established.",
+    "Qwen2.5-7B substitutes for the official32B script; explicit generation/context caps and concurrent serving are disclosed adaptations of the underlying run.",
+    "The existing run audit checks execution integrity, not effectiveness. CP72 is interpretation feedback, not an independent raw-data audit."
+  ],
+  "new_work": {
+    "source_summary_reads_only": true,
+    "new_model_calls": 0,
+    "new_gpu_jobs": 0,
+    "trace_diagnostic_reruns": 0,
+    "original_score_changes": 0,
+    "private_raw_data_included": false
+  }
+}

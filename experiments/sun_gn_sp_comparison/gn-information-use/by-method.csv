@@ -1,0 +1,4 @@
+method,trajectories,environment_questions,native_final_correct,any_explicit_hit,uniquely_identified_by_turn25,uniquely_identified_but_final_wrong,uniquely_identified_without_explicit_hit,still_ambiguous_by_turn25,final_inconsistent_with_feedback,repeated_known_wrong_questions,all_repeated_questions,repeated_correct_questions,prior_explicit_hit_but_final_wrong
+zero_shot,100,2500,0,1,83,83,82,17,100,300,300,0,1
+few_shot,100,2500,0,2,52,52,50,48,100,460,460,0,2
+few_shot_inst,100,2500,2,3,29,27,26,71,98,558,588,30,1

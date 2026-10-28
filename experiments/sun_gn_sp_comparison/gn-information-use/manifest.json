@@ -1,0 +1,63 @@
+{
+  "schema": "gn_information_use_public_delta_v1",
+  "status": "PUBLIC_AGGREGATE_DELTA_REVIEWED",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "f703ff8253fae4a4cb4d8b99bc3ba9a648e337067f4752b67a49e83093d266af",
+      "bytes": 4952
+    },
+    {
+      "path": "aggregate-results.json",
+      "sha256": "00f4e01386325bb3c9cf48fcbdf2fd6fcdf720dc31f85738294771a297ef70f3",
+      "bytes": 6785
+    },
+    {
+      "path": "by-method.csv",
+      "sha256": "bd4d87104a6075a2f0ad692f2d3c36f645a21823316a2eb6dd26d5a36179d383",
+      "bytes": 518
+    }
+  ],
+  "source_reports": [
+    {
+      "name": "traditional-trace-diagnostic-01.json",
+      "sha256": "a6eec3e9141f36ffedecfa54d473be23dc4407425fe2edf35aa2f57fefc38b7d",
+      "public_raw_source_included": false
+    },
+    {
+      "name": "native-feasible-set-diagnostic-01.json",
+      "sha256": "8f0149c37c179eae190505068bc22912561658d8605af1350e5c5e04867fc749",
+      "public_raw_source_included": false
+    },
+    {
+      "name": "failure-accounting-summary.json",
+      "sha256": "fbceecea3118c3fd642633b3ccfd2b38eaf56551ef4bd3bd1d9bcfac152ef9a5",
+      "public_raw_source_included": false
+    },
+    {
+      "name": "analysis.json",
+      "sha256": "e883f49c6f7493357ec3b224c12579b077158216f4f7a59331bd35483282feec",
+      "public_raw_source_included": false
+    },
+    {
+      "name": "research-cp72-complete-observed.txt",
+      "sha256": "8d7bbd3a9449521676edea43b9905b0d6b28cbe7a9662552c0dd7a3f54b635d8",
+      "public_raw_source_included": false
+    }
+  ],
+  "controller_result_sha256": "242e39458414b690c2bb4fbaf046ce515924fdb5d59962784de5d8f38d75afe3",
+  "existing_execution_integrity_audit_sha256": "20eeba191c89420925c8d534a5dee2e66f53df240c1c9806eab15f65df72ee66",
+  "validation": {
+    "summary_arithmetic_and_cross_report_checks": "PASS",
+    "trace_or_experiment_rerun": false,
+    "all_counts_from_existing_reports": true,
+    "expected_native_five_scores_unchanged": true,
+    "four_prior_hit_checks_from_existing_report": "PASS",
+    "published_raw_cases": false
+  },
+  "privacy_allowlist": "Aggregate counts, method names, public model/protocol descriptions and hashes only; no per-case rows.",
+  "new_model_calls": 0,
+  "new_gpu_jobs": 0,
+  "remote_operations": 0,
+  "git_operations": 0
+}

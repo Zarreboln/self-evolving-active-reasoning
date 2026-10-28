@@ -1,0 +1,24 @@
+{
+  "schema": "gn_posttraining_public_manifest_v1",
+  "status": "PUBLIC_AGGREGATE_DELTA_REVIEWED",
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 2934,
+      "sha256": "83d8740f1ff1aebe14ae2db5bfb326276d416de5e645691992bcdea42fd795f5"
+    },
+    {
+      "path": "results.json",
+      "bytes": 2100,
+      "sha256": "37dd951e26ee77ca7bad225062e3ea0b1608bde2279668f5e72f1efbc24c111c"
+    },
+    {
+      "path": "verify_results.py",
+      "bytes": 1951,
+      "sha256": "9ba688766141cbc5fde8c543addbc19fe38b799b4b1b1e3fb548b4e10133bb28"
+    }
+  ],
+  "privacy": "Aggregate counts and integrity hashes only; no cases, targets, prompts, transcripts, credentials or adapter weights.",
+  "new_model_calls_for_publication": 0,
+  "new_gpu_jobs_for_publication": 0
+}

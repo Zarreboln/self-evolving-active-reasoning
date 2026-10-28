@@ -1061,3 +1061,20 @@ Traceback: [method details, limitations and source pins](../experiments/sun_base
 
 </dd></dl>
 </details>
+
+
+<details>
+<summary><b>B9 2026-10-28 — GN information-use diagnostic and post-training evaluation</b></summary>
+
+<dl><dd>
+
+The completed five-baseline run was analyzed without new generation. Across the three traditional methods, recorded feedback uniquely identified the native answer in **164/300 trajectories**, but **162/164** still ended with a wrong final answer. Four trajectories had explicitly guessed correctly earlier; the success feedback remained in the final input, yet the final response changed to a different wrong number. Across 7,500 question turns, 1,318 repeated a previously refuted guess. These are post-hoc information-use diagnostics, not rescored accuracy, a cognitive-cause claim or a repaired policy result.
+
+The fixed 500-case training collection produced **7,299 SFT rows** and **3,354 DPO pairs** from 12,486 eligible states. GN SFT completed **1,371/1,371 optimizer steps** and then completed the fixed official 100-case zero-shot evaluation: **1/100** official success, versus **0/100** for the matched base zero-shot baseline. The one-case difference is not reliable evidence of improvement or self-evolution.
+
+The DPO adapter passed structural checks, but its fixed evaluation did not complete: one attempted episode emitted an invalid-length final guess and the shared no-retry boundary halted the other seven. It therefore supplies no DPO effect estimate. Raw cases, transcripts, targets, credentials and adapter weights remain private.
+
+[Information-use diagnostic](../experiments/sun_gn_sp_comparison/gn-information-use/README.md) · [GN post-training aggregate](../experiments/sun_gn_sp_comparison/gn-posttraining/README.md). UoT and the complete SP baseline remain pending and are not represented as completed here.
+
+</dd></dl>
+</details>

@@ -1,0 +1,63 @@
+{
+  "schema": "gn_posttraining_public_v1",
+  "status": "SFT_EVAL_COMPLETE_DPO_EVAL_INCOMPLETE",
+  "model": "Qwen2.5-7B-Instruct",
+  "training_data": {
+    "episodes": 500,
+    "calls": 37458,
+    "sft_rows": 7299,
+    "dpo_pairs": 3354,
+    "total_states": 12486,
+    "eligible_states": 12486,
+    "excluded_states": 0,
+    "invalid_responses": 0,
+    "solved_episodes": 3,
+    "max_states_exhausted": 497,
+    "audit_sha256": "9daac684a763df9c309769f3a74bfc106087644d13b40da7410eb151049f4047",
+    "token_inspection": {
+      "rows_dropped": 0,
+      "tokens_truncated": 0,
+      "maximum_tokens": 1372,
+      "training_limit_tokens": 8192,
+      "sha256": "184805c8199ae0a25c5e9e1aa4d7d757b3614582778c1979e38f0011c8eddd43"
+    }
+  },
+  "sft": {
+    "epochs": 3.0,
+    "optimizer_steps": 1371,
+    "expected_optimizer_steps": 1371,
+    "train_loss": 0.17325451501925698,
+    "evaluation": {
+      "cases": 100,
+      "method": "zero_shot",
+      "completed_model_calls": 2600,
+      "official_successes": 1,
+      "matched_base_official_successes": 0,
+      "hit_at_any": 3,
+      "mean_selected_path_environment_queries": 25.0,
+      "truncated_responses": 0,
+      "elapsed_seconds": 132.21379839105066,
+      "audit_status": "PASS_OFFLINE_GN_FIVE_INTEGRITY",
+      "audit_verified_model_responses": 2600,
+      "audit_sha256": "903aea992c3186f577e272158e9f33f2750c1b52926c5316879d22fb32a475fb"
+    }
+  },
+  "dpo": {
+    "adapter_structural_audit": "PASS",
+    "evaluation_status": "INCOMPLETE_FORMAT_FAILURE_EVIDENCE_PRESERVED",
+    "attempted_cases": 8,
+    "complete_cases": 0,
+    "completed_model_calls": 92,
+    "truncated_responses": 0,
+    "elapsed_seconds": 18.972006957046688,
+    "primary_failure": "One episode produced an invalid-length guess; the shared no-retry boundary halted the other seven episodes.",
+    "effect_conclusion": "UNAVAILABLE"
+  },
+  "claim_guards": {
+    "reliable_sft_improvement_established": false,
+    "dpo_effect_established": false,
+    "self_evolution_established": false,
+    "private_cases_published": false,
+    "adapter_weights_published": false
+  }
+}

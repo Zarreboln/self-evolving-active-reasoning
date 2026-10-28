@@ -49,18 +49,22 @@ designed never to have any.
 The SP numbers here are a fresh paired run, not run1's (41.0 / 39.0 / 36.5). The gap between the
 two is resampling at temperature 0.7, which is why both columns were re-run together.
 
-## 2. yield and uptake on Guess Number
+## 2. IA and BT on Guess Number
 
 Where the consistent set `H_t` is computable from the transcript, accuracy factors exactly:
 
-    yield  = mean 1/|H_T|      what a perfect reader of this harness's own transcript would score
-    uptake = accuracy / yield  the share of that the harness turned into a right answer
-    accuracy = yield x uptake
+    IA = mean 1/|H_T|   what a perfect reader of this harness's own transcript would score
+    BT = accuracy / IA  the share of that the harness turned into a right answer
+    accuracy = IA x BT
+
+Named for the abilities, but they are our estimators: IA is the on-policy counterpart of AREW's
+I_AS, conditioned on the questions actually asked rather than on actions re-drawn under an oracle
+belief, and BT is a ratio off the final answer, not their C_BT, which needs a belief readout.
 
 Only GN qualifies. DC's testimony is free text and its murderer lies; SP's hypothesis space is
 unbounded. (Both still get §1 and §3.)
 
-| harness | acc | yield | uptake | dead turns | longest dead run | pinned | pinned & wrong |
+| harness | acc | IA | BT | dead turns | longest dead run | pinned | pinned & wrong |
 |---|---|---|---|---|---|---|---|
 | `template_zero_shot` (before) |   2.0 |  97.5 | **0.02** | 74.4% | 17.2 |  95.0% | **93.0%** |
 | `packed_group_echo` (after)   | 100.0 | 100.0 | **1.00** | 16.7% |  1.0 | 100.0% |    0.0% |
@@ -68,19 +72,19 @@ unbounded. (Both still get §1 and §3.)
 Before evolution the questions were already nearly perfect -- a Bayesian reading that transcript
 scores 97.5 -- and the harness scored 2.0. 95% of episodes end with the answer pinned to a single
 candidate and 93% of episodes are pinned and still answered wrong. **What evolution moved on GN is
-uptake, 0.02 to 1.00, not yield.** That matches the delta analysis, where `surviving_set_state`
+BT, 0.02 to 1.00, not IA.** That matches the delta analysis, where `surviving_set_state`
 appears in all fifteen record-setting steps.
 
-The 74.4% dead turns are not in tension with yield 97.5: `template_zero_shot` keeps nothing between
+The 74.4% dead turns are not in tension with IA 97.5: `template_zero_shot` keeps nothing between
 turns and repeats guesses, but GN's feedback is informative enough that the few live turns still
 collapse 5040 to one.
 
 Caveat for the second row: `packed_group_echo` makes 0.08 model calls an episode and merges
-sixteen concurrent episodes into one "Repeat: <digits>" call. yield 100 / uptake 1.00 is a program
+sixteen concurrent episodes into one "Repeat: <digits>" call. IA 100 / BT 1.00 is a program
 solving the puzzle, not a model doing it. The decomposition makes that visible rather than hiding
 it -- which is the point -- but the row is about a harness-as-solver.
 
-Under ablation, `yield` is computed against the decoy's feedback, so it measures consistency with
+Under ablation, `IA` is computed against the decoy's feedback, so it measures consistency with
 the decoy, not information about the target. Ignore that column on ablated rows.
 
 ## 3. Belief trajectory
@@ -122,7 +126,7 @@ there is no measurable self-destructive drift in it.
 
 ## What is missing
 
-- SP has no yield/uptake and DC has none either; §1 and §3 cover all three, §2 covers GN only.
+- SP has no IA/BT columns and DC has none either; §1 and §3 cover all three, §2 covers GN only.
 - DC's "before" is `template_zero_shot`, not a published method: the three published DC arms were
   scored through AR-Bench's own evaluator and were never wrapped on the harness interface, so they
   cannot take the ablation switch. `template_zero_shot` scores 31.0, inside the published band of

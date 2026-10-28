@@ -52,22 +52,37 @@ def curves(prefix):
     # The system's belief: right or wrong when the episode is cut at T.
     sysP = {T: [bool(r.get("correctness")) for r in runs[(T, False)][:n]] for T in Ts}
 
-    # The oracle's belief on the same episodes, replayed from the longest run's transcripts.
+    # The oracle's belief on the same episodes, replayed from the longest run's transcripts --
+    # only where a consistent set is computable at all. Detective Cases logs (name, question,
+    # free-text reply) and Situation Puzzles a judge's prose, so neither has one, and replaying
+    # them would quietly filter every candidate away and print a confident zero.
     full = runs[(max(Ts), False)]
+
+    def is_gn(h):
+        return (len(h) == 3 and isinstance(h[0], str) and h[0].isdigit() and len(h[0]) == 4
+                and all(isinstance(x, int) for x in h[1:]))
+
+    hist = [[tuple(h) for h in r.get("history", [])] for r in full[:n]]
+    replayable = any(hist) and all(is_gn(h) for ep in hist for h in ep)
+
     orc = {}
-    for T in Ts:
-        vals = []
-        for r in full[:n]:
-            H = ALL
-            for g, a, b in [tuple(h) for h in r.get("history", [])][:T]:
-                H = [s for s in H if feedback(s, g) == (a, b)]
-            vals.append(1.0 / len(H) if H else 0.0)
-        orc[T] = sum(vals) / len(vals)
+    if replayable:
+        for T in Ts:
+            vals = []
+            for ep in hist:
+                H = ALL
+                for g, a, b in ep[:T]:
+                    H = [s for s in H if feedback(s, g) == (a, b)]
+                vals.append(1.0 / len(H) if H else 0.0)
+            orc[T] = sum(vals) / len(vals)
 
     print("      turn   oracle 1/|H_t|   system answer   gap")
     for T in Ts:
-        s = 100.0 * sum(sysP[T]) / n
-        print("      %4d   %12.1f   %13.1f   %+5.1f" % (T, 100.0 * orc[T], s, s - 100.0 * orc[T]))
+        sv = 100.0 * sum(sysP[T]) / n
+        if replayable:
+            print("      %4d   %12.1f   %13.1f   %+6.1f" % (T, 100.0 * orc[T], sv, sv - 100.0 * orc[T]))
+        else:
+            print("      %4d   %12s   %13.1f   %6s" % (T, "n/a", sv, "n/a"))
 
     # Per-episode movement between consecutive budgets, AREW's one-sided split.
     up = down = 0

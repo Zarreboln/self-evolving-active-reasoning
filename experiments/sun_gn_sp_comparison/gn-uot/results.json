@@ -1,0 +1,99 @@
+{
+  "status": "PASS_NATIVE_UOT_OFFICIAL100_CAP2048_MIT91_CLOUD9_COMBINED_INTEGRITY",
+  "task": "GN",
+  "method": "native_uot_depth1",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "official_script_model": "qwen2.5-32b-instruct",
+  "model_adaptation_disclosed": true,
+  "cases": 100,
+  "execution_segments": {
+    "mit_completed_cases": 91,
+    "cloud_suffix_cases": 9,
+    "original_execution_failures_replaced": 9,
+    "old_successful_cases_repeated": 0,
+    "source_journals": 4
+  },
+  "serving": {
+    "output_cap_tokens": 2048,
+    "context_tokens": 16384,
+    "max_prompt_tokens_observed": 7550,
+    "simulate_depth": 1,
+    "proposal_sampling": {
+      "temperature": 0.7,
+      "top_p": 0.7
+    },
+    "simulation_sampling": {
+      "temperature": 0.1,
+      "top_p": 0.9
+    }
+  },
+  "usage": {
+    "exact_native_requests": 12803,
+    "actual_input_tokens": 6221091,
+    "actual_output_tokens": 16085099,
+    "length_finishes": {
+      "uot_proposal": 33,
+      "uot_simulation": 4694
+    }
+  },
+  "metrics": {
+    "official_successes": 100,
+    "harness_final_successes": 100,
+    "hit_at_any": 100,
+    "actor_final_evaluated": 0,
+    "actor_final_successes": 0,
+    "selected_path_environment_queries_total": 774,
+    "selected_path_environment_queries_mean": 7.74,
+    "selected_path_count_caveat": "Selected-path environment queries omit search-branch cost."
+  },
+  "audit": {
+    "model_calls": 0,
+    "api_calls": 0,
+    "gpu_jobs": 0,
+    "source_journals_verified_independently": true,
+    "journals_merged": false,
+    "scientific_parameters_changed": false,
+    "assignment_sha256": "10b5486967bec8e096c7330784dcd9c17295f71a0e41c9a14f553762eed2ec64",
+    "combined_outcomes_sha256": "83b1287889bdd6a6038a881b3a36af2a50902b737195cb6244a1dcc073b18d5c",
+    "private_audit_result_sha256": "da3d16d8a1744264f4ea79c1970b6ebee8da1894e7e0ef3fa8f468b549ea896d",
+    "auditor_sha256": "43087ac1b12763d6d89704546ebfbcce1c75c23d613b5067ff8216ec2e375a92"
+  },
+  "source_digests": [
+    {
+      "segment": "mit_shard_1",
+      "selected_completed_cases": 44,
+      "plan_sha256": "d18bc96b5df25571b45a732688721e237e605114820b520f40cd4cb0ae08e7e8",
+      "result_sha256": "5d343889d5574439f0e20fb82b4b8fce3f470ff158f4638b642029a614a7986d",
+      "journal_sha256": "cd0420b9c0cc2afd7c287bd05a870ec1a3b0aa990202857ab8f3610c8bb2cbe6"
+    },
+    {
+      "segment": "mit_shard_2",
+      "selected_completed_cases": 47,
+      "plan_sha256": "3bd28a14de81837d8cc4e3ab572ea687c8b310789ddb4e63f41ac4dbf6b40bcf",
+      "result_sha256": "316052263b796c50d09697f8373fc16d84111ea84701fc8168bba5e132a68c9e",
+      "journal_sha256": "2ba74c492ae2cdaae5ec00109196e88f7a58fba2a1ab6979be488bb4a33204ac"
+    },
+    {
+      "segment": "cloud_suffix_1",
+      "selected_completed_cases": 5,
+      "plan_sha256": "26166bc2ffb14b29e79649cc1756cdb651b757aed469d9c39fba475492f217a4",
+      "result_sha256": "1d862624215b0f7043c60c0a95d4f0ca7a35f7700a875a0191b061424dad66fa",
+      "journal_sha256": "5d0e0df9bff0ea9c34e12eab1c84cb514daa3a0bbe6a4647d372e1506848f509"
+    },
+    {
+      "segment": "cloud_suffix_2",
+      "selected_completed_cases": 4,
+      "plan_sha256": "e6f5d03fef813380dec73d664c67b38155120ef18d20052d42f4e5e5708838d2",
+      "result_sha256": "d47e1aafa655a575f937a92553f0c5d8ddd2684ea423254a5d08d3e4aa7e1388",
+      "journal_sha256": "10d42e31a2ce34c350a29c629c9d0851c1480e96afc2b15c40e421cd15d23115"
+    }
+  ],
+  "claim_limits": [
+    "This is a Qwen2.5-7B adaptation, not an exact reproduction of the official 32B configuration.",
+    "The two cloud suffixes were planned after the MIT execution failures were observed.",
+    "Actor-final exact match is unavailable for all 100 cases; harness resolution is not evidence that the actor produced 100 correct final answers.",
+    "Selected-path query counts omit search-branch cost and do not establish query efficiency or speedup.",
+    "Integrity and replay success do not establish self-evolution or scientific gain."
+  ],
+  "private_material_included": false
+}

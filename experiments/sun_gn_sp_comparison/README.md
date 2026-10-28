@@ -19,6 +19,7 @@ Neither experiment establishes a general method ranking, a full paper/benchmark 
 - [Five inference baselines on the full 100-case test split](../sun_baselines100_20261027/gn-five/README.md): ZeroShot 0/100, FewShot 0/100, FewShotInst 2/100, ToT 5/100 and ProactiveCoT 2/100. The complete run and independent integrity audit are already part of this PR.
 - [Acquired-evidence versus final-answer diagnostic](gn-information-use/README.md): recorded feedback uniquely identified the answer in 164/300 traditional-method trajectories, yet 162 of those ended wrong. Four trajectories guessed correctly earlier and then changed to a wrong final answer. This is post-hoc mechanism evidence, not corrected accuracy or a repair result.
 - [GN post-training results](gn-posttraining/README.md): SFT completed 1,371 optimizer steps and scored 1/100 versus the matched base model's 0/100. That one-case difference is not reliable improvement. The DPO adapter was trained, but its fixed evaluation failed the output-format boundary and provides no effect estimate.
+- [GN native UoT on the full 100-case test split](gn-uot/README.md): the two MIT shards supplied 91 completed cases and two disjoint cloud suffixes supplied only the nine execution failures. A zero-model combined replay audit passed with no repeated successful case. The native harness resolved 100/100, but actor-final exact match is unavailable and branch-search cost is omitted, so this is not evidence of 100 actor-correct answers, query efficiency or self-evolution.
 
 ## Recompute the published numbers
 
@@ -26,6 +27,7 @@ Only Python's standard library is needed. From this directory:
 
 ```text
 python -B gn/verify_results.py --data gn/anonymous-numerics.json --results gn/results.json
+python -B gn-uot/verify_results.py gn-uot/results.json
 python -B sp/numeric/verify_results.py sp/numeric
 python -B sp/verify_supplements.py
 ```
@@ -36,6 +38,6 @@ These commands check the anonymous numeric inputs and summaries, not private exe
 
 Freeze a finite candidate bank of complete ACE memory snapshots from the learning run. Compare the initial snapshot, the latest snapshot and a snapshot selected only on a separate validation set, all on the same fresh heldout cases, with the same monitor and explicit total cost accounting. This tests snapshot selection without treating the observed post-reflection/post-update pattern as proof that merging caused the difference. No such follow-up is included in these results.
 
-What remains: the full audited UoT baseline, complete SP baseline coverage, qualified SP feedback or a separately justified evaluation condition, a valid DPO evaluation, SP post-training, reliable semantic outcome assessment, and replicated learning trajectories. The observed truncation and update stagnation motivate targeted checks; their causes are not isolated by these runs. The historical selected-policy GN studies are separate experiments, linked from the team log rather than duplicated here.
+What remains: complete SP baseline coverage, qualified SP feedback or a separately justified evaluation condition, a valid DPO evaluation, SP post-training, reliable semantic outcome assessment, and replicated learning trajectories. The observed truncation and update stagnation motivate targeted checks; their causes are not isolated by these runs. The historical selected-policy GN studies are separate experiments, linked from the team log rather than duplicated here.
 
 Private case identities, targets, prompts, interaction transcripts, learned text, credentials, cluster paths and coordination records are excluded. The retained SP `publication_ready=false` and `qualification=UNMET` flags describe the recorded scientific limitations; assembling this disclosure does not alter those flags. This package contains no execution or publication authorization.

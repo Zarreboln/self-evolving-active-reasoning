@@ -33,11 +33,16 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 SLIDES = os.environ.get("SLIDES") == "1"
+# One hue per ability, so a glance at the colour says which row you are in. Within a row, the
+# before-evolution line is the same hue lightened and dashed, which keeps the pair legible in
+# greyscale as well.
 if SLIDES:
-    ACC, INK, MUTE, FAINT = "#990000", "#1D1D1D", "#555555", "#AAAAAA"
+    INK, FAINT = "#1D1D1D", "#AAAAAA"
+    HUE = {"ia": ("#8FA9C0", "#2E5E86"), "bt": ("#C68E8E", "#990000")}
     FAM, FAMKEY = ["Georgia", "Times New Roman", "DejaVu Serif"], "serif"
 else:
-    ACC, INK, MUTE, FAINT = "#b4530f", "#1c1f26", "#6b7382", "#b8bec7"
+    INK, FAINT = "#1c1f26", "#b8bec7"
+    HUE = {"ia": ("#93aec4", "#2f6286"), "bt": ("#d3a083", "#b4530f")}
     FAM, FAMKEY = ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"], "sans-serif"
 
 plt.rcParams.update({
@@ -59,26 +64,30 @@ TASKS = [("Guess Number", "gn_template_zero_shot", "gn_packed_group_echo",
           "decisive answers, share of budget")]
 TASKS = [t for t in TASKS if t[1] in data and t[2] in data]
 
-fig, axes = plt.subplots(2, len(TASKS), figsize=(4.1 * len(TASKS), 6.2), squeeze=False)
+fig, axes = plt.subplots(2, len(TASKS), figsize=(4.1 * len(TASKS) + 1.0, 6.2), squeeze=False)
 
 
-def draw(ax, Ts, before, after, ylab, show_legend):
-    for series, col, lw, ls, ms, lab in (
-            (before, MUTE, 1.6, (0, (4, 2)), 3.4, "before evolution"),
-            (after, ACC, 2.2, "-", 3.8, "after evolution")):
+def draw(ax, Ts, before, after, ylab, show_legend, hue):
+    pale, full = HUE[hue]
+    for series, col, lw, ls, ms, mfc, lab in (
+            (before, pale, 1.7, (0, (4, 2)), 3.6, "white", "before evolution"),
+            (after, full, 2.4, "-", 4.0, full, "after evolution")):
         if series is None:
             continue
         xs = [0] + [t for t, v in zip(Ts, series) if v is not None]
         ys = [0] + [v for v in series if v is not None]
-        ax.plot(xs, ys, color=col, lw=lw, ls=ls, marker="o", ms=ms,
-                mfc="white" if col is MUTE else col, label=lab, zorder=3)
+        ax.plot(xs, ys, color=col, lw=lw, ls=ls, marker="o", ms=ms, mec=col,
+                mfc=mfc, label=lab, zorder=3)
     ax.set_xlim(0, Ts[-1])
     ax.set_ylim(-3, 107)
     ax.grid(axis="y", color="#ECECEC", lw=0.6)
     ax.set_axisbelow(True)
-    ax.set_ylabel(ylab, fontsize=10 if SLIDES else 8.4)
+    ax.set_ylabel(ylab, fontsize=10.5 if SLIDES else 8.6)
     if show_legend:
-        ax.legend(frameon=False, fontsize=9.6 if SLIDES else 7.8, loc="lower right",
+        # The two rows have their empty corner in different places: IA climbs to a ceiling and
+        # leaves the bottom right, BT stays low before evolution and leaves the top left.
+        ax.legend(frameon=False, fontsize=9.6 if SLIDES else 7.8,
+                  loc="lower right" if hue == "ia" else "upper left",
                   handlelength=1.8, borderaxespad=0.4)
 
 
@@ -87,23 +96,23 @@ for col, (title, before, after, ialab) in enumerate(TASKS):
     Ts = b["turns"]
     top, bot = axes[0][col], axes[1][col]
 
-    draw(top, Ts, b.get("ia"), a.get("ia"), ialab, col == 0)
+    draw(top, Ts, b.get("ia"), a.get("ia"), ialab, col == 0, "ia")
     top.set_title(title, fontsize=12.5 if SLIDES else 10.4, color=INK, pad=9)
     if a.get("ia") is None and b.get("ia") is None:
         top.text(0.5, 0.5, "no proxy on this task", transform=top.transAxes, ha="center",
                  va="center", fontsize=10 if SLIDES else 8, color=FAINT)
 
-    draw(bot, Ts, b["bt"], a["bt"], "belief in the right answer", False)
+    draw(bot, Ts, b["bt"], a["bt"], "belief in the right answer", col == 0, "bt")
     bot.set_xlabel("turn the episode was cut at", fontsize=10.5 if SLIDES else 8.8)
 
-axes[0][0].annotate("information\nacquisition", xy=(-0.42, 0.5), xycoords="axes fraction",
-                    ha="center", va="center", rotation=90, fontsize=12 if SLIDES else 10,
-                    color=INK)
-axes[1][0].annotate("belief\ntracking", xy=(-0.42, 0.5), xycoords="axes fraction",
-                    ha="center", va="center", rotation=90, fontsize=12 if SLIDES else 10,
-                    color=INK)
-
-fig.tight_layout(pad=0.8, h_pad=1.4, w_pad=2.2)
+# The row names read horizontally in a left gutter, in that row's own colour, so they are read
+# once rather than tilted into.
+GUT = 1.0 / (4.1 * len(TASKS) + 1.0)
+fig.tight_layout(pad=0.8, h_pad=1.4, w_pad=2.2, rect=(GUT, 0, 1, 1))
+for r, (name, hue) in enumerate((("information\nacquisition", "ia"), ("belief\ntracking", "bt"))):
+    bb = axes[r][0].get_position()
+    fig.text(GUT * 0.52, (bb.y0 + bb.y1) / 2, name, ha="center", va="center",
+             fontsize=15 if SLIDES else 12.5, color=HUE[hue][1], linespacing=1.35)
 name = "fig_ia_bt%s.png" % ("_slides" if SLIDES else "")
 fig.savefig(out / name, bbox_inches="tight", facecolor="white")
 print("  " + name)

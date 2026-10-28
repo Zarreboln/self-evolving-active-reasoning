@@ -123,6 +123,9 @@ def run_one(task, item, cls, total):
         out = None                                   # the loop keeps going
         print("    episode failed: %s: %s" % (type(e).__name__, str(e)[:120]), flush=True)
     r = env.score(out)
+    # The transcript, so the AS/BT split can be replayed offline (meta/tools/as_bt.py). Scoring
+    # throws it away otherwise, and it is the only record of what the harness actually asked.
+    r["history"] = [list(h) for h in getattr(env, "history", [])]
     r["input_token"] = counter.in_tok
     r["output_token"] = counter.out_tok
     r["total_token"] = counter.in_tok + counter.out_tok

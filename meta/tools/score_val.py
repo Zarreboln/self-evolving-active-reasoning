@@ -56,6 +56,11 @@ def main():
                          "calls 4 of 10 not-equivalent-to-themselves, deterministically, while "
                          "jev calls 10 of 10 equivalent")
     ap.add_argument("--force", action="store_true")
+    # Add-only: the evolution loop reads val.json and never passes this, so its path is untouched.
+    # The belief trajectory needs a score PER EPISODE to count absorbed against destroyed steps,
+    # and val.json is an aggregate.
+    ap.add_argument("--per-episode", default=None,
+                    help="also write [{score, tier}, ...] here, in the run's episode order")
     a = ap.parse_args()
 
     rows = json.load(open(a.run))
@@ -101,8 +106,27 @@ def main():
         out["partial"] = tiers["partial"] / n
         out["nonstrict"] = (tiers["equivalent"] + tiers["partial"]) / n   # BALAR's, for the table
         out["judge_failed"] = sum(1 for j in js if j.get("judge_failed"))
+        if a.per_episode:
+            per = []
+            for j in js:
+                l, r = M.get(j.get("left2right")), M.get(j.get("right2left"))
+                if l is None or r is None or 0 in (l, r):
+                    per.append({"score": 0.0, "tier": "wrong"})
+                elif l == 2 and r == 2:
+                    per.append({"score": 1.0, "tier": "equivalent"})
+                elif 2 in (l, r):
+                    per.append({"score": 0.5, "tier": "partial"})
+                else:
+                    per.append({"score": 0.0, "tier": "wrong"})
+            os.makedirs(os.path.dirname(os.path.abspath(a.per_episode)), exist_ok=True)
+            with open(a.per_episode, "w") as f:
+                json.dump(per, f)
     else:
         out["accuracy"] = sum(1 for r in rows if r.get("correctness")) / len(rows)
+        if a.per_episode:
+            os.makedirs(os.path.dirname(os.path.abspath(a.per_episode)), exist_ok=True)
+            with open(a.per_episode, "w") as f:
+                json.dump([{"score": 1.0 if r.get("correctness") else 0.0} for r in rows], f)
 
     d = os.path.join(a.logs_dir, a.task, a.system, a.model.split("/")[-1])
     os.makedirs(d, exist_ok=True)

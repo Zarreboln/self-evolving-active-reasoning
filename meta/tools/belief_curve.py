@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import glob
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -33,14 +34,27 @@ sys.path.insert(0, str(Path(__file__).parent))
 from ia_bt import ALL, feedback  # noqa: E402
 
 
+def scores(path, rows):
+    """One number per episode. Guess Number and Detective Cases score 0/1 in the run file;
+    Situation Puzzles does not -- its episodes are graded against the gold text by the equivalence
+    judge, so score_val.py --per-episode writes them alongside, and that file is read instead."""
+    side = path[:-5] + ".scored.json"
+    if os.path.exists(side):
+        per = json.load(open(side))
+        return [float(p["score"]) for p in per][:len(rows)]
+    return [1.0 if r.get("correctness") else 0.0 for r in rows]
+
+
 def curves(prefix):
     """prefix is e.g. .../gn_template_zero_shot; files are <prefix>_b<T>.json (+ _b25r2)."""
-    runs = {}
+    runs, sc = {}, {}
     for f in sorted(glob.glob(prefix + "_b*.json")):
         m = re.search(r"_b(\d+)(r2)?\.json$", f)
-        if not m:
+        if not m or f.endswith(".scored.json"):
             continue
-        runs[(int(m.group(1)), bool(m.group(2)))] = json.load(open(f))
+        k = (int(m.group(1)), bool(m.group(2)))
+        runs[k] = json.load(open(f))
+        sc[k] = scores(f, runs[k])
     if not runs:
         print("  no budget sweep under %s" % prefix)
         return
@@ -49,8 +63,9 @@ def curves(prefix):
     n = min(len(v) for v in runs.values())
     print("  %s   n=%d  budgets=%s" % (Path(prefix).name, n, Ts))
 
-    # The system's belief: right or wrong when the episode is cut at T.
-    sysP = {T: [bool(r.get("correctness")) for r in runs[(T, False)][:n]] for T in Ts}
+    # The system's belief: how it scores when the episode is cut at T. 0/1 on gn and dc, graded
+    # on sp, where a partial answer is worth half.
+    sysP = {T: sc[(T, False)][:n] for T in Ts}
 
     # The oracle's belief on the same episodes, replayed from the longest run's transcripts --
     # only where a consistent set is computable at all. Detective Cases logs (name, question,
@@ -76,31 +91,48 @@ def curves(prefix):
                 vals.append(1.0 / len(H) if H else 0.0)
             orc[T] = sum(vals) / len(vals)
 
-    print("      turn   oracle 1/|H_t|   system answer   gap")
+    # Both abilities are process quantities, as AREW states them: I_AS telescopes a sum of
+    # one-step oracle gains, C_BT sums the agent's own POSITIVE one-step gains. So the columns
+    # that matter are the increments between budget points, not the levels.
+    #
+    #   IA_t  = Psi_oracle(t) - Psi_oracle(t-1)   what this stretch of questions was worth
+    #   BT_t  = Psi_system(t) - Psi_system(t-1)   what the system actually took from it
+    #
+    # and the episode-level gained/lost counts below are the same split one episode at a time.
+    print("      turn   oracle Psi   IA (gain)     system Psi   BT (gain)")
+    po = ps = 0.0
     for T in Ts:
         sv = 100.0 * sum(sysP[T]) / n
+        ov = 100.0 * orc[T] if replayable else None
         if replayable:
-            print("      %4d   %12.1f   %13.1f   %+6.1f" % (T, 100.0 * orc[T], sv, sv - 100.0 * orc[T]))
+            print("      %4d   %10.1f   %+9.1f   %12.1f   %+9.1f" % (T, ov, ov - po, sv, sv - ps))
+            po = ov
         else:
-            print("      %4d   %12s   %13.1f   %6s" % (T, "n/a", sv, "n/a"))
+            print("      %4d   %10s   %9s   %12.1f   %+9.1f" % (T, "n/a", "n/a", sv, sv - ps))
+        ps = sv
+    if replayable:
+        print("      ---- over the whole episode:  IA +%.1f   BT +%.1f" % (po, ps))
+    else:
+        print("      ---- over the whole episode:  IA n/a    BT %+.1f" % ps)
 
     # Per-episode movement between consecutive budgets, AREW's one-sided split.
     up = down = 0
     lost = 0
     for e in range(n):
         seq = [sysP[T][e] for T in Ts]
-        up += sum(1 for i in range(1, len(seq)) if seq[i] and not seq[i - 1])
-        down += sum(1 for i in range(1, len(seq)) if seq[i - 1] and not seq[i])
-        if any(seq[:-1]) and not seq[-1]:
+        up += sum(1 for i in range(1, len(seq)) if seq[i] > seq[i - 1])
+        down += sum(1 for i in range(1, len(seq)) if seq[i] < seq[i - 1])
+        if max(seq[:-1]) > seq[-1]:
             lost += 1
-    print("      gained %d  lost %d   episodes right at some turn and wrong at the end: %.1f%%"
-          % (up, down, 100.0 * lost / n))
+    # The one-sided split, per episode: AREW's absorbed progress against its self-destructive
+    # drift, counted over the transitions between budget points.
+    print("      per-episode steps:  absorbed %d   destroyed %d   "
+          "(right at some turn, wrong at the end: %.1f%%)" % (up, down, 100.0 * lost / n))
 
     ctl = [(max(Ts), False), (max(Ts), True)]
     if all(c in runs for c in ctl):
-        a, b = (runs[c] for c in ctl)
-        dis = sum(1 for x, y in zip(a[:n], b[:n])
-                  if bool(x.get("correctness")) != bool(y.get("correctness")))
+        sa, sb = sc[ctl[0]][:n], sc[ctl[1]][:n]
+        dis = sum(1 for x, y in zip(sa, sb) if x != y)
         print("      noise floor: the same budget run twice disagrees on %.1f%% of episodes"
               % (100.0 * dis / n))
 

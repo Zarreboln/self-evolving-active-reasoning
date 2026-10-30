@@ -1,0 +1,120 @@
+{
+ "_note": "AR-Bench's own reasoning methods on the TEST split, 100 instances each, frozen Qwen2.5-7B-Instruct, 25 turns. These are not new runs: run_sharded.sh pins DATA=$HOME/code/AR-Bench/data/$TASK/test.json and make_ar_splits.py defines test as exactly that file, untouched, so the runs made 2026-10-24..26 on bath were already on test. Scored 2026-10-30 by meta/tools/score_test_grid.py. The selection-split numbers in published_baselines.json are a separate measurement of the seed set and are NOT these runs -- e.g. dc/few_shot_inst is 34.0 there and 39.0 here.",
+ "_protocol": {
+  "policy": "Qwen2.5-7B-Instruct frozen, temperature 0.7, top_p 0.7, budget 25",
+  "gn_feedback": "pure function, no second model on either side",
+  "dc_suspects": "the same served 7B at 0.7/0.7 (DC_RESPONDER=local; ours via dc/env.py)",
+  "sp_referee": "jev shim on :8099, labelled jev-latest, 0.7/0.7, both sides",
+  "sp_judge": "sp_semantic_equivalence.py at JEV_MODEL=jev-1.14.0, both sides",
+  "sp_metric": "(equivalent + 0.5 * partial) / n, both sides",
+  "cost_axis": "input + output tokens per episode"
+ },
+ "_gaps": {
+  "gn/tot": "cannot run as published: extract_four_digit_numbers returns str, the loop iterates characters and compare_guess raises on instance 1. gn/tot_fixed is the repaired arm.",
+  "gn/tot_fixed": "input tokens only; the record keeps guess_list/oracle_calls, not the conversation, so output is unrecoverable. GN output runs ~1% of input.",
+  "sp/tot": "cost unrecoverable: the record keeps only the chosen path, not the sibling branches expand_node generated at each depth. Accuracy is sound. A re-run is the only fix.",
+  "sp/uot": "episode file is on the retired h100 (Baidu /h100_backup/); its jev judgments survive in sp_equiv_jev.json, so accuracy is recomputable. RUN_LOG's 5.0 for this cell is the non-strict tier count (eq+partial)/n, not this table's metric -- it is 2.5 here."
+ },
+ "rows": {
+  "gn/zero_shot": {
+   "accuracy": 0.0,
+   "tokens": 31093.82,
+   "n": 100
+  },
+  "gn/few_shot": {
+   "accuracy": 0.0,
+   "tokens": 42378.03,
+   "n": 100
+  },
+  "gn/few_shot_inst": {
+   "accuracy": 1.0,
+   "tokens": 54925.21,
+   "n": 100
+  },
+  "gn/proactive_cot": {
+   "accuracy": 2.0,
+   "tokens": 45508.98,
+   "n": 100
+  },
+  "gn/tot_fixed": {
+   "accuracy": 6.0,
+   "tokens": 21196.18,
+   "n": 100
+  },
+  "dc/zero_shot": {
+   "accuracy": 33.0,
+   "tokens": 143613.96,
+   "n": 100
+  },
+  "dc/few_shot": {
+   "accuracy": 32.0,
+   "tokens": 268291.28,
+   "n": 100
+  },
+  "dc/few_shot_inst": {
+   "accuracy": 39.0,
+   "tokens": 286701.16,
+   "n": 100
+  },
+  "dc/proactive_cot": {
+   "accuracy": 27.0,
+   "tokens": 160959.41,
+   "n": 100
+  },
+  "dc/tot": {
+   "accuracy": 31.0,
+   "tokens": 97069.08,
+   "n": 100
+  },
+  "dc/tot_eval": {
+   "accuracy": 34.0,
+   "tokens": 244318.18,
+   "n": 100
+  },
+  "dc/proactive_stop": {
+   "accuracy": 37.0,
+   "tokens": 118216.8,
+   "n": 100
+  },
+  "sp/zero_shot": {
+   "accuracy": 7.0,
+   "tokens": 37568.03,
+   "n": 100
+  },
+  "sp/few_shot": {
+   "accuracy": 3.5,
+   "tokens": 52450.02,
+   "n": 100
+  },
+  "sp/few_shot_inst": {
+   "accuracy": 5.5,
+   "tokens": 54712.58,
+   "n": 100
+  },
+  "sp/proactive_cot": {
+   "accuracy": 0.0,
+   "tokens": 45997.0,
+   "n": 100
+  },
+  "sp/tot": {
+   "accuracy": 4.0,
+   "tokens": null,
+   "n": 100
+  },
+  "sp/tot_eval": {
+   "accuracy": 9.0,
+   "tokens": 11359.62,
+   "n": 100
+  },
+  "sp/proactive_stop": {
+   "accuracy": 2.5,
+   "tokens": 22404.6,
+   "n": 100
+  },
+  "sp/uot": {
+   "accuracy": 2.5,
+   "tokens": null,
+   "n": 100
+  }
+ }
+}

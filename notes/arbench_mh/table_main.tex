@@ -1,13 +1,15 @@
-% Main comparison. Everything on the SAME split (selection, 100 episodes) so the columns are
-% comparable; the held-out numbers for our systems are in the note, since the published arms have
-% not been re-measured there yet. Frozen Qwen2.5-7B-Instruct throughout; no gradient step.
+% Main comparison. Every cell is the SEALED TEST split now: the published arms were always run
+% against AR-Bench's own data/<task>/test.json (run_sharded.sh pins it, make_ar_splits.py defines
+% test as exactly that file), and our systems were finalised there on 2026-10-27. Same frozen
+% Qwen2.5-7B-Instruct, same referees, same judge, same metric on both sides; no gradient step.
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{5pt}
-\caption{Accuracy and cost on AR-Bench, selection split, 100 episodes per cell, with a frozen
-Qwen2.5-7B-Instruct. Cost is mean input plus output tokens per episode. Guess Number is reported
-for completeness but is saturated by the harness search and is not evidence about reasoning
+\caption{Accuracy and cost on AR-Bench, \textbf{held-out test split}, 100 episodes per cell, with
+a frozen Qwen2.5-7B-Instruct and a budget of 25 turns. Cost is mean input plus output tokens per
+episode. Every method shown is reported on all three tasks. Guess Number is included for
+completeness but is saturated by the harness search and is not evidence about reasoning
 (\S\ref{sec:gn}).}
 \label{tab:main}
 \begin{tabular}{l rr rr rr}
@@ -17,29 +19,33 @@ for completeness but is saturated by the harness search and is not evidence abou
 \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
 Method & Acc. & Tok/ep & Acc. & Tok/ep & Acc. & Tok/ep \\
 \midrule
-Zero-shot                      &  0.0 & 31,094 &   -- &      -- &  4.5 & 37,413 \\
-Few-shot with instruction      &   -- &     -- & 34.0 & 286,863 &  3.5 & 54,746 \\
-Tree of Thoughts$^{\dagger}$   &  6.0 & 21,176 & 31.0 &  95,518 & 12.5 &  8,624 \\
-Proactive CoT                  &  2.0 & 46,161 & 35.0 & 114,648 &   -- &     -- \\
+Zero-shot                      &  0.0 & 31,094 & 33.0 & 143,614 &  7.0 & 37,568 \\
+Few-shot                       &  0.0 & 42,378 & 32.0 & 268,291 &  3.5 & 52,450 \\
+Few-shot with instruction      &  1.0 & 54,925 & 39.0 & 286,701 &  5.5 & 54,713 \\
+Proactive CoT                  &  2.0 & 45,509 & 27.0 & 160,959 &  0.0 & 45,997 \\
+Tree of Thoughts$^{\dagger}$   &  6.0 & 21,196 & 34.0 & 244,318 &  9.0 & 11,360 \\
 \addlinespace[2pt]
-Ask nothing (anchor)           &  0.0 &    226 & 37.0 &     863 & 12.0 &    216 \\
+Ask nothing (anchor)           &  0.0 &    226 & 36.0 &     847 & 10.5 &    215 \\
 \midrule
-\textbf{Ours}, cost-efficient  & \textbf{100.0} & \textbf{12} & 57.0 & 20,854 & 36.5 &  8,448 \\
-\textbf{Ours}, best            & \textbf{100.0} & \textbf{7}  & \textbf{80.0} & 25,344 & \textbf{41.0} & 12,368 \\
+\textbf{Ours}, cost-efficient  & \textbf{100.0} & \textbf{7} & 57.0 & 18,308 & 31.5 & 10,913 \\
+\textbf{Ours}, best            & \textbf{100.0} & \textbf{7} & \textbf{63.0} & 25,715 & \textbf{32.5} & 16,142 \\
 \bottomrule
 \end{tabular}
 
 \vspace{2pt}
 \footnotesize
-$^{\dagger}$ Repaired. AR-Bench's \texttt{gn/tot} scores each candidate guess against the hidden
-answer and its \texttt{sp/dc} ToT never assigns the state evaluator Yao et al.\ specify; both are
-corrected here. Uncertainty-of-Thoughts is held out of the seed set and is not reported.
-A dash marks a method AR-Bench does not provide for that task.
+$^{\dagger}$ Repaired, and AR-Bench implements ToT separately for each task, so the three cells are
+three modules: \texttt{gn/tot} iterates characters instead of candidate guesses and cannot run as
+published; \texttt{sp/dc} ToT never assigns the state evaluator Yao et al.\ specify, leaving the
+choice to a tie-break. Both are corrected here. The Guess Number cost is input tokens only --- that
+record keeps the guess list and not the conversation --- which understates it by roughly 1\%.
+Uncertainty-of-Thoughts is held out of the seed set and is not reported.
 
 \vspace{1pt}
 \footnotesize
-\textbf{Held-out split.} Our systems were finalised once on the sealed test split: Guess Number
-100.0, Detective Cases 63.0 (cost-efficient variant 57.0), Situation Puzzles 32.5; the anchor
-moves by at most 1.5 points. The published arms have not yet been re-measured there, so the table
-above keeps every method on the split they share.
+\textbf{Selection split.} The frontier was chosen on a disjoint selection split, and the winners
+give some of that edge back: Detective Cases 80.0 there against 63.0 here, Situation Puzzles 41.0
+against 32.5. The anchor moves by at most 1.5 points and the cost-efficient Detective Cases system
+by none, which is what selection on a held-out frontier should look like (\S\ref{sec:gap}).
+The Guess Number frontier holds a single system, so both \textbf{Ours} rows are the same one there.
 \end{table}

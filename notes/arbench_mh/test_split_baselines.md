@@ -51,3 +51,21 @@ evaluator 的 0.677–0.703(8 个谜题),在噪声内相等。seed 本身是用 
 ## 全表
 
 见 `published_baselines_test.json`。重跑命令:`~/venv/bin/python ~/code/score_test_grid.py`(bath)。
+
+## 主表口径决定 (2026-10-30)
+
+只保留三个任务都有 accuracy **和** cost 的方法。干净通过的有四个:
+`zero_shot` / `few_shot` / `few_shot_inst` / `proactive_cot`。
+
+**ToT 加回来当第五行。** 理由:AR-Bench 的 ToT 本来就是三个任务三份独立实现,但
+zero_shot/few_shot 的 prompt 也是每个任务分开写的 —— 横着读一行从来是同一套配方而不是同一段
+代码,ToT 按这个标准合格。砍掉它会让 baseline 集合变成「四种提示词写法」,唯一带搜索结构的方法
+就没了。取各任务修好的变体:`gn=tot_fixed`、`dc=tot_eval`、`sp=tot_eval`。
+唯一瑕疵是 GN 那格的成本只有 input(record 存了 guess_list 不存 conversation),
+GN 的 output 约占 input 的 1%,写进脚注。
+
+被刷掉的:`tot`(未修版 GN 跑不了)、`proactive_stop`(GN 没有对应变体,
+`dc_proactive_stop.py` 开头解释了为什么 GN 不需要)、`uot`(原始 episode 文件在已停用的 h100)。
+
+主表 `table_main.tex` 和前沿图 `meta/tools/plot_frontier.py` 都已改成全 test 口径;
+图直接读 `published_baselines_test.json`,不再手抄数字,表和图不会走偏。

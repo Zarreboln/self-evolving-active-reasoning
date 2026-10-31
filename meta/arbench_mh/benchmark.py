@@ -142,8 +142,8 @@ def main():
     ap.add_argument("--workers", type=int, default=16)
     ap.add_argument("--limit", type=int, default=0)
     # Ending the episode at turn T and taking the system's answer is the only way to read the
-    # belief of harness-plus-model without installing a readout: whatever state the harness keeps
-    # -- a ledger, a surviving set, a grid -- is in the answer by construction. Sweeping T gives
+    # belief of harness-plus-model without installing a readout: whatever state the harness keeps,
+    # of whatever kind, is in the answer by construction. Sweeping T gives
     # the belief trajectory. Its one cost is that the harness sees a shorter budget, so T equal to
     # the full budget must reproduce the ordinary run; that is the control.
     ap.add_argument("--budget", type=int, default=0)

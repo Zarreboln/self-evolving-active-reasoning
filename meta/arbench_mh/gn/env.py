@@ -27,9 +27,9 @@ BUDGET = 25
 # AREW replaces the answer with the word "Unknown", which works because its feedback is prose.
 # Here it does not. Feedback reaches a harness through TWO channels, the record text and the
 # structured history, and blanking only the text leaves the second one carrying the real answer:
-# packed_group_echo reads env.history directly and scored 100% "ablated". Blanking the structured
-# channel too is no better -- a harness that filters a candidate set on it ends with an empty set
-# and crashes, which scores zero for the wrong reason.
+# a harness reading env.history directly scored 100% "ablated". Blanking the structured channel
+# too is no better: a harness that computes anything from it is left with nothing and crashes,
+# which scores zero for the wrong reason.
 #
 # So the oracle is replaced instead of the message: for the whole episode, feedback is computed
 # against a DECOY secret. Every channel is blinded at once, the feedback stays well formed and

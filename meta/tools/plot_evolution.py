@@ -51,11 +51,13 @@ def style():
         "font.family": "serif" if SLIDES else "sans-serif",
         "font.serif": ["Georgia", "Times New Roman", "DejaVu Serif"],
         "font.sans-serif": ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"],
-        "font.size": 9.5, "axes.labelsize": 9.5,
+        "font.size": 13 if SLIDES else 9.5,
+        "axes.labelsize": 13 if SLIDES else 9.5,
         "axes.spines.top": False, "axes.spines.right": False,
         "axes.edgecolor": "#3c424c", "axes.linewidth": 0.9,
         "xtick.color": "#3c424c", "ytick.color": "#3c424c",
-        "xtick.labelsize": 9, "ytick.labelsize": 9,
+        "xtick.labelsize": 12 if SLIDES else 9,
+        "ytick.labelsize": 12 if SLIDES else 9,
         "figure.dpi": 200, "savefig.dpi": 200,
     })
 
@@ -140,7 +142,7 @@ def place(ax, items, pad_pt=9.0, avoid=()):
 
     for x, y, text, colour, droppable in sorted(items, key=lambda it: it[3] != FRONT):
         mx, my = ax.transData.transform((x, y))
-        probe = ax.annotate(text, (0.5, 0.5), xycoords="axes fraction", fontsize=8.6, alpha=0)
+        probe = ax.annotate(text, (0.5, 0.5), xycoords="axes fraction", fontsize=13 if SLIDES else 8.6, alpha=0)
         bb = probe.get_window_extent(renderer=rend)
         probe.remove()
         hw, hh = bb.width / 2 + 3.0 * scale, bb.height / 2 + 2.0 * scale
@@ -170,13 +172,14 @@ def place(ax, items, pad_pt=9.0, avoid=()):
         kw = {"arrowprops": dict(arrowstyle="-", lw=0.6, color=RULE, shrinkA=1, shrinkB=6)} \
             if math.hypot(dx / 2.2, dy) > pad * 1.5 else {}
         ax.annotate(text, (x, y), textcoords="offset pixels", xytext=(dx, dy),
-                    ha="center", va="center", fontsize=8.6, color=colour, zorder=6,
+                    ha="center", va="center", fontsize=13 if SLIDES else 8.6, color=colour, zorder=6,
                     path_effects=[pe.withStroke(linewidth=2.6, foreground="white")], **kw)
 
 
 def heading(ax, name, metric):
-    ax.set_title(name, loc="left", pad=26, fontsize=11.5, color=INK)
-    ax.text(0, 1.028, metric, transform=ax.transAxes, fontsize=10, color="#454b56", va="bottom")
+    ax.set_title(name, loc="left", pad=26, fontsize=16 if SLIDES else 11.5, color=INK)
+    ax.text(0, 1.028, metric, transform=ax.transAxes,
+            fontsize=13 if SLIDES else 10, color="#454b56", va="bottom")
 
 
 def figure_frontier(rows, out, stamp):
@@ -220,8 +223,9 @@ def figure_frontier(rows, out, stamp):
         labels = []
         for r in rs:
             colour = draw_point(ax, r["tokens"], r["accuracy"], r)
-            labels.append((r["tokens"], r["accuracy"], r["system"], colour,
-                           not r["front"] and r["origin"] == "search"))
+            if not (SLIDES and not r["front"]):
+                labels.append((r["tokens"], r["accuracy"], r["system"], colour,
+                               not r["front"] and r["origin"] == "search"))
         pending.append((ax, labels, avoid))
 
     axes[0].set_ylabel("accuracy %")
@@ -230,9 +234,12 @@ def figure_frontier(rows, out, stamp):
     fig.text(0.006, 0.935, "filled = on the frontier, hollow = dominated   ·   circle = published "
              "method or the no-questions anchor, diamond = written by the search",
              fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
-             f"dominated candidate with no room for its name  ·  {stamp}",
-             fontsize=8, color=MUTE)
+    # On a slide the unlabelled markers are the ones off the frontier, so the note that used to
+    # explain them is both tiny and wrong there.
+    if not SLIDES:
+        fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
+                 f"dominated candidate with no room for its name  ·  {stamp}",
+                 fontsize=8, color=MUTE)
     fig.tight_layout(rect=(0, 0.035, 1, 0.885))
     for ax, labels, avoid in pending:
         place(ax, labels, avoid=avoid)
@@ -263,8 +270,9 @@ def figure_trajectory(rows, out, stamp):
         labels = []
         for x, r in zip(xs, seq):
             colour = draw_point(ax, x, r["accuracy"], r)
-            labels.append((x, r["accuracy"], r["system"], colour,
-                           not r["front"] and r["origin"] == "search"))
+            if not (SLIDES and not r["front"]):      # a slide names the frontier only
+                labels.append((x, r["accuracy"], r["system"], colour,
+                               not r["front"] and r["origin"] == "search"))
 
         ax.set_xticks([])
         groups = {}
@@ -289,14 +297,18 @@ def figure_trajectory(rows, out, stamp):
         pending.append((ax, labels))
 
     axes[0].set_ylabel("accuracy %")
-    fig.text(0.006, 0.975, "What each iteration produced   ·   the step line is the best selection "
+    if not SLIDES:
+      fig.text(0.006, 0.975, "What each iteration produced   ·   the step line is the best selection "
              "accuracy reached so far", fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.935, "filled = on the accuracy-cost frontier (see the other figure), hollow = "
+      fig.text(0.006, 0.935, "filled = on the accuracy-cost frontier (see the other figure), hollow = "
              "dominated   ·   circle = anchor, diamond = written by the search",
              fontsize=10, color="#454b56", va="top")
-    fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
-             f"dominated candidate with no room for its name  ·  {stamp}",
-             fontsize=8, color=MUTE)
+    # On a slide the unlabelled markers are the ones off the frontier, so the note that used to
+    # explain them is both tiny and wrong there.
+    if not SLIDES:
+        fig.text(0.006, 0.012, "Uncertainty-of-Thoughts held out  ·  an unlabelled marker is a "
+                 f"dominated candidate with no room for its name  ·  {stamp}",
+                 fontsize=8, color=MUTE)
     fig.tight_layout(rect=(0, 0.04, 1, 0.885))
     for ax, labels in pending:
         place(ax, labels)

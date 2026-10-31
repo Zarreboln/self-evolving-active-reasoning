@@ -11,7 +11,9 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import FancyArrowPatch, FancyBboxPatch
 
 INK, MID, FAINT = "#1D1D1D", "#555555", "#AAAAAA"
-ACCENT = "#990000"
+# One hue per ability, the same two the IA/BT curves use.
+IA_C, BT_C = "#2E5E86", "#990000"
+ACCENT = BT_C
 plt.rcParams.update({
     "font.family": "serif", "font.serif": ["Georgia", "Times New Roman", "DejaVu Serif"],
     "axes.spines.top": False, "axes.spines.right": False,
@@ -25,24 +27,27 @@ out = Path(sys.argv[2])
 
 def loop():
     """The cycle the task is: the agent asks, the environment answers, the belief updates."""
-    fig, ax = plt.subplots(figsize=(8.4, 3.1))
+    fig, ax = plt.subplots(figsize=(9.0, 3.1))
     ax.set_xlim(0, 10); ax.set_ylim(0, 3.6); ax.axis("off")
-    for x, w, title, body, fill in ((0.1, 3.5, "Agent", "holds a belief over\nwhat the answer is", "#FFFFFF"),
-                                    (6.4, 3.5, "Environment", "holds the hidden state,\nanswers and nothing more", "#F0F0F0")):
+    for x, w, title, body, fill in ((0.1, 3.2, "Agent", "holds a belief over\nwhat the answer is", "#FFFFFF"),
+                                    (6.7, 3.2, "Environment", "holds the hidden state,\nanswers and nothing more", "#F0F0F0")):
         ax.add_patch(FancyBboxPatch((x, 0.75), w, 2.0, boxstyle="round,pad=0.08",
                                     fc=fill, ec=INK, lw=1.1))
-        ax.text(x + w / 2, 2.25, title, ha="center", fontsize=15, color=INK)
-        ax.text(x + w / 2, 1.45, body, ha="center", fontsize=11, color=MID, linespacing=1.5)
-    ax.add_patch(FancyArrowPatch((3.8, 2.25), (6.2, 2.25), arrowstyle="-|>",
-                                 mutation_scale=16, lw=1.3, color=ACCENT))
-    ax.text(5.0, 2.45, "IA  ·  chooses the question", ha="center", fontsize=11.5, color=ACCENT)
-    ax.add_patch(FancyArrowPatch((6.2, 1.25), (3.8, 1.25), arrowstyle="-|>",
-                                 mutation_scale=16, lw=1.3, color=MID))
-    ax.text(5.0, 0.95, "answer  ·  one turn spent", ha="center", fontsize=11.5, color=MID)
+        ax.text(x + w / 2, 2.25, title, ha="center", fontsize=18, color=INK)
+        ax.text(x + w / 2, 1.45, body, ha="center", fontsize=13, color=MID, linespacing=1.5)
+    ax.add_patch(FancyArrowPatch((3.5, 2.25), (6.5, 2.25), arrowstyle="-|>",
+                                 mutation_scale=18, lw=1.7, color=IA_C))
+    ax.text(5.0, 2.45, "IA  ·  chooses the question", ha="center", fontsize=13.5,
+            color=IA_C)
+    ax.add_patch(FancyArrowPatch((6.5, 1.25), (3.5, 1.25), arrowstyle="-|>",
+                                 mutation_scale=18, lw=1.5, color=MID))
+    ax.text(5.0, 0.90, "answer  ·  one turn spent", ha="center", fontsize=13.5,
+            color=MID)
     ax.add_patch(FancyArrowPatch((1.0, 0.72), (2.9, 0.72), arrowstyle="-|>",
-                                 mutation_scale=14, lw=1.1, color=ACCENT,
+                                 mutation_scale=16, lw=1.5, color=BT_C,
                                  connectionstyle="arc3,rad=0.55"))
-    ax.text(1.95, 0.08, "BT  ·  updates the belief", ha="center", fontsize=11.5, color=ACCENT)
+    ax.text(1.85, 0.04, "BT  ·  updates the belief", ha="center", fontsize=13.5,
+            color=BT_C)
     fig.tight_layout(pad=0.2)
     fig.savefig(out / "fig_loop_bw.png", bbox_inches="tight", facecolor="white")
     plt.close(fig)

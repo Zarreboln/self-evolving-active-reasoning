@@ -38,11 +38,11 @@ SLIDES = os.environ.get("SLIDES") == "1"
 # greyscale as well.
 if SLIDES:
     INK, FAINT = "#1D1D1D", "#AAAAAA"
-    HUE = {"ia": ("#8FA9C0", "#2E5E86"), "bt": ("#C68E8E", "#990000")}
+    HUE = {"ia": ("#9A9A9A", "#2E5E86"), "bt": ("#9A9A9A", "#990000")}
     FAM, FAMKEY = ["Georgia", "Times New Roman", "DejaVu Serif"], "serif"
 else:
     INK, FAINT = "#1c1f26", "#b8bec7"
-    HUE = {"ia": ("#93aec4", "#2f6286"), "bt": ("#d3a083", "#b4530f")}
+    HUE = {"ia": ("#8b93a1", "#2f6286"), "bt": ("#8b93a1", "#b4530f")}
     FAM, FAMKEY = ["Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"], "sans-serif"
 
 plt.rcParams.update({
@@ -87,7 +87,7 @@ def draw(ax, Ts, before, after, ylab, show_legend, hue):
         # The two rows have their empty corner in different places: IA climbs to a ceiling and
         # leaves the bottom right, BT stays low before evolution and leaves the top left.
         ax.legend(frameon=False, fontsize=9.6 if SLIDES else 7.8,
-                  loc="lower right" if hue == "ia" else "upper left",
+                  loc="lower right" if hue == "ia" else "center right",
                   handlelength=1.8, borderaxespad=0.4)
 
 

@@ -16,6 +16,8 @@ meta/cd_evolve/logs/wrapper_test/
 meta/cd_evolve/logs/*/*.nohup
 meta/cd_evolve/logs/*/nohup.out
 evoharness_results/
+meta/arbench_mh/runs/gn_fixed/
+meta/arbench_mh/runs/gn_unguided/
 # ---- scratch / runtime ----
 __pycache__/
 *.pyc

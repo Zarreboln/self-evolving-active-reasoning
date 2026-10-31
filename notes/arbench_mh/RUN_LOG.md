@@ -327,3 +327,34 @@ and re-run; the whole pass is about six minutes.
   measured somewhere else. Nine runs of 100 episodes would put them on test too and make the
   table test-against-test.
 
+
+### Failure annotation against the Bayes-optimal factorisation, 2026-10-30 (ORCD)
+
+Step 3 of the skeleton design: check that every failure lands in one of the six factors
+(perception, hypothesis generation, observation model, belief update, question selection,
+stopping). Detective Cases is the task that can answer it, because the hypothesis set is the five
+suspects and the gold label names the murderer, so the belief is over a set we can enumerate.
+
+`benchmark.py` never persisted the harness trace --- `run_one` built the harness inline and let it
+go --- although `DCHarness.llm` has been appending every call to `self._trace` all along. Patched
+on both clusters to keep the instance and write the trace under `KEEP_TRACE=1`, off by default
+because an episode makes ~33 calls each carrying its whole message list (3 episodes = 0.10 MB,
+so ~3 MB per 100). Backups at `benchmark.py.bak_before_trace`.
+
+Running on ORCD rather than bath. The ORCD copy of `arbench_mh` is the newer one --- bath's
+`run_one` still has no `budget` parameter --- and all 17 DC agents are present there.
+
+| | |
+|---|---|
+| Serve | job 27307202, `mit_normal_gpu`, `gpu:l40s:1`, 8 cores / 48 GB, ready in 180 s on node3501 |
+| Runs | `dc/template_zero_shot` and `dc/lean_verify`, selection split, 100 episodes, 16 workers |
+| Start | 2026-10-30T00:38:06-04:00 |
+| Cost | none. Detective Cases plays its suspects with the same served model; no referee API |
+
+L40S over H200 deliberately: a 7B at 16k needs ~16 GB of 44, and the partition had ~44 L40S nodes
+in mix against a handful of free H200s, with 1268 jobs pending overall.
+
+Scored offline by `meta/tools/annotate_failures.py`, which assigns each failed episode to the
+earliest factor that can be shown to have broken. Perception and hypothesis generation are
+reported as inapplicable rather than zero: the task is text and the five names are given, so a
+zero there would read as evidence of coverage that was never tested.

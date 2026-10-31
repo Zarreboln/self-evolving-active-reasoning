@@ -68,7 +68,10 @@ class DCEnv:
         if name not in self._agents:
             raise KeyError("no such suspect: %r; the suspects are %s" % (name, self.suspects))
         self._agents[name].append({"role": "user", "content": question})
-        reply = self._answerer(self._agents[name], temperature=0.7, max_tokens=None)
+        # See gn/env.py: ABLATE_FEEDBACK replaces the testimony, not the act of asking, so the
+        # turn is still spent and the only thing removed is the information.
+        reply = ("unknown" if os.environ.get("ABLATE_FEEDBACK") == "1"
+                 else self._answerer(self._agents[name], temperature=0.7, max_tokens=None))
         self._agents[name].append({"role": "assistant", "content": reply})
         self.history.append((name, question, reply))
         self.record += f"Question for {name}: {question} Feedback: {reply}\n"

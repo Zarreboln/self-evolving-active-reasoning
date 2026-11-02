@@ -59,9 +59,9 @@ out = Path(sys.argv[2] if len(sys.argv) > 2 else "figures")
 TASKS = [("Guess Number", "gn_template_zero_shot", "gn_packed_group_echo",
           "posterior mass on the answer"),
          ("Detective Cases", "dc_template_zero_shot", "dc_lean_verify",
-          "suspects interrogated, of five"),
+          "key questions covered, of six"),
          ("Situation Puzzles", "sp_baseline_zero_shot", "sp_atomic_audit",
-          "decisive answers, share of budget")]
+          "key questions covered, of six")]
 TASKS = [t for t in TASKS if t[1] in data and t[2] in data]
 
 fig, axes = plt.subplots(2, len(TASKS), figsize=(4.1 * len(TASKS) + 1.0, 6.2), squeeze=False)

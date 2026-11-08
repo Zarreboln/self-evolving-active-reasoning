@@ -89,7 +89,7 @@ three-way labels and the same two few-shot examples.
 | **A6** | — | 10-21 | — | **Code and data audit of the official GN and SP evaluators** (no model calls). GN: the zero-shot loop scores only the extra final guess; ToT picks among candidate guesses by comparing them with the gold number; UoT filters candidates in Python and fills in the answer; guesses are not validated (repeated digits accepted, the last 4-digit run in the text is taken), and an output with no number raises an uncaught error. SP: another puzzle's bottom scores 0.833 character-level F1; a 137-word string of common function words scores word-level F1 0.349 |
 | A7 | — | pending | pending | **Guess Numbers without a harness** under the official loop. *Not yet run* |
 | B1 | — | pending | pending | **Context evolution on Guess Numbers.** *Not yet run* |
-| B2 | — | pending | pending | **Context evolution on Situation Puzzles.** *Not yet run* |
+| **B2** | — | 11-07–11-08 | ~2 days, ~$313 API | **Context evolution on Situation Puzzles** (Sun). Playbooks evolved for questioning raise validation recall every round but give no test gain under the strict judge; ACE gets worse (−0.050) and Dynamic Cheatsheet is flat. A memory of two past puzzles with their true stories, shown just before the final answer, raises the story score from 0.49 to 0.67 (strict judge) with the same 7B and transcript. Without the true stories it does nothing; random past puzzles still give +0.10 |
 | **C1** | B4 | 10-13 05:03–07:17 | 2 h 14 | **Test-time harness evolution on Situation Puzzles** (strict, 405B referee). Prequential F1 goes 63.7 → 74.5 → 79.9 over the 30-puzzle stream. On all 100 test puzzles (70 of them never seen by the stream), bare scores 60.4 and the evolved harnesses 73.0–76.7. That is above every zero-shot model in AR-Bench Table 6, including GPT-4o at 63, and the 7B still writes every question. The cost is 3–8× more output tokens; `b2r0g1`, which was not chosen, does as well at half the tokens. Read this together with A4 |
 | **C2** | B5 | 10-13 | — | **Checking the TTHE judge without an external benchmark.** Each run stores the gold scores of the candidate pool, which the judge never sees. `strict6` picks a best-scoring candidate 2/3 times (mean regret 0.011), `labeled6` 3/3 (0.000) and `sp_strict1` 1/3 (mean regret 0.063, worst 0.114). The Circuit Decoding pools are saturated, so the check says little there; on Situation Puzzles the judge is clearly noisy |
 | C3 | — | pending | pending | **Test-time harness evolution on Guess Numbers.** *Not yet run* |
@@ -627,13 +627,30 @@ the frozen evaluation set.
 </details>
 
 <details>
-<summary><b>B2 Context evolution on Situation Puzzles (pending)</b></summary>
+<summary><b>B2 Context evolution on Situation Puzzles (11-07–11-08, Sun)</b></summary>
 
 <dl><dd>
 
-*Not yet run.* Conditions to fill in when it runs: task (Situation Puzzles), questioner model, what the
-proposer may change, signals the judge sees (strict / labeled), batch size and budget, split, and
-the frozen evaluation set.
+Folder: [`experiments/13_sp_context_evolution`](../experiments/13_sp_context_evolution/README.md). Questioner
+Qwen2.5-7B-Instruct (frozen), referee Qwen3-235B-A22B, 25 questions, AR-Bench player and grading prompts, all calls
+through OpenRouter. Official SP train split into 300 TRAIN / 100 VAL; every number below is on the 100 official test
+puzzles, 3–5 seeds, paired by puzzle with 95% bootstrap intervals. Two judges for key points: Claude Haiku 5.5
+(lenient, 80/100 agreement with an Opus 5.5 reference) and Gemini 3.7 Flash (strict, 91/98). The task score is the
+number of key points (0–6) the final story gets right, not character-level F1 (see A4).
+
+- **Evolving the questioning playbook.** Four kinds of experience (success vs. failure contrast, step-level credit from
+  8 alternative questions at the same state, the same credit shuffled, a prior over hidden stories), 4 rounds, 3 seeds,
+  a new playbook kept only if VAL recall rises. VAL rises in every run. On test, none beats the empty playbook under the
+  strict judge (contrast −0.007, shuffled credit −0.041, real credit −0.032). Selecting with the strict judge, or with
+  both judges, does not help either. ACE −0.050 [−0.083, −0.017], Dynamic Cheatsheet −0.014, best-of-8 written into rules
+  −0.071. Only best-of-8 at test time is ahead (+0.031, interval touches 0) at about 5× the calls.
+- **Asking vs. using.** On the 7B's own transcripts, Opus writing the story scores 1.56 against the 7B's 0.50 (strict);
+  Qwen3-235B asking and the 7B writing scores 1.33.
+- **Answer-step memory.** Before the final answer, the 7B sees two TRAIN puzzles it played earlier: its questions and
+  answers there plus the true story. Same model, same transcript. Story score +0.17 [+0.08, +0.26] strict, +0.25
+  lenient, against resampling the answer without examples. Without the true stories: −0.03. Random past puzzles: +0.10
+  [+0.03, +0.17]. The extra gain of similar over random examples comes from the third of test puzzles that have a near
+  variant in TRAIN.
 
 </dd></dl>
 

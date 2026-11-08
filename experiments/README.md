@@ -22,6 +22,7 @@ GitHub Release named in each README.
 | 09 | Test-time harness evolution with label isolation + session audit (`strict6` / `labeled6`), then frozen evaluation of the finished harnesses on 200 held-out | same | strict stream 0/10 → 9/10 → 10/10 (cwa 67.8 / joint 63.3 prequential), every judge clean; on 200 instances the label-free state-only harness reaches joint 98.5 / cwa 99.5, bare 0 / 11.8 |
 | 10 | Test-time harness evolution on AR-Bench Situation Puzzles (strict, 405B referee) | Qwen2.5-7B + Opus 5.5 | prequential F1 63.7 → 74.5 → 79.9; on 100 test puzzles the evolved harnesses reach F1 76–77 (bare 60.4), above every zero-shot model in AR-Bench's table |
 | 11 | What the SP metric measures: F1 against answer length and question quality | — (re-analysis of 500 stored episodes) | answer length alone explains 65% of F1 variance (r=+0.806); key-question recall explains almost none (r=+0.050); the headline bare→evolved +15.2 shrinks to +0.4…+7.2 within a length band |
+| 13 | Context evolution on Situation Puzzles: evolved questioning playbooks, ACE, Dynamic Cheatsheet, and a memory of past puzzles at the answer step | Qwen2.5-7B + Qwen3-235B referee | evolved playbooks: no test gain under the strict judge; answer-step memory: story score 0.49 → 0.67 (strict), +0.10 with random examples |
 
 Common protocol for 03-06: Multi-Turn Puzzles Circuit Decoding, 300 released instances, 18
 queries + final guess, environment wording from the paper's transcript, Qwen2.5-7B-Instruct

@@ -1,6 +1,6 @@
 # 13 — Context evolution on Situation Puzzles (2026-11-07–11-08)
 
-Yangzi Sun's part of the project. Same setting as the harness experiments: Qwen2.5-7B-Instruct stays frozen. The difference is
+Sun's part of the project. Same setting as the harness experiments: Qwen2.5-7B-Instruct stays frozen. The difference is
 what we let change. Here only the text the model reads changes: a playbook of rules while it asks questions, or a memory
 of past puzzles and their true stories right before it answers.
 
@@ -92,7 +92,7 @@ answer length (see A4 in the log). Numbers here are therefore not comparable wit
 ## Reproduce
 
 Scripts are in `code/`. They expect the AR-Bench repo (commit 9971322) in `data/arbench_9971322/` and an OpenRouter key
-in `OPENROUTER_API_KEY`. Raw episode logs are not in the repo because of their size; ask Yangzi if you need them.
+in `OPENROUTER_API_KEY`. Raw episode logs are not in the repo because of their size; ask Sun if you need them.
 
 | Step | Script |
 |---|---|

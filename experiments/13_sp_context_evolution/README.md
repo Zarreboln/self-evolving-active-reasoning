@@ -91,6 +91,15 @@ answer length (see A4 in the log). Numbers here are therefore not comparable wit
 
 ## Reproduce
 
-`code/` has the scripts. Calls go through OpenRouter; set `OPENROUTER_API_KEY`. Main entry points:
-`evolve.py` (playbook evolution), `evaluate.py` (test episodes), `rescore_test.py` and `story_test.py` (strict judge),
-`use_step.py` (answer-step memory and controls), `make_figures_final.py` (figures).
+Scripts are in `code/`. They expect the AR-Bench repo (commit 9971322) in `data/arbench_9971322/` and an OpenRouter key
+in `OPENROUTER_API_KEY`. Raw episode logs are not in the repo because of their size; ask Yangzi if you need them.
+
+| Step | Script |
+|---|---|
+| evolve a playbook | `evolve.py <mechanism> <seed>` |
+| ACE and Dynamic Cheatsheet | `named_methods.py <ace\|dc> <seed>` |
+| play test episodes | `evaluate.py run <arm> <seed>` |
+| strict-judge rescoring | `rescore_test.py`, `story_test.py` |
+| answer-step memory and controls | `use_step.py <arm> <condition>` |
+| asking vs. using | `probe_use.py`, `strong_asker.py` |
+| figures | `make_figures_final.py` |

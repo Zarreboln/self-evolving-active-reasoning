@@ -1,0 +1,6 @@
+__pycache__/
+*.py[cod]
+_test_*/
+outputs/*
+!outputs/requests.jsonl
+!outputs/contrasts.json

@@ -1,0 +1,55 @@
+{
+  "format": "c2_protocol_v1",
+  "data_kind": "synthetic",
+  "version": "synthetic-probe-v1",
+  "system_text": "You are solving a fictional toy puzzle from its surface and recorded dialogue.",
+  "writers": {
+    "plain": "Answer the puzzle using the recorded dialogue. Return only the final explanation.",
+    "evidence": "Answer the puzzle using the recorded dialogue. Return only the final explanation.\nUse only supported facts; do not present conjectures or denied/unknown claims as established."
+  },
+  "cells": {
+    "A": {
+      "source": "bare",
+      "writer": "plain"
+    },
+    "B": {
+      "source": "bare",
+      "writer": "evidence"
+    },
+    "C": {
+      "source": "first",
+      "writer": "plain"
+    },
+    "D": {
+      "source": "first",
+      "writer": "evidence"
+    }
+  },
+  "settings": {
+    "model": "synthetic://writer-stub/v1",
+    "temperature": 0.0,
+    "max_output_tokens": 400
+  },
+  "seed_schedule": {
+    "toy_clock": 101,
+    "toy_kite": 202
+  },
+  "scoring_spec": {
+    "name": "synthetic-hand-assigned",
+    "version": "1",
+    "metric": "synthetic_test_score",
+    "method": "hand_assigned_test_values"
+  },
+  "matching_rules": "Exact case IDs and surface text; identical source records within each writer pair; fixed model/settings/seed per case.",
+  "completeness_policy": "Malformed request designs fail. Missing/failed/unscored responses retain null contrasts. Any unavailable planned contrast suppresses its mean.",
+  "usage_semantics": "Unknown usage remains null. Coverage uses all planned requests. No partial totals are presented as complete totals.",
+  "real_run_gates": [
+    "approved complete source/configuration binding",
+    "outcome-independent development-case selection",
+    "reviewed exact-history policy",
+    "reviewed offline scorer and target identities",
+    "explicit real model/settings/endpoint authorization",
+    "input/output budget, retry and cancellation limits",
+    "independent code review"
+  ]
+}

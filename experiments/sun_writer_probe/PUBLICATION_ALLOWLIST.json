@@ -1,0 +1,33 @@
+{
+  "format": "c2_publication_allowlist_v1",
+  "data_kind": "synthetic",
+  "repository_target": "experiments/sun_writer_probe/",
+  "publication_authorized": false,
+  "review_status": "independent code review pending",
+  "policy": "Exact additive candidates only; this list grants no permission to publish. File hashes, including this list's own hash, are in the transfer packet preview.",
+  "allowed_paths": [
+    "experiments/sun_writer_probe/.gitignore",
+    "experiments/sun_writer_probe/README.md",
+    "experiments/sun_writer_probe/probe.py",
+    "experiments/sun_writer_probe/protocol.json",
+    "experiments/sun_writer_probe/tests/test_probe.py",
+    "experiments/sun_writer_probe/fixtures/manifest.json",
+    "experiments/sun_writer_probe/fixtures/bare.jsonl",
+    "experiments/sun_writer_probe/fixtures/first.jsonl",
+    "experiments/sun_writer_probe/fixtures/responses.jsonl",
+    "experiments/sun_writer_probe/outputs/requests.jsonl",
+    "experiments/sun_writer_probe/outputs/contrasts.json",
+    "experiments/sun_writer_probe/PUBLICATION_ALLOWLIST.json"
+  ],
+  "explicitly_allowed_demo_paths": [
+    "experiments/sun_writer_probe/outputs/requests.jsonl",
+    "experiments/sun_writer_probe/outputs/contrasts.json"
+  ],
+  "excluded": [
+    "Sun_C2_Implementation.json",
+    "private_review/**",
+    "work-order packets and prior review decisions",
+    "real dialogues, gold/keys/labels, archives, credentials and endpoints",
+    "any file not in allowed_paths"
+  ]
+}

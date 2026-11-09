@@ -1,0 +1,354 @@
+{
+  "format": "c2_analysis_v1",
+  "data_kind": "synthetic",
+  "planned_cases": 2,
+  "planned_requests": 8,
+  "case_results": [
+    {
+      "case_id": "toy_clock",
+      "cells": {
+        "A": {
+          "request_id": "330975b5dd17fc329a0006bc2280246f1a53ae8608553559cfe7630b1788ce0e",
+          "status": "completed",
+          "score": 0.2,
+          "response": {
+            "case_id": "toy_clock",
+            "cell": "A",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "e44861bcf5e3a371c6562e8a449c46c9dee20969b0b9bfbb5c782d15641b339d",
+            "request_id": "330975b5dd17fc329a0006bc2280246f1a53ae8608553559cfe7630b1788ce0e",
+            "score": 0.2,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_clock/A — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        },
+        "B": {
+          "request_id": "51d33fa81b2e1bb3989a33f9109ca959bb9620fe49db6fe5b3b50241e1cb90cb",
+          "status": "completed",
+          "score": 0.3,
+          "response": {
+            "case_id": "toy_clock",
+            "cell": "B",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "7898ca25a9500a5862d84b59c1be1fd8b218068389b9663f5e09f6335877d768",
+            "request_id": "51d33fa81b2e1bb3989a33f9109ca959bb9620fe49db6fe5b3b50241e1cb90cb",
+            "score": 0.3,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_clock/B — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        },
+        "C": {
+          "request_id": "9af8fc833ba3fccd7ce9e91e91b36456c4a8127542622cf36862f495e7246768",
+          "status": "completed",
+          "score": 0.4,
+          "response": {
+            "case_id": "toy_clock",
+            "cell": "C",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "60b925ff97f1590e289c502661e6d8f42688535a9d11a46c71f756931ed204fd",
+            "request_id": "9af8fc833ba3fccd7ce9e91e91b36456c4a8127542622cf36862f495e7246768",
+            "score": 0.4,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_clock/C — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        },
+        "D": {
+          "request_id": "2852349b17201d4f33998e47ecbd9337ad143369a1e7d3dbd8103663104dd296",
+          "status": "completed",
+          "score": 0.6,
+          "response": {
+            "case_id": "toy_clock",
+            "cell": "D",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "length",
+            "format": "c2_response_v1",
+            "payload_sha256": "759211116b7e47434ff61e7989be5a730248c249712db6ae2fbc5ab86bb1a092",
+            "request_id": "2852349b17201d4f33998e47ecbd9337ad143369a1e7d3dbd8103663104dd296",
+            "score": 0.6,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_clock/D — ☾\n\tNo model was called.  ",
+            "truncated": true,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        }
+      },
+      "contrasts": {
+        "B-A": 0.09999999999999998,
+        "D-C": 0.19999999999999996,
+        "C-A": 0.2,
+        "D-B": 0.3,
+        "interaction": 0.09999999999999998
+      }
+    },
+    {
+      "case_id": "toy_kite",
+      "cells": {
+        "A": {
+          "request_id": "255e3f6f6dded8db985dddbe4e802e5f5290edd591aac7d47f28166a8b238a40",
+          "status": "completed",
+          "score": 0.8,
+          "response": {
+            "case_id": "toy_kite",
+            "cell": "A",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "409c488bfb14136c587983c7c26f4eb53f99e212ac66f31de4912b0555000642",
+            "request_id": "255e3f6f6dded8db985dddbe4e802e5f5290edd591aac7d47f28166a8b238a40",
+            "score": 0.8,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_kite/A — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        },
+        "B": {
+          "request_id": "c8463615445fafb083ba7628a546e04282e86bafb54172515addb3aa82020f73",
+          "status": "completed",
+          "score": 0.6,
+          "response": {
+            "case_id": "toy_kite",
+            "cell": "B",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "eaeb803d012155d5bb7abb38bc27c579f65ba6dcc7ca2c9b3976d2ff12d686f7",
+            "request_id": "c8463615445fafb083ba7628a546e04282e86bafb54172515addb3aa82020f73",
+            "score": 0.6,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_kite/B — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        },
+        "C": {
+          "request_id": "fb6f7c93343b881e234e19b2dcabb538a03af4ca811b3a3539d5ec1873525535",
+          "status": "completed",
+          "score": 0.5,
+          "response": {
+            "case_id": "toy_kite",
+            "cell": "C",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "8c92a5fdb4410a8dfeee7bbdb5803f3badef7f02a4975b6528c872e6023a2b11",
+            "request_id": "fb6f7c93343b881e234e19b2dcabb538a03af4ca811b3a3539d5ec1873525535",
+            "score": 0.5,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_kite/C — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": null,
+              "output_tokens": null,
+              "total_tokens": null
+            }
+          }
+        },
+        "D": {
+          "request_id": "f6057cfebdd8e742a2014541536113830fe7769d72d5662cfa4cb85f1b0f8bd7",
+          "status": "completed",
+          "score": 0.4,
+          "response": {
+            "case_id": "toy_kite",
+            "cell": "D",
+            "data_kind": "synthetic",
+            "error": null,
+            "finish_reason": "stop",
+            "format": "c2_response_v1",
+            "payload_sha256": "aa0e40b2f2b4b7c499df4b22d2a17bdc49d50f4116aec9ea54ae0a42c3a356a4",
+            "request_id": "f6057cfebdd8e742a2014541536113830fe7769d72d5662cfa4cb85f1b0f8bd7",
+            "score": 0.4,
+            "scorer": {
+              "metric": "synthetic_test_score",
+              "name": "synthetic-hand-assigned",
+              "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6",
+              "version": "1"
+            },
+            "status": "completed",
+            "text": "  SYNTHETIC hand-authored answer toy_kite/D — ☾\n\tNo model was called.  ",
+            "truncated": false,
+            "usage": {
+              "input_tokens": 10,
+              "output_tokens": 5,
+              "total_tokens": 15
+            }
+          }
+        }
+      },
+      "contrasts": {
+        "B-A": -0.20000000000000007,
+        "D-C": -0.09999999999999998,
+        "C-A": -0.30000000000000004,
+        "D-B": -0.19999999999999996,
+        "interaction": 0.10000000000000009
+      }
+    }
+  ],
+  "means": {
+    "B-A": {
+      "mean": -0.050000000000000044,
+      "expected": 2,
+      "available": 2,
+      "missing": 0
+    },
+    "D-C": {
+      "mean": 0.04999999999999999,
+      "expected": 2,
+      "available": 2,
+      "missing": 0
+    },
+    "C-A": {
+      "mean": -0.05000000000000002,
+      "expected": 2,
+      "available": 2,
+      "missing": 0
+    },
+    "D-B": {
+      "mean": 0.05000000000000002,
+      "expected": 2,
+      "available": 2,
+      "missing": 0
+    },
+    "interaction": {
+      "mean": 0.10000000000000003,
+      "expected": 2,
+      "available": 2,
+      "missing": 0
+    }
+  },
+  "diagnostics": [],
+  "usage": {
+    "planned": 8,
+    "returned": 8,
+    "missing_responses": 0,
+    "fields": {
+      "input_tokens": {
+        "known": 7,
+        "unknown": 1,
+        "total_if_complete": null
+      },
+      "output_tokens": {
+        "known": 7,
+        "unknown": 1,
+        "total_if_complete": null
+      },
+      "total_tokens": {
+        "known": 7,
+        "unknown": 1,
+        "total_if_complete": null
+      }
+    }
+  },
+  "scorer": {
+    "name": "synthetic-hand-assigned",
+    "version": "1",
+    "metric": "synthetic_test_score",
+    "spec_sha256": "b7dd72e7cacb276a8d2cb386cec898d59702a9ac814bdc9b8e949d7138fea8d6"
+  },
+  "provenance": {
+    "builder": {
+      "code_sha256": "c356b156d49713a4a517dd851f171c7bf6018a8fca15db7736e02104b7e3cbe9",
+      "version": "c2-offline-v1"
+    },
+    "protocol": {
+      "byte_sha256": "8724e46c9e69f5389e0e4d65a5fcad9f1deed6187a7ab97b1f98cf90aeb152b8",
+      "sha256": "0a8e03b64d76d61cb8507af9abc7e96cd4e4c968c7010b37c05dfc24b3b201d4"
+    },
+    "manifest": {
+      "byte_sha256": "31cb456a00af4b21c3e8cc089f36507979b071e48a4611a26a80f6c3d9b8d012",
+      "sha256": "2406fff1aff0acaa577134435ec52056253912ecd8eb5671276f959afdd01993"
+    }
+  },
+  "limitations": [
+    "Hand-assigned synthetic test scores; no model findings.",
+    "History utility is conditional on writers, not an equal-compute acquisition effect.",
+    "Matching seeds does not synchronize backend draws.",
+    "Hashes establish supplied-content consistency, not historical authenticity.",
+    "Independent code review pending; real inference and historical preparation disabled."
+  ]
+}

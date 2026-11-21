@@ -1,6 +1,5 @@
 # Self-Evolving Harnesses for Active Reasoning
 
-MAS.S62 *Self-Evolving AI* (Fall 2026) course project.
 **Zining Liu** (ziningl@mit.edu) · **Yangzi Sun** (sunyz@mit.edu) — Massachusetts Institute of Technology
 
 ## The claim

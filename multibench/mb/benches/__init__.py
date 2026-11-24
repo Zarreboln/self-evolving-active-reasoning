@@ -13,12 +13,21 @@ from types import SimpleNamespace
 
 BENCHES = ["wordle", "twentyq", "gn", "dc", "sp",
            "mastermind", "hangman", "minesweeper", "guessnumber", "guesswho",
+           "circuit", "movierec", "boxinggym", "blicket",
            "babyai", "alfworld", "sciworld"]
 _AR = {"gn", "dc", "sp"}
 _TA = {"mastermind", "hangman", "minesweeper", "guessnumber", "guesswho"}
+_MTP = {"circuit", "movierec"}
 
 
 def get(name):
+    if name in _MTP:
+        m = importlib.import_module("mb.benches.mtp")
+        return SimpleNamespace(
+            name=name, subtasks=list(m.SUBTASKS), dimensions=m.DIMENSIONS[name],
+            responder=m.RESPONDER[name],
+            instances=lambda subtask, split, limit=None: m.instances(name, subtask, split, limit),
+            make=lambda subtask, instance, responder=None: m.make(name, subtask, instance, responder))
     if name in _TA:
         m = importlib.import_module("mb.benches.tagames")
         return SimpleNamespace(

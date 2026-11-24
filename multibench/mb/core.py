@@ -13,7 +13,9 @@ that the success path of each adapter scores what the bench says it should.
 
 Scores are the bench's own metric, mapped to [0, 1] where the bench uses another range, and
 `success` is the bench's own notion of solving the instance. Both are recorded; neither is
-redefined here.
+redefined here. The one exception to [0, 1] is a bench whose official metric is an error with no
+fixed range (BoxingGym): its score is that metric as the paper standardises it, and
+`higher_is_better` is False.
 """
 from __future__ import annotations
 
@@ -30,6 +32,7 @@ class EpisodeOver(Exception):
 class TextEnv(ABC):
     bench: str = ""
     max_steps: int = 0
+    higher_is_better: bool = True     # False for benches whose official metric is an error
 
     def __init__(self, subtask: str, instance: str):
         self.subtask = subtask
@@ -88,7 +91,7 @@ class TextEnv(ABC):
         return {"bench": self.bench, "subtask": self.subtask, "instance": self._instance,
                 "instance_id": self.instance_id,
                 "steps": self.steps, "done": self.done, "score": self.score(),
-                "success": self.success()}
+                "higher_is_better": self.higher_is_better, "success": self.success()}
 
 
 def hash_split(key: str, test=0.4, selection=0.3) -> str:

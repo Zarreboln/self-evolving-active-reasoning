@@ -55,3 +55,11 @@ Forgetting reported as DPM does: "the average drop in accuracy on the first two"
 
 ## First use
 After experiment A: plug its 4×10 Δ matrix in as ℓ(t,c) at k = 0, plot γ for several τ, and run Learned-TreeMAML clustering on Δ(t,·).
+
+## 7. What a component is, and when sharing happens (decided 2026-11-25, after the B pilot design)
+- **Component = the content of one fixed slot.** Slots are Meta-Skills' seven families (2609.38143 Table 1: instructions, memory, context organization, composed tools, execution control, verification & recovery, workspace preparation); families that have no counterpart in our env interface are marked not applicable. Slot types are fixed by hand, as in Meta-Skills and Harness² (2610.14224 §2.1, 8 file components); only slot contents evolve. Not our own taxonomy.
+- The library starts empty; the seed is `think`. Experiment A's hand-written arms (belief/plan/check/brief) are not library members (HW2 rule: no hand-written harness for the proposer); they may serve as probes to describe a new task.
+- **Schedule: interleaved (main).** Inner loop = k proposer rounds on one task, overfitting to it is allowed; outer step = credit (γ-weighted, §4), promotion (cross-bench recurrence), replay/fork (§6); then the next task. Default k = 2. Required by the continual setting: tasks arrive over time, so there is no point at which all tasks are done.
+- **Baseline: overfit-then-extract** at equal total budget (k = whole budget per task, extraction once at the end). If it adapts held-out tasks as well as the interleaved schedule, the interleaving is unnecessary.
+- Ablation: k ∈ {1, 2, 4}. Extraction by recurrence only (main) vs an LLM abstractor that rewrites a task-specific component into a general one (ablation; this is what Meta-Skills' keep/revise/add and Harness²'s Reflector do).
+- The hard split by the `world` label (pure / intermediate / world, as pre-registered in A) is a baseline only.

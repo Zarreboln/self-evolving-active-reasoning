@@ -20,9 +20,26 @@ fixed range (BoxingGym): its score is that metric as the paper standardises it, 
 from __future__ import annotations
 
 import hashlib
+import random
+import threading
 from abc import ABC, abstractmethod
 
+import numpy as np
+
 SPLITS = ("search", "selection", "test")
+
+# Several benches (TextArena, BoxingGym) draw secrets and noise from the process-global `random` /
+# numpy state. Any such call goes through `seeded`, which reseeds from a per-instance value under
+# one lock, so an episode replays identically whatever else runs before it or in other threads.
+GLOBAL_RNG_LOCK = threading.Lock()
+
+
+def seeded(rng_seed, fn, /, *args, **kwargs):
+    with GLOBAL_RNG_LOCK:
+        s = int(rng_seed) % (2 ** 32)
+        random.seed(s)
+        np.random.seed(s)
+        return fn(*args, **kwargs)
 
 
 class EpisodeOver(Exception):

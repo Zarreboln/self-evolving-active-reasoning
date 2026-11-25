@@ -27,23 +27,22 @@ raw_score        = the first value `evaluate_predictions` returns
 higher_is_better = True only for the two goals whose metric is an accuracy (hyperbolic `direct`,
                    survival `direct`); every other goal returns an error (MSE, |error|, 1 - acc)
 success          = None (BoxingGym defines none)
+An answer set the goal's scorer cannot evaluate (location/source raises on a wrong shape) leaves
+the score NaN and the error in `eval_error`, instead of crashing the run.
 """
 from __future__ import annotations
 
 import os
-import random
 import re
-import threading
 
 import numpy as np
 import yaml
 
-from mb.core import TextEnv
+from mb.core import TextEnv, seeded
 
 # BoxingGym draws everything (hidden parameters, observation noise, evaluation points) from the
-# global numpy/random state. Each call below reseeds from (instance seed, call index) under one
-# lock, so an instance replays identically whatever ran before it or alongside it in other threads.
-_RNG_LOCK = threading.Lock()
+# global numpy/random state. Each call below reseeds from (instance seed, call index) through
+# core.seeded, so an instance replays identically whatever ran before it or alongside it.
 
 
 def _pin_pymc():
@@ -65,11 +64,7 @@ def _pin_pymc():
 
 
 def _seeded(seed, salt, fn, *args):
-    with _RNG_LOCK:
-        s = (seed * 1000 + salt) % (2 ** 32)
-        np.random.seed(s)
-        random.seed(s)
-        return fn(*args)
+    return seeded(seed * 1000 + salt, fn, *args)
 
 BENCH = "boxinggym"
 _CONF = os.path.expanduser(os.environ.get("BOXING_GYM_ROOT", "~/code/multibench/boxing-gym")) + "/conf/envs"
@@ -148,6 +143,7 @@ class BoxingGymEnv(TextEnv):
         self._preds, self._gts = [], []
         self._question = None
         self.raw_score = None
+        self.eval_error = None      # set when the goal's own scorer rejects the answers
 
     def _next_question(self):
         q, gt = _seeded(self._seed, 500 + len(self._gts), self._goal.get_goal_eval_question, True)
@@ -176,8 +172,11 @@ class BoxingGymEnv(TextEnv):
         self._preds.append(ans)
         if len(self._preds) < self._n_evals:
             return self._next_question()
-        self.raw_score = float(self._goal.evaluate_predictions(self._preds, self._gts)[0])
         self.done = True
+        try:
+            self.raw_score = float(self._goal.evaluate_predictions(self._preds, self._gts)[0])
+        except Exception as e:      # e.g. location/source raises on an answer of the wrong shape
+            self.eval_error = repr(e)
         return "Evaluation complete."
 
     def score(self):
@@ -189,7 +188,7 @@ class BoxingGymEnv(TextEnv):
         return None
 
     def result(self):
-        return {**super().result(), "raw_score": self.raw_score,
+        return {**super().result(), "raw_score": self.raw_score, "eval_error": self.eval_error,
                 "experiments": self._experiments, "answers": len(self._preds)}
 
     def _oracle_next(self):

@@ -14,7 +14,7 @@ import json
 
 import textarena as ta
 
-from mb.core import TextEnv, hash_split
+from mb.core import TextEnv, hash_split, seeded
 
 BENCH = "twentyq"
 _LEVELS = {"basic": "TwentyQuestions-v0", "hard": "TwentyQuestions-v0-hardcore"}
@@ -59,7 +59,7 @@ class TwentyQEnv(TextEnv):
         self._env.gamemaster = lambda prompt: responder(
             [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
         self._env.word_list = {th: [instance]}      # reset() draws theme and word from this
-        self._env.reset(num_players=1, seed=0)
+        seeded(0, self._env.reset, num_players=1, seed=0)   # reset() reseeds the global RNG
         self.max_steps = self._env.state.max_turns + 1
         _, obs = self._env.get_observation()
         self.instructions = "\n".join(m for _, m, _ in obs)
@@ -71,13 +71,17 @@ class TwentyQEnv(TextEnv):
         text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
         if done:
             rewards, info = self._env.close()
-            self._reward = float(rewards[0])
+            self.raw_reward = float(rewards[0])
+            self._reward = max(self.raw_reward, 0.0)   # TextArena pays -1 for a loss by invalid moves
             self.done = True
             text = (text + "\n" + info[0].get("reason", "")).strip()
         return text
 
     def score(self):
         return self._reward
+
+    def result(self):
+        return {**super().result(), "raw_reward": getattr(self, "raw_reward", None)}
 
     def success(self):
         return self._reward == 1.0

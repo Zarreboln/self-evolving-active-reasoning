@@ -19,7 +19,8 @@ Two TextArena rules worth knowing when reading scores: Minesweeper counts hittin
 invalid move, so with one error allowed the first mine does not end the game; and every game here
 pays partial credit on a loss (its `_get_percentage_completion`).
 
-score   = TextArena's reward (1 on a win, partial credit otherwise)
+score   = max(TextArena's reward, 0): 1 on a win, partial credit otherwise; TextArena pays -1 for a
+          loss by invalid moves (e.g. two wrong names in Guess Who), kept as `raw_reward`
 success = reward == 1
 """
 from __future__ import annotations
@@ -30,7 +31,7 @@ import os
 
 import textarena as ta
 
-from mb.core import TextEnv, hash_split
+from mb.core import TextEnv, hash_split, seeded
 
 GAMES = {
     "mastermind": {"basic": "Mastermind-v0", "hard": "Mastermind-v0-hard",
@@ -88,7 +89,7 @@ def _catalogue(game, subtask, per_split=200):
     for seed in range(_SCAN):
         if all(len(v) >= per_split for v in out.values()):
             break
-        env.reset(num_players=1, seed=seed)
+        seeded(seed, env.reset, num_players=1, seed=seed)
         k = key(env) if key else str(seed)
         if k in seen:
             continue
@@ -111,7 +112,8 @@ class TAGameEnv(TextEnv):
                 raise ValueError(f"{game} needs a responder to play the gamemaster")
             self._env.gamemaster = lambda prompt: responder(
                 [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
-        self._env.reset(num_players=1, seed=int(instance))
+        self._seed = int(instance)
+        seeded(self._seed, self._env.reset, num_players=1, seed=self._seed)
         self.max_steps = (self._env.state.max_turns or 50) + 2   # room for the allowed error
         _, obs = self._env.get_observation()
         self.instructions = "\n".join(m for _, m, _ in obs) + self._board()
@@ -122,18 +124,23 @@ class TAGameEnv(TextEnv):
         return f"\n\nCurrent board:\n{b}" if b else ""
 
     def _act(self, action):
-        done, _ = self._env.step(action)
+        # Minesweeper lays its mines on the first click, from the global RNG: seed every step.
+        done, _ = seeded(self._seed * 1000 + self.steps, self._env.step, action)
         _, obs = self._env.get_observation()
         text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
         if done:
             rewards, info = self._env.close()
-            self._reward = float(rewards[0])
+            self.raw_reward = float(rewards[0])
+            self._reward = max(self.raw_reward, 0.0)   # TextArena pays -1 for a loss by invalid moves
             self.done = True
             return (text + "\n" + info[0].get("reason", "")).strip()
         return text + self._board()
 
     def score(self):
         return self._reward
+
+    def result(self):
+        return {**super().result(), "raw_reward": getattr(self, "raw_reward", None)}
 
     def success(self):
         return self._reward == 1.0

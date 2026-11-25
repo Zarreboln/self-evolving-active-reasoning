@@ -4,7 +4,8 @@ The environment, feedback wording, invalid-move rules (one error allowed, the se
 reward are TextArena's. The adapter only fixes the secret word per instance instead of drawing it
 at random, so splits are disjoint by word.
 
-score   = TextArena's reward: 1 for a solve, else the green/yellow completion of the last guess
+score   = TextArena's reward: 1 for a solve, else the green/yellow completion of the last guess;
+          floored at 0 (a loss by invalid moves pays -1 in TextArena, kept as `raw_reward`)
 success = the secret word was guessed
 """
 from __future__ import annotations
@@ -15,7 +16,7 @@ import os
 
 import textarena as ta
 
-from mb.core import TextEnv, hash_split
+from mb.core import TextEnv, hash_split, seeded
 
 BENCH = "wordle"
 SUBTASKS = {"basic5": "Wordle-v0", "hard5": "Wordle-v0-hardcore",
@@ -55,7 +56,8 @@ class WordleEnv(TextEnv):
     def __init__(self, subtask, instance, responder=None):
         super().__init__(subtask, instance)
         self._env = ta.make(SUBTASKS[subtask] + "-raw")
-        self._env.reset(num_players=1, seed=0)
+        # reset() reseeds the global RNG (TextArena's state does); keep it inside the shared lock
+        seeded(0, self._env.reset, num_players=1, seed=0)
         self._env.state.game_state["secret_word"] = instance
         self.max_steps = self._env.num_guesses + 2     # room for the one allowed invalid move
         _, obs = self._env.get_observation()
@@ -69,7 +71,8 @@ class WordleEnv(TextEnv):
         text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
         if done:
             rewards, info = self._env.close()
-            self._reward = float(rewards[0])
+            self.raw_reward = float(rewards[0])
+            self._reward = max(self.raw_reward, 0.0)   # TextArena pays -1 for a loss by invalid moves
             self._reason = info[0].get("reason", "")
             self.done = True
             text = (text + "\n" + self._reason).strip()
@@ -77,6 +80,9 @@ class WordleEnv(TextEnv):
 
     def score(self):
         return self._reward
+
+    def result(self):
+        return {**super().result(), "raw_reward": getattr(self, "raw_reward", None)}
 
     def success(self):
         hist = self._env.state.game_state.get("guess_history", [])

@@ -12,6 +12,11 @@ max(raw, 0) / 100, the way papers average it.
 score   = max(raw, 0) / 100
 success = raw == 100
 Needs Java on PATH (source mb/env.sh).
+
+Episodes are deterministic (verified: same variation and actions -> same transcript, same
+admissible-action order), but each env is a JVM behind py4j, and running several from threads of
+one process loses the Java connection ("Answer from Java side is empty"). Run ScienceWorld
+episodes in separate processes, and retry an episode that dies with a Py4J error.
 """
 from __future__ import annotations
 

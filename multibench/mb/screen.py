@@ -14,6 +14,10 @@ round-robin over the servers in POLICY_BASE_URLS; every LLM-played role uses the
 
     python -m mb.screen --out DIR [--n 20] [--workers 64]      # run / resume
     python -m mb.screen --out DIR --merge                       # summary.json + summary.tsv
+
+Experiment A runs the same machinery with hand-written components (mb/harness/strategies.py) on a
+few subtasks: `--strategies seed,belief,... --only gn:all,wordle:basic5,...` puts each strategy's
+episodes under DIR/<strategy>/, on the same instances, so the comparison is paired.
 """
 from __future__ import annotations
 
@@ -41,8 +45,8 @@ def _path(out, bench, sub, inst):
 
 
 def _episode(args):
-    out, bench, sub, inst, url = args
-    from mb.harness.react import run_episode
+    out, bench, sub, inst, url, strategy = args
+    from mb.harness.strategies import run_episode
     from mb.llm import Counter, make_chat
     model = os.environ["POLICY_MODEL"]
     b = get(bench)
@@ -61,7 +65,7 @@ def _episode(args):
                 responder = responder_for(bench, jev)
             responder = responder or make_chat(url, model, rc)
         env = b.make(sub, inst, responder)
-        r = run_episode(env, make_chat(url, model, pc))
+        r = run_episode(env, make_chat(url, model, pc), strategy)
     except Exception as e:
         r = {"bench": bench, "subtask": sub, "instance": inst, "score": float("nan"),
              "success": None, "error": "setup/run: " + repr(e)}
@@ -82,7 +86,7 @@ def _write(out, bench, sub, inst, r):
 
 def _episode_subprocess(job):
     """Run one episode in a fresh interpreter; a timeout or crash becomes an error record."""
-    out, bench, sub, inst, url = job
+    out, bench, sub, inst, url, _ = job
     cmd = [sys.executable, "-m", "mb.screen", "--one", json.dumps(job)]
     try:
         cp = subprocess.run(cmd, capture_output=True, text=True, timeout=EPISODE_TIMEOUT)
@@ -97,18 +101,31 @@ def _episode_subprocess(job):
     return bench, sub, None, err
 
 
+def _cells(a):
+    """(bench, subtask) pairs to run: every subtask of --benches, or exactly the --only list."""
+    if a.only:
+        return [tuple(c.split(":", 1)) for c in a.only.split(",")]
+    return [(bench, sub) for bench in a.benches.split(",") for sub in get(bench).subtasks]
+
+
+def _outs(a):
+    """[(strategy, output dir)]: DIR itself for the plain screen, DIR/<strategy> with --strategies."""
+    if not a.strategies:
+        return [("seed", a.out)]
+    return [(s, os.path.join(a.out, s)) for s in a.strategies.split(",")]
+
+
 def run(a):
     urls = [u.strip().rstrip("/") for u in os.environ["POLICY_BASE_URLS"].split(",") if u.strip()]
     jobs, done = [], 0
-    for bench in a.benches.split(","):
-        b = get(bench)
-        for sub in b.subtasks:
-            for inst in b.instances(sub, "search", limit=a.n):
-                p = _path(a.out, bench, sub, inst)
+    for strategy, out in _outs(a):
+        for bench, sub in _cells(a):
+            for inst in get(bench).instances(sub, "search", limit=a.n):
+                p = _path(out, bench, sub, inst)
                 if os.path.exists(p) and not json.load(open(p)).get("error"):
                     done += 1          # finished cleanly; an episode that errored is run again
                     continue
-                jobs.append((a.out, bench, sub, inst, urls[len(jobs) % len(urls)]))
+                jobs.append((out, bench, sub, inst, urls[len(jobs) % len(urls)], strategy))
     print(f"{done} episodes already on disk, {len(jobs)} to run, {len(urls)} servers", flush=True)
     # interleave benches so slow ones (ScienceWorld, BoxingGym) do not all land at the end
     jobs.sort(key=lambda j: hash((j[3], j[2])) % 1000)
@@ -123,41 +140,47 @@ def run(a):
 
 
 def merge(a):
+    for strategy, out in _outs(a):
+        _merge_one(a, out)
+
+
+def _merge_one(a, out):
     rows = []
-    for bench in a.benches.split(","):
+    for bench, sub in _cells(a):
         b = get(bench)
-        for sub in b.subtasks:
-            eps = []
-            for inst in b.instances(sub, "search", limit=a.n):
-                p = _path(a.out, bench, sub, inst)
-                if os.path.exists(p):
-                    eps.append(json.load(open(p)))
-            ok = [e for e in eps if not e.get("error")]          # errored episodes are not scores
-            sc = [e["score"] for e in ok if isinstance(e.get("score"), (int, float)) and not math.isnan(e["score"])]
-            wins = [e["success"] for e in ok if e.get("success") is not None]
-            rows.append({
-                "bench": bench, "subtask": sub, "episodes": len(eps),
-                "errors": sum(bool(e.get("error")) for e in eps),
-                "mean_score": round(sum(sc) / len(sc), 4) if sc else None,
-                "success_rate": round(sum(map(bool, wins)) / len(wins), 4) if wins else None,
-                "higher_is_better": eps[0].get("higher_is_better", True) if eps else None,
-                "mean_steps": round(sum(e.get("steps", 0) for e in eps) / len(eps), 1) if eps else None,
-                "policy_out_tok": sum(e.get("policy_tokens", {}).get("out_tok", 0) for e in eps),
-                "seconds": round(sum(e.get("seconds", 0) for e in eps), 1),
-            })
-    json.dump(rows, open(os.path.join(a.out, "summary.json"), "w"), indent=1)
+        eps = []
+        for inst in b.instances(sub, "search", limit=a.n):
+            p = _path(out, bench, sub, inst)
+            if os.path.exists(p):
+                eps.append(json.load(open(p)))
+        ok = [e for e in eps if not e.get("error")]          # errored episodes are not scores
+        sc = [e["score"] for e in ok if isinstance(e.get("score"), (int, float)) and not math.isnan(e["score"])]
+        wins = [e["success"] for e in ok if e.get("success") is not None]
+        rows.append({
+            "bench": bench, "subtask": sub, "episodes": len(eps),
+            "errors": sum(bool(e.get("error")) for e in eps),
+            "mean_score": round(sum(sc) / len(sc), 4) if sc else None,
+            "success_rate": round(sum(map(bool, wins)) / len(wins), 4) if wins else None,
+            "higher_is_better": eps[0].get("higher_is_better", True) if eps else None,
+            "mean_steps": round(sum(e.get("steps", 0) for e in eps) / len(eps), 1) if eps else None,
+            "policy_out_tok": sum(e.get("policy_tokens", {}).get("out_tok", 0) for e in eps),
+            "seconds": round(sum(e.get("seconds", 0) for e in eps), 1),
+        })
+    json.dump(rows, open(os.path.join(out, "summary.json"), "w"), indent=1)
     keys = list(rows[0])
-    with open(os.path.join(a.out, "summary.tsv"), "w") as f:
+    with open(os.path.join(out, "summary.tsv"), "w") as f:
         f.write("\t".join(keys) + "\n")
         for r in rows:
             f.write("\t".join(str(r[k]) for k in keys) + "\n")
-    print(f"{len(rows)} subtasks merged -> {a.out}/summary.tsv")
+    print(f"{len(rows)} subtasks merged -> {out}/summary.tsv")
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=None)
     ap.add_argument("--benches", default=",".join(BENCHES))
+    ap.add_argument("--only", default=None, help="bench:subtask,... instead of every subtask")
+    ap.add_argument("--strategies", default=None, help="seed,belief,plan,check,brief (experiment A)")
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--workers", type=int, default=64)
     ap.add_argument("--merge", action="store_true")

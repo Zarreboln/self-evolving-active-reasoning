@@ -26,10 +26,21 @@ BANNED_NAMES = {"open", "exec", "eval", "compile", "__import__", "globals", "loc
                 "getattr", "setattr", "delattr", "input", "breakpoint", "memoryview", "help",
                 "exit", "quit", "dir", "type", "object", "super", "classmethod", "staticmethod"}
 MAX_BYTES = 200_000
+# HW2's "must not name any task": a harness shared by several games may not branch on which game it
+# is playing by name. (It can still read the instructions, as any harness can.)
+GAME_NAMES = ["wordle", "mastermind", "hangman", "twenty questions", "20 questions", "guess who",
+              "minesweeper", "alfworld", "scienceworld", "science world", "babyai", "blicket",
+              "textarena", "ar-bench", "arbench", "boxinggym", "zendo", "guessing game", "guess the number",
+              "situation puzzle", "turtle soup", "detective", "murder"]
 
 
-def problems(src: str) -> list[str]:
+def problems(src: str, names: bool = False) -> list[str]:
     out = []
+    if names:
+        low = src.lower()
+        hit = [n for n in GAME_NAMES if re.search(r"(?<![a-z])" + re.escape(n) + r"(?![a-z])", low)]
+        if hit:
+            out.append("names games: " + ", ".join(hit))
     if len(src.encode()) > MAX_BYTES:
         out.append(f"file is larger than {MAX_BYTES} bytes")
     try:

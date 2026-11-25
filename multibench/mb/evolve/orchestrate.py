@@ -41,6 +41,7 @@ RUNS = Path.home() / "evo_b_runs"                 # outside every repo and works
 REMOTE_CODE = "~/code/multibench"
 REMOTE_RUNS = "~/results/mb/evo_b"
 MODEL = "Qwen3.5-9B"
+CELLS = ["wordle:basic5"]     # set from --cells; several cells = one harness shared by all of them
 TEMPERATURE = 0.05            # HW2: score difference that changes a parent's sampling weight by e
 CHAT_CAP = 8
 PUBLIC_META = ("id", "parent", "valid", "reason")
@@ -65,9 +66,14 @@ class Archive:
 
 
 def noise(m):
-    """Standard error of a candidate's search score, over episodes (one per instance)."""
-    s = [e["score"] for e in m["scores"]["per_episode"].values() if e["score"] is not None]
-    return statistics.stdev(s) / math.sqrt(len(s)) if len(s) > 1 else 0.0
+    """Standard error of a candidate's search score: the mean over games of each game's mean, so
+    sqrt(sum_g var_g / n_g) / G, with episodes (one per instance) as the unit inside a game."""
+    by = {}
+    for e in m["scores"]["per_episode"].values():
+        if e["score"] is not None:
+            by.setdefault(e.get("game", ""), []).append(e["score"])
+    v = [statistics.variance(s) / len(s) for s in by.values() if len(s) > 1]
+    return math.sqrt(sum(v)) / len(by) if v else 0.0
 
 
 def select_parent(archive):
@@ -106,8 +112,14 @@ def fill_workspace(ws, archive, parent, n):
     shutil.copy(HERE / "check.py", ws / "check_harness.py")
     (ws / "harness").mkdir()
     shutil.copy(archive.dir / parent["id"] / "harness" / "harness.py", ws / "harness" / "harness.py")
+    shared = len(CELLS) > 1
     task = (TEMPLATE / "TASK_template.md").read_text().format(
-        model=MODEL, parent=parent["id"], n=n, noise=noise(parent), chat_cap=CHAT_CAP)
+        model=MODEL, parent=parent["id"], noise=noise(parent), chat_cap=CHAT_CAP,
+        what=(f"{len(CELLS)} different text games with one and the same harness" if shared else "a text game"),
+        scoring=(f"{n} episodes of each game, one per game instance; its score is the mean over the games of each "
+                 "game's mean score (`per_game` in `scores.json`)" if shared else f"{n} episodes, one per game instance"),
+        shared_rule=("\n- The same harness plays every game, and it is judged on all of them at once. A change that "
+                     "helps one game and hurts others is not progress." if shared else ""))
     (ws / "TASK.md").write_text(task)
     arc = ws / "archive"
     arc.mkdir()
@@ -155,9 +167,12 @@ def evaluate(run, cid, harness, split="search", n=30, export=True, smoke=True, p
     sh(f"ssh bath 'mkdir -p {rbase}/harness'")
     sh(f"scp -q {harness} bath:{rbase}/harness/harness.py")
     while True:
-        env = (f"CAND={rbase}/harness OUT={out} SPLIT={split} N={n}" + (f" DEST={rbase}/export" if export else "")
-               + (" SMOKE=1" if smoke else ""))
-        jid = sh(f"ssh bath 'cd ~/logs && {env} sbatch --parsable {REMOTE_CODE}/mb/evolve/eval_cand.sbatch'").stdout.strip()
+        env = (f"CAND={rbase}/harness OUT={out} SPLIT={split} N={n} CELL={','.join(CELLS)}"
+               + (" NO_NAMES=1" if split == "search" else "")
+               + (f" DEST={rbase}/export" if export else "") + (" SMOKE=1" if smoke else ""))
+        res = ("--gres=gpu:2 --cpus-per-task=32 --mem=192G -t 3:00:00" if len(CELLS) > 1
+               else "-t 2:00:00" if split != "search" else "")
+        jid = sh(f"ssh bath 'cd ~/logs && {env} sbatch --parsable {res} {REMOTE_CODE}/mb/evolve/eval_cand.sbatch'").stdout.strip()
         print(f"  {cid}/{split}: job {jid}", flush=True)
         while sh(f"ssh bath 'squeue -h -j {jid}'", check=False).stdout.strip():
             time.sleep(poll)
@@ -213,6 +228,13 @@ def loop(a):
         log.parent.mkdir(parents=True, exist_ok=True)
         t0 = time.time()
         rc, cost = propose(ws, log)
+        for _ in range(2):          # a failed session (e.g. a rate limit) is retried, not counted as a round
+            if rc == 0 or (ws / "harness" / "harness.py").read_bytes() != (archive.dir / parent["id"] / "harness" / "harness.py").read_bytes():
+                break
+            print(f"  proposer rc={rc} with no change; retrying in 5 min", flush=True)
+            time.sleep(300)
+            fill_workspace(ws, archive, parent, a.n)
+            rc, cost = propose(ws, log)
         m = {"id": cid, "parent": parent["id"], "valid": False, "proposer_rc": rc,
              "proposer_cost_usd_equiv": cost, "proposer_seconds": round(time.time() - t0)}
         d = archive.dir / cid
@@ -225,7 +247,7 @@ def loop(a):
         print(f"  proposer rc={rc} cost≈${cost} in {m['proposer_seconds']}s", flush=True)
         if src == (archive.dir / parent["id"] / "harness" / "harness.py").read_text():
             m["reason"] = "no change"
-        elif bad := problems(src):
+        elif bad := problems(src, names=True):
             m["reason"] = "static check: " + "; ".join(bad)[:300]
         if m.get("reason"):
             archive.save(m)
@@ -262,8 +284,10 @@ def main():
     ap.add_argument("--rounds", type=int, default=8)
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--n-final", type=int, default=100)
+    ap.add_argument("--cells", default="wordle:basic5", help="bench:subtask,...; several = one shared harness")
     ap.add_argument("--final", action="store_true")
     a = ap.parse_args()
+    CELLS[:] = a.cells.split(",")
     final(a) if a.final else loop(a)
 
 

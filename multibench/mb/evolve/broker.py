@@ -21,6 +21,7 @@ keeps the score the environment gives at that point; that is the harness's resul
 model server is infrastructure, not the harness: the episode is marked `infra` and reruns on resume.
 
     python -m mb.evolve.broker run    --cand DIR --cell wordle:basic5 --split search --n 30 --out OUT
+    python -m mb.evolve.broker run    --cand DIR --cell gn:all,wordle:basic5,... ...   # one harness, several games
     python -m mb.evolve.broker export --out OUT --dest DIR
 """
 from __future__ import annotations
@@ -198,30 +199,32 @@ def run(a):
     if os.path.exists(os.path.join(a.out, "rejected.json")):
         return
     src = open(os.path.join(a.cand, "harness.py")).read()
-    bad = problems(src)
-    if a.seen_split:
-        lk = leaks(src, instances(a.cell, a.seen_split, a.seen_n), instances(a.cell, "selection", None))
-        bad += [lk] if lk else []
+    cells = a.cell.split(",")
+    bad = problems(src, names=len(cells) > 1 or a.no_names)
+    for cell in cells if a.seen_split else []:
+        lk = leaks(src, instances(cell, a.seen_split, a.seen_n), instances(cell, "selection", None))
+        bad += [f"{cell}: {lk}"] if lk else []
     os.makedirs(a.out, exist_ok=True)
     if bad:
         json.dump({"rejected": bad}, open(os.path.join(a.out, "rejected.json"), "w"), indent=1)
         print("rejected:", bad, flush=True)
         return
     urls = [u.strip().rstrip("/") for u in os.environ["POLICY_BASE_URLS"].split(",") if u.strip()]
-    bench, sub = a.cell.split(":", 1)
     jobs, done = [], 0
-    for inst in instances(a.cell, a.split, a.n):
-        p = _path(a.out, bench, sub, inst)
-        if os.path.exists(p) and "infra" not in json.load(open(p)):
-            done += 1
-            continue
-        jobs.append((os.path.abspath(a.cand), bench, sub, inst, urls[len(jobs) % len(urls)], a.out))
+    for cell in cells:
+        bench, sub = cell.split(":", 1)
+        for inst in instances(cell, a.split, a.n):
+            p = _path(a.out, bench, sub, inst)
+            if os.path.exists(p) and "infra" not in json.load(open(p)):
+                done += 1
+                continue
+            jobs.append((os.path.abspath(a.cand), bench, sub, inst, urls[len(jobs) % len(urls)], a.out))
     print(f"{done} on disk, {len(jobs)} to run", flush=True)
     if a.smoke and jobs and not done:
         # HW2's smoke test (DGM): one episode first; a child that cannot run at all is rejected
         # before the rest. The reward is ignored, one episode says nothing about quality.
         _one_subprocess(jobs[0])
-        e = json.load(open(_path(a.out, bench, sub, jobs[0][3])))
+        e = json.load(open(_path(a.out, *jobs[0][1:4])))
         why = ("crashes: " + (e.get("error") or "")[-300:] if e.get("end") == "crash"
                else "made no model call" if "infra" not in e and not e.get("calls") else "")
         if why:
@@ -229,6 +232,7 @@ def run(a):
             print("rejected:", why, flush=True)
             return
         jobs = jobs[1:]
+    jobs.sort(key=lambda j: hash((j[3], j[2])) % 1000)     # interleave cells, as mb.screen does
     with ThreadPoolExecutor(a.workers) as ex:
         for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
             f.result()
@@ -247,8 +251,15 @@ def summarize(out):
     ok = [e for e in eps if "infra" not in e]
     sc = [e["score"] for e in ok if isinstance(e.get("score"), (int, float)) and not math.isnan(e["score"])]
     src = {k: sum(e.get("source_counts", {}).get(k, 0) for e in ok) for k in ("model", "model-picked", "code")}
+    games = {}
+    for e in ok:
+        if isinstance(e.get("score"), (int, float)) and not math.isnan(e["score"]):
+            games.setdefault(f"{e['bench']}:{e['subtask']}", []).append(e["score"])
+    per_game = {g: round(sum(v) / len(v), 4) for g, v in sorted(games.items())}
     s = {"episodes": len(eps), "infra_errors": len(eps) - len(ok),
-         "mean_score": round(sum(sc) / len(sc), 4) if sc else None,
+         # every game weighs the same, however many instances it has
+         "mean_score": round(sum(per_game.values()) / len(per_game), 4) if per_game else None,
+         "per_game": per_game,
          "success_rate": round(sum(bool(e.get("success")) for e in ok) / len(ok), 4) if ok else None,
          "harness_errors": sum(bool(e.get("error")) for e in ok),
          "policy_out_tok": sum(e.get("policy_tokens", {}).get("out_tok", 0) for e in ok),
@@ -309,16 +320,17 @@ def export(a):
         if "infra" in e:
             continue
         iid = e["instance_id"]
-        res = {k: e.get(k) for k in ("instance_id", "score", "success", "steps", "end", "error", "seconds")}
+        game = f"{e['bench']}:{e['subtask']}"
+        res = {"game": game, **{k: e.get(k) for k in ("instance_id", "score", "success", "steps", "end", "error", "seconds")}}
         res["error"] = _clean(res["error"])
         res["model_calls"] = e.get("policy_tokens", {}).get("calls")
         res["model_out_tokens"] = e.get("policy_tokens", {}).get("out_tok")
         per[iid] = res
-        d = os.path.join(a.dest, "episodes", _slug(iid))
+        d = os.path.join(a.dest, "episodes", _slug(game), _slug(iid))
         os.makedirs(d, exist_ok=True)
         json.dump(res, open(os.path.join(d, "result.json"), "w"), indent=1)
         open(os.path.join(d, "trace.md"), "w").write(_render(e))
-    pub = {k: s[k] for k in ("episodes", "mean_score", "success_rate", "harness_errors", "policy_out_tok", "policy_calls")}
+    pub = {k: s[k] for k in ("episodes", "mean_score", "per_game", "success_rate", "harness_errors", "policy_out_tok", "policy_calls")}
     json.dump({**pub, "per_episode": per}, open(os.path.join(a.dest, "scores.json"), "w"), indent=1)
 
 
@@ -327,7 +339,8 @@ def main():
     ap.add_argument("cmd", choices=["run", "export", "summarize", "one"])
     ap.add_argument("job", nargs="?")
     ap.add_argument("--cand")
-    ap.add_argument("--cell", default="wordle:basic5")
+    ap.add_argument("--cell", default="wordle:basic5", help="bench:subtask[,bench:subtask...]; several = one shared harness")
+    ap.add_argument("--no-names", action="store_true", help="reject a harness that names a game (always on with several cells)")
     ap.add_argument("--split", default="search")
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--seen-split", default="search", help="the split whose traces the proposer reads")

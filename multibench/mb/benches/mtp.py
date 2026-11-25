@@ -90,6 +90,7 @@ def _cd_instruction(inventory):
 
 
 class CircuitEnv(TextEnv):
+    reads_full_reply = True
     bench = "circuit"
     max_steps = CD_BUDGET + 1
 
@@ -158,6 +159,7 @@ def _table(attrs, names, scores):
 
 
 class MovieRecEnv(TextEnv):
+    reads_full_reply = True
     bench = "movierec"
     max_steps = MR_BUDGET + 1
 

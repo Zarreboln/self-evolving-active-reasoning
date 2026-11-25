@@ -44,6 +44,7 @@ class _NoAgent:
 
 
 class TwentyQEnv(TextEnv):
+    reads_full_reply = True
     bench = BENCH
 
     def __init__(self, subtask, instance, responder=None):

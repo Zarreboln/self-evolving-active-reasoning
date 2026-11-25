@@ -10,7 +10,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=01:00:00
-#SBATCH --qos=short
+#SBATCH --qos=lowprio
+#SBATCH --nodelist=ml-16-node-001
 #SBATCH --output=%x_%j.out
 set -uo pipefail
 REPO=Qwen/Qwen3.5-9B
@@ -18,7 +19,7 @@ export VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_ATTENTION_BACKEND
 export HF_HOME=$HOME/hf_cache VLLM_LOGGING_LEVEL=WARNING
 PORT=$(( 9000 + RANDOM % 800 ))
 echo "host=$(hostname) start=$(date -Is)"
-$HOME/venv/bin/vllm serve "$REPO" --port "$PORT" --max-model-len 32768 \
+$HOME/venv/bin/vllm serve "$REPO" --port "$PORT" --max-model-len 65536 \
   --gpu-memory-utilization 0.90 --max-num-seqs 64 --enable-prefix-caching \
   --default-chat-template-kwargs '{"enable_thinking": false}' \
   > "$HOME/logs/vllm_mb_smoke_$SLURM_JOB_ID.log" 2>&1 &
@@ -28,7 +29,17 @@ curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null || { echo "serve failed
 echo "server up after ${SECONDS}s"
 
 cd "$HOME/code/multibench" && source mb/env.sh
-export POLICY_BASE_URL="http://127.0.0.1:$PORT/v1" POLICY_MODEL="$REPO"
-python -m mb.smoke --mode llm --n 1 --out "$HOME/results/mb_smoke_llm_$SLURM_JOB_ID.json"
+export POLICY_BASE_URL="http://127.0.0.1:$PORT/v1" POLICY_MODEL="$REPO"   # every LLM role too
+OUT=$HOME/results/mb/smoke_llm_$SLURM_JOB_ID
+mkdir -p "$OUT"
+# one process per bench: faster, and ScienceWorld's JVMs must not share a process
+BENCHES=$(python -c "from mb.benches import BENCHES; print(' '.join(BENCHES))")
+PIDS=()
+for b in $BENCHES; do
+  python -m mb.smoke --mode llm --n 1 --benches "$b" --out "$OUT/$b.json" > "$OUT/$b.log" 2>&1 &
+  PIDS+=($!)
+done
+wait "${PIDS[@]}"      # not a bare `wait`: that would also wait on the server and hold the GPU to timeout
 echo "end=$(date -Is)"
+grep -h -E "^\{|FAIL|episodes" "$OUT"/*.log
 kill $SERVE

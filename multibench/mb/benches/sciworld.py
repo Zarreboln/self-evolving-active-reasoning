@@ -92,7 +92,11 @@ class SciWorldEnv(TextEnv):
         self._env = ScienceWorldEnv("", envStepLimit=self.max_steps + 10)
         self._env.load(subtask, int(instance), SIMPLIFICATION, generateGoldPath=True)
         obs, self._info = self._env.reset()
-        self.instructions = self._env.get_task_description() + "\n\n" + obs
+        # the admissible list runs to hundreds, so state ScienceWorld's own action templates instead
+        templates = ", ".join(self._env.get_possible_actions())
+        self.instructions = (self._env.get_task_description()
+                             + "\n\nValid actions (replace OBJ with the name of an object you can see): "
+                             + templates + "\n\n" + obs)
         self.raw_score = 0
 
     def admissible(self):

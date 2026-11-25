@@ -28,7 +28,9 @@ higher_is_better = True only for the two goals whose metric is an accuracy (hype
                    survival `direct`); every other goal returns an error (MSE, |error|, 1 - acc)
 success          = None (BoxingGym defines none)
 An answer set the goal's scorer cannot evaluate (location/source raises on a wrong shape) leaves
-the score NaN and the error in `eval_error`, instead of crashing the run.
+the score NaN and the error in `eval_error`, instead of crashing the run. Likewise an experiment
+input that BoxingGym's validator raises on (e.g. "1] (observation: 0)" -> float()) is returned to
+the agent as an invalid input, uncounted, as rejected inputs already are.
 """
 from __future__ import annotations
 
@@ -117,6 +119,7 @@ def instances(subtask, split, limit=None):
 
 
 class BoxingGymEnv(TextEnv):
+    reads_full_reply = True
     bench = BENCH
 
     def __init__(self, subtask, instance, responder=None):
@@ -156,7 +159,10 @@ class BoxingGymEnv(TextEnv):
             obs_in = _parse(action, "observe")
             if obs_in is None:
                 return _RETRY_OBS
-            obs, ok = _seeded(self._seed, 1 + self._experiments, self._env.run_experiment, obs_in)
+            try:
+                obs, ok = _seeded(self._seed, 1 + self._experiments, self._env.run_experiment, obs_in)
+            except Exception as e:     # BoxingGym's own validators raise on some malformed inputs
+                obs, ok = f"Invalid input {obs_in!r}: {e}", False
             if not ok:
                 return str(obs)
             self._experiments += 1

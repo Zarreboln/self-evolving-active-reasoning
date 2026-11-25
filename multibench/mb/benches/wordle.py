@@ -51,6 +51,7 @@ def instances(subtask, split, limit=None):
 
 
 class WordleEnv(TextEnv):
+    reads_full_reply = True
     bench = BENCH
 
     def __init__(self, subtask, instance, responder=None):

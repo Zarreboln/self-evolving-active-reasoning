@@ -50,6 +50,10 @@ class TextEnv(ABC):
     bench: str = ""
     max_steps: int = 0
     higher_is_better: bool = True     # False for benches whose official metric is an error
+    # True where the bench's own parser searches the whole reply for its format (TextArena's
+    # `[...]`, MT-Puzzles' tags, BoxingGym's <observe>/<answer>): a harness should then pass the
+    # reply through rather than cut an action out of it.
+    reads_full_reply: bool = False
 
     def __init__(self, subtask: str, instance: str):
         self.subtask = subtask

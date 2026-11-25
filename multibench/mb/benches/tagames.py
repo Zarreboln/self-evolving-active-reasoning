@@ -102,6 +102,7 @@ def _catalogue(game, subtask, per_split=200):
 
 
 class TAGameEnv(TextEnv):
+    reads_full_reply = True
     def __init__(self, game, subtask, instance, responder=None):
         self.bench = game
         super().__init__(subtask, instance)

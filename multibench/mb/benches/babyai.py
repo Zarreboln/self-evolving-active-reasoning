@@ -9,7 +9,8 @@ BALROG's `make_babyai_env` only builds the MixedTrainLocal tasks (any other name
 an unbound variable), so the official levels are built here with the same wrapper. BALROG passes
 `num_dists=0` to every task; the official levels keep their own defaults, as in the BabyAI paper. Observations,
 the instruction prompt, the action strings and the invalid-action rule (substitute "go forward",
-as BALROG's `check_action_validity` does) are BALROG's.
+as BALROG's `check_action_validity` does, exact match only, with BALROG's feedback text) are BALROG's.
+GoToLocal and the other official levels are not among BALROG's five tasks; they only borrow its wrapper and prompt.
 
 Instances are seeds. The splits are disjoint seed ranges.
 
@@ -72,11 +73,13 @@ class BabyAIEnv(TextEnv):
         return list(BABYAI_ACTION_SPACE)
 
     def _act(self, action):
-        a = action.strip().lower()
-        note = ""
+        # BALROG's check_action_validity: an exact match with an action string, else the default
+        # action, with BALROG's feedback_on_invalid_action text in front of the next observation.
+        # (Cleaning the model's reply, e.g. BALROG's letter filter, is the harness's job.)
+        a, note = action, ""
         if a not in BABYAI_ACTION_SPACE:
-            note = f"Invalid action {action!r}; 'go forward' was taken instead.\n"
             a = self._env.default_action
+            note = f"\n\nYour previous output did not contain a valid action. Defaulted to action: {a}\n\nObservation:\n"
         obs, reward, terminated, truncated, _ = self._env.step(a)
         if reward > 0:
             self._won = True

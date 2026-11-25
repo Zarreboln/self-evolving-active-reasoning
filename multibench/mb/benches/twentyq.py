@@ -62,27 +62,28 @@ class TwentyQEnv(TextEnv):
         lv, th = SUBTASKS[subtask]
         real, ta.agents.OpenRouterAgent = ta.agents.OpenRouterAgent, _NoAgent
         try:
-            self._env = ta.make(_LEVELS[lv] + "-raw")
+            self._env = ta.make(_LEVELS[lv])     # with TextArena's default wrapper (full history)
         finally:
             ta.agents.OpenRouterAgent = real
+        base = self._env
+        while hasattr(base, "env"):         # wrappers forward reads, not writes
+            base = base.env
         if getattr(responder, "jev_role", None) == "gamemaster":
             # Jev answers from the secret and the player's question with TextArena's own options
-            self._env.gamemaster = lambda prompt: responder.answer(
+            base.gamemaster = lambda prompt: responder.answer(
                 "20 Questions", instance, _question(prompt))
         else:
-            self._env.gamemaster = lambda prompt: responder(
+            base.gamemaster = lambda prompt: responder(
                 [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
-        self._env.word_list = {th: [instance]}      # reset() draws theme and word from this
+        base.word_list = {th: [instance]}      # reset() draws theme and word from this
         seeded(0, self._env.reset, num_players=1, seed=0)   # reset() reseeds the global RNG
         self.max_steps = self._env.state.max_turns + 1
-        _, obs = self._env.get_observation()
-        self.instructions = "\n".join(m for _, m, _ in obs)
+        _, self.instructions = self._env.get_observation()
         self._reward = 0.0
 
     def _act(self, action):
         done, _ = self._env.step(action)
-        _, obs = self._env.get_observation()
-        text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
+        _, text = self._env.get_observation()
         if done:
             rewards, info = self._env.close()
             self.raw_reward = float(rewards[0])

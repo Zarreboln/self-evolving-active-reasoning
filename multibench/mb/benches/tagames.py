@@ -71,12 +71,22 @@ class _NoAgent:
         pass
 
 
-def _build(game, subtask):
+def _build(game, subtask, raw=False):
+    """TextArena's env with its default wrappers (what `ta.make` gives an agent: LLMObservationWrapper,
+    i.e. the full history as one string, plus ActionFormattingWrapper where registered); raw=True for
+    listing instances, which only reads the game state."""
     real, ta.agents.OpenRouterAgent = ta.agents.OpenRouterAgent, _NoAgent
     try:
-        return ta.make(GAMES[game][subtask] + "-raw")
+        return ta.make(GAMES[game][subtask] + ("-raw" if raw else ""))
     finally:
         ta.agents.OpenRouterAgent = real
+
+
+def _base(env):
+    """The unwrapped env: wrappers forward reads (__getattr__) but not writes."""
+    while hasattr(env, "env"):
+        env = env.env
+    return env
 
 
 @functools.lru_cache(maxsize=None)
@@ -85,7 +95,7 @@ def _catalogue(game, subtask, per_split=200):
     path = os.path.join(os.environ.get("MBENCH_DATA", "."), f"tagames_{game}_{subtask}.json")
     if os.path.exists(path):
         return json.load(open(path))
-    env, key = _build(game, subtask), _SECRET[game]
+    env, key = _build(game, subtask, raw=True), _SECRET[game]
     out, seen = {"search": [], "selection": [], "test": []}, set()
     for seed in range(_SCAN):
         if all(len(v) >= per_split for v in out.values()):
@@ -115,34 +125,28 @@ class TAGameEnv(TextEnv):
             if getattr(responder, "jev_role", None) == "gamemaster":
                 # Jev answers from the target's trait record (read at call time, after reset)
                 from mb.benches.twentyq import _question
-                self._env.gamemaster = lambda prompt: responder.answer(
+                _base(self._env).gamemaster = lambda prompt: responder.answer(
                     "Guess Who", json.dumps(self._env.target_character), _question(prompt))
             else:
-                self._env.gamemaster = lambda prompt: responder(
+                _base(self._env).gamemaster = lambda prompt: responder(
                     [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
         self._seed = int(instance)
         seeded(self._seed, self._env.reset, num_players=1, seed=self._seed)
         self.max_steps = (self._env.state.max_turns or 50) + 2   # room for the allowed error
-        _, obs = self._env.get_observation()
-        self.instructions = "\n".join(m for _, m, _ in obs) + self._board()
+        _, self.instructions = self._env.get_observation()     # the wrapper's full-history string
         self._reward = 0.0
-
-    def _board(self):
-        b = self._env.state.game_state.get("rendered_board")
-        return f"\n\nCurrent board:\n{b}" if b else ""
 
     def _act(self, action):
         # Minesweeper lays its mines on the first click, from the global RNG: seed every step.
         done, _ = seeded(self._seed * 1000 + self.steps, self._env.step, action)
-        _, obs = self._env.get_observation()
-        text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
+        _, text = self._env.get_observation()     # full history, as TextArena shows it to an agent
         if done:
             rewards, info = self._env.close()
             self.raw_reward = float(rewards[0])
             self._reward = max(self.raw_reward, 0.0)   # TextArena pays -1 for a loss by invalid moves
             self.done = True
             return (text + "\n" + info[0].get("reason", "")).strip()
-        return text + self._board()
+        return text
 
     def score(self):
         return self._reward

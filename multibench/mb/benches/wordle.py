@@ -56,20 +56,18 @@ class WordleEnv(TextEnv):
 
     def __init__(self, subtask, instance, responder=None):
         super().__init__(subtask, instance)
-        self._env = ta.make(SUBTASKS[subtask] + "-raw")
+        self._env = ta.make(SUBTASKS[subtask])     # with TextArena's default wrappers
         # reset() reseeds the global RNG (TextArena's state does); keep it inside the shared lock
         seeded(0, self._env.reset, num_players=1, seed=0)
         self._env.state.game_state["secret_word"] = instance
         self.max_steps = self._env.num_guesses + 2     # room for the one allowed invalid move
-        _, obs = self._env.get_observation()
-        self.instructions = "\n".join(m for _, m, _ in obs)
+        _, self.instructions = self._env.get_observation()     # the wrapper's full-history string
         self._reward = 0.0
         self._reason = ""
 
     def _act(self, action):
         done, _ = self._env.step(action)
-        _, obs = self._env.get_observation()
-        text = "\n".join(m for frm, m, kind in obs if kind != ta.ObservationType.PLAYER_ACTION)
+        _, text = self._env.get_observation()
         if done:
             rewards, info = self._env.close()
             self.raw_reward = float(rewards[0])

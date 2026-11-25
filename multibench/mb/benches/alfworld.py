@@ -2,8 +2,9 @@
 
 Games are ALFWorld's TextWorld PDDL files, played through ALFWorld's own wrappers (demangler,
 infos, handcoded expert). The official splits map onto ours directly: train -> search,
-valid_seen -> selection, valid_unseen (the 134 games every paper reports) -> test. The step limit
-is the 50 the ALFWorld/ReAct evaluations use.
+valid_seen -> selection, valid_unseen (the 134 games every paper reports) -> test. The env allows
+at most 50 actions. ReAct's own budget is an agent loop of 49 model completions, thoughts included
+(alfworld.ipynb, range(1, 50)); its seed harness enforces that, not the env.
 
 score = success = TextWorld's `won`
 """

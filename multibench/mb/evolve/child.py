@@ -41,7 +41,7 @@ class Env:
 
     def __init__(self, init):
         self.instructions = init["instructions"]
-        self.observation = ""
+        self.observation = init.get("observation", "")     # the env's first prompt, where it has one
         self.max_steps = init["max_steps"]
         self.reads_full_reply = init["reads_full_reply"]
         self.steps = 0
@@ -61,8 +61,9 @@ class Env:
         return self.observation
 
 
-def chat(messages, temperature=0.7, max_tokens=8192):
-    r = call({"op": "chat", "messages": messages, "temperature": temperature, "max_tokens": max_tokens})
+def chat(messages, temperature=0.7, max_tokens=8192, top_p=None, stop=None):
+    r = call({"op": "chat", "messages": messages, "temperature": temperature, "max_tokens": max_tokens,
+              "top_p": top_p, "stop": stop})
     if "error" in r:
         raise ChatError(r["error"])
     return r["reply"]

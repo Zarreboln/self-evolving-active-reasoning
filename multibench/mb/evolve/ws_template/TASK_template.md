@@ -22,14 +22,15 @@ action. When the game ends it gives the episode a score in [0, 1].
 `harness/harness.py` must define `run_episode(env, chat)`. It is called once per episode and should return when
 `env.done` is true.
 
-- `env.instructions` (str): the game's instructions, shown before the first action.
+- `env.instructions` (str): the game's instructions (in a chat, the system prompt), shown before the first action.
+- `env.observation` (str): the latest observation; before the first action, the game's first prompt if it has one, else empty.
 - `env.act(action: str) -> str`: take one action, return the next observation. Also updates `env.observation`,
   `env.done` and `env.steps`. Raises an exception if the episode is already over.
 - `env.max_steps` (int): the episode ends after this many actions at the latest.
 - `env.admissible()`: the valid actions right now if the game lists them, else None.
 - `env.reads_full_reply` (bool): if true, the game parses the action out of whatever text you pass to `env.act`
   (as the seed does, it is fine to pass the model's whole reply minus any blocks you add).
-- `chat(messages, temperature=0.7, max_tokens=8192) -> str`: one call to the model; `messages` is an OpenAI-style
+- `chat(messages, temperature=0.7, max_tokens=8192, top_p=None, stop=None) -> str`: one call to the model; `messages` is an OpenAI-style
   list of `{{"role": ..., "content": ...}}`. The server's context is 64K tokens; a longer prompt raises an exception.
   At most {chat_cap} calls per action on average over an episode; beyond that `chat` raises.
 

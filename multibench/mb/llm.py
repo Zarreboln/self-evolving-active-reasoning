@@ -27,12 +27,14 @@ class Counter:
 def make_chat(base_url: str, model: str, counter: Counter | None = None, retries: int = 4):
     url = base_url.rstrip("/") + "/chat/completions"
 
-    def chat(messages, temperature=0.7, max_tokens=None, top_p=None):
+    def chat(messages, temperature=0.7, max_tokens=None, top_p=None, stop=None):
         body = {"model": model, "messages": messages, "temperature": temperature}
         if max_tokens:
             body["max_tokens"] = max_tokens
         if top_p is not None:
             body["top_p"] = top_p
+        if stop:
+            body["stop"] = stop
         req = urllib.request.Request(url, data=json.dumps(body).encode(),
                                      headers={"Content-Type": "application/json"})
         for k in range(retries):

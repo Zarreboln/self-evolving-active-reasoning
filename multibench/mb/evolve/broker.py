@@ -97,7 +97,7 @@ def episode(cand, bench, sub, inst, url, model):
     replies, prompts = [], []                 # since the last action
     env_text = env.instructions
     end, error = None, None
-    send({"instructions": env.instructions, "max_steps": env.max_steps,
+    send({"instructions": env.instructions, "observation": env.observation, "max_steps": env.max_steps,
           "reads_full_reply": env.reads_full_reply, "admissible": env.admissible()})
     try:
         while True:
@@ -112,7 +112,8 @@ def episode(cand, bench, sub, inst, url, model):
                     continue
                 msgs = m["messages"]
                 try:
-                    reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=m.get("max_tokens", 8192))
+                    reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=m.get("max_tokens", 8192),
+                                 top_p=m.get("top_p"), stop=m.get("stop"))
                 except urllib.error.HTTPError as e:      # e.g. 400: the prompt outgrew the context
                     calls.append({"step": env.steps, "messages": msgs, "error": f"HTTP {e.code}"})
                     send({"error": f"HTTP {e.code}: {e.read()[:300].decode(errors='replace')}"})

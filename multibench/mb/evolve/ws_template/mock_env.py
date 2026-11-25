@@ -25,7 +25,7 @@ class MockEnv:
     def __init__(self, steps=4):
         self.instructions = ("[MOCK] This is a stand-in game. Submit actions in square brackets, "
                              "e.g. [word]. You have %d turns." % steps)
-        self.observation = ""
+        self.observation = "[MOCK] Make your first move."
         self.max_steps = steps
         self.reads_full_reply = True
         self.steps = 0
@@ -43,7 +43,7 @@ class MockEnv:
         return self.observation
 
 
-def mock_chat(messages, temperature=0.7, max_tokens=8192):
+def mock_chat(messages, temperature=0.7, max_tokens=8192, top_p=None, stop=None):
     assert isinstance(messages, list) and all(isinstance(m, dict) and "role" in m for m in messages)
     return "<reasoning>mock reasoning</reasoning>\nAction: [mock]"
 

@@ -51,3 +51,24 @@ cannot tell apart at 10 tasks: a low-rank shared structure from fully per-task g
   measured against `think`, so a component's content is separated from reasoning elicitation.
 - More task columns (~20 subtasks). With 10 columns the saturated model costs too few extra
   parameters to lose to a low-rank one; L vs S needs more tasks, not more instances.
+
+## Amendment 1 result: few-shot prediction of a held-out task (spec in exp_a_prereg.md)
+Held-out MSE of the predicted 4 gains. Episodes spent on the new task: G/H 0; S, L1, L2 5k; L1-probe 2k (seed + belief only).
+
+| k | G | H | S | L1 | L2 | L1-probe |
+|---|---|---|---|---|---|---|
+| 1 | 0.094 | 0.100 | 0.221 | 0.149 | 0.169 | 0.167 |
+| 2 | 0.094 | 0.101 | 0.113 | 0.083 | 0.092 | 0.103 |
+| 3 | 0.095 | 0.101 | 0.082 | 0.066 | 0.071 | 0.082 |
+| 5 | 0.095 | 0.102 | 0.049 | 0.046 | 0.048 | 0.062 |
+| 8 | 0.097 | 0.103 | 0.037 | 0.039 | 0.039 | 0.052 |
+| 12 | 0.099 | 0.105 | 0.031 | 0.037 | 0.037 | 0.049 |
+
+Without GN: G 0.038 at 0 episodes. S 0.119 / 0.082 / 0.053 / 0.038 / 0.032 at k = 2 / 3 / 5 / 8 / 12. L2 reaches 0.029 at k = 12. L1-probe: 0.062 at 4 episodes, 0.047 at 6, 0.036 at 10.
+
+Reading:
+- **At the same number of episodes, the shared structure predicts better than starting per task from scratch.**
+  - All tasks: L1-probe has 0.062 at 10 episodes; S has 0.113 at 10 and 0.082 at 15. The two meet at about 24–25 episodes (0.049).
+  - At the same k, L1 beats S up to k = 5. From k = 8 on, S wins.
+- **Without GN, the global mean (0 episodes, 0.038) is about as good as anything below ~40 episodes.** At these sample sizes, most per-task variation outside GN is noise. The task-specific signal is concentrated in a few cells.
+- The reasoning-elicitation confound from the first analysis still applies to all of this.

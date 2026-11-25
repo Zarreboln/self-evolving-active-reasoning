@@ -52,9 +52,10 @@ def _episode(args):
     try:
         responder = None
         if b.responder:
-            # Jev plays SP / 20Q / Guess Who only when asked for (MB_USE_JEV=1); otherwise every
-            # LLM-played role is the run's chat model. Never a silent mix of the two.
-            if os.environ.get("MB_USE_JEV") == "1":
+            # Jev plays SP / 20Q / Guess Who unless MB_USE_JEV=0, in which case every LLM-played
+            # role is the run's chat model. Never a silent mix: a Jev failure is an error, not a
+            # fallback.
+            if os.environ.get("MB_USE_JEV", "1") == "1":
                 from mb.jev import Jev, responder_for
                 jev = Jev()
                 responder = responder_for(bench, jev)

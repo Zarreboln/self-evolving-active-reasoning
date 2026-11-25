@@ -1,4 +1,4 @@
-"""Jev (TypeSafe, pinned jev-1.14.0) as the environment's answerer wherever the role is a typed
+"""Jev (TypeSafe's model via JevHub, pinned jev-1.14.0) as the environment's answerer wherever the role is a typed
 choice from hidden information: SP's referee, 20Q's gamemaster, Guess Who's gamemaster. DC's
 suspects answer in free-text role play, which is not Jev's shape, so they stay on the chat model.
 
@@ -20,7 +20,9 @@ import threading
 import time
 import urllib.request
 
-API = "https://api.typesafe.ai/v1/systemone"
+# The user's access is a JevHub (jevgo.cn, Jev's official reseller) key: same protocol, same model
+# names, different base URL. The direct TypeSafe organisation was deactivated on 2026-11-25.
+API = os.environ.get("JEV_API", "https://api.jevgo.cn/v1/systemone")
 MODEL = "jev-1.14.0"
 RATE_IN = 0.042 / 1_000_000
 
@@ -28,8 +30,8 @@ sys.path.insert(0, os.path.expanduser("~/code"))
 
 
 def _key():
-    k = os.environ.get("TYPESAFE_API_KEY")
-    return k.strip() if k else open(os.path.expanduser("~/.typesafe_token")).read().strip()
+    k = os.environ.get("JEVHUB_API_KEY")
+    return k.strip() if k else open(os.path.expanduser("~/.jevhub_token")).read().strip()
 
 
 class Jev:
@@ -101,7 +103,8 @@ class Gamemaster:
     def answer(self, game, secret, question):
         instructions = (f"You are the gamemaster of {game}. You know the secret given in the state; "
                         "the player does not. Answer the player's question truthfully about the "
-                        "secret, choosing exactly one option.")
+                        "secret, choosing exactly one option. A question that is not a yes-or-no "
+                        "question (e.g. 'what color is it?') gets \"I don't know\".")
         return self.jev.choose({"secret": secret, "player_question": question},
                                instructions, _GM_CRITERIA)
 

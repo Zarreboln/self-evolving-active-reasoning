@@ -1,0 +1,271 @@
+"""Experiment B, the outer loop on the Mac: proposer in the Docker sandbox, evaluation on bath.
+
+The loop is MAS.S62 HW2's (repo/evolve.py), with the user's own choices there kept:
+
+    1. select_parent()  RRSI + DGM: build only on children that beat their parent by more than the
+                        combined noise; among those, sample by score and by how few children each has
+    2. propose()        Claude Code (Opus 5.5) edits a copy of the parent in its own workspace, run in
+                        the sandbox (ar_harness/sandbox/run_proposer.py), which mounts that workspace only
+    3. check()          the child must change something and pass the static rules locally; on bath it
+                        must not hold the archive's answers and must survive one smoke episode
+    4. evaluate         N search episodes on bath (mb/evolve/eval_cand.sbatch)
+
+What a workspace holds is decided here (`fill_workspace`) and nowhere else: the parent's harness, the
+helpers, and for every candidate its code, proposal, public meta, scores and episode traces. Never the
+proposer logs, our action-source labels (kept under private/), or anything from the selection and
+test splits, which only `final` touches.
+
+    python -m mb.evolve.orchestrate --run pilot_wordle --rounds 8
+    python -m mb.evolve.orchestrate --run pilot_wordle --final
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import random
+import shutil
+import statistics
+import subprocess
+import sys
+import time
+from collections import Counter
+from pathlib import Path
+
+from mb.evolve.check import problems
+
+HERE = Path(__file__).resolve().parent
+TEMPLATE = HERE / "ws_template"
+SANDBOX = HERE.parents[2] / "sandbox"
+RUNS = Path.home() / "evo_b_runs"                 # outside every repo and workspace
+REMOTE_CODE = "~/code/multibench"
+REMOTE_RUNS = "~/results/mb/evo_b"
+MODEL = "Qwen3.5-9B"
+TEMPERATURE = 0.05            # HW2: score difference that changes a parent's sampling weight by e
+CHAT_CAP = 8
+PUBLIC_META = ("id", "parent", "valid", "reason")
+
+
+def sh(cmd, check=True, **kw):
+    return subprocess.run(cmd, shell=True, check=check, text=True, capture_output=True, **kw)
+
+
+class Archive:
+    def __init__(self, run):
+        self.dir = RUNS / run / "archive"
+        self.dir.mkdir(parents=True, exist_ok=True)
+
+    def all(self):
+        return [json.loads(p.read_text()) for p in sorted(self.dir.glob("c*/meta.json"))]
+
+    def save(self, m):
+        d = self.dir / m["id"]
+        d.mkdir(parents=True, exist_ok=True)
+        (d / "meta.json").write_text(json.dumps(m, indent=1))
+
+
+def noise(m):
+    """Standard error of a candidate's search score, over episodes (one per instance)."""
+    s = [e["score"] for e in m["scores"]["per_episode"].values() if e["score"] is not None]
+    return statistics.stdev(s) / math.sqrt(len(s)) if len(s) > 1 else 0.0
+
+
+def select_parent(archive):
+    """HW2's select_parent, unchanged in substance (RRSI gate + DGM-weighted draw, seeded by size)."""
+    everyone = {m["id"]: m for m in archive.all()}
+    scored = {i: (m["scores"]["mean_score"], noise(m)) for i, m in everyone.items() if m["valid"] and m.get("scores")}
+    children = Counter(m.get("parent") for m in everyone.values())
+
+    def is_progress(cid):
+        p = everyone[cid].get("parent")
+        if p is None or p not in scored:
+            return True
+        return scored[cid][0] - scored[p][0] > math.hypot(scored[cid][1], scored[p][1])
+
+    pool = [c for c in scored if is_progress(c)] or list(scored)
+    top = max(scored[c][0] for c in pool)
+    w = [math.exp((scored[c][0] - top) / TEMPERATURE) / (1 + children[c]) for c in pool]
+    return everyone[random.Random(len(everyone)).choices(pool, weights=w, k=1)[0]]
+
+
+def summary_md(archive):
+    rows = ["| id | parent | valid | mean score | success | reason |", "|---|---|---|---|---|---|"]
+    for m in archive.all():
+        s = m.get("scores") or {}
+        rows.append(f"| {m['id']} | {m.get('parent') or '-'} | {m['valid']} | {s.get('mean_score', '-')} | "
+                    f"{s.get('success_rate', '-')} | {m.get('reason') or ''} |")
+    return "\n".join(rows) + "\n"
+
+
+def fill_workspace(ws, archive, parent, n):
+    if ws.exists():
+        shutil.rmtree(ws)
+    ws.mkdir(parents=True)
+    for f in ("harness_lib.py", "mock_env.py"):
+        shutil.copy(TEMPLATE / f, ws / f)
+    shutil.copy(HERE / "check.py", ws / "check_harness.py")
+    (ws / "harness").mkdir()
+    shutil.copy(archive.dir / parent["id"] / "harness" / "harness.py", ws / "harness" / "harness.py")
+    task = (TEMPLATE / "TASK_template.md").read_text().format(
+        model=MODEL, parent=parent["id"], n=n, noise=noise(parent), chat_cap=CHAT_CAP)
+    (ws / "TASK.md").write_text(task)
+    arc = ws / "archive"
+    arc.mkdir()
+    (arc / "summary.md").write_text(summary_md(archive))
+    for m in archive.all():
+        src, dst = archive.dir / m["id"], arc / m["id"]
+        dst.mkdir()
+        shutil.copytree(src / "harness", dst / "harness")
+        if (src / "proposal.md").exists():
+            shutil.copy(src / "proposal.md", dst / "proposal.md")
+        (dst / "meta.json").write_text(json.dumps({k: m.get(k) for k in PUBLIC_META}, indent=1))
+        if (src / "scores.json").exists():
+            shutil.copy(src / "scores.json", dst / "scores.json")
+        if (src / "episodes").exists():
+            shutil.copytree(src / "episodes", dst / "episodes")
+
+
+def proposer_cost(log):
+    total = None
+    for line in log.read_text(errors="ignore").splitlines():
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if e.get("type") == "result":
+            total = e.get("total_cost_usd")
+    return total
+
+
+def propose(ws, log):
+    sys.path.insert(0, str(SANDBOX))
+    import run_proposer
+    rc = run_proposer.run(ws, log)
+    return rc, proposer_cost(log) if log.exists() else None
+
+
+def sync_code():
+    sh(f"rsync -a --delete --exclude __pycache__ {HERE}/ bath:{REMOTE_CODE}/mb/evolve/")
+
+
+def evaluate(run, cid, harness, split="search", n=30, export=True, smoke=True, poll=30):
+    """Ship one harness to bath, score it there, and pull back the exported files (or None if rejected)."""
+    rbase = f"{REMOTE_RUNS}/{run}/{cid}"
+    out = f"{rbase}/eval_{split}"
+    sh(f"ssh bath 'mkdir -p {rbase}/harness'")
+    sh(f"scp -q {harness} bath:{rbase}/harness/harness.py")
+    while True:
+        env = (f"CAND={rbase}/harness OUT={out} SPLIT={split} N={n}" + (f" DEST={rbase}/export" if export else "")
+               + (" SMOKE=1" if smoke else ""))
+        jid = sh(f"ssh bath 'cd ~/logs && {env} sbatch --parsable {REMOTE_CODE}/mb/evolve/eval_cand.sbatch'").stdout.strip()
+        print(f"  {cid}/{split}: job {jid}", flush=True)
+        while sh(f"ssh bath 'squeue -h -j {jid}'", check=False).stdout.strip():
+            time.sleep(poll)
+        rej = sh(f"ssh bath 'cat {out}/rejected.json 2>/dev/null'", check=False).stdout
+        if rej:
+            return {"rejected": json.loads(rej)["rejected"]}
+        summ = sh(f"ssh bath 'cat {out}/summary.json 2>/dev/null'", check=False).stdout
+        if summ and json.loads(summ)["infra_errors"] == 0:
+            return json.loads(summ)
+        print(f"  {cid}/{split}: incomplete ({summ.strip()[:120] or 'no summary'}), resubmitting", flush=True)
+        smoke = False
+
+
+def pull_export(run, cid, archive):
+    d = archive.dir / cid
+    sh(f"rsync -a bath:{REMOTE_RUNS}/{run}/{cid}/export/ {d}/")
+
+
+def score_candidate(run, archive, m, n):
+    cid = m["id"]
+    r = evaluate(run, cid, archive.dir / cid / "harness" / "harness.py", n=n)
+    priv = RUNS / run / "private" / cid
+    priv.mkdir(parents=True, exist_ok=True)
+    (priv / "search_summary.json").write_text(json.dumps(r, indent=1))
+    if "rejected" in r:
+        m.update(valid=False, reason="; ".join(r["rejected"])[:300])
+    else:
+        pull_export(run, cid, archive)
+        m.update(valid=True, scores=json.loads((archive.dir / cid / "scores.json").read_text()))
+    archive.save(m)
+    print(f"  {cid}: {m.get('reason') or m['scores']['mean_score']}", flush=True)
+
+
+def loop(a):
+    archive = Archive(a.run)
+    sync_code()
+    if not (archive.dir / "c000" / "meta.json").exists():
+        (archive.dir / "c000" / "harness").mkdir(parents=True, exist_ok=True)
+        shutil.copy(HERE / "seed_think.py", archive.dir / "c000" / "harness" / "harness.py")
+        (archive.dir / "c000" / "proposal.md").write_text("The seed: experiment A's `think` arm.\n")
+        print("c000 (seed)", flush=True)
+        score_candidate(a.run, archive, {"id": "c000", "parent": None, "valid": False}, a.n)
+    while True:
+        done = len(archive.all()) - 1
+        if done >= a.rounds:
+            break
+        cid = f"c{done + 1:03d}"
+        parent = select_parent(archive)
+        print(f"{cid}: parent {parent['id']} ({parent['scores']['mean_score']})", flush=True)
+        ws = RUNS / a.run / "workspaces" / cid
+        fill_workspace(ws, archive, parent, a.n)
+        log = RUNS / a.run / "private" / cid / "proposer.jsonl"
+        log.parent.mkdir(parents=True, exist_ok=True)
+        t0 = time.time()
+        rc, cost = propose(ws, log)
+        m = {"id": cid, "parent": parent["id"], "valid": False, "proposer_rc": rc,
+             "proposer_cost_usd_equiv": cost, "proposer_seconds": round(time.time() - t0)}
+        d = archive.dir / cid
+        (d / "harness").mkdir(parents=True, exist_ok=True)
+        child = ws / "harness" / "harness.py"
+        shutil.copy(child, d / "harness" / "harness.py")
+        if (ws / "proposal.md").exists():
+            shutil.copy(ws / "proposal.md", d / "proposal.md")
+        src = child.read_text()
+        print(f"  proposer rc={rc} cost≈${cost} in {m['proposer_seconds']}s", flush=True)
+        if src == (archive.dir / parent["id"] / "harness" / "harness.py").read_text():
+            m["reason"] = "no change"
+        elif bad := problems(src):
+            m["reason"] = "static check: " + "; ".join(bad)[:300]
+        if m.get("reason"):
+            archive.save(m)
+            print(f"  {cid}: rejected locally: {m['reason']}", flush=True)
+            continue
+        score_candidate(a.run, archive, m, a.n)
+
+
+def final(a):
+    """After the loop: every valid candidate on the selection split; the best of them and the seed on
+    test. Nothing here goes back into any workspace."""
+    archive = Archive(a.run)
+    priv = RUNS / a.run / "private"
+    sel = {}
+    for m in archive.all():
+        if m["valid"]:
+            r = evaluate(a.run, m["id"], archive.dir / m["id"] / "harness" / "harness.py",
+                         split="selection", n=a.n_final, export=False, smoke=False)
+            sel[m["id"]] = r
+            (priv / m["id"]).mkdir(parents=True, exist_ok=True)
+            (priv / m["id"] / "selection_summary.json").write_text(json.dumps(r, indent=1))
+    best = max(sel, key=lambda c: sel[c]["mean_score"])
+    print("selection:", {c: r["mean_score"] for c, r in sel.items()}, "best", best, flush=True)
+    for cid in sorted({best, "c000"}):
+        r = evaluate(a.run, cid, archive.dir / cid / "harness" / "harness.py",
+                     split="test", n=a.n_final, export=False, smoke=False)
+        (priv / cid / "test_summary.json").write_text(json.dumps(r, indent=1))
+        print("test", cid, r["mean_score"], flush=True)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run", required=True)
+    ap.add_argument("--rounds", type=int, default=8)
+    ap.add_argument("--n", type=int, default=30)
+    ap.add_argument("--n-final", type=int, default=100)
+    ap.add_argument("--final", action="store_true")
+    a = ap.parse_args()
+    final(a) if a.final else loop(a)
+
+
+if __name__ == "__main__":
+    main()

@@ -39,3 +39,25 @@ If only the sign part holds, the result is "per-task" (S best) or "grouped" (H b
 
 ## Budget
 ~1,450 A episodes + ~130 seed episodes rerun with Jev for 20Q/SP/Guess Who. Two H100s, lowprio on ml-16-node-001; estimate 3–5 GPU-h. Jev < $1.
+
+## Amendment 1 (2026-11-25, after the first analysis, BEFORE running this test)
+The original structure rule (low-rank must beat the saturated model S in held-out fit) tests the
+wrong thing. S is accurate whenever each cell has enough data; its cost is that every new task
+has to be measured on every component from scratch. What sharing buys is sample efficiency: from a
+few episodes on a new task, predict how every component will do there. This is the "fast
+adaptation" claim, so it is the test. The original verdict stays on record as computed.
+
+Leave-one-task-out few-shot prediction (existing data, no new runs):
+- Hold out task t. From the other 9 tasks fit a_s (mean gain per component) and the rank-r
+  interaction factors U_r (SVD of the residual), r = 1, 2.
+- On t, draw k paired instances (k = 1, 2, 3, 5, 8, 12) as the "adaptation" data; the remaining
+  instances of t give the target Δ. 200 random draws per (t, k).
+- Estimators of t's 4-vector of gains:
+  - S_k: the per-cell means on the k instances (all 4 components measured: 5k episodes)
+  - G: a_s (0 episodes)        - H: mean of t's dimension group on the 9 tasks (0 episodes)
+  - L_r,k: a_s + U_r w, w by least squares on the k instances (5k episodes)
+  - L1-probe,k: only seed + belief measured on k instances (2k episodes); w from that one
+    component, the other three predicted
+- Error: mean squared error against the target, averaged over tasks and draws; also reported
+  without GN.
+- Sharing pays off if L_r,k (or L1-probe,k) reaches a given error with fewer episodes than S_k.

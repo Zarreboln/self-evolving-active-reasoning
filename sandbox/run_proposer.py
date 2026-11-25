@@ -24,7 +24,7 @@ import subprocess
 from pathlib import Path
 
 IMAGE = "ar-proposer:2.1.326"
-DOCKER = os.path.expanduser("~/.docker/bin/docker")
+DOCKER = "/Applications/Docker.app/Contents/Resources/bin/docker"   # ~/.docker/bin links break when Docker restarts
 NETWORK = "ar-proposer-net"          # internal network: the proxy is the only way out
 PROXY = "http://ar-egress:8888"
 TOOLS = "Read,Glob,Grep,Agent,Write,Edit,Bash"
@@ -58,12 +58,13 @@ def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=T
         cmd += ["--network", "none"]
     cmd += [IMAGE, "claude", "-p", task, "--safe-mode", "--permission-mode", "acceptEdits",
             "--output-format", "stream-json", "--verbose", "--model", model,
-            "--allowedTools", TOOLS, "--disallowedTools", "WebFetch,WebSearch"]
+            "--tools", TOOLS, "--allowedTools", TOOLS, "--disallowedTools", "WebFetch,WebSearch"]
     env = os.environ | {var: secret, "PATH": os.path.dirname(DOCKER) + ":" + os.environ["PATH"]}
     log.parent.mkdir(parents=True, exist_ok=True)
     with log.open("w") as f:
         try:
-            r = subprocess.run(cmd, env=env, stdout=f, stderr=subprocess.STDOUT, timeout=timeout)
+            r = subprocess.run(cmd, env=env, stdin=subprocess.DEVNULL, stdout=f, stderr=subprocess.STDOUT,
+                               timeout=timeout)
             return r.returncode
         except subprocess.TimeoutExpired:
             f.write(f"\n[run_proposer] timed out after {timeout}s\n")

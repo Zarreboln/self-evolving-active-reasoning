@@ -1,7 +1,7 @@
 #!/bin/bash
 # One-time (and after a Docker restart): build the images, the internal network and the proxy.
 set -euo pipefail
-export PATH=$HOME/.docker/bin:$PATH
+export PATH=/Applications/Docker.app/Contents/Resources/bin:$PATH
 cd "$(dirname "$0")"
 docker build -q -t ar-proposer:2.1.326 .
 docker build -q -t ar-egress:1 egress

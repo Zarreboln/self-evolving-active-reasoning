@@ -1,7 +1,9 @@
 # Official initial agents of the suite's benchmarks (checked 2026-11-25, read-only)
 
-Decision (user, 2026-11-25): every task starts from its benchmark's own agent where one exists, else from the
-most widely used one (labelled "not official"); two versions per task, one without and one with reasoning.
+Decision (user, 2026-11-25): where public code exists, follow it exactly (environment and agent); where it does
+not, use one unified setting, which is BALROG's task-agnostic `naive` / `cot` pair. Two versions per task, one
+without and one with reasoning. Blicket: environment as CannyLab's public causal_env_v0 defaults (3 objects,
+subtask `official`, replacing n5); no public LLM agent, so the unified BALROG pair.
 
 | task | official? | without reasoning | with reasoning | examples | source |
 |---|---|---|---|---|---|
@@ -10,7 +12,7 @@ most widely used one (labelled "not official"); two versions per task, one witho
 | BabyAI (BALROG) | yes | `naive` (paper's main results, history 16) | `cot` | none | BALROG `config/config.yaml`, `agents/naive.py`, `agents/chain_of_thought.py` |
 | ALFWorld | no; ReAct is the standard | ReAct `act_put_{1,0}` | ReAct `react_put_{1,0}` (`think:` steps) | 2 hand-written demos | ysymyth/ReAct `alfworld.ipynb`, `prompts/alfworld_3prompts.json` |
 | ScienceWorld | no (original baselines are RL) | SwiftSage SayCan prompt (`prompt_no_think.jsonl`) | SwiftSage ReAct baseline (`prompt.jsonl`, key "27" = test-conductivity) | 1 demo from a gold trajectory | SwiftSage branch `science_world`, `baselines/eval_agent_react.py` |
-| Blicket | no interactive agent (Kosoy et al. 2206.08353 is one-shot passive inference) | GX-Chen et al. 2505.09614 "Default" | GX-Chen "ReAct" | none | 2505.09614 App. B |
+| Blicket | no public interactive agent (Kosoy et al. 2206.08353 is one-shot passive inference; GX-Chen 2505.09614 has no code) | unified: BALROG `naive` | unified: BALROG `cot` | none | env: CannyLab causal_overhypotheses `causal_env_v0.py` |
 
 ## Details that matter for porting
 - AR-Bench zero_shot never stops early: GN plays 25 turns and is judged on a final guess after them; DC asks 25
@@ -30,4 +32,4 @@ most widely used one (labelled "not official"); two versions per task, one witho
 2. TextArena games built with `-raw`: no `LLMObservationWrapper` / `ActionFormattingWrapper`.
 3. BabyAI parser more lenient than BALROG's; invalid-action text not BALROG's.
 4. ALFWorld step limit 50 vs ReAct's 49.
-5. Blicket n5: no source uses 5 objects (original 3; GX-Chen 3, 4, 8).
+5. Blicket n5: no source uses 5 objects (original 3; GX-Chen 3, 4, 8). Resolved: use the public env's default, subtask `official` (3 objects).

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Step 1a: AR-Bench's own evaluators, unchanged, on our split, against Qwen3.5-9B (thinking off).
-# GN and DC with proactive_cot (the official reasoning agent). DC's suspects are the same model, as in
+# GN and DC with zero_shot, AR-Bench's default agent (its README example). DC's suspects are the same model, as in
 # AR-Bench's own runs. Each task's items are sharded (mb/official/prep_arbench.py) and every shard is a
 # separate evaluator process; AR-Bench resumes each from its own log, so a requeue after preemption
 # continues where it stopped. 4 GPUs, one vLLM server each, shards spread round-robin.
@@ -21,7 +21,7 @@ REPO=Qwen/Qwen3.5-9B
 export VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_ATTENTION_BACKEND=FLASH_ATTN
 export HF_HOME=$HOME/hf_cache VLLM_LOGGING_LEVEL=WARNING
 OUT=${OUT:-/data/team-bath/tmp_l/official/arbench}; SPLIT=${SPLIT:-test}; SHARDS=${SHARDS:-10}
-METHODS=${METHODS:-proactive_cot}; TASKS=${TASKS:-gn,dc}
+METHODS=${METHODS:-zero_shot}; TASKS=${TASKS:-gn,dc}
 echo "host=$(hostname) start=$(date -Is) restart=${SLURM_RESTART_COUNT:-0} split=$SPLIT methods=$METHODS"
 BASE=$(( 9000 + RANDOM % 800 )); SERVERS=(); URLS=()
 for g in $(seq 0 $(( ${SLURM_GPUS_ON_NODE:-4} - 1 ))); do

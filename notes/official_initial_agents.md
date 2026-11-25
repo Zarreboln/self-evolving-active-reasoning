@@ -4,6 +4,8 @@ Decision (user, 2026-11-25): where public code exists, follow it exactly (enviro
 not, use one unified setting, which is BALROG's task-agnostic `naive` / `cot` pair. Two versions per task, one
 without and one with reasoning. Blicket: environment as CannyLab's public causal_env_v0 defaults (3 objects,
 subtask `official`, replacing n5); no public LLM agent, so the unified BALROG pair.
+**Blicket dropped (user, 2026-11-25):** the public env's default gives only 6 instances, identical across
+search/selection/test. The experiment has 9 tasks.
 
 | task | official? | without reasoning | with reasoning | examples | source |
 |---|---|---|---|---|---|

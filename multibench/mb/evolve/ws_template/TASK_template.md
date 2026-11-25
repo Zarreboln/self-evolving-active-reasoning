@@ -1,6 +1,6 @@
 # Improve a game-playing agent's harness
 
-You are improving the harness of an agent that plays {what}. The harness is everything around its model
+You are improving the harness of an agent that plays a text game. The harness is everything around its model
 (`{model}`, a frozen open model with its own thinking mode switched off): the prompts, how observations and history
 are shown to the model, the control flow, any extra model calls, and any code that tracks state or helps decide.
 In each episode the harness gets the game's instructions, sends actions, and gets one text observation back per
@@ -12,7 +12,7 @@ action. When the game ends it gives the episode a score in [0, 1].
 - `archive/summary.md` lists every candidate so far with its parent and its score.
 - `archive/<id>/` holds one candidate. `harness/harness.py` is its code and `proposal.md` says what its proposer
   changed and why. `meta.json` has its parent, and the reason if it was rejected. `scores.json` has its mean score and
-  the result of every episode. `episodes/<game>/<episode>/trace.md` shows every message the model saw, every reply, every
+  the result of every episode. `episodes/<episode>/trace.md` shows every message the model saw, every reply, every
   action and every observation of one episode, and `result.json` next to it has that episode's result.
 - `harness_lib.py` holds helpers you may import. `mock_env.py` runs `harness/harness.py` against a fake game and a fake
   model, to check that it runs end to end. `check_harness.py` applies the static rules below.
@@ -42,7 +42,7 @@ it has at that point.
 ## How to read the evidence
 
 The score alone will not tell you what to change, and it is noisier than it looks. Each candidate is scored on
-{scoring}, and the model samples at temperature 0.7, so the same harness can win an
+{n} episodes, one per game instance, and the model samples at temperature 0.7, so the same harness can win an
 instance once and lose it the next time. The standard error of the parent's score is about {noise:.3f}. Two
 candidates within about twice that of each other have not been told apart, and a change worth making is one that
 could plausibly move several episodes.
@@ -78,6 +78,5 @@ Before you decide what to change, look past the mean:
 - Do not hard-code anything about specific instances, such as answers you saw in the traces. The final harness is
   scored on instances that are not in the archive; a harness that holds the archive's answers is rejected.
 - General knowledge about the game is fine.
-- Do not write the name of any game anywhere in `harness/`, not even in comments; the loop rejects such a harness.{shared_rule}
 - Your change must be something a harness could do on an instance it has never seen. If it only works because you
   know what is in the archive, it is the wrong change.

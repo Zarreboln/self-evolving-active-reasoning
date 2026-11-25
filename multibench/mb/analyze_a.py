@@ -35,6 +35,13 @@ GROUP = {"gn": 0, "dc": 0, "mastermind": 0, "hangman": 0, "twentyq": 0, "wordle"
 GROUP_NAMES = ["pure", "intermediate", "world"]
 
 
+def set_baseline(name):
+    """Measure gains against `name` instead of seed (the think control): it becomes arm 0."""
+    global STRATS
+    if name != "seed":
+        STRATS[:] = [name] + COMPS
+
+
 def load(out, keep_errors=False):
     """{cell: array [strategy, instance]} on the instances every strategy finished cleanly. With
     keep_errors (sensitivity check, not the pre-registered analysis), an errored episode counts
@@ -89,7 +96,9 @@ def main():
     ap.add_argument("--boot", type=int, default=10_000)
     ap.add_argument("--halves", type=int, default=200)
     ap.add_argument("--keep-errors", action="store_true", help="sensitivity: score errored episodes")
+    ap.add_argument("--baseline", default="seed", help="arm the gains are measured against (e.g. think)")
     a = ap.parse_args()
+    set_baseline(a.baseline)
     rng = np.random.default_rng(0)
     data, dropped = load(a.out, a.keep_errors)
     names = [f"{b}/{s}" for b, s in CELLS]
@@ -162,7 +171,7 @@ def main():
     json.dump({"cells": names, "components": COMPS, "delta": D.tolist(), "lo": lo.tolist(),
                "hi": hi.tolist(), "cv": {m: [float(np.mean(err[m])), float(np.std(err[m]))] for m in models},
                "sign_both": both, "pass": passed},
-              open(os.path.join(a.out, "analysis_a" + ("_keep_errors" if a.keep_errors else "") + ".json"), "w"), indent=1)
+              open(os.path.join(a.out, "analysis_a" + ("" if a.baseline == "seed" else "_vs_" + a.baseline) + ("_keep_errors" if a.keep_errors else "") + ".json"), "w"), indent=1)
 
 
 if __name__ == "__main__":

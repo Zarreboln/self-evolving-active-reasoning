@@ -72,3 +72,17 @@ Reading:
   - At the same k, L1 beats S up to k = 5. From k = 8 on, S wins.
 - **Without GN, the global mean (0 episodes, 0.038) is about as good as anything below ~40 episodes.** At these sample sizes, most per-task variation outside GN is noise. The task-specific signal is concentrated in a few cells.
 - The reasoning-elicitation confound from the first analysis still applies to all of this.
+
+## think control (job 11607, 2026-11-25 14:46–15:16 UTC, 1× H100, ~0.5 GPU-h; post-hoc arm, see strategies.py)
+`think` = seed + free reasoning in a <reasoning> block, nothing else. Its scores: gn 1.00, alfworld 1.00, mastermind 0.95, blicket 0.94, babyai 0.80, wordle 0.65, hangman 0.61, 20Q 0.47, sciworld 0.16, dc 0.13.
+So most of the seed-relative gains in the first table were reasoning elicitation: think alone takes gn 0.15→1.00 and alfworld 0.77→1.00. Reasoning also hurts sciworld (0.53→0.16, premature focus) and dc (0.37→0.13).
+
+Gains against think (same pre-registered analysis, `--baseline think`):
+- belief: no significant cell anywhere. Its earlier gains were all reasoning.
+- plan and check: significantly negative on mastermind/wordle (plan also on blicket), positive nowhere.
+- brief (less reasoning): +0.38 on sciworld; negative on gn, mastermind, blicket, alfworld and babyai.
+- Sign part: only brief has both signs → **fails** (1/4). Structure part: L2 0.0258 < S 0.0263 < L1 0.0301 < H 0.0328 < G 0.0348; L2 beats G in 86% of halves, H in 85%, S in 60% → **passes**. Overall not passed.
+- Rank-1 interaction = "how much reasoning": component loadings brief 0.76, check 0.53, plan 0.38, belief −0.01. Tasks that want less reasoning are sciworld (+0.57) and dc (+0.38); tasks that want more are mastermind (−0.62), wordle and gn.
+- Few-shot against think: the global mean (0 episodes) 0.033 is the best predictor up to ~25 episodes. L2 beats S at every k (k=5: 0.036 vs 0.044; k=12: 0.0245 vs 0.0256), but only by a little. The belief-only probe is undefined: belief's loading is ~0, so the probe divides by zero (the table's 10^3 values).
+
+Reading: with the reasoning confound removed, four hand-written prompt components show one real axis (reasoning amount, which tasks want in opposite directions) and little else. They are too coarse to test partial sharing. Structure, if any, has to come from task-specific components that B evolves, e.g. a gn enumerator or a sciworld focus guard. Recommendation: B starts from `think`, not from the thinking-off seed.

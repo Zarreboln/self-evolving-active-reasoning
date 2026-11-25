@@ -13,7 +13,7 @@ import os
 
 import numpy as np
 
-from mb.analyze_a import CELLS, GROUP, delta, load
+from mb.analyze_a import CELLS, GROUP, delta, load, set_baseline
 
 KS = (1, 2, 3, 5, 8, 12)
 
@@ -70,7 +70,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", required=True)
     ap.add_argument("--draws", type=int, default=200)
+    ap.add_argument("--baseline", default="seed")
     a = ap.parse_args()
+    set_baseline(a.baseline)
     data, _ = load(a.out)
     print("held-out MSE of the predicted 4-vector of gains; (Nk) = episodes spent on the new task\n")
     print("== all 10 tasks")

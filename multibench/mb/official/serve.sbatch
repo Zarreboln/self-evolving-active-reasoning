@@ -5,9 +5,9 @@
 #     sbatch --job-name=off_textarena ~/code/multibench/mb/official/serve.sbatch
 #SBATCH --job-name=off_run
 #SBATCH --partition=h100_1
-#SBATCH --gres=gpu:4
-#SBATCH --cpus-per-task=48
-#SBATCH --mem=256G
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --qos=lowprio
 #SBATCH --nodelist=ml-16-node-001

@@ -17,6 +17,7 @@ import json
 import math
 import os
 import time
+import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 BALROG = os.path.expanduser("~/code/multibench/BALROG")
@@ -72,7 +73,9 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--n", type=int, default=100)
     ap.add_argument("--workers", type=int, default=64)
+    ap.add_argument("--shard", default="0/1", help="i/k: run every k-th pending episode starting at i (one GPU job each)")
     a = ap.parse_args()
+    si, sk = map(int, a.shard.split("/"))
     from mb.benches import get
     urls = [u for u in os.environ["POLICY_BASE_URLS"].split(",") if u]
     model = os.environ["POLICY_MODEL"]
@@ -85,6 +88,7 @@ def main():
         if os.path.exists(p) and "error" not in json.load(open(p)):
             continue
         jobs.append((a.out, a.agent, a.level, s, urls[len(jobs) % len(urls)], model, i))
+    jobs = [j for j in jobs if zlib.crc32(str(j[3]).encode()) % sk == si]   # fixed across requeues
     print(f"{len(jobs)} episodes to run", flush=True)
     with ProcessPoolExecutor(a.workers) as ex:
         for f in as_completed([ex.submit(episode, j) for j in jobs]):

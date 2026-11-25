@@ -23,6 +23,7 @@ import json
 import math
 import os
 import time
+import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 PROMPTS = os.path.join(os.path.dirname(__file__), "..", "evolve", "seeds_src", "alfworld_3prompts.json")
@@ -92,7 +93,9 @@ def main():
     ap.add_argument("--split", default="test")
     ap.add_argument("--n", type=int, default=0)
     ap.add_argument("--workers", type=int, default=48)
+    ap.add_argument("--shard", default="0/1", help="i/k: run every k-th pending episode starting at i (one GPU job each)")
     a = ap.parse_args()
+    si, sk = map(int, a.shard.split("/"))
     from mb.benches.alfworld import instances
     urls = [u for u in os.environ["POLICY_BASE_URLS"].split(",") if u]
     model = os.environ["POLICY_MODEL"]
@@ -104,6 +107,7 @@ def main():
         if os.path.exists(p) and "error" not in json.load(open(p)):
             continue
         jobs.append((a.out, a.agent, a.subtask, g, urls[len(jobs) % len(urls)], model))
+    jobs = [j for j in jobs if zlib.crc32(str(j[3]).encode()) % sk == si]   # fixed across requeues
     print(f"{len(jobs)} episodes to run of {len(games)}", flush=True)
     with ProcessPoolExecutor(a.workers) as ex:
         for f in as_completed([ex.submit(episode, j) for j in jobs]):

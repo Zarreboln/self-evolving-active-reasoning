@@ -7,9 +7,9 @@
 #   OUT=/data/team-bath/tmp_l/official/arbench SPLIT=test sbatch ~/code/multibench/mb/official/arbench.sbatch
 #SBATCH --job-name=off_arbench
 #SBATCH --partition=h100_1
-#SBATCH --gres=gpu:4
-#SBATCH --cpus-per-task=32
-#SBATCH --mem=192G
+#SBATCH --gres=gpu:1
+#SBATCH --cpus-per-task=16
+#SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --qos=lowprio
 #SBATCH --nodelist=ml-16-node-001
@@ -47,6 +47,8 @@ for task in ${TASKS//,/ }; do
   for m in ${METHODS//,/ }; do
     mkdir -p "$OUT/logs/$task/$m/$SPLIT"
     for s in $(seq 0 $((SHARDS - 1))); do
+      # as a job array, task t runs shards t, t+n, ... (one GPU each, filling whatever is free)
+      [ -n "${SLURM_ARRAY_TASK_ID:-}" ] && [ $((s % SLURM_ARRAY_TASK_COUNT)) -ne "$SLURM_ARRAY_TASK_ID" ] && continue
       URL=${URLS[$((k % ${#URLS[@]}))]}; k=$((k + 1))
       DATA="$OUT/data/$task/$SPLIT/shard$s.json"; LOG="$OUT/logs/$task/$m/$SPLIT/shard$s.json"
       if [ "$task" = gn ]; then

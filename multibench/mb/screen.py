@@ -52,9 +52,13 @@ def _episode(args):
     try:
         responder = None
         if b.responder:
-            from mb.jev import Jev, responder_for
-            jev = Jev()
-            responder = responder_for(bench, jev) or make_chat(url, model, rc)
+            # Jev plays SP / 20Q / Guess Who only when asked for (MB_USE_JEV=1); otherwise every
+            # LLM-played role is the run's chat model. Never a silent mix of the two.
+            if os.environ.get("MB_USE_JEV") == "1":
+                from mb.jev import Jev, responder_for
+                jev = Jev()
+                responder = responder_for(bench, jev)
+            responder = responder or make_chat(url, model, rc)
         env = b.make(sub, inst, responder)
         r = run_episode(env, make_chat(url, model, pc))
     except Exception as e:

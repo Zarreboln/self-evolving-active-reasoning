@@ -18,6 +18,7 @@ import os
 import sys
 import threading
 import time
+import urllib.error
 import urllib.request
 
 # The user's access is a JevHub (jevgo.cn, Jev's official reseller) key: same protocol, same model
@@ -59,6 +60,8 @@ class Jev:
                 if label in criteria:
                     return label
                 last = ValueError(f"Jev returned {label!r}")
+            except urllib.error.HTTPError as e:     # keep the server's reason and what was asked
+                last = RuntimeError(f"HTTP {e.code}: {e.read()[:300]!r}; state={json.dumps(state)[:300]}")
             except Exception as e:          # 429 / 5xx / transport
                 last = e
             time.sleep(1.5 * (a + 1))

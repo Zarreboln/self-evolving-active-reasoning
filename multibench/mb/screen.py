@@ -48,13 +48,21 @@ def _episode(args):
     b = get(bench)
     pc, rc = Counter(), Counter()
     t0 = time.time()
+    jev = None
     try:
-        env = b.make(sub, inst, make_chat(url, model, rc) if b.responder else None)
+        responder = None
+        if b.responder:
+            from mb.jev import Jev, responder_for
+            jev = Jev()
+            responder = responder_for(bench, jev) or make_chat(url, model, rc)
+        env = b.make(sub, inst, responder)
         r = run_episode(env, make_chat(url, model, pc))
     except Exception as e:
         r = {"bench": bench, "subtask": sub, "instance": inst, "score": float("nan"),
              "success": None, "error": "setup/run: " + repr(e)}
     r.update(policy_tokens=pc.as_dict(), responder_tokens=rc.as_dict(), seconds=round(time.time() - t0, 1))
+    if jev is not None and jev.calls:
+        r["jev"] = jev.usage()
     _write(out, bench, sub, inst, r)
     return bench, sub, r.get("score"), r.get("error")
 

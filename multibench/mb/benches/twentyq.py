@@ -1,8 +1,9 @@
 """Twenty Questions, TextArena's official implementation, one subtask per (word list, theme).
 
 One deliberate change: TextArena hard-codes GPT-4o through OpenRouter as the gamemaster. Here the
-gamemaster is the run's pinned responder model, called with TextArena's own prompt, options and
-fallback. Everything else -- the word lists, the 20-question limit, the bracketed final guess, and
+gamemaster is the run's pinned responder: Jev (mb/jev.py), given the secret and the player's
+question and answering with TextArena's own options; or a chat model called with TextArena's own
+prompt, options and fallback. Everything else -- the word lists, the 20-question limit, the bracketed final guess, and
 the substring check that decides a win -- is TextArena's.
 
 score = success = the target word appears in the bracketed guess (TextArena's rule)
@@ -11,6 +12,7 @@ from __future__ import annotations
 
 import importlib.resources
 import json
+import re
 
 import textarena as ta
 
@@ -43,6 +45,12 @@ class _NoAgent:
         pass
 
 
+def _question(prompt):
+    """The player's question out of TextArena's gamemaster prompt ("...Q: {action}\\nOptions: ...")."""
+    m = re.findall(r"\nQ: (.*?)\nOptions:", prompt, re.S)
+    return (m[-1] if m else prompt).strip()
+
+
 class TwentyQEnv(TextEnv):
     reads_full_reply = True
     bench = BENCH
@@ -57,8 +65,13 @@ class TwentyQEnv(TextEnv):
             self._env = ta.make(_LEVELS[lv] + "-raw")
         finally:
             ta.agents.OpenRouterAgent = real
-        self._env.gamemaster = lambda prompt: responder(
-            [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
+        if getattr(responder, "jev_role", None) == "gamemaster":
+            # Jev answers from the secret and the player's question with TextArena's own options
+            self._env.gamemaster = lambda prompt: responder.answer(
+                "20 Questions", instance, _question(prompt))
+        else:
+            self._env.gamemaster = lambda prompt: responder(
+                [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
         self._env.word_list = {th: [instance]}      # reset() draws theme and word from this
         seeded(0, self._env.reset, num_players=1, seed=0)   # reset() reseeds the global RNG
         self.max_steps = self._env.state.max_turns + 1

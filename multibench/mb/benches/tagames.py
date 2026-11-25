@@ -12,8 +12,9 @@ adapter does three things only:
   * The observation after each move is the game's messages plus the current board when the game
     keeps one (`rendered_board`), which is what TextArena's own board wrapper shows; the raw env
     sends the move confirmation alone.
-  * Guess Who's gamemaster, hard-coded to GPT-4o through OpenRouter, is the run's pinned responder,
-    with TextArena's prompt and options -- the same change as twentyq.
+  * Guess Who's gamemaster, hard-coded to GPT-4o through OpenRouter, is the run's pinned responder
+    -- Jev given the target's trait record, or a chat model with TextArena's prompt -- answering
+    with TextArena's options, the same change as twentyq.
 
 Two TextArena rules worth knowing when reading scores: Minesweeper counts hitting a mine as an
 invalid move, so with one error allowed the first mine does not end the game; and every game here
@@ -111,8 +112,14 @@ class TAGameEnv(TextEnv):
         if RESPONDER[game]:
             if responder is None:
                 raise ValueError(f"{game} needs a responder to play the gamemaster")
-            self._env.gamemaster = lambda prompt: responder(
-                [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
+            if getattr(responder, "jev_role", None) == "gamemaster":
+                # Jev answers from the target's trait record (read at call time, after reset)
+                from mb.benches.twentyq import _question
+                self._env.gamemaster = lambda prompt: responder.answer(
+                    "Guess Who", json.dumps(self._env.target_character), _question(prompt))
+            else:
+                self._env.gamemaster = lambda prompt: responder(
+                    [{"role": "user", "content": prompt}], temperature=0.0, max_tokens=64)
         self._seed = int(instance)
         seeded(self._seed, self._env.reset, num_players=1, seed=self._seed)
         self.max_steps = (self._env.state.max_turns or 50) + 2   # room for the allowed error

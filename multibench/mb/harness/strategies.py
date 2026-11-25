@@ -14,6 +14,10 @@ two-level harness would do). Each component is a small, fixed change to the seed
           step of a task) the model writes a <check> testing it against all observations, and
           gathers more information instead if the check fails. Not carried forward.
   brief   reasoning is capped at about 50 words per turn. No block.
+  think   (control, added after A's first analysis) free reasoning in a <reasoning> block before
+          each action, with no structure asked for. Not carried forward. Comparing a component
+          with `think` instead of `seed` separates its content from merely making the model
+          reason, which the thinking-off seed barely does on several tasks.
 
 Blocks are removed from the reply before the env sees it, because several benches parse the
 whole reply (env.reads_full_reply) and would read e.g. a bracketed candidate list as a move.
@@ -53,8 +57,12 @@ STRATEGIES = {
     "brief": {
         "system": ("\n\nKeep your reasoning to at most 50 words per turn, then give the action."),
         "carry": None},
+    "think": {
+        "system": ("\n\nBefore each action, reason step by step about the situation and what to do "
+                   "next inside a <reasoning>...</reasoning> block." + _NO_BRACKETS.format(tag="reasoning")),
+        "carry": None},
 }
-_BLOCK = re.compile(r"<(belief|plan|check)>(.*?)</\1>", re.S | re.I)
+_BLOCK = re.compile(r"<(belief|plan|check|reasoning)>(.*?)</\1>", re.S | re.I)
 
 
 def split_blocks(reply):

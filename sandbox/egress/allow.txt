@@ -1,1 +1,3 @@
 ^api\.anthropic\.com$
+^api\.deepseek\.com$
+^api\.pinference\.ai$

@@ -30,6 +30,19 @@ PROXY = "http://ar-egress:8888"
 TOOLS = "Read,Glob,Grep,Agent,Write,Edit,Bash"
 CRED_FILES = {"CLAUDE_CODE_OAUTH_TOKEN": "~/.claude_proposer_oauth_token",   # subscription (claude setup-token)
               "ANTHROPIC_API_KEY": "~/.anthropic_proposer_api_key"}          # pay-as-you-go
+# DeepSeek serves an Anthropic-compatible endpoint, so Claude Code drives it unchanged (as in MAS.S62 HW2).
+DEEPSEEK_KEY_FILE = "~/.deepseek_proposer_api_key"
+DEEPSEEK_URL = "https://api.deepseek.com/anthropic"
+# Prime Intellect inference also accepts Anthropic-format requests (checked 2026-11-26); model ids
+# carry a provider prefix, e.g. qwen/qwen3.5-9b.
+PRIME_KEY_FILE = "~/.prime_proposer_api_key"
+PRIME_URL = "https://api.pinference.ai/api"
+# USD per 1M tokens (input cache miss, input cache hit, output), off-peak; peak hours
+# (01:00-04:00 and 06:00-10:00 UTC, Mon-Fri) are double. Taken from MAS.S62 HW2 (hw2/model.py, 2026-11).
+PRICES = {"deepseek-v4-pro": (0.66, 0.022, 1.98), "deepseek-flash": (0.15, 0.003, 0.60)}
+# Prime Intellect catalog (api.pinference.ai/api/v1/models, read 2026-11-26); no peak pricing.
+PRIME_PRICES = {"qwen/qwen3.5-9b": (0.17, 0.153, 0.25), "qwen/qwen3-235b-a22b-2507": (0.25, 0.25, 1.0),
+                "anthropic/claude-opus-5.5": (4.0, 4.0, 20.0)}
 
 
 def _credential():
@@ -40,10 +53,64 @@ def _credential():
     return var, path.read_text().strip()
 
 
+def _deepseek_env(model, key_file=DEEPSEEK_KEY_FILE, url=DEEPSEEK_URL):
+    secret = Path(key_file).expanduser().read_text().strip()
+    names = {"ANTHROPIC_BASE_URL": url, "ANTHROPIC_MODEL": model,
+             "ANTHROPIC_DEFAULT_OPUS_MODEL": model, "ANTHROPIC_DEFAULT_SONNET_MODEL": model,
+             "ANTHROPIC_DEFAULT_HAIKU_MODEL": model, "CLAUDE_CODE_SUBAGENT_MODEL": model}
+    return "ANTHROPIC_AUTH_TOKEN", secret, names
+
+
+def deepseek_cost(log: Path):
+    """Metered USD of a DeepSeek session from its own token counts (Claude Code's total_cost_usd uses
+    Anthropic list prices, about nine times too high here; HW2). Off-peak price, x2 if any part of the
+    session fell in DeepSeek's peak hours; returns (usd, peak)."""
+    import json, time
+    cost, peak = 0.0, False
+    for line in log.read_text(errors="ignore").splitlines():
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if e.get("type") == "result":
+            cost = 0.0
+            for m, u in (e.get("modelUsage") or {}).items():
+                miss, hit, out = PRICES.get(m, PRICES["deepseek-v4-pro"])
+                cost += ((u.get("inputTokens", 0) + u.get("cacheCreationInputTokens", 0)) * miss
+                         + u.get("cacheReadInputTokens", 0) * hit + u.get("outputTokens", 0) * out) / 1e6
+    t = time.gmtime(log.stat().st_mtime)
+    peak = t.tm_wday < 5 and (1 <= t.tm_hour < 4 or 6 <= t.tm_hour < 10)
+    return round(cost * (2 if peak else 1), 4), peak
+
+
+def prime_cost(log: Path):
+    """Metered USD of a Prime Intellect session from its own token counts and the catalog price."""
+    import json
+    cost = 0.0
+    for line in log.read_text(errors="ignore").splitlines():
+        try:
+            e = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if e.get("type") == "result":
+            cost = 0.0
+            for m, u in (e.get("modelUsage") or {}).items():
+                miss, hit, out = PRIME_PRICES[m]
+                cost += ((u.get("inputTokens", 0) + u.get("cacheCreationInputTokens", 0)) * miss
+                         + u.get("cacheReadInputTokens", 0) * hit + u.get("outputTokens", 0) * out) / 1e6
+    return round(cost, 4)
+
+
 def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=True):
     ws = ws.resolve()
     task = "Follow the instructions in TASK.md (they are repeated here).\n\n" + (ws / "TASK.md").read_text()
-    var, secret = _credential()
+    extra = {}
+    if model.startswith("deepseek"):
+        var, secret, extra = _deepseek_env(model)
+    elif "/" in model:                                  # provider/model -> Prime Intellect
+        var, secret, extra = _deepseek_env(model, PRIME_KEY_FILE, PRIME_URL)
+    else:
+        var, secret = _credential()
     cmd = [DOCKER, "run", "--rm", "-i",
            "--read-only", "--tmpfs", "/home/proposer:rw,exec,uid=1001,gid=1001,size=512m",
            "--tmpfs", "/tmp:rw,exec,size=512m",
@@ -52,6 +119,8 @@ def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=T
            "-v", f"{ws}:/work:rw", "-w", "/work",
            "-e", var, "-e", "HOME=/home/proposer", "-e", "DISABLE_AUTOUPDATER=1",
            "-e", "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1"]
+    for k, v in extra.items():
+        cmd += ["-e", f"{k}={v}"]
     if network:
         cmd += ["--network", NETWORK, "-e", f"HTTPS_PROXY={PROXY}", "-e", f"HTTP_PROXY={PROXY}"]
     else:

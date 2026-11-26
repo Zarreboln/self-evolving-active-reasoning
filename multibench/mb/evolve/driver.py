@@ -37,7 +37,12 @@ def running(jid):
 
 def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log):
     box.pull()
-    reqs = sorted(p.parent for p in (box.repo / "requests").rglob("request.json"))
+    def asked(d):                                   # first come, first served (not by name: "ours"
+        try:                                        # would wait behind every "abl_*"/"mh_*" request)
+            return json.loads((d / "request.json").read_text()).get("submitted", 0)
+        except Exception:
+            return 0
+    reqs = sorted((p.parent for p in (box.repo / "requests").rglob("request.json")), key=asked)
     places = PLACES[cluster]
     used = [sum(1 for s in state.values() if s.get("job") and s.get("place") == i and running(s["job"]))
             for i in range(len(places))]

@@ -3,6 +3,7 @@
 # claims the work and cancels its pending siblings; a copy that starts later sees the claim and exits.
 GPU_TYPES=${GPU_TYPES:-"l40s a100 h100 h200 rtx_a6000"}   # Blackwell, L4 and MIG left out (see notes)
 GPU_PARTS=mit_normal_gpu,mit_preemptable
+# MB_EXCLUDE (from ~/.mb_site.sh): nodes whose GPUs failed to start CUDA
 
 # race_claim DIR: 0 = this job owns DIR's work (siblings cancelled), 1 = another live copy owns it
 race_claim() {
@@ -22,7 +23,8 @@ race_claim() {
 race_submit() {
   local name=$1 args=$2 script=$3 ids=() t j
   for t in $GPU_TYPES; do
-    j=$(sbatch --parsable -J "$name" --partition=$GPU_PARTS --gres=gpu:$t:1 $args "$script" 2>/dev/null) && ids+=("$j")
+    j=$(sbatch --parsable -J "$name" --partition=$GPU_PARTS --gres=gpu:$t:1 ${MB_EXCLUDE:+--exclude=$MB_EXCLUDE} \
+        $args "$script" 2>/dev/null) && ids+=("$j")
   done
   (IFS=,; echo "${ids[*]}")
 }

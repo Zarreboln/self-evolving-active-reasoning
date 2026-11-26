@@ -19,6 +19,8 @@ Selection and test results carry no export, so nothing from those splits can rea
 """
 from __future__ import annotations
 
+import contextlib
+import fcntl
 import json
 import shutil
 import subprocess
@@ -81,10 +83,25 @@ class Mailbox:
         return subprocess.run(["git", "-C", str(self.repo), *args], check=check, text=True,
                               capture_output=True)
 
+    @contextlib.contextmanager
+    def lock(self):
+        """Several orchestrators (and nothing else) share one clone: one git operation at a time."""
+        with open(self.repo / ".git" / "mailbox.lock", "w") as f:
+            fcntl.flock(f, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(f, fcntl.LOCK_UN)
+
     def pull(self):
-        self._git("pull", "-q", "--rebase")
+        with self.lock():
+            self._git("pull", "-q", "--rebase")
 
     def push(self, msg):
+        with self.lock():
+            self._push(msg)
+
+    def _push(self, msg):
         self._git("add", "-A")
         if self._git("diff", "--cached", "--quiet", check=False).returncode == 0:
             return
@@ -99,17 +116,22 @@ class Mailbox:
         pass                                    # the cluster runs the code its own checkout holds
 
     def submit(self, key, harness, params):
-        self.pull()
-        req = self.repo / "requests" / key
-        shutil.rmtree(self.repo / "results" / key, ignore_errors=True)
-        req.mkdir(parents=True, exist_ok=True)
-        shutil.copy(harness, req / "harness.py")
-        (req / "request.json").write_text(json.dumps({**params, "submitted": time.time()}, indent=1))
-        self.push(f"request {key}")
+        with self.lock():
+            self._git("pull", "-q", "--rebase")
+            req = self.repo / "requests" / key
+            shutil.rmtree(self.repo / "results" / key, ignore_errors=True)
+            req.mkdir(parents=True, exist_ok=True)
+            shutil.copy(harness, req / "harness.py")
+            (req / "request.json").write_text(json.dumps({**params, "submitted": time.time()}, indent=1))
+            self._push(f"request {key}")
 
     def result(self, key):
         """None until the driver has a final answer (it resubmits incomplete runs itself)."""
         self.pull()
+        with self.lock():
+            return self._result(key)
+
+    def _result(self, key):
         d = self.repo / "results" / key
         if (d / "failed.json").exists():
             raise RuntimeError(f"{key}: driver gave up: {(d / 'failed.json').read_text()[:300]}")
@@ -118,8 +140,8 @@ class Mailbox:
         return read_result(lambda name: (d / name).read_text() if (d / name).exists() else "")
 
     def fetch_export(self, key, dest):
-        src = self.repo / "results" / key / "export"
-        shutil.copytree(src, dest, dirs_exist_ok=True)
+        with self.lock():
+            shutil.copytree(self.repo / "results" / key / "export", dest, dirs_exist_ok=True)
 
 
 def env_for(params, cand, out, dest):

@@ -144,6 +144,27 @@ class Mailbox:
             shutil.copytree(self.repo / "results" / key / "export", dest, dirs_exist_ok=True)
 
 
+def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True, poll=10):
+    """Play these instances with this harness on the cluster's long-lived worker (mb/evolve/worker.py);
+    returns the local folder of what the method may read. Scores stay in play_results/<key>/private.json,
+    which the caller's method code must not read (our reports do)."""
+    with box.lock():
+        box._git("pull", "-q", "--rebase")
+        req = box.repo / "play_requests" / key
+        shutil.rmtree(box.repo / "play_results" / key, ignore_errors=True)
+        req.mkdir(parents=True, exist_ok=True)
+        shutil.copy(harness, req / "harness.py")
+        (req / "request.json").write_text(json.dumps({"cell": cell, "split": split, "instances": list(instances),
+                                                      "visible_only": visible_only, "submitted": time.time()}))
+        box._push(f"play request {key}")
+    res = box.repo / "play_results" / key
+    while True:
+        box.pull()
+        if (res / "private.json").exists():
+            return res / "visible"
+        time.sleep(poll)
+
+
 def env_for(params, cand, out, dest):
     """Environment for eval_cand.sbatch, from the request's parameters."""
     env = {"CAND": cand, "OUT": out, "CELL": params["cell"], "SPLIT": params["split"], "N": params["n"]}

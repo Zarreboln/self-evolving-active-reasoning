@@ -211,7 +211,11 @@ def run(a):
     urls = [u.strip().rstrip("/") for u in os.environ["POLICY_BASE_URLS"].split(",") if u.strip()]
     bench, sub = a.cell.split(":", 1)
     jobs, done = [], 0
-    for inst in instances(a.cell, a.split, a.n):
+    chosen = a.instances.split(",") if a.instances else instances(a.cell, a.split, a.n)
+    if a.instances:                       # only ids that really are in this split
+        valid = set(instances(a.cell, a.split, None))
+        assert all(i in valid for i in chosen), "instance not in split"
+    for inst in chosen:
         p = _path(a.out, bench, sub, inst)
         if os.path.exists(p) and "infra" not in json.load(open(p)):
             done += 1
@@ -336,6 +340,7 @@ def main():
     ap.add_argument("--out")
     ap.add_argument("--dest")
     ap.add_argument("--workers", type=int, default=32)
+    ap.add_argument("--instances", default="", help="comma-separated instance ids to play (default: first --n)")
     ap.add_argument("--smoke", action="store_true", help="run one episode first, reject a child that cannot run")
     a = ap.parse_args()
     if a.cmd == "one":

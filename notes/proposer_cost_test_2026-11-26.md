@@ -36,3 +36,22 @@ submitted a guess it already knew was invalid (NICE, 4 letters), twice, and lost
 - Prime-hosted Qwen models are reachable only through an Anthropic-to-OpenAI bridge
   (`sandbox/bridge/`, LiteLLM). The bridge is built but not run yet; this waits for the user's go-ahead,
   because it spends Prime credits (estimate under $1).
+
+## Qwen as proposer, through the LiteLLM bridge to Prime (run 10:30–11:16 UTC)
+| Proposer | Time | Assistant turns | Tool calls | Stream errors | Change made |
+|---|---|---|---|---|---|
+| Qwen3.5-9B | 45 min (timed out) | 7 | Read 2, Bash 2 | 3 | none |
+| Qwen3.8-27B | 45 min (timed out) | 127 | Bash 64, Write 2 | 21 | none |
+| Qwen3.6-35B-A3B | 45 min (timed out) | 51 | Bash 14, Read 13 | 15 | none |
+
+- **No session finished**, so Claude Code wrote no final usage record.
+- **Exact cost is unknown.** The bridge did not pass token counts back. The only counts reported were for
+  the 35B session: 250k input and 10k output tokens, about $0.06. The total for all three is well under $1
+  of Prime credits; the exact figure is in the Prime dashboard.
+- **Two causes mixed together:**
+  - the stream through the bridge broke repeatedly ("response never arrived", "stream was malformed");
+  - the models themselves made little progress: 9B nearly none, and 27B ran 64 shell commands without
+    finishing a change.
+- **Conclusion:** through this route, the Qwen models cannot serve as the proposer. Opus stays the proposer
+  for every method. A self-proposer extra (Qwen editing its own harness) would first need a working stream
+  path (e.g. vLLM's own Anthropic-format endpoint) before its ability can be judged.

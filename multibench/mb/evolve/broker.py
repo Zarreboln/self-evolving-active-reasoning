@@ -19,7 +19,8 @@ Rules, as in MAS.S62 HW2 (README, "What the loop saves"), adapted to this suite:
 Errors: a harness that raises, returns early, or calls the model more than CHAT_CAP times per step
 keeps the score the environment gives at that point; that is the harness's result. An unreachable
 model server is infrastructure, not the harness: the episode is marked `infra` and reruns on resume.
-An episode that runs past EPISODE_TIMEOUT is the harness's failure (score 0), not infrastructure.
+Runaway output is the agent's failure, judged by tokens: a reply that fills MAX_TOKENS ends the episode
+with score 0 (end "runaway"). Running past EPISODE_TIMEOUT (wall clock, load-dependent) is infrastructure.
 
     python -m mb.evolve.broker run    --cand DIR --cell wordle:basic5 --split search --n 30 --out OUT
     python -m mb.evolve.broker export --out OUT --dest DIR
@@ -46,7 +47,7 @@ CHILD = os.path.join(HERE, "child.py")
 LIB = os.path.join(HERE, "ws_template")          # harness_lib.py lives here
 CHAT_CAP = 8                  # model calls per environment step, on average over the episode
 MAX_TOKENS = 8192             # cap on every reply (2026-11-26); harness_lib's chat() default is the same
-EPISODE_TIMEOUT = 2400
+EPISODE_TIMEOUT = 7200          # wall clock; a timeout is infrastructure and is rerun
 _TOK = re.compile(r"[a-z0-9]+")
 _FORMAT_TOKENS = {"action"}
 
@@ -115,8 +116,8 @@ def episode(cand, bench, sub, inst, url, model):
                 msgs = m["messages"]
                 try:
                     # one cap for every harness and method: a reply longer than MAX_TOKENS is runaway output
-                    reply = chat(msgs, temperature=m.get("temperature", 0.7),
-                                 max_tokens=min(m.get("max_tokens") or MAX_TOKENS, MAX_TOKENS),
+                    cap = min(m.get("max_tokens") or MAX_TOKENS, MAX_TOKENS)
+                    reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=cap,
                                  top_p=m.get("top_p"), stop=m.get("stop"))
                 except urllib.error.HTTPError as e:      # e.g. 400: the prompt outgrew the context
                     calls.append({"step": env.steps, "messages": msgs, "error": f"HTTP {e.code}"})
@@ -124,7 +125,13 @@ def episode(cand, bench, sub, inst, url, model):
                     continue
                 except Exception as e:                   # server unreachable: not the harness's doing
                     raise Infra(repr(e))
-                calls.append({"step": env.steps, "messages": msgs, "reply": reply})
+                last = dict(getattr(pc, "last", {}) or {})
+                calls.append({"step": env.steps, "messages": msgs, "reply": reply, **last})
+                if cap == MAX_TOKENS and last.get("finish") == "length":
+                    # runaway output: the reply filled the whole cap. The agent's failure (as the
+                    # official baselines count output that runs past the context), not infrastructure.
+                    end, error = "runaway", f"a reply filled the {MAX_TOKENS}-token cap"
+                    break
                 replies.append(reply)
                 prompts.append("\n".join(str(x.get("content", "")) for x in msgs if x.get("role") != "assistant"))
                 send({"reply": reply})
@@ -157,6 +164,8 @@ def episode(cand, bench, sub, inst, url, model):
     r = {**env.result(), "steps_log": steps, "calls": calls, "end": end, "error": error,
          "harness_stderr": stderr, "policy_tokens": pc.as_dict(), "responder_tokens": rc.as_dict()}
     r["source_counts"] = {k: sum(s["source"] == k for s in steps) for k in ("model", "model-picked", "code")}
+    if end == "runaway":
+        r.update(score=0.0, success=False)
     return r
 
 
@@ -194,10 +203,9 @@ def _one_subprocess(job):
             return inst, json.load(open(_path(out, bench, sub, inst))).get("score")
         err = f"exit {cp.returncode}: {cp.stderr.strip()[-400:]}"
     except subprocess.TimeoutExpired:
-        # runaway output (e.g. no max_tokens and a model that does not stop): the agent's failure,
-        # scored as such and not rerun (notes/exp_b_design.md, "Failures")
-        _write(_path(out, bench, sub, inst), timeout_record(bench, sub, inst))
-        return inst, 0.0
+        # wall-clock time depends on the server's load, not only on the agent: infrastructure, rerun.
+        # Runaway output is judged by tokens instead (a reply that fills MAX_TOKENS ends the episode).
+        err = f"timeout after {EPISODE_TIMEOUT}s (rerun)"
     # a broker failure (not a harness error, which is recorded inside the episode) reruns on resume
     _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst,
                                           "score": float("nan"), "infra": err})

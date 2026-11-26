@@ -79,5 +79,6 @@ Before you decide what to change, look past the mean:
 - Do not hard-code anything about specific instances, such as answers you saw in the traces. The final harness is
   scored on instances that are not in the archive; a harness that holds the archive's answers is rejected.
 - General knowledge about the game is fine.
+- Every action sent to the environment must come from a model reply in that step. Code may build the prompt, check or repair the format of the model's answer, track state, or choose among candidates the model proposed; it must not decide the action without the model. A harness that plays an episode without calling the model is rejected.
 - Your change must be something a harness could do on an instance it has never seen. If it only works because you
   know what is in the archive, it is the wrong change.

@@ -55,6 +55,7 @@ this workspace.
   dict literal that names top-level functions of the file (instead of {{"source": ...}}). The callback
   contracts are at the top of `harness/components.py`; `runner.py` is the fixed runner that calls them
   (read it, do not edit it). It is appended to your file to make the harness.
+- **The Target decides every action.** Every action sent to the environment must come from a model reply in that step. Code may build the prompt, check or repair the format of the model's answer, track state, or choose among candidates the model proposed; it must not decide the action without the model. A harness that plays an episode without calling the model is rejected.
 - **One callback differs.** There is no finish tool: the environment ends the episode, and any action
   may end it. So `verification.before_finish(answer, snapshot)` is `before_action(action, snapshot)`
   here and gates every action (at most 2 rejections per action, then the action is sent).

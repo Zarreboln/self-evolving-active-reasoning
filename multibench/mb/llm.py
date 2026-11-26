@@ -19,6 +19,7 @@ import urllib.request
 class Counter:
     def __init__(self):
         self.calls = self.in_tok = self.out_tok = 0
+        self.last = {}                      # the latest call: {"out_tok", "finish"} (finish "length" = cut off)
 
     def as_dict(self):
         return {"calls": self.calls, "in_tok": self.in_tok, "out_tok": self.out_tok}
@@ -53,6 +54,7 @@ def make_chat(base_url: str, model: str, counter: Counter | None = None, retries
             counter.calls += 1
             counter.in_tok += u.get("prompt_tokens", 0)
             counter.out_tok += u.get("completion_tokens", 0)
+            counter.last = {"out_tok": u.get("completion_tokens"), "finish": o["choices"][0].get("finish_reason")}
         return o["choices"][0]["message"]["content"] or ""
 
     return chat

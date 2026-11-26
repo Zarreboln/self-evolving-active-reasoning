@@ -53,7 +53,7 @@ EMBED_PY = Path.home() / "venvs" / "softtree" / "bin" / "python"
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 SIGMA = 1.0
 ABLATION = ""        # "" (ours) | "hard": one path per task (TreeMAML) | "flat": no levels, soft weights only
-MAX_DEPTH = 4
+MAX_DEPTH = 5           # levels including the root (user, 2026-11-26: 5 levels)
 PRUNE = 0.05
 P_NOISE = 0.1
 

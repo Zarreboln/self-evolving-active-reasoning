@@ -1,5 +1,8 @@
 # Experiment B: design (settings fixed 2026-11-26)
 
+**These settings (tasks, splits, rounds, selection, test protocol) apply to every experiment in this project:
+baselines, our method and all ablations. Changing them needs the user's approval.**
+
 ## Question
 Can a harness learned on a few tasks be shared with new tasks, including tasks from benchmarks never
 seen during learning, so that they adapt faster, at lower cost and with less overfitting, when the

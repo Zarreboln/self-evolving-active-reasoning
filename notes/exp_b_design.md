@@ -96,6 +96,24 @@ separately.
 
 "One harness for all tasks" and "one per task / per benchmark" are covered by the two Meta-Harness variants.
 
+**Starting points (seeds) of the evolution methods** (decided 2026-11-26)
+- One harness per benchmark: the benchmark's own official default agent, ported into the harness interface
+  (`mb/evolve/seeds/`).
+- One harness for all tasks: TextArena's standard agent (`seeds/textarena_standard.py`): a generic system
+  prompt, the current observation, one call per turn, and the reply sent as the action.
+  - On the TextArena games this is the official agent.
+  - On BabyAI, ScienceWorld and DC it is weaker than their official agents (no history, no admissible
+    actions); the paper states this.
+  - Its score on the development tasks comes from its round-0 search run. On ALFWorld and ScienceWorld
+    grow-plant it is run once as a reference (57 episodes).
+
+**One harness per benchmark, on a benchmark never seen.** No harness exists for it. This is the only method
+that needs a choice by hand. Both options are reported:
+1. **The benchmark's official default agent.** Nothing transfers, so the score is the official baseline
+   already measured.
+2. **The harness of the benchmark judged most similar by hand.** The mapping is confirmed with the user
+   before the test runs.
+
 ## Budget (estimate)
 | Item | Episodes | GPU hours |
 |---|---|---|

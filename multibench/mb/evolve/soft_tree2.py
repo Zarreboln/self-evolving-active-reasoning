@@ -57,6 +57,17 @@ ABLATION = ""          # "" | "flat" | "hard"
 ORDER_SEED = "exp_b/incremental/0"
 
 
+SMOKE_N, SMOKE_TOL = 5, 0.2   # other tasks after a new module: 5 problems, no crash, mean not 0.2 lower
+
+
+def only_additions(old_src: str, new_src: str) -> bool:
+    """True if new_src only adds lines to old_src (blank-line and comment changes ignored)."""
+    import difflib
+    keep = lambda t: [l for l in t.splitlines() if l.strip() and not l.strip().startswith("#")]
+    a, b = keep(old_src), keep(new_src)
+    return all(op in ("equal", "insert") for op, *_ in difflib.SequenceMatcher(None, a, b, autojunk=False).get_opcodes())
+
+
 # ---------- configs ----------
 
 def mix(cfgs: dict, weights: dict) -> dict:
@@ -423,23 +434,49 @@ class Run:
         cand = json.loads(json.dumps(tree))
         cand["nodes"][lf]["config"] = new_cfg
         others = [x for x in tree["order"] if x != c]
-        cells = [c] + (others if new_shared != shared else [])   # shared code changed: every task re-scored
-        new, err = self.evaluate(new_shared, cand, cells, tag)
+        additions_only = new_shared != shared and only_additions(shared, new_shared)
+        # the edited task: its 20 search problems. The others, only if shared.py changed: a new module (lines
+        # only added, off by default) gets a smoke check of SMOKE_N problems each; a change to existing code
+        # gets a full re-score (user, 2026-11-26: option b)
+        new, err = self.evaluate(new_shared, cand, [c], tag)
         if new is None:
             rec["outcome"] = "rejected: " + err
             self.record(tag, rec)
             return shared, tree, meta
+        full, smoke = ([], others) if additions_only else ((others, []) if new_shared != shared else ([], []))
+        if full:
+            got, err = self.evaluate(new_shared, cand, full, tag + "_others")
+            if got is None:
+                rec["outcome"] = "rejected: " + err
+                self.record(tag, rec)
+                return shared, tree, meta
+            new.update(got)
+        smoke_bad = []
+        if smoke:
+            got, err = self.evaluate(new_shared, cand, smoke, tag + "_smoke", n=SMOKE_N)
+            if got is None:
+                rec["outcome"] = "rejected: " + err
+                self.record(tag, rec)
+                return shared, tree, meta
+            for x in smoke:
+                eps = got[x]["per_episode"]
+                crashed = any(e.get("end") == "crash" for e in eps.values())
+                old = [meta["per_episode"][x][i]["score"] for i in eps if i in meta["per_episode"][x]]
+                fell = old and statistics.mean(e["score"] for e in eps.values()) <= statistics.mean(old) - SMOKE_TOL
+                if crashed or fell:
+                    smoke_bad.append(x)
+            rec["smoke"] = {x: got[x]["mean_score"] for x in smoke}
+        cells = [c] + full
         tests = {x: dict(zip(("wins", "losses"), paired(new[x]["per_episode"], meta["per_episode"][x]))) for x in cells}
-        drops = [x for x in cells if sign_test_p(tests[x]["losses"], tests[x]["wins"]) < P_NOISE]
-        # kept when the edited task's score rises, as Meta-Harness keeps its best candidate (user, 2026-11-26);
-        # protection of the others is strict: if shared.py changed, every task was re-scored and none may drop
+        drops = [x for x in cells if sign_test_p(tests[x]["losses"], tests[x]["wins"]) < P_NOISE] + smoke_bad
+        # kept when the edited task's score rises, as Meta-Harness keeps its best candidate (user, 2026-11-26)
         gain = new[c]["mean_score"] > meta["scores"][c] and not drops
-        rec["tests"] = tests
-        if gain and not drops:
+        rec.update(tests=tests, shared_change=("additions" if additions_only else "edits") if new_shared != shared else None)
+        if gain:
             for x in cells:
                 meta["scores"][x] = new[x]["mean_score"]
                 meta["per_episode"][x] = new[x]["per_episode"]
-                meta["last_export"][x] = tag
+                meta["last_export"][x] = tag if x == c else tag + "_others"
             meta["units"] = self.units
             self.save(f"v{len(self.versions()):03d}", new_shared, cand, meta)
             rec["outcome"] = f"kept ({c} {new[c]['mean_score']})"
@@ -650,6 +687,7 @@ Two kinds of sharing, either or both:
    node (an existing one if it is the same idea, or a new one). Games far apart can share a mechanism.
 2. Code: where two modules do nearly the same thing for different games, merge them into one module with
    CONFIG parameters (an alphabet, a length, a format), edit `shared.py`, and switch the games over to it.
+   Modules that `modules.md` marks as used by no game may be deleted, to keep `shared.py` short.
 
 Write `extract.json`:
 {{"node": "<existing node id, 'new', or null>", "config": {{<keys and values the node will hold>}},

@@ -222,19 +222,27 @@ def loop(a):
         parent = select_parent(archive)
         print(f"{cid}: parent {parent['id']} ({parent['scores']['mean_score']})", flush=True)
         ws = RUNS / a.run / "workspaces" / cid
-        fill_workspace(ws, archive, parent, a.n)
-        log = RUNS / a.run / "private" / cid / "proposer.jsonl"
-        log.parent.mkdir(parents=True, exist_ok=True)
-        t0 = time.time()
-        rc, cost = propose(ws, log)
-        m = {"id": cid, "parent": parent["id"], "valid": False, "proposer_rc": rc,
-             "proposer_cost_usd_equiv": cost, "proposer_seconds": round(time.time() - t0)}
         d = archive.dir / cid
-        (d / "harness").mkdir(parents=True, exist_ok=True)
-        child = ws / "harness" / "harness.py"
-        shutil.copy(child, d / "harness" / "harness.py")
-        if (ws / "proposal.md").exists():
-            shutil.copy(ws / "proposal.md", d / "proposal.md")
+        done_p = RUNS / a.run / "private" / cid / "proposed.json"
+        if done_p.exists():          # resume: the proposer already finished for this candidate
+            m = json.loads(done_p.read_text())
+            parent = next(x for x in archive.all() if x["id"] == m["parent"])
+            rc, cost = m["proposer_rc"], m["proposer_cost_usd_equiv"]
+            print(f"  {cid}: resuming after the proposer (scoring only)", flush=True)
+        else:
+            fill_workspace(ws, archive, parent, a.n)
+            log = RUNS / a.run / "private" / cid / "proposer.jsonl"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            t0 = time.time()
+            rc, cost = propose(ws, log)
+            m = {"id": cid, "parent": parent["id"], "valid": False, "proposer_rc": rc,
+                 "proposer_cost_usd_equiv": cost, "proposer_seconds": round(time.time() - t0)}
+            (d / "harness").mkdir(parents=True, exist_ok=True)
+            shutil.copy(ws / "harness" / "harness.py", d / "harness" / "harness.py")
+            if (ws / "proposal.md").exists():
+                shutil.copy(ws / "proposal.md", d / "proposal.md")
+            done_p.write_text(json.dumps(m))
+        child = d / "harness" / "harness.py"
         src = child.read_text()
         print(f"  proposer rc={rc} cost≈${cost} in {m['proposer_seconds']}s", flush=True)
         if src == (archive.dir / parent["id"] / "harness" / "harness.py").read_text():

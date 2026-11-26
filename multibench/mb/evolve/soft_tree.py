@@ -329,12 +329,20 @@ class Run:
             shared, tree = self.load(cur)
             meta = json.loads((cur / "meta.json").read_text())
             node = self.choose_node(tree, meta, rnd)
-            ws = self.workspace(rnd, node, shared, tree, cur)
-            log = self.dir / "private" / f"r{rnd:02d}_proposer.jsonl"
+            ws = self.dir / "workspaces" / f"r{rnd:02d}"
+            done_p = self.dir / "private" / f"r{rnd:02d}_proposed.json"
             t0 = time.time()
-            sys.path.insert(0, str(SANDBOX))
-            import run_proposer
-            rc = run_proposer.run(ws, log)
+            if done_p.exists() and json.loads(done_p.read_text()).get("node") == node and ws.exists():
+                rc = json.loads(done_p.read_text())["rc"]    # resume: proposer finished, score only
+                print(f"r{rnd:02d}: resuming after the proposer (scoring only)", flush=True)
+            else:
+                ws = self.workspace(rnd, node, shared, tree, cur)
+                log = self.dir / "private" / f"r{rnd:02d}_proposer.jsonl"
+                sys.path.insert(0, str(SANDBOX))
+                import run_proposer
+                rc = run_proposer.run(ws, log)
+                (self.dir / "private").mkdir(exist_ok=True)
+                done_p.write_text(json.dumps({"node": node, "rc": rc}, default=str))
             new_shared = (ws / "shared.py").read_text()
             try:
                 new_cfg = json.loads((ws / "node_config.json").read_text())

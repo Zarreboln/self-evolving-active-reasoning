@@ -31,7 +31,7 @@ from arbench_mh.sp.env import SPEnv as _SP  # noqa: E402
 
 from mb.core import TextEnv  # noqa: E402
 
-sys.path.insert(0, os.path.expanduser("~/code/AR-Bench"))
+sys.path.insert(0, os.path.expanduser(os.environ.get("ARBENCH_ROOT", "~/code/AR-Bench")))
 from arbench.reasoner.dc import dc_evaluator as _dce  # noqa: E402
 from arbench.reasoner.dc import prompt as dc_prompt  # noqa: E402
 from arbench.reasoner.dc.dc_evaluator import extract_answer_choice, remove_punctuation_at_ends  # noqa: E402
@@ -48,7 +48,8 @@ _LETTERS = "ABCDE"
 
 @functools.lru_cache(maxsize=None)
 def _items(task, split):
-    root = "~/sealed" if split == "test" else "~/arbench_mh_splits"
+    root = (os.environ.get("ARBENCH_SEALED", "~/sealed") if split == "test"
+            else os.environ.get("ARBENCH_SPLITS", "~/arbench_mh_splits"))
     return json.load(open(os.path.expanduser(f"{root}/{task}/{split}.json")))["instances"]
 
 

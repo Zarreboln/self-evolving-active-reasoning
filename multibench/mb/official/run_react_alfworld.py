@@ -12,6 +12,8 @@ only these:
   * the initial observation is cut as the notebook cuts it ('\n'.join(ob.split('\n\n')[1:])).
   * a leading '>' is stripped from the reply: the notebook's completion model continues after the
     prompt's final '>', a chat model repeats it ('> go to drawer 1'), which the env does not parse.
+  * 'put X in/on Y' (ReAct's prompts, older ALFWorld) is sent as 'move X to Y', the same command
+    in ALFWorld 0.4's text env.
 `react` is the reasoning version; `act` uses the repo's act-only examples (`act_put_*`).
 
 score = success = the game's `won`
@@ -24,6 +26,7 @@ import argparse
 import json
 import math
 import os
+import re
 import time
 import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -59,6 +62,11 @@ def episode(job):
             # chat-model glue: the completion prompt ends in '>', which a completion model continues
             # after; a chat model repeats it at the start of its reply ('> go to drawer 1')
             action = action.lstrip('>').strip()
+            # env-version glue: ReAct's prompts use ALFWorld's old 'put X in/on Y'; ALFWorld 0.4's text
+            # env renamed it 'move X to Y' (its own handcoded_expert_tw issues 'move {} to {}')
+            m = re.match(r'^put (.+?) in/on (.+)$', action)
+            if m:
+                action = f'move {m.group(1)} to {m.group(2)}'
             observation = env.act(action)
             observation, reward, done = process_ob(observation), env.success(), env.done
             if action.startswith('think:'):

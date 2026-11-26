@@ -19,6 +19,7 @@ of the container; they are never written into /work.
 from __future__ import annotations
 
 import argparse
+import json
 import time
 import re
 import os
@@ -51,6 +52,35 @@ PRIME_PRICES = {"qwen/qwen3.5-9b": (0.17, 0.153, 0.25), "qwen/qwen3-235b-a22b-25
                 "anthropic/claude-opus-5.5": (4.0, 4.0, 20.0),
                 "qwen3.5-9b": (0.17, 0.153, 0.25), "qwen3.6-35b-a3b": (0.19, 0.17, 1.7),
                 "qwen3.8-27b": (0.45, 0.05, 3.2)}
+
+
+# Further subscription accounts (claude setup-token while logged into each); used in turn when one hits
+# its usage limit. Their reset times are shared by every running loop through LIMITS_FILE.
+EXTRA_OAUTH_FILES = ["~/.claude_proposer_oauth_token_2", "~/.claude_proposer_oauth_token_3"]
+LIMITS_FILE = Path("~/.claude_proposer_limits.json").expanduser()
+
+
+def _accounts():
+    """[(name, var, path)] of the subscription accounts, the primary first."""
+    out = [("primary", "CLAUDE_CODE_OAUTH_TOKEN", Path(CRED_FILES["CLAUDE_CODE_OAUTH_TOKEN"]).expanduser())]
+    out += [(Path(f).name, "CLAUDE_CODE_OAUTH_TOKEN", Path(f).expanduser()) for f in EXTRA_OAUTH_FILES]
+    return [a for a in out if a[2].exists()]
+
+
+def _limits(update=None):
+    """{account name: reset time ISO} under a file lock; `update` (name, iso) is merged in."""
+    import fcntl
+    LIMITS_FILE.touch(exist_ok=True)
+    with LIMITS_FILE.open("r+") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            d = json.loads(f.read() or "{}")
+        except Exception:
+            d = {}
+        if update:
+            d[update[0]] = update[1]
+            f.seek(0); f.truncate(); f.write(json.dumps(d))
+        return d
 
 
 def _credential():
@@ -131,22 +161,40 @@ def limit_reset(log: Path):
     return t
 
 
-def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=True, max_waits=12):
-    """One session; if it hit the subscription's usage limit, wait until the limit resets and run it again
-    (a limit is not the proposer's doing: it must never count as a round without a change)."""
+def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=True, max_waits=24):
+    """One session. If it hits an account's usage limit, the next account whose limit has not been hit is
+    used at once; when all are limited, wait for the earliest reset. A limit never counts as a round."""
     import datetime as dt
+    subscription = not (model.startswith("deepseek") or model.startswith("bridge:") or "/" in model)
+    rc = None
     for _ in range(max_waits):
-        rc = _run_once(ws, log, model, timeout, network)
+        acct = None
+        if subscription and _accounts():
+            now = dt.datetime.now(dt.timezone.utc)
+            lim = _limits()
+            free = [a for a in _accounts() if a[0] not in lim or dt.datetime.fromisoformat(lim[a[0]]) <= now]
+            if not free:
+                t = min(dt.datetime.fromisoformat(lim[a[0]]) for a in _accounts())
+                wait = (t - now).total_seconds() + 180
+                print(f"[run_proposer] every account at its usage limit; waiting {wait / 60:.0f} min "
+                      f"until {t:%H:%M} UTC", flush=True)
+                time.sleep(max(60, wait))
+                continue
+            acct = free[0]
+        rc = _run_once(ws, log, model, timeout, network, acct)
         t = limit_reset(log)
         if t is None:
+            if acct:
+                (log.parent / (log.name + ".account")).write_text(acct[0])   # which account ran it
             return rc
-        wait = (t - dt.datetime.now(dt.timezone.utc)).total_seconds() + 180
-        print(f"[run_proposer] usage limit; waiting {wait / 60:.0f} min until {t:%H:%M} UTC", flush=True)
-        time.sleep(max(60, wait))
+        name = acct[0] if acct else "primary"
+        _limits((name, t.isoformat()))
+        print(f"[run_proposer] account {name} hit its usage limit (resets {t:%H:%M} UTC); trying the next",
+              flush=True)
     return rc
 
 
-def _run_once(ws: Path, log: Path, model, timeout, network):
+def _run_once(ws: Path, log: Path, model, timeout, network, acct=None):
     ws = ws.resolve()
     task = "Follow the instructions in TASK.md (they are repeated here).\n\n" + (ws / "TASK.md").read_text()
     extra = {}
@@ -159,7 +207,7 @@ def _run_once(ws: Path, log: Path, model, timeout, network):
     elif "/" in model:                                  # provider/model -> Prime Intellect
         var, secret, extra = _deepseek_env(model, PRIME_KEY_FILE, PRIME_URL)
     else:
-        var, secret = _credential()
+        var, secret = (acct[1], acct[2].read_text().strip()) if acct else _credential()
     cmd = [DOCKER, "run", "--rm", "-i",
            "--read-only", "--tmpfs", "/home/proposer:rw,exec,uid=1001,gid=1001,size=512m",
            "--tmpfs", "/tmp:rw,exec,size=512m",

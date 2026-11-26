@@ -16,6 +16,7 @@ overfitting.
   Results: [docs/official_baselines.md](docs/official_baselines.md).
 - **Baseline methods** (in progress): Meta-Harness (one harness per benchmark, and one harness for all
   tasks), Harness², ACE, and Learning Meta-Skills, each run from its released code.
+- **Experiment design** (tasks, phases, budgets, compared methods, rules): [notes/exp_b_design.md](notes/exp_b_design.md).
 - **Our method** (in progress): the harness is split into a fixed set of component types; each task has
   a continuous weight on each component, which decides which components it uses and how credit for a
   change is shared; evolution and sharing alternate. Formulas and their sources:

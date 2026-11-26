@@ -179,10 +179,10 @@ def build_tree(cells, vecs):
 
     def flatten(c, depth):
         """Collapse binary merges into nodes with several children so the depth stays <= MAX_DEPTH."""
-        if not c["children"] or depth >= MAX_DEPTH - 1:
+        if not c["children"] or depth >= MAX_DEPTH - 2:   # its members become one-task leaves one level down
             return {"members": c["members"], "children": []}
         kids = c["children"]
-        if depth < MAX_DEPTH - 2:                      # absorb merges that are nearly as tall as this one
+        if depth < MAX_DEPTH - 3:                      # absorb merges that are nearly as tall as this one
             changed = True
             while changed:
                 changed = False
@@ -295,7 +295,8 @@ class Run:
         out = {}
         for c in self.cells:
             traces = sorted((dest / "cells" / c.replace(":", "_") / "episodes").glob("*/trace.md"))
-            t = traces[0].read_text() if traces else c
+            # the first trace that shows a model call (an episode killed before any call has no instructions)
+            t = next((x.read_text() for x in traces if "**user:**" in x.read_text()), c)
             # the first message the model saw; our header lines (episode id, score) are dropped
             body = t.split("**user:**", 1)[-1] if "**user:**" in t else t
             out[c] = body.strip().strip("`").strip()[:4000]

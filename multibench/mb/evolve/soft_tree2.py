@@ -50,7 +50,7 @@ RUNS = Path.home() / "evo_b_runs"
 SIGMA = 0.3
 K_PARENTS = 3
 P_NOISE = 0.1
-EDITS = 3              # leaf edit rounds per task
+EDITS = 5              # leaf edit rounds per task, as MH's 5 rounds per task (user); early stop below
 BUDGET_UNITS = float("inf")  # no cap for now (user, 2026-11-26): run every step, record the units used; compare later
 ABLATION = ""          # "" | "flat" | "hard"
 ORDER_SEED = "exp_b/incremental/0"
@@ -331,6 +331,10 @@ class Run:
             if self.units >= BUDGET_UNITS - 1:          # keep the budget equal to every other method's
                 self.record(tag, {"outcome": "skipped: episode budget used up"})
                 continue
+            last3 = [self.done(f"{tagp}_e{k}") for k in range(e - 3, e) if k >= 1]
+            if len(last3) == 3 and all(r and not str(r.get("outcome", "")).startswith("kept") for r in last3):
+                self.record(tag, {"outcome": "skipped: early stop (3 edits in a row not kept, as every method)"})
+                continue
             shared, tree, meta = self.edit_leaf(tag, c, shared, tree, meta)
         # 5: extraction
         if ABLATION != "flat" and len(tree["order"]) >= 2 and not self.done(f"{tagp}_extract"):
@@ -567,7 +571,7 @@ def main():
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--n-selection", type=int, default=20)
     ap.add_argument("--max-tasks", type=int, default=0, help="pilot: only the first k tasks of the order")
-    ap.add_argument("--edits", type=int, default=3)
+    ap.add_argument("--edits", type=int, default=5)
     ap.add_argument("--final", action="store_true")
     ap.add_argument("--ablation", default="", choices=["", "hard", "flat"])
     a = ap.parse_args()

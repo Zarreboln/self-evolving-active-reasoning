@@ -397,12 +397,9 @@ class Run:
             return shared, tree, meta
         tests = {x: dict(zip(("wins", "losses"), paired(new[x]["per_episode"], meta["per_episode"][x]))) for x in cells}
         drops = [x for x in cells if sign_test_p(tests[x]["losses"], tests[x]["wins"]) < P_NOISE]
-        if new_shared == shared:
-            # a leaf edit touches this task only: kept when its score rises and it does not drop, as Meta-Harness
-            # keeps its best candidate (user, 2026-11-26). Shared-code changes keep the paired significance test.
-            gain = new[c]["mean_score"] > meta["scores"][c] and not drops
-        else:
-            gain = sign_test_p(tests[c]["wins"], tests[c]["losses"]) < P_NOISE
+        # kept when the edited task's score rises, as Meta-Harness keeps its best candidate (user, 2026-11-26);
+        # protection of the others is strict: if shared.py changed, every task was re-scored and none may drop
+        gain = new[c]["mean_score"] > meta["scores"][c] and not drops
         rec["tests"] = tests
         if gain and not drops:
             for x in cells:

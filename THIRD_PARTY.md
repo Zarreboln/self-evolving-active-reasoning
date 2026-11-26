@@ -12,6 +12,7 @@ git clone --recurse-submodules https://github.com/Zarreboln/self-evolving-active
 | `meta_harness_official/` | stanford-iris-lab/meta-harness | MIT | none |
 | `third_party_b/ace/` | ace-agent/ace @ 82709de (its `ace-appworld` submodule @ 9f3e921) | Apache-2.0 | none; loaded at run time by `multibench/mb/baselines/ace/official.py` |
 | `third_party_b/harness2/` | google-research/harness2 @ 6868817 | Apache-2.0 | Harness² baseline: official prompts and library code, imported by `multibench/mb/baselines/harness2/` |
+| `third_party_b/metaskill/` | qiancheng-apodex/MetaSkill-AI4AI @ 72a7b02 | **no license file**: nothing copied; prompts and helpers are loaded from the clone at run time | Learning Meta-Skills baseline, `multibench/mb/baselines/metaskill/` |
 
 ## Code copied into this repository
 

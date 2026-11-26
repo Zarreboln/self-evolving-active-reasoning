@@ -10,3 +10,6 @@
 [submodule "third_party_b/harness2"]
 	path = third_party_b/harness2
 	url = https://github.com/google-research/harness2
+[submodule "third_party_b/metaskill"]
+	path = third_party_b/metaskill
+	url = https://github.com/qiancheng-apodex/MetaSkill-AI4AI.git

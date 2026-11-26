@@ -18,7 +18,8 @@ there is one set of shared parameters, and each node only gates it.
 - **Inheritance.** A child inherits its parent's configuration and overrides only a few entries.
   - Root: the configuration fitted to the failures of all tasks.
   - Inner nodes and leaves: overrides fitted to their own group, so lower nodes are more specific.
-- **Shape.** A node can have any number of children, and branches can have different depths.
+- **Shape.** A node can have any number of children, and branches can have different depths. At most 4
+  levels (root included); a node with a single task is not split further.
 - **Precedent for gating.** HSML ablation A4c: gating one shared initialisation beats generating a separate
   initialisation per cluster by about 4 points.
 

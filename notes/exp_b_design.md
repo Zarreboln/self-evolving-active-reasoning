@@ -24,15 +24,19 @@ count more.
 ## Method
 The harness is split into a fixed set of component types (following the seven families of Learning
 Meta-Skills, 2609.38143). Components are organised as a **soft tree**, following the tree of TreeMAML (Garcia et al., 2021) and the
-per-level soft assignment of HSML (Yao et al., 2019): one big harness at the root splits level by level into
-smaller harnesses (h → h1, h2 → h1.1, h1.2, ... → one task). The depth is not fixed; a level is added when
-the data supports a split.
+per-level soft assignment of HSML (Yao et al., 2019). The tree runs from general (root) to specific (leaves).
+The depth is not fixed; a level is added when the data supports a split.
 
-- Each node holds the components shared by the tasks below it; the root holds what every task uses, the
-  leaves what only one task uses.
+- **What a node is**: the components shared by the tasks below it. The root holds what every task uses
+  (e.g. output-format repair); a node lower down holds what only its tasks share (e.g. keeping a candidate
+  list and pruning it by feedback); a leaf holds what only one task uses. A node stores only its own part.
+- **What a task runs**: the parts along its path(s), joined: root + each node on the way + its own leaf, as in
+  TreeMAML, where a task's parameters add up the node updates along its path. Nodes get narrower going down,
+  but the harness a task runs gets more complete the deeper it hangs.
 - A task attaches to the nodes of each level with weights γ(t, n) = softmax over that level's nodes of
   gain(t, n) / τ, and can follow several branches at once. This is the difference from TreeMAML, where each
-  task follows exactly one path.
+  task follows exactly one path. When two of a task's nodes fill the same slot, the task takes that slot from
+  the node it weighs most (one version per slot); different slots can come from different nodes.
 - The tree need not be balanced: a task can hang directly from any level (its own leaf is then empty) and
   can draw from nodes on several levels at once. How deep a task hangs shows how much it shares with others.
 

@@ -66,8 +66,10 @@ After experiment A: plug its 4×10 Δ matrix in as ℓ(t,c) at k = 0, plot γ fo
 
 ## 8. Soft tree (decided 2026-11-25)
 The idea comes from TreeMAML, so the structure is a tree, not a flat set of components.
-- **Levels**: one big harness at the root splits level by level into smaller harnesses down to one task per
-  leaf. Depth is not fixed (TreeMAML also allows K levels, §3.1).
+- **Levels**: general (root) to specific (leaves); depth not fixed (TreeMAML also allows K levels, §3.1).
+- **Node content**: only the components shared by the tasks below it. A task runs the union along its
+  path(s) (TreeMAML: task parameters = sum of node updates along the path). Same slot filled by two of a
+  task's nodes → take the higher-γ node's version.
 - **Soft attachment at every level**: γ(t, n) = softmax over the nodes n of a level of gain(t, n) / τ,
   gain(t, n) = score change on t when n's components are mounted. Per-level soft assignment is what HSML does
   (Eq. 6, one σ^l per level); TreeMAML assigns each task to exactly one node per level. A task mounts every

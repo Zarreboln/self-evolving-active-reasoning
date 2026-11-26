@@ -1,33 +1,41 @@
-# Harness 的部分共享:让新任务更快适应
+# Partial Sharing of Harnesses Across Tasks
 
-**Zining Liu** — 麻省理工学院
+**Zining Liu** — Massachusetts Institute of Technology
 
-围绕一个冻结的大模型,外面那层代码(harness,包括提示词、对话历史怎么组织、控制流程、工具等)可以自动改进。
-现有方法在多个任务之间共享 harness 时,共享范围都是人事先定好的:要么所有任务共用一份,要么每个 benchmark 各用一份。
-这个项目研究的是:**让数据来决定 harness 的哪些组件在哪些任务之间共享**,从而让新任务,包括来自没见过的 benchmark 的任务,适应得更快、花费更少、更不容易过拟合。
+The code around a frozen language model (its harness: prompts, how the history is kept, control flow,
+tools) can be improved automatically. When existing methods share a harness across several tasks, the
+scope of sharing is fixed by hand: either one harness for all tasks, or one per benchmark. This project
+asks whether the data can decide **which parts of a harness are shared between which tasks**, so that a
+new task, including one from a benchmark not seen before, adapts faster, at lower cost, and with less
+overfitting.
 
-## 当前进度
+## Status
 
-- **官方默认基线**:每个任务都用它所在 benchmark 自己的默认智能体(agent),代码原样运行。结果见 [docs/official_baselines.md](docs/official_baselines.md)。
-- **基线方法**(进行中):Meta-Harness(按 benchmark 分组、所有任务共用一份,两种用法)、Harness²、ACE、Learning Meta-Skills,都用各自公开的官方代码。
-- **我们的方法**(进行中):把 harness 分成固定的几类组件;每个任务对每个组件有一个连续的权重,决定它用哪些组件、改动的功劳怎么分;进化和共享交替进行。公式和出处见 [notes/method_formulas.md](notes/method_formulas.md)。
+- **Official default baselines**: every task is run with its own benchmark's default agent, unchanged.
+  Results: [docs/official_baselines.md](docs/official_baselines.md).
+- **Baseline methods** (in progress): Meta-Harness (one harness per benchmark, and one harness for all
+  tasks), Harness², ACE, and Learning Meta-Skills, each run from its released code.
+- **Our method** (in progress): the harness is split into a fixed set of component types; each task has
+  a continuous weight on each component, which decides which components it uses and how credit for a
+  change is shared; evolution and sharing alternate. Formulas and their sources:
+  [notes/method_formulas.md](notes/method_formulas.md).
 
-## 仓库结构
+## Layout
 
-| 路径 | 内容 |
+| Path | Contents |
 |---|---|
-| `multibench/mb/benches/` | 17 个 benchmark、101 个子任务的统一接口(游戏规则和判分照各 benchmark 官方) |
-| `multibench/mb/official/` | 运行各 benchmark 官方默认智能体的脚本(只加了适配代码) |
-| `multibench/mb/evolve/` | harness 自动改进所需的代码:候选在隔离的子进程里运行、静态检查、防止抄答案、评测和结果导出 |
-| `sandbox/` | 负责修改代码的模型(proposer,即 Claude Code)所用的 Docker 隔离环境:只能看到自己的工作目录,只能访问 Anthropic 的接口 |
-| `notes/` | 预注册、实验结果、方法公式、官方智能体核查、进度安排、论文阅读笔记 |
-| `meta/arbench_mh/` | AR-Bench 的 DC、SP 环境(适配代码会导入) |
+| `multibench/mb/benches/` | One interface for 17 benchmarks and 101 subtasks (rules and scoring as in each benchmark's official code) |
+| `multibench/mb/official/` | Scripts that run each benchmark's default agent (with only the adapter code added) |
+| `multibench/mb/evolve/` | Code for harness evolution: candidates run in an isolated subprocess, static checks, a check against copying answers, evaluation and export |
+| `sandbox/` | Docker sandbox for the model that edits the code (Claude Code): it sees only its own workspace and can reach only the Anthropic API |
+| `notes/` | Pre-registration, experiment results, method formulas, the check of official agents, the schedule, paper notes |
+| `meta/arbench_mh/` | The AR-Bench DC and SP environments, imported by the adapters |
 
-## 之前的项目
+## Earlier project
 
-MAS.S62 课程的主动推理项目(在 AR-Bench 上用 Meta-Harness,与 Yangzi Sun 合作)完整保存在标签
-[`mas-s62-ar-report`](../../tree/mas-s62-ar-report) 里。
+The MAS.S62 active-reasoning project (Meta-Harness on AR-Bench, with Yangzi Sun) is kept in full under
+the tag [`mas-s62-ar-report`](../../tree/mas-s62-ar-report).
 
-## 第三方代码
+## Third-party code
 
-见 [THIRD_PARTY.md](THIRD_PARTY.md)。
+See [THIRD_PARTY.md](THIRD_PARTY.md).

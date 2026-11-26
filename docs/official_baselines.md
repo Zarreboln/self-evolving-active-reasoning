@@ -1,38 +1,53 @@
-# 官方默认基线结果
+# Official Default Baselines
 
-更新于 2026-11-26。模型:Qwen3.5-9B,关闭思考模式(vLLM,`enable_thinking: false`)。
-每个任务都用**它所在 benchmark 自己的默认智能体**,代码原样运行;我们只加了适配代码,让它调用我们的模型、使用我们的数据划分。
-每一处适配都写在对应脚本的开头,见 `multibench/mb/official/`。
+Updated 2026-11-26. Model: Qwen3.5-9B with thinking turned off (vLLM, `enable_thinking: false`).
+Every task is run with **its own benchmark's default agent**, unchanged. We only added adapter code so
+that it calls our model and uses our data splits; every adaptation is described at the top of the
+corresponding script in `multibench/mb/official/`.
 
-## 测试集结果(9 个任务)
+## Test results (9 tasks)
 
-| 任务 | 默认智能体 | 测试集来源 | 局数 | 得分 | 记为失败的局 |
+| Task | Default agent | Test set | Episodes | Score | Episodes counted as failures |
 |---|---|---|---|---|---|
-| GN(猜数字) | AR-Bench `zero_shot` | 官方测试集 | 100 | **0.02** | — |
-| DC(找凶手) | AR-Bench `zero_shot` | 官方测试集 | 100 | **0.45** | — |
-| Wordle basic5 | TextArena 标准智能体 | 我们的划分 | 60 | **0.43** | — |
-| Mastermind basic | TextArena 标准智能体 | 我们的划分 | 142 | **0.57** | — |
-| Hangman basic | TextArena 标准智能体 | 我们的划分 | 200 | **0.22** | 50 局:模型输出失控,超出上下文长度 |
-| 20Q basic-things | TextArena 标准智能体(出题方为 Jev) | 我们的划分 | 49 | **0.06** | 12 局:出题方 Jev 服务报错,**待重跑**(见下) |
-| BabyAI GoToLocal | BALROG `naive` | 我们的划分(固定随机种子) | 200 | **0.82** | — |
-| ALFWorld pick_and_place_simple | ReAct | 官方 valid_unseen | 24 | **0.58** | — |
-| ScienceWorld test-conductivity | SwiftSage 中的 ReAct 基线 | 官方测试集 | 225 | **0.33** | — |
+| GN (guess the number) | AR-Bench `zero_shot` | official test set | 100 | **0.02** | — |
+| DC (detective cases) | AR-Bench `zero_shot` | official test set | 100 | **0.45** | — |
+| Wordle basic5 | TextArena standard agent | our split | 60 | **0.43** | — |
+| Mastermind basic | TextArena standard agent | our split | 142 | **0.57** | — |
+| Hangman basic | TextArena standard agent | our split | 200 | **0.22** | 50: the model's output ran on until it exceeded the context length |
+| 20Q basic-things | TextArena standard agent (Jev as gamemaster) | our split | 49 | **0.06** | 12: the Jev service returned errors; **to be rerun** (see below) |
+| BabyAI GoToLocal | BALROG `naive` | our split (fixed seeds) | 200 | **0.82** | — |
+| ALFWorld pick_and_place_simple | ReAct | official valid_unseen | 24 | **0.58** | — |
+| ScienceWorld test-conductivity | ReAct baseline from SwiftSage | official test set | 225 | **0.33** | — |
 
-得分是各 benchmark 自己的官方指标,换算到 0 到 1 之间。
+Scores are each benchmark's official metric, scaled to 0–1.
 
-## 说明
+## Notes
 
-- **数据划分**:GN、DC、ALFWorld、ScienceWorld 的测试集是官方的;TextArena 和 BabyAI 没有官方划分,我们按答案的哈希值或固定的随机种子划分。
-- **失败怎么算**:智能体自己造成的失败(例如输出失控、格式错误)记为失败;服务器、网络、第三方服务出的问题,重新运行。
-- **20Q 的 12 局**:最初以为是请求太长被 Jev 拒绝;后来发现 Jev 的服务在同时收到很多请求时会间歇性报错(`400 Unknown model`),短请求也会。这属于第三方服务的问题,已改为失败后等待更久再重试,重跑后更新。
-- **Hangman 的 50 局**:TextArena 的标准智能体调用模型时不限制输出长度,模型偶尔会不停重复,写满 64K 的上下文。这是官方默认设置下智能体真实的失败,记为失败。
-- **适配代码做了哪些改动**:
-  - ALFWorld:原版用的是续写式模型,我们的是对话模型,会在回复开头多写一个 `>`,所以把它去掉;ReAct 示例里旧版 ALFWorld 的 `put X in/on Y`,转换成 ALFWorld 0.4 中对应的 `move X to Y`。
-  - ReAct 和 SwiftSage:原版调用的模型(text-davinci-002、gpt-3.5)已经停止服务,改为调用我们的模型,其余设置照原版。
-  - SwiftSage 的不推理版本:原版用句向量匹配合法动作,我们改成和推理版本一样的按词重叠匹配。
-  - 20Q:TextArena 原版固定用 GPT-4o 当出题方,我们用 Jev。
-- **仅供参考的结果(不作为基线)**:AR-Bench 的推理版 `proactive_cot` 跑了一部分后停止:GN 完成的 79 局全对,DC 完成的 36 局对 10 局。
+- **Data splits**: GN, DC, ALFWorld and ScienceWorld use their official test sets. TextArena and BabyAI
+  have no official split, so we split by a hash of the answer or by fixed random seeds.
+- **How failures are counted**: a failure caused by the agent itself (for example, runaway output or a
+  wrong format) counts as a failure. Problems with servers, the network or a third-party service are rerun.
+- **The 12 episodes of 20Q**: we first thought Jev rejected requests that were too long. It turned out
+  that Jev's service intermittently returns an error (`400 Unknown model`) when it receives many requests
+  at once, even for short ones. This is a third-party service problem; the client now waits longer
+  between retries, and these episodes will be rerun.
+- **The 50 episodes of Hangman**: TextArena's standard agent sets no limit on output length, and the model
+  sometimes repeats itself until the 64K context is full. This is a real failure of the agent under its
+  default settings, so it counts as a failure.
+- **What the adapter code changes**:
+  - ALFWorld: the original used a text-completion model; our model is a chat model and repeats the `>` at
+    the start of its reply, so it is removed. ReAct's examples use older ALFWorld's `put X in/on Y`, which
+    is sent as `move X to Y`, the same command in ALFWorld 0.4.
+  - ReAct and SwiftSage: the models they called (text-davinci-002, gpt-3.5) are no longer served, so they
+    call our model instead; everything else follows the original.
+  - SwiftSage's version without reasoning: the original matches actions with sentence embeddings; we use
+    the same word-overlap matching as its reasoning version.
+  - 20Q: TextArena's code fixes GPT-4o as the gamemaster; we use Jev.
+- **For reference only (not a baseline)**: AR-Bench's reasoning agent `proactive_cot` was stopped partway.
+  GN: all 79 finished episodes correct; DC: 10 of 36 finished episodes correct.
 
-## 进行中
+## In progress
 
-42 个候选任务的官方基线正在运行:每个任务先在搜索集上跑 20 局,用来挑选做进化实验的任务;再跑完整的测试集,用来报告。完成后补进这张表。
+The official baselines for 42 candidate tasks are running: each task first plays 20 episodes on the search
+split, used to choose the tasks for the evolution experiments, and then its full test set, for reporting.
+They will be added to this table.

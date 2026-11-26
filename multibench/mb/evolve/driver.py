@@ -13,6 +13,7 @@ still queued. driver.sbatch resubmits the driver before its time limit runs out.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import subprocess
@@ -30,7 +31,8 @@ def sh(cmd, check=True):
 
 
 def running(jid):
-    return bool(sh(f"squeue -h -j {jid}", check=False).stdout.strip())
+    """jid may be a comma-separated group of copies (race.sh): running while any copy is queued or running."""
+    return any(sh(f"squeue -h -j {j}", check=False).stdout.strip() for j in str(jid).split(",") if j)
 
 
 def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log):
@@ -91,8 +93,18 @@ def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log
             s = {"submitted": params["submitted"], "tries": 0}
         p = dict(params, smoke=params.get("smoke") and s["tries"] == 0)
         env = " ".join(f"{k}={v}" for k, v in env_for(p, work / "harness", out, work / "export").items())
-        jid = sh(f"cd ~/logs && {env} sbatch --parsable {places[place][0]} "
-                 f"{HERE}/eval_cand.sbatch").stdout.strip()
+        shutil.rmtree(work / "claim", ignore_errors=True)      # a new group of copies races afresh
+        if cluster == "orcd":                                    # one copy per GPU type (race.sh)
+            name = "mbe_" + hashlib.sha1(key.encode()).hexdigest()[:8]
+            jid = sh(f"cd ~/logs && export {env} && source {HERE}/race.sh && "
+                     f"race_submit {name} '{places[place][0]} --export=ALL' {HERE}/eval_cand.sbatch",
+                     check=False).stdout.strip()
+        else:
+            jid = sh(f"cd ~/logs && {env} sbatch --parsable {places[place][0]} "
+                     f"{HERE}/eval_cand.sbatch").stdout.strip()
+        if not jid:
+            log(f"{key}: submission failed")
+            continue
         s.update(job=jid, tries=s["tries"] + 1, place=place)
         state[key] = s
         in_flight += 1

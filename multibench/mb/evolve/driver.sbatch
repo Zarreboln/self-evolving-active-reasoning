@@ -1,7 +1,7 @@
 #!/bin/bash
 # The mailbox driver (mb/evolve/driver.py) as a CPU job that hands over to its next copy before its time
 # limit, so it keeps running without anyone logged in. Stop the chain with `touch ~/mailbox_STOP`.
-#   CLUSTER=orcd MAILBOX=~/mailbox RUNS=~/results/mb/evo_b sbatch --partition=mit_normal driver.sbatch
+#   CLUSTER=orcd MAILBOX=~/mailbox RUNS=~/results/mb/evo_b sbatch --partition=mit_normal,mit_preemptable --requeue driver.sbatch
 #SBATCH --job-name=mb_driver
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=4G
@@ -13,7 +13,7 @@ set -uo pipefail
 cd "$HOME/code/multibench" && source mb/env.sh
 [ -e "$HOME/mailbox_STOP" ] && { echo "STOP file present, not starting"; exit 0; }
 # The next copy waits for this one to end; it is cancelled below if this one was told to stop.
-NEXT=$(sbatch --parsable --dependency=afterany:$SLURM_JOB_ID --partition="$SLURM_JOB_PARTITION" \
+NEXT=$(sbatch --parsable --dependency=afterany:$SLURM_JOB_ID --partition=mit_normal,mit_preemptable --requeue \
        --export=ALL "$HOME/code/multibench/mb/evolve/driver.sbatch")
 echo "host=$(hostname) start=$(date -Is) next=$NEXT"
 python -m mb.evolve.driver --mailbox "$MAILBOX" --cluster "$CLUSTER" --runs "$RUNS" \

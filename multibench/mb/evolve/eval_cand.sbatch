@@ -13,6 +13,8 @@
 #SBATCH --output=%x_%j.out
 set -uo pipefail
 [ -f "$HOME/.mb_site.sh" ] && source "$HOME/.mb_site.sh"
+source "$HOME/code/multibench/mb/evolve/race.sh"
+race_claim "$(dirname "$OUT")" || { echo "another copy of this request is running; exiting"; exit 0; }
 REPO=Qwen/Qwen3.5-9B
 export VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_ATTENTION_BACKEND=FLASH_ATTN
 export HF_HOME=${HF_HOME:-$HOME/hf_cache} VLLM_LOGGING_LEVEL=WARNING

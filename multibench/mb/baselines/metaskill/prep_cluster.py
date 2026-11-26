@@ -27,6 +27,10 @@ from mb.baselines.metaskill.config import DEV_CELLS, SEARCH_N, TEST_PROBLEMS, TE
 ORDER_SEED = "exp_b_test_order_v1"
 
 
+def _no_responder(*a, **k):
+    raise RuntimeError("a card is read before the first action; no suspect is asked")
+
+
 def opaque(cell: str, instance: str) -> str:
     """TextEnv.instance_id (mb/core.py)."""
     bench, sub = cell.split(":", 1)
@@ -36,7 +40,7 @@ def opaque(cell: str, instance: str) -> str:
 def card(cell, instance):
     from mb.benches import get
     bench, sub = cell.split(":", 1)
-    env = get(bench).make(sub, instance, None)       # no responder: nothing is asked before the first action
+    env = get(bench).make(sub, instance, _no_responder)   # nothing is asked before the first action
     try:
         return {"instructions": env.instructions, "observation": env.observation, "max_steps": env.max_steps,
                 "reads_full_reply": env.reads_full_reply, "valid_actions": env.admissible()}

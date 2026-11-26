@@ -1,7 +1,9 @@
 #!/bin/bash
 # The long-lived episode player (mb/evolve/worker.py): one GPU, one vLLM server, serving play requests
 # from the mailbox until shortly before its time limit, then handing over to its next copy.
-#   MAILBOX=~/mailbox_worker RUNS=~/results/mb/play sbatch -p mit_normal_gpu --gres=gpu:l40s:1 -c 16 --mem=64G -t 05:59:00 worker.sbatch
+#   source race.sh; MAILBOX=~/mailbox_worker RUNS=~/results/mb/play \
+#     race_submit mb_worker "--requeue -c 16 --mem=64G -t 05:59:00 --export=ALL" worker.sbatch
+# (one copy per GPU type; the first to start serves, the others are cancelled)
 #SBATCH --job-name=mb_worker
 #SBATCH --open-mode=append
 #SBATCH --output=%x_%j.out
@@ -11,8 +13,11 @@ set -uo pipefail
 REPO=Qwen/Qwen3.5-9B
 export VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_ATTENTION_BACKEND=FLASH_ATTN
 export HF_HOME=${HF_HOME:-$HOME/hf_cache} VLLM_LOGGING_LEVEL=WARNING
-NEXT=$(sbatch --parsable --dependency=afterany:$SLURM_JOB_ID --partition="$SLURM_JOB_PARTITION" \
-       --gres=gpu:l40s:1 -c "$SLURM_CPUS_PER_TASK" --mem=64G -t 05:59:00 --export=ALL "$HOME/code/multibench/mb/evolve/worker.sbatch")
+source "$HOME/code/multibench/mb/evolve/race.sh"
+mkdir -p "$RUNS"
+race_claim "$RUNS" || { echo "another worker is running; exiting"; exit 0; }
+NEXT=$(race_submit mb_worker "--dependency=afterany:$SLURM_JOB_ID --requeue -c $SLURM_CPUS_PER_TASK --mem=64G -t 05:59:00 --export=ALL" \
+       "$HOME/code/multibench/mb/evolve/worker.sbatch")
 PORT=$(( 9000 + RANDOM % 800 ))
 ${VLLM_BIN:-$HOME/venv/bin/vllm} serve "$REPO" --port "$PORT" --max-model-len 65536 \
   --gpu-memory-utilization 0.90 --max-num-seqs 64 --enable-prefix-caching \
@@ -24,5 +29,5 @@ echo "host=$(hostname) server up after ${SECONDS}s next=$NEXT"
 cd "$HOME/code/multibench" && source mb/env.sh
 export POLICY_MODEL="$REPO" POLICY_BASE_URLS="http://127.0.0.1:$PORT/v1"
 python -m mb.evolve.worker --mailbox "$MAILBOX" --runs "$RUNS" --until $(( $(date +%s) + 5*3600 + 30*60 ))
-[ -e "$HOME/mailbox_STOP" ] && scancel "$NEXT"
+[ -e "$HOME/mailbox_STOP" ] && scancel ${NEXT//,/ }
 kill $SERVER

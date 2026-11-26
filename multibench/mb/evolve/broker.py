@@ -45,6 +45,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CHILD = os.path.join(HERE, "child.py")
 LIB = os.path.join(HERE, "ws_template")          # harness_lib.py lives here
 CHAT_CAP = 8                  # model calls per environment step, on average over the episode
+MAX_TOKENS = 8192             # cap on every reply (2026-11-26); harness_lib's chat() default is the same
 EPISODE_TIMEOUT = 2400
 _TOK = re.compile(r"[a-z0-9]+")
 _FORMAT_TOKENS = {"action"}
@@ -113,7 +114,9 @@ def episode(cand, bench, sub, inst, url, model):
                     continue
                 msgs = m["messages"]
                 try:
-                    reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=m.get("max_tokens", 8192),
+                    # one cap for every harness and method: a reply longer than MAX_TOKENS is runaway output
+                    reply = chat(msgs, temperature=m.get("temperature", 0.7),
+                                 max_tokens=min(m.get("max_tokens") or MAX_TOKENS, MAX_TOKENS),
                                  top_p=m.get("top_p"), stop=m.get("stop"))
                 except urllib.error.HTTPError as e:      # e.g. 400: the prompt outgrew the context
                     calls.append({"step": env.steps, "messages": msgs, "error": f"HTTP {e.code}"})

@@ -30,7 +30,6 @@ import zlib
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 SRC = os.path.join(os.path.dirname(__file__), "..", "evolve", "seeds_src")
-TASK_NUM = {"test-conductivity": 27}
 ENV_STEP_LIMIT = 100
 
 rooms = ["hallway", "greenhouse", "green house", "kitchen", "bathroom", "outside", "workshop", "art studio", "foundry", "bedroom", "living room"]
@@ -137,11 +136,11 @@ def episode(job):
 
     pf = "swiftsage_prompt.jsonl" if agent_kind == "react" else "swiftsage_prompt_no_think.jsonl"
     d = json.load(open(os.path.join(SRC, pf)))
-    task_num = TASK_NUM[task]
     t0 = time.time()
     rec = {"task": task, "variation": variation, "agent": agent_kind}
     try:
         env = ScienceWorldEnv("", envStepLimit=ENV_STEP_LIMIT)
+        task_num = env.getTaskNames().index(task)        # SwiftSage: taskName = env.getTaskNames()[task_num]
         env.load(task, int(variation), "easy", generateGoldPath=True)
         encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
         task_description = env.taskdescription()[18:]

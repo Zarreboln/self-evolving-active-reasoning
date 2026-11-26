@@ -136,6 +136,16 @@ transfers, so its score there is the official baseline already measured, and no 
 - **Failures.**
   - A failure caused by the agent (runaway output, wrong format) counts as a failure.
   - Problems with servers, the network or third-party services are rerun.
+  - Decided 2026-11-26 (user): every model reply is capped at 8192 tokens (the harness interface's
+    `chat()` default); runaway output is judged by tokens: a reply that fills the cap ends the episode
+    with score 0. Wall-clock timeouts depend on server load, so they are infrastructure and rerun
+    (limit 2 h per episode). Before this, 3 published candidates scored timeouts as 0
+    (mh_pb_hangman c001: 11 episodes; mh_pbta_babyai c000: 18; mh_pbta_sciworld c001: 2); they are kept.
+- **The model decides every action** (user, 2026-11-26; stated to every method's code model). Code may
+  build the prompt, check or repair the format, track state, or choose among candidates the model
+  proposed; it must not decide the action without the model. A harness that plays an episode without
+  calling the model is rejected. Reported per method: the share of actions from model / model-picked / code.
+  mh_pb_babyai c002 (a code-only solver) was rejected before the rule was stated.
 - **What the code-editing model sees.** What the playing model saw, including answers the environment
   reveals. It never sees the selection or test splits, or the environment's hidden state.
 

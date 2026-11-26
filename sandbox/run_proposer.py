@@ -37,12 +37,18 @@ DEEPSEEK_URL = "https://api.deepseek.com/anthropic"
 # carry a provider prefix, e.g. qwen/qwen3.5-9b.
 PRIME_KEY_FILE = "~/.prime_proposer_api_key"
 PRIME_URL = "https://api.pinference.ai/api"
+# Prime-hosted models that its Anthropic-format API does not serve go through the LiteLLM bridge
+# (sandbox/bridge/), a container on the proposer network: model "bridge:<name in bridge/config.yaml>".
+BRIDGE_URL = "http://ar-bridge:4000"
+BRIDGE_KEY_FILE = "~/.bridge_proposer_key"
 # USD per 1M tokens (input cache miss, input cache hit, output), off-peak; peak hours
 # (01:00-04:00 and 06:00-10:00 UTC, Mon-Fri) are double. Taken from MAS.S62 HW2 (hw2/model.py, 2026-11).
 PRICES = {"deepseek-v4-pro": (0.66, 0.022, 1.98), "deepseek-flash": (0.15, 0.003, 0.60)}
 # Prime Intellect catalog (api.pinference.ai/api/v1/models, read 2026-11-26); no peak pricing.
 PRIME_PRICES = {"qwen/qwen3.5-9b": (0.17, 0.153, 0.25), "qwen/qwen3-235b-a22b-2507": (0.25, 0.25, 1.0),
-                "anthropic/claude-opus-5.5": (4.0, 4.0, 20.0)}
+                "anthropic/claude-opus-5.5": (4.0, 4.0, 20.0),
+                "qwen3.5-9b": (0.17, 0.153, 0.25), "qwen3.6-35b-a3b": (0.19, 0.17, 1.7),
+                "qwen3.8-27b": (0.45, 0.05, 3.2)}
 
 
 def _credential():
@@ -107,6 +113,10 @@ def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=T
     extra = {}
     if model.startswith("deepseek"):
         var, secret, extra = _deepseek_env(model)
+    elif model.startswith("bridge:"):
+        model = model.split(":", 1)[1]
+        var, secret, extra = _deepseek_env(model, BRIDGE_KEY_FILE, BRIDGE_URL)
+        extra["NO_PROXY"] = extra["no_proxy"] = "ar-bridge"
     elif "/" in model:                                  # provider/model -> Prime Intellect
         var, secret, extra = _deepseek_env(model, PRIME_KEY_FILE, PRIME_URL)
     else:

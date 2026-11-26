@@ -325,6 +325,13 @@ class Run:
         for rnd in range(1, a.rounds + 1):
             if (self.dir / "rounds" / f"r{rnd:02d}.json").exists():
                 continue
+            # early stop, as every method (notes/exp_b_design.md): 3 rounds in a row with no change kept
+            # (a "kept" or "split" passed the paired noise test; anything else is no gain)
+            last = [json.loads((self.dir / "rounds" / f"r{k:02d}.json").read_text())["outcome"]
+                    for k in range(max(1, rnd - 3), rnd)]
+            if len(last) == 3 and not any(o.startswith(("kept", "split")) for o in last):
+                print(f"early stop before r{rnd:02d}: 3 rounds in a row without a gain beyond noise", flush=True)
+                break
             cur = self.versions()[-1]
             shared, tree = self.load(cur)
             meta = json.loads((cur / "meta.json").read_text())

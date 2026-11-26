@@ -119,7 +119,7 @@ transfers, so its score there is the official baseline already measured, and no 
 ## Budget (estimate)
 | Item | Episodes | GPU hours |
 |---|---|---|
-| Per method: search 8 × 140 + test 307 | about 1,430 | about 5.4 |
+| Per method: search 5 × 140 + test 307 | about 1,430 | about 5.4 |
 | Per method with a selection step: + 7 × 20 × 3 | + 420 | + 1.6 |
 | All 8 methods (official agent reused) | | about 51 |
 
@@ -157,3 +157,15 @@ transfers, so its score there is the official baseline already measured, and no 
 4. *(Open: needs a test-split run on the development tasks, not in the budget above.)* Change against the
    official default agent on each development task (negative transfer).
 5. *(Open, same as 4.)* Search-versus-test gap on the development tasks.
+
+## Changes on 2026-11-26 (timeline, all decided by the user)
+- About 13:20 EST: every model reply capped at 8192 tokens; runaway output judged by tokens; wall-clock
+  timeouts rerun (2 h limit). Earlier evaluations had no cap; only 3 replies in the whole experiment exceeded
+  8192 tokens without timing out, so finished runs were not rerun.
+- About 13:30–14:00 EST: a rule that the model must decide every action was stated, then withdrawn: code may
+  decide actions; no rejection for zero model calls.
+- 14:20 EST: **at most 5 rounds for every method** (was 8). mh_pbta_dc had 7 rounds: c006–c007 removed and
+  its selection redone over c000–c005. mh_pb_dc and mh_pb_sciworld finished within 5 rounds: unchanged.
+- The subscription's 5-hour usage limit was hit around 13:50 EST; sessions that failed on it are not rounds:
+  the affected candidates, Harness² steps and the Meta-Skills bank were rolled back, and run_proposer now
+  waits for the limit to reset.

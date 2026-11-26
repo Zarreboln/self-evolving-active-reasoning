@@ -10,6 +10,8 @@ only these:
   * the env is one game at a time (our ALFWorld adapter: the same game files and ALFWorld wrappers),
     so the notebook's batch indexing `[0]` is dropped;
   * the initial observation is cut as the notebook cuts it ('\n'.join(ob.split('\n\n')[1:])).
+  * a leading '>' is stripped from the reply: the notebook's completion model continues after the
+    prompt's final '>', a chat model repeats it ('> go to drawer 1'), which the env does not parse.
 `react` is the reasoning version; `act` uses the repo's act-only examples (`act_put_*`).
 
 score = success = the game's `won`
@@ -54,6 +56,9 @@ def episode(job):
         steps = []
         for i in range(1, 50):
             action = llm(init_prompt + prompt, stop=['\n']).strip()
+            # chat-model glue: the completion prompt ends in '>', which a completion model continues
+            # after; a chat model repeats it at the start of its reply ('> go to drawer 1')
+            action = action.lstrip('>').strip()
             observation = env.act(action)
             observation, reward, done = process_ob(observation), env.success(), env.done
             if action.startswith('think:'):

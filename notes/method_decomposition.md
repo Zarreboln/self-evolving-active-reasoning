@@ -4,17 +4,15 @@ Replaces the specialization tree of `method_formulas.md` §8 as the main method.
 (TreeMAML-style, general at the root, specific at the leaves) stays as a figure and as a comparison.
 Figure: `~/Desktop/soft_hierarchy_fig/decomposition_tree.png`.
 
-## Structure
-- **Top level**: one ability per task, the task's full harness.
-- **Lower levels**: sub-abilities that the abilities above call (e.g. keep a candidate list, prune it by
-  feedback, plan then act). The lower an ability sits, the more tasks call it.
-- **Bottom**: primitives that most tasks call (e.g. read feedback, check that an action is valid, repair the
-  output format).
-- Every node is a callable function with a fixed input/output. An edge means "calls".
-- The graph need not be balanced: an ability can call a primitive directly, skipping a level.
-- Tasks sit at the top (callers), primitives at the bottom (callees), as in a call graph. Because an ability
-  can have several callers, this is a layered hierarchy (a DAG), not a strict tree; the paper says
-  "hierarchy". Lower abilities tend to be called by more tasks; this is a tendency, not a rule.
+## Structure (main figure: `~/Desktop/soft_hierarchy_fig/soft_hierarchy.png`, decided 2026-11-26)
+- The harness h splits into abilities (h1, h2), which split into **atomic abilities** (h1.1, h1.2, h2.1,
+  h2.2, h2.3). Top = composite, bottom = atomic. A node can have any number of children.
+- **Tasks attach only to atomic abilities**, never directly to h1/h2: a task draws on several atomic
+  abilities, with weights, across branches (e.g. one task uses h1.2 strongly and h2.1 weakly).
+- An atomic ability serves every task that weighs it.
+- Hard version (TreeMAML): the same tree, but each task follows exactly one path to one atomic ability.
+- Earlier figure with tasks on top as callers (`decomposition_tree.png`) is kept but is no longer the main
+  picture.
 
 ## What is soft: splits into smaller versions
 When two tasks want a shared ability changed in conflicting ways (the change helps one and hurts the other

@@ -33,6 +33,8 @@ the data supports a split.
 - A task attaches to the nodes of each level with weights γ(t, n) = softmax over that level's nodes of
   gain(t, n) / τ, and can follow several branches at once. This is the difference from TreeMAML, where each
   task follows exactly one path.
+- The tree need not be balanced: a task can hang directly from any level (its own leaf is then empty) and
+  can draw from nodes on several levels at once. How deep a task hangs shows how much it shares with others.
 
 A table records, for every component and task, how much the score on the task changes when the component
 is added (the gain table). Each round alternates two steps, following the E/M structure of DPM

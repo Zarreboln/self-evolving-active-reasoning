@@ -98,7 +98,7 @@ class Mailbox:
     def pull(self):
         """A failed pull (network, GitHub) is left for the next poll: callers poll in a loop."""
         with self.lock():
-            r = self._git("pull", "-q", "--rebase", check=False)
+            r = self._git("pull", "-q", "--rebase", "--autostash", check=False)
             if r.returncode != 0:
                 self._git("rebase", "--abort", check=False)
                 print(f"mailbox pull failed (will retry): {(r.stderr or '').strip()[-200:]}", flush=True)
@@ -115,7 +115,7 @@ class Mailbox:
         for _ in range(5):                      # the driver may have pushed in between
             if self._git("push", "-q", check=False).returncode == 0:
                 return
-            self._git("pull", "-q", "--rebase")
+            self._git("pull", "-q", "--rebase", "--autostash")
         raise RuntimeError("mailbox push failed 5 times")
 
     def sync_code(self, here):
@@ -125,7 +125,7 @@ class Mailbox:
         """Idempotent: the same harness(es) and parameters under an existing key keep the request (and
         whatever the driver has already played or published for it), so a restarted Mac loop resumes."""
         with self.lock():
-            self._git("pull", "-q", "--rebase", check=False)
+            self._git("pull", "-q", "--rebase", "--autostash", check=False)
             req = self.repo / "requests" / key
             if (req / "request.json").exists():
                 old = json.loads((req / "request.json").read_text())
@@ -177,7 +177,7 @@ def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True
     params = {"cell": cell, "split": split, "instances": list(instances), "visible_only": visible_only,
               **(extra or {})}
     with box.lock():
-        box._git("pull", "-q", "--rebase")
+        box._git("pull", "-q", "--rebase", "--autostash")
         req = box.repo / "play_requests" / key
         res = box.repo / "play_results" / key
         if (res / "private.json").exists() and (req / "harness.py").exists() \

@@ -220,6 +220,7 @@ def main():
         print(time.strftime("%m-%d %H:%M:%S"), msg, flush=True)
 
     busy = {}
+    last_hb = 0.0
     with ThreadPoolExecutor(a.parallel) as ex:
         while not stop.exists() and not (a.until and time.time() > a.until):
             try:
@@ -259,6 +260,9 @@ def main():
                 hb = box.repo / "heartbeat" / f"{a.name}.json"
                 hb.parent.mkdir(exist_ok=True)
                 hb.write_text(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "busy": sorted(busy)}))
+                if time.time() - last_hb > 300:               # commit it, or the next pull is blocked
+                    box.push(f"{a.name}: heartbeat")
+                    last_hb = time.time()
             except Exception as e:                            # git hiccup: try again next loop
                 log(f"loop error: {e!r}")
             time.sleep(a.poll)

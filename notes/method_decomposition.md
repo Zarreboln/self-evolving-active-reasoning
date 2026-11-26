@@ -4,15 +4,18 @@ Replaces the specialization tree of `method_formulas.md` §8 as the main method.
 (TreeMAML-style, general at the root, specific at the leaves) stays as a figure and as a comparison.
 Figure: `~/Desktop/soft_hierarchy_fig/decomposition_tree.png`.
 
-## Structure (main figure: `~/Desktop/soft_hierarchy_fig/soft_hierarchy.png`, decided 2026-11-26)
-- The harness h splits into abilities (h1, h2), which split into **atomic abilities** (h1.1, h1.2, h2.1,
-  h2.2, h2.3). Top = composite, bottom = atomic. A node can have any number of children.
-- **Tasks attach only to atomic abilities**, never directly to h1/h2: a task draws on several atomic
-  abilities, with weights, across branches (e.g. one task uses h1.2 strongly and h2.1 weakly).
-- An atomic ability serves every task that weighs it.
-- Hard version (TreeMAML): the same tree, but each task follows exactly one path to one atomic ability.
-- Earlier figure with tasks on top as callers (`decomposition_tree.png`) is kept but is no longer the main
-  picture.
+## Structure (main figure: `~/Desktop/soft_hierarchy_fig/soft_hierarchy.png`, revised 2026-11-26)
+**Superseded twice on 2026-11-26.** First the tree was "composite ability → atomic abilities". The user then
+said that is not the intended meaning. The intended tree is TreeMAML-style descent, general → specific:
+- The root harness h is improved on the pooled failures of **all** tasks (every task can gain from it).
+- Each child starts from a copy of its parent and is improved further on the failures of its own group only.
+  Lower nodes therefore fit fewer tasks, and fit them better. Leaves are the most specific versions.
+- Soft: a task belongs to several branches with weights. A node is improved on the failures of the tasks below
+  it, weighted by these weights. A task runs the leaf it weighs most. The weights and the shape of the tree
+  (how many children, how deep) are learned from scores.
+- Hard version (TreeMAML): the same tree, but each task belongs to exactly one path.
+- The "atomic abilities" picture is kept as `soft_hierarchy_atomic.png`. The sections below were written for
+  the ability-decomposition reading and still need to be rewritten for this one.
 
 ## What is soft: splits into smaller versions
 When two tasks want a shared ability changed in conflicting ways (the change helps one and hurts the other

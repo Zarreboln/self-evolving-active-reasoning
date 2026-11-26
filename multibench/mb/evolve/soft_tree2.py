@@ -50,6 +50,7 @@ RUNS = Path.home() / "evo_b_runs"
 SIGMA = 0.3
 K_PARENTS = 3
 P_NOISE = 0.1
+DROP_TOL = 0.1       # a mean fall this large also counts as worse (user, 2026-11-26)
 EDITS = 5              # leaf edit rounds per task, as MH's 5 rounds per task (user); early stop below
 BUDGET_UNITS = float("inf")  # no cap for now (user, 2026-11-26): run every step, record the units used; compare later
 ABLATION = ""          # "" | "flat" | "hard"
@@ -112,10 +113,23 @@ def scale(tree):
     return statistics.median(ds) if ds else 1.0
 
 
-def parent_weights(tree, vec, exclude=()):
-    """Soft parents of a leaf among the internal nodes and the root. The root's centre is the mean of all
+AFF_UP, AFF_MAX = 1.5, 3.0
+
+
+def affinity(tree, task, node):
+    return tree.get("affinity", {}).get(task, {}).get(node, 1.0)
+
+
+def set_affinity(tree, task, node, value):
+    tree.setdefault("affinity", {}).setdefault(task, {})[node] = value
+
+
+def parent_weights(tree, vec, exclude=(), task=None):
+    """Soft parents of a leaf among the internal nodes and the root: a softmax over distances (the prior:
+    how alike the problems are) times the task's learned affinity to each node (the evidence: whether it
+    gained or lost when the node changed; 0 = it left the node). The root's centre is the mean of all
     tasks seen, so a task unlike every internal node mostly inherits from the root."""
-    cands = [n for n in internal(tree) if n not in exclude]
+    cands = [n for n in internal(tree) if n not in exclude and (task is None or affinity(tree, task, n) > 0)]
     if ABLATION == "flat" or not cands:
         return {"root": 1.0}
     vs = list(tree["vecs"].values())
@@ -124,12 +138,13 @@ def parent_weights(tree, vec, exclude=()):
     s = scale(tree) or 1.0
     near = sorted(cands, key=lambda n: dist(vec, tree["nodes"][n]["centre"]))[:K_PARENTS]
     logits = {n: -(dist(vec, tree["nodes"][n]["centre"]) / s / SIGMA) ** 2 / 2 for n in near}
-    if ABLATION == "hard":
-        best = max(logits, key=logits.get)
-        return {best: 1.0}
     m = max(logits.values())
-    z = sum(math.exp(v - m) for v in logits.values())
-    w = {n: math.exp(v - m) / z for n, v in logits.items()}
+    raw = {n: math.exp(v - m) * (affinity(tree, task, n) if task else 1.0) for n, v in logits.items()}
+    if ABLATION == "hard":
+        best = max(raw, key=raw.get)
+        return {best: 1.0}
+    z = sum(raw.values()) or 1.0
+    w = {n: v / z for n, v in raw.items()}
     return {n: round(x, 4) for n, x in w.items() if x >= 0.05} or {near[0]: 1.0}
 
 
@@ -260,6 +275,24 @@ class Run:
         lines += [f"- {self.tid(c)}: {s}" for c, s in meta["scores"].items()]
         return "\n".join(lines) + "\n"
 
+    def modules_md(self, shared, tree):
+        """The shared code's switches and which games turn each on (their resolved configuration)."""
+        import ast
+        defaults = {}
+        for node in ast.parse(shared).body:
+            if isinstance(node, ast.Assign) and any(getattr(t, "id", "") == "DEFAULT_CONFIG" for t in node.targets):
+                try:
+                    defaults = ast.literal_eval(node.value)
+                except Exception:
+                    pass
+        lines = ["# Modules of shared.py and the games that use them", "",
+                 "Every game runs this same code; a CONFIG key switches a module on or sets it.", ""]
+        for k, d in defaults.items():
+            users = [self.tid(c) for c in tree["order"] if leaf(c) in tree["nodes"]
+                     and resolve(tree, leaf(c)).get(k, d) != d]
+            lines.append(f"- `{k}` (default {d!r}): {', '.join(users) if users else 'used by no game yet'}")
+        return "\n".join(lines) + "\n"
+
     def base_ws(self, tag, shared, tree, meta):
         ws = self.dir / "workspaces" / tag
         shutil.rmtree(ws, ignore_errors=True)
@@ -269,6 +302,7 @@ class Run:
         shutil.copy(HERE / "check.py", ws / "check_harness.py")
         (ws / "shared.py").write_text(shared)
         (ws / "tree.md").write_text(self.tree_md(tree, meta))
+        (ws / "modules.md").write_text(self.modules_md(shared, tree))
         return ws
 
     def add_evidence(self, ws, c, export_tag, k=None):
@@ -311,7 +345,7 @@ class Run:
             if not tree["nodes"]["root"]["centre"]:
                 tree["nodes"]["root"]["centre"] = vec
             tree["order"].append(c)
-            tree["nodes"][leaf(c)] = {"parents": parent_weights(tree, vec), "config": {}, "desc": ess[:200],
+            tree["nodes"][leaf(c)] = {"parents": parent_weights(tree, vec, task=c), "config": {}, "desc": ess[:200],
                                       "centre": vec}
             start, err = self.evaluate(shared, tree, [c], f"{tagp}_start")
             meta["scores"][c] = start[c]["mean_score"] if start else None
@@ -450,51 +484,104 @@ class Run:
         cfg = prop.get("config") if isinstance(prop.get("config"), dict) else None
         ids = {self.tid(x): x for x in [c] + others}
         who = [ids[t] for t in prop.get("tasks", []) if t in ids]
-        if not node or cfg is None or len(who) < 2:
+        updates = {ids[t]: u for t, u in (prop.get("leaf_updates") or {}).items() if t in ids and isinstance(u, dict)}
+        new_shared = (ws / "shared.py").read_text() if (ws / "shared.py").exists() else shared
+        if new_shared != shared and problems(assemble(new_shared, {})):
+            new_shared = shared                         # a refactor that breaks the static rules is dropped
+        has_node = bool(node) and cfg is not None and len(who) >= 2
+        if not has_node and not updates and new_shared == shared:
             rec["outcome"] = "nothing extracted"
             self.record(tag, rec)
             return shared, tree, meta
         cand = json.loads(json.dumps(tree))
-        same = [n for n in internal(cand) if all(cand["nodes"][n]["config"].get(k) == v for k, v in cfg.items())]
-        nid = node if node in internal(cand) else (same[0] if same else f"n{len(internal(cand)) + 1}")
-        if nid not in cand["nodes"]:
-            cand["nodes"][nid] = {"parents": {"root": 1.0}, "config": {}, "desc": "", "centre": []}
-        cand["nodes"][nid]["config"].update(cfg)
-        cand["nodes"][nid]["desc"] = str(prop.get("description", ""))[:300]
-        for x in who:                                  # the extracted keys leave the leaves
-            for key in cfg:
-                cand["nodes"][leaf(x)]["config"].pop(key, None)
-        cand["nodes"][nid]["centre"] = [sum(cand["vecs"][x][i] for x in who) / len(who)
-                                        for i in range(len(cand["vecs"][c]))]
+        nid = None
+        if has_node:
+            same = [n for n in internal(cand) if all(cand["nodes"][n]["config"].get(k) == v for k, v in cfg.items())]
+            nid = node if node in internal(cand) else (same[0] if same else f"n{len(internal(cand)) + 1}")
+            if nid not in cand["nodes"]:
+                cand["nodes"][nid] = {"parents": {"root": 1.0}, "config": {}, "desc": "", "centre": []}
+            cand["nodes"][nid]["config"].update(cfg)
+            cand["nodes"][nid]["desc"] = str(prop.get("description", ""))[:300]
+            for x in who:                              # the extracted keys leave the leaves
+                for key in cfg:
+                    cand["nodes"][leaf(x)]["config"].pop(key, None)
+            cand["nodes"][nid]["centre"] = [sum(cand["vecs"][x][i] for x in who) / len(who)
+                                            for i in range(len(cand["vecs"][c]))]
+        for x, u in updates.items():                   # a merged module: the leaves switch to its keys
+            for k, v in u.items():
+                if v is None:
+                    cand["nodes"][leaf(x)]["config"].pop(k, None)
+                else:
+                    cand["nodes"][leaf(x)]["config"][k] = v
         for x in cand["order"]:                        # every leaf re-derives its soft parents
-            cand["nodes"][leaf(x)]["parents"] = parent_weights(cand, cand["vecs"][x])
+            cand["nodes"][leaf(x)]["parents"] = parent_weights(cand, cand["vecs"][x], task=x)
         recentre(cand)
-        changed = [x for x in cand["order"] if resolve(cand, leaf(x)) != resolve(tree, leaf(x))]
+        if has_node:                                   # a member that would lose an extracted setting keeps it
+            for x in who:
+                before, after = resolve(tree, leaf(x)), resolve(cand, leaf(x))
+                for key in cfg:
+                    if after.get(key) != before.get(key) and key in before:
+                        cand["nodes"][leaf(x)]["config"][key] = before[key]
+        if new_shared != shared:                       # the code changed: every task is re-scored
+            changed = list(cand["order"])
+        else:
+            changed = [x for x in cand["order"] if resolve(cand, leaf(x)) != resolve(tree, leaf(x))]
         if not changed:
             rec["outcome"] = "extraction changes no task's configuration: kept without scoring"
             meta["units"] = self.units
             self.save(f"v{len(self.versions()):03d}", shared, cand, meta)
             self.record(tag, rec)
             return shared, cand, meta
-        new, err = self.evaluate(shared, cand, changed, tag)
+        new, err = self.evaluate(new_shared, cand, changed, tag)
         if new is None:
             rec["outcome"] = "rejected: " + err
             self.record(tag, rec)
             return shared, tree, meta
         tests = {x: dict(zip(("wins", "losses"), paired(new[x]["per_episode"], meta["per_episode"][x]))) for x in changed}
-        drops = [x for x in changed if sign_test_p(tests[x]["losses"], tests[x]["wins"]) < P_NOISE]
-        rec.update(tests=tests, node=nid, tasks=who, changed=changed)
-        if drops:
-            rec["outcome"] = f"rejected: extraction into {nid} hurt {drops}"
+        # a task is worse if it drops significantly or its mean falls by DROP_TOL or more
+        worse = [x for x in changed if sign_test_p(tests[x]["losses"], tests[x]["wins"]) < P_NOISE
+                 or new[x]["mean_score"] <= meta["scores"][x] - DROP_TOL]
+        rec.update(tests=tests, node=nid, tasks=who, changed=changed, refactored=new_shared != shared,
+                   leaf_updates=list(updates), worse=worse)
+        if worse and new_shared != shared:             # shared code cannot be split per task: all or nothing
+            rec["outcome"] = f"rejected: the shared-code change hurt {worse}"
             self.record(tag, rec)
             return shared, tree, meta
+        keep = [x for x in changed if x not in worse]
+        if not keep:
+            rec["outcome"] = f"rejected: every re-scored task got worse {worse}"
+            self.record(tag, rec)
+            return shared, tree, meta
+        mean_new = statistics.mean(new[x]["mean_score"] for x in keep)
+        mean_old = statistics.mean(meta["scores"][x] for x in keep)
+        rec.update(mean_old=mean_old, mean_new=mean_new)
+        if mean_new < mean_old:
+            rec["outcome"] = f"rejected: mean over the tasks that stay {mean_old:.3f} -> {mean_new:.3f}"
+            self.record(tag, rec)
+            return shared, tree, meta
+        for x in worse:                                # it leaves the node: its leaf as before, affinity 0
+            cand["nodes"][leaf(x)] = json.loads(json.dumps(tree["nodes"][leaf(x)]))
+            if nid:
+                set_affinity(cand, x, nid, 0.0)
+                old_par = {p: w for p, w in cand["nodes"][leaf(x)]["parents"].items() if p != nid}
+                tot = sum(old_par.values()) or 1.0
+                cand["nodes"][leaf(x)]["parents"] = {p: w / tot for p, w in old_par.items()} or {"root": 1.0}
+        if nid:
+            for x in keep:                             # it gained or held: a stronger tie to the node
+                if new[x]["mean_score"] > meta["scores"][x]:
+                    set_affinity(cand, x, nid, min(AFF_MAX, affinity(cand, x, nid) * AFF_UP))
+            recentre(cand)
+        changed = keep
+        shared = new_shared
         for x in changed:
             meta["scores"][x] = new[x]["mean_score"]
             meta["per_episode"][x] = new[x]["per_episode"]
             meta["last_export"][x] = tag
         meta["units"] = self.units
         self.save(f"v{len(self.versions()):03d}", shared, cand, meta)
-        rec["outcome"] = f"extracted into {nid} for {who}; re-scored {changed}, none worse"
+        rec["outcome"] = (f"extracted into {nid} for {who}" if nid else "refactored") + \
+                         (" with a shared-code refactor" if rec["refactored"] else "") + \
+                         f"; kept for {changed}" + (f"; {worse} got worse and left the node" if worse else "")
         self.record(tag, rec)
         return shared, cand, meta
 
@@ -536,8 +623,12 @@ by CONFIG. Games are the leaves of a tree; internal nodes hold what several game
 from its parents (`tree.md`). `inherited_config.json` (read-only) is what game `{tid}` inherits; your change goes
 into its own overrides, `leaf_config.json`, which affect this game only.
 
-You may also add a module to `shared.py`, always behind a CONFIG key whose default keeps current behaviour, so
-other games are unaffected (every game is re-scored when shared.py changes). Keep the `CONFIG = {{}}` line.
+You may also change `shared.py`, which is shared by every game: `modules.md` lists its modules and which
+games use each. Reuse or extend an existing module before writing a new one, so that games with the same
+need end up with the same mechanism (later, common parts are moved up the tree). A new module goes behind a
+CONFIG key whose default keeps current behaviour; a change to an existing module must keep the behaviour of
+the games already using it. Every game is re-scored when shared.py changes, and the change is undone if any
+game gets worse. Keep the `CONFIG = {{}}` line.
 
 Evidence: `evidence/{tid}/` has its scores ({n} problems) and traces. Tabulate how episodes end before reading
 traces; read the last steps of failing traces. Code may decide actions; a module that cannot read an
@@ -547,20 +638,26 @@ keep symbols, lengths and formats as CONFIG parameters. No game or benchmark nam
 changed, why). The change is kept only if this game gains on the same problems, beyond noise.
 """
 
-TASK_EXTRACT = """# Extract what games share into an internal node
+TASK_EXTRACT = """# Review every game's harness and move what they share up the tree
 
-Game `{tid}` has just been added. `leaves.json` shows its leaf and every other game's leaf, nearest first
-(`distance_to_new_game`, in the space of the problem descriptions): their own overrides, their resolved
-configurations and a description of each problem. Games far apart can still share a mechanism. `internal_nodes.json` shows the
-existing internal nodes. `evidence/` has a few traces per game; `tree.md` the whole tree.
+Game `{tid}` has just been added. You see the whole picture: `leaves.json` (every game's own overrides, its
+resolved configuration, a description of its problem and its distance to the new game, nearest first),
+`internal_nodes.json` (what is already shared), `shared.py` with `modules.md` (the modules every game runs and
+which games use each), `tree.md`, and a few traces per game in `evidence/`.
 
-Find what at least two of these games share in a way that is about the problem (a mechanism, a setting) and
-move it into an internal node: an existing one (if it is the same idea) or a new one. Write `extract.json`:
-{{"node": "<existing node id, or 'new'>", "config": {{<keys and values the node will hold>}},
-"tasks": ["task1", "task4"], "description": "<one line: what these games have in common, as a problem>"}}.
-The keys you put in the node are removed from those games' leaves, and every game whose configuration changes
-is re-scored: the extraction is kept only if none gets worse. If nothing is genuinely shared, write
-{{"node": null}}. Do not edit any other file.
+Two kinds of sharing, either or both:
+1. Settings: move what at least two games set alike, in a way that is about the problem, into an internal
+   node (an existing one if it is the same idea, or a new one). Games far apart can share a mechanism.
+2. Code: where two modules do nearly the same thing for different games, merge them into one module with
+   CONFIG parameters (an alphabet, a length, a format), edit `shared.py`, and switch the games over to it.
+
+Write `extract.json`:
+{{"node": "<existing node id, 'new', or null>", "config": {{<keys and values the node will hold>}},
+  "tasks": ["task1", "task4"], "description": "<one line: what these games share, as a problem>",
+  "leaf_updates": {{"task4": {{"<key>": <new value, or null to remove it>}}}}}}
+The keys put in the node are removed from those games' leaves. Every game whose configuration changes, and
+every game if `shared.py` changes, is re-scored: the change is kept only if no game gets worse and their mean
+does not fall. If nothing is genuinely shared, write {{"node": null}} and change nothing.
 """
 
 

@@ -193,7 +193,7 @@ class Deploy:
         if not self.tree["nodes"]["root"].get("centre"):
             self.tree["nodes"]["root"]["centre"] = vec
         lf = S.leaf(cell)
-        self.tree["nodes"][lf] = {"parents": S.parent_weights(self.tree, vec), "config": {}, "desc": ess[:200], "centre": vec}
+        self.tree["nodes"][lf] = {"parents": S.parent_weights(self.tree, vec, task=cell), "config": {}, "desc": ess[:200], "centre": vec}
         inherited = S.mix({p: S.resolve(self.tree, p) for p in self.tree["nodes"][lf]["parents"]},
                           self.tree["nodes"][lf]["parents"])
         arms = {"v0": {"cfg": {**inherited}, "own": {}, "shared": self.shared, "a": 1, "b": 1}}
@@ -284,7 +284,7 @@ class Deploy:
                                               for i in range(len(self.tree["vecs"][cell]))]
         for x in self.tree["order"]:
             if S.leaf(x) in self.tree["nodes"]:
-                self.tree["nodes"][S.leaf(x)]["parents"] = S.parent_weights(self.tree, self.tree["vecs"][x])
+                self.tree["nodes"][S.leaf(x)]["parents"] = S.parent_weights(self.tree, self.tree["vecs"][x], task=x)
         S.recentre(self.tree)
 
     def run(self, order):

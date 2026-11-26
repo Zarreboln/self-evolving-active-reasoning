@@ -51,7 +51,7 @@ SANDBOX = HERE.parents[2] / "sandbox"
 RUNS = Path.home() / "evo_b_runs"
 EMBED_PY = Path.home() / "venvs" / "softtree" / "bin" / "python"
 EMBED_MODEL = "BAAI/bge-small-en-v1.5"
-SIGMA = 1.0
+SIGMA = 0.3          # calibrated on the development tasks' real vectors (user, 2026-11-26): own leaf 0.55-1.0
 ABLATION = ""        # "" (ours) | "hard": one path per task (TreeMAML) | "flat": no levels, soft weights only
 MAX_DEPTH = 100         # no depth cap: the data decides how many levels (user, 2026-11-26)
 PRUNE = 0.05
@@ -316,7 +316,8 @@ class Run:
             exp = self.dir / "exports" / "v000"
             scores = self.per_task(key, exp)
             texts = self.task_texts(exp)
-            vecs = dict(zip(self.cells, embed([texts[c] for c in self.cells])))
+            ess = self.essence(texts, exp)               # Opus: one line per game, what the problem is
+            vecs = dict(zip(self.cells, embed([ess.get(c) or texts[c] for c in self.cells])))
             tree = build_tree(self.cells, vecs)
             self.save("v000", shared, tree, {"round": 0, "node": None, "export": "v000",
                                              "scores": {c: s["mean_score"] for c, s in scores.items()},
@@ -340,12 +341,42 @@ class Run:
                 rec = self.factor_round(rnd, shared, tree, meta, cur)
             else:
                 rec = None
-                if rnd % 3 == 0 and ABLATION != "flat":           # every third round: review the grouping
+                done_regroup = any(json.loads(f.read_text()).get("kind") == "regroup"
+                                   for f in (self.dir / "rounds").glob("r*.json")) if (self.dir / "rounds").exists() else False
+                if rnd >= 3 and not done_regroup and ABLATION != "flat":   # once, from round 3 on
                     rec = self.regroup_round(rnd, shared, tree, meta, cur)
                 if rec is None:
                     rec = self.edit_round(rnd, shared, tree, meta, cur)
             self.record(rnd, rec)
             print(f"r{rnd:02d}: {rec['outcome']}", flush=True)
+
+    def essence(self, texts, exp):
+        """One session before the tree is built: the model reads each game's instructions and a few traces and
+        writes what the problem is, in terms of the problem, not the game; those lines are embedded."""
+        out_f = self.dir / "state" / "essence.json"
+        if out_f.exists():
+            return json.loads(out_f.read_text())
+        ws = self.dir / "workspaces" / "r00e"
+        shutil.rmtree(ws, ignore_errors=True)
+        (ws / "games").mkdir(parents=True)
+        for c in self.cells:
+            d = ws / "games" / self.tid(c)
+            d.mkdir()
+            (d / "instructions.md").write_text(texts[c])
+            eps = sorted((exp / "cells" / c.replace(":", "_") / "episodes").iterdir())[:3]
+            for e in eps:
+                if (e / "trace.md").exists():
+                    shutil.copy(e / "trace.md", d / f"{e.name}_trace.md")
+        (ws / "TASK.md").write_text(TASK_ESSENCE)
+        self.propose(0, ws, "e")
+        try:
+            got = json.loads((ws / "essence.json").read_text())
+        except Exception:
+            got = {}
+        ids = {self.tid(c): c for c in self.cells}
+        ess = {ids[k]: v.strip()[:500] for k, v in got.items() if k in ids and isinstance(v, str) and v.strip()}
+        out_f.write_text(json.dumps(ess, indent=1))
+        return ess
 
     # ----- round kinds -----
     def propose(self, rnd, ws, tag=""):
@@ -529,14 +560,21 @@ class Run:
         (self.dir / "rounds" / f"r{rnd:02d}.json").write_text(json.dumps(rec, indent=1))
 
     def choose_node(self, tree, meta, rnd):
-        by_depth = {}
-        for n in tree["nodes"]:
-            by_depth.setdefault(len(path(tree, n)) - 1, []).append(n)
-        depth = (rnd - 1) % len(by_depth)
+        """The node where failure is largest, by data: mean weighted failure of its games x sqrt(their weight),
+        so severity and reach both count; a node edited in the previous round is halved, so the same node is
+        not chosen again and again. The model may still move its change up the path (placement.json)."""
+        last = None
+        if rnd > 1 and (self.dir / "rounds" / f"r{rnd - 1:02d}.json").exists():
+            last = json.loads((self.dir / "rounds" / f"r{rnd - 1:02d}.json").read_text()).get("node")
 
-        def mass(n):
-            return sum(node_weight(tree, tree["vecs"][c], n) * (1 - (meta["scores"][c] or 0)) for c in self.cells)
-        return max(by_depth[depth], key=mass)
+        def score(n):
+            ws_ = {c: node_weight(tree, tree["vecs"][c], n) for c in self.cells}
+            tot = sum(ws_.values())
+            if tot < 1e-9:
+                return -1
+            fail = sum(w * (1 - (meta["scores"][c] or 0)) for c, w in ws_.items()) / tot
+            return fail * math.sqrt(tot) * (0.5 if n == last else 1.0)
+        return max(tree["nodes"], key=score)
 
     def workspace(self, rnd, node, shared, tree, cur, sub=""):
         ws = self.dir / "workspaces" / f"r{rnd:02d}{sub}"
@@ -774,6 +812,17 @@ Two more files to write:
   some of this node's games should. Moving a change up means it is tested on more games.
 - `node_description.txt`: one line saying what the games under `target_node` have in common, in terms of the
   problem (for example "guess a hidden item from structured feedback"), never game or benchmark names.
+"""
+
+TASK_ESSENCE = """# Describe what each game is, as a problem
+
+`games/` has one folder per game (task1, task2, ...): its instructions as the player first sees them, and a
+few traces of a simple agent playing it. Write `essence.json`: {"task1": "<one or two sentences>", ...}.
+
+Describe the underlying problem and what it takes to solve it, not the surface: for example "find a hidden
+item by proposing candidates and narrowing them down from structured feedback", or "move through a small
+world to reach and act on a described object". Games that are the same problem should read alike even if
+their symbols, formats or stories differ. Never write game or benchmark names. Do not edit any other file.
 """
 
 TASK_FACTOR = """# Separate a change into its general and its specific part

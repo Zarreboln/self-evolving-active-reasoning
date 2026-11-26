@@ -211,6 +211,8 @@ def main():
     ap.add_argument("--poll", type=int, default=10)
     ap.add_argument("--eval-runs", default="", help="also serve evaluation requests (requests/), working here")
     ap.add_argument("--name", default="play_worker", help="heartbeat file name")
+    ap.add_argument("--drain", type=int, default=5400, help="stop taking new requests this many seconds before "
+                    "--until, so long episodes end before the job's time limit (the next worker takes over)")
     ap.add_argument("--only", default="", help="serve only requests whose key starts with one of these "
                     "comma-separated prefixes (a dedicated worker); the other workers skip them")
     a = ap.parse_args()
@@ -258,7 +260,8 @@ def main():
                     todo = [t for t in todo if any(t[2].startswith(x) for x in only)]
                 else:
                     todo = [t for t in todo if not any(t[2].startswith(x) for x in reserved)]
-                for _, kind, key in sorted(todo):
+                draining = a.until and time.time() > a.until - a.drain
+                for _, kind, key in ([] if draining else sorted(todo)):
                     if len(busy) >= a.parallel:
                         break
                     if not claim((runs if kind == "play" else eval_runs) / key):

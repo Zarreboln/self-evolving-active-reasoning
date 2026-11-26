@@ -211,6 +211,8 @@ def main():
     ap.add_argument("--poll", type=int, default=10)
     ap.add_argument("--eval-runs", default="", help="also serve evaluation requests (requests/), working here")
     ap.add_argument("--name", default="play_worker", help="heartbeat file name")
+    ap.add_argument("--only", default="", help="serve only requests whose key starts with one of these "
+                    "comma-separated prefixes (a dedicated worker); the other workers skip them")
     a = ap.parse_args()
     box, runs = Mailbox(Path(a.mailbox)), Path(a.runs).expanduser()
     eval_runs = Path(a.eval_runs).expanduser() if a.eval_runs else None
@@ -247,6 +249,15 @@ def main():
                                                           ("summary.json", "rejected.json", "failed.json")):
                             continue
                         todo.append((json.loads(rj.read_text()).get("submitted", 0), "eval", key))
+                only = [x for x in a.only.split(",") if x]
+                reserved = []
+                rf = Path.home() / "results" / "mb" / "reserved_prefixes.txt"   # prefixes a dedicated worker owns
+                if rf.exists():
+                    reserved = [x.strip() for x in rf.read_text().split() if x.strip()]
+                if only:
+                    todo = [t for t in todo if any(t[2].startswith(x) for x in only)]
+                else:
+                    todo = [t for t in todo if not any(t[2].startswith(x) for x in reserved)]
                 for _, kind, key in sorted(todo):
                     if len(busy) >= a.parallel:
                         break

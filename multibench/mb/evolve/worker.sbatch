@@ -35,6 +35,6 @@ echo "host=$(hostname) server up after ${SECONDS}s next=$NEXT"
 cd "$HOME/code/multibench" && source mb/env.sh
 export POLICY_MODEL="$REPO" POLICY_BASE_URLS="http://127.0.0.1:$PORT/v1"
 python -m mb.evolve.worker --mailbox "$MAILBOX" --runs "$RUNS" --eval-runs "$EVAL_RUNS" --name "worker$SLOT" \
-  --parallel "${PARALLEL:-8}" --until $(( $(date +%s) + 5*3600 + 30*60 ))
+  --parallel "${PARALLEL:-8}" ${ONLY:+--only "$ONLY"} --until $(( $(date +%s) + 5*3600 + 30*60 ))
 [ -e "$HOME/mailbox_STOP" ] && scancel ${NEXT//,/ }
 kill $SERVER

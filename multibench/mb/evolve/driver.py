@@ -79,7 +79,13 @@ def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log
         if not s:
             work.mkdir(parents=True, exist_ok=True)
             (work / "harness").mkdir(exist_ok=True)
-            shutil.copy(req / "harness.py", work / "harness" / "harness.py")
+            if params.get("per_cell"):
+                for h in req.glob("harness_*.py"):
+                    d = work / "harness" / h.stem[len("harness_"):]
+                    d.mkdir(parents=True, exist_ok=True)
+                    shutil.copy(h, d / "harness.py")
+            else:
+                shutil.copy(req / "harness.py", work / "harness" / "harness.py")
             for d in (out, work / "export"):                   # a fresh request starts clean
                 shutil.rmtree(d, ignore_errors=True)
             s = {"submitted": params["submitted"], "tries": 0}

@@ -121,7 +121,14 @@ class Mailbox:
             req = self.repo / "requests" / key
             shutil.rmtree(self.repo / "results" / key, ignore_errors=True)
             req.mkdir(parents=True, exist_ok=True)
-            shutil.copy(harness, req / "harness.py")
+            if isinstance(harness, dict):        # one harness file per task: {cell: path}
+                for old in req.glob("harness*.py"):
+                    old.unlink()
+                for c, h in harness.items():
+                    shutil.copy(h, req / f"harness_{c.replace(':', '_')}.py")
+                params = {**params, "per_cell": True}
+            else:
+                shutil.copy(harness, req / "harness.py")
             (req / "request.json").write_text(json.dumps({**params, "submitted": time.time()}, indent=1))
             self._push(f"request {key}")
 
@@ -168,6 +175,8 @@ def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True
 def env_for(params, cand, out, dest):
     """Environment for eval_cand.sbatch, from the request's parameters."""
     env = {"CAND": cand, "OUT": out, "CELL": params["cell"], "SPLIT": params["split"], "N": params["n"]}
+    if params.get("per_cell"):          # CAND is a folder of per-task folders: CAND/<cell_slug>/harness.py
+        env["PER_CELL"] = 1
     if params.get("export"):
         env["DEST"] = dest
     if params.get("smoke"):

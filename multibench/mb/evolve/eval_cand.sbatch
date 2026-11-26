@@ -36,7 +36,8 @@ W=$(( 48 / ${#CELLS[@]} )); [ $W -lt 8 ] && W=8
 for c in "${CELLS[@]}"; do
   sub="$OUT"; dst="${DEST:-}"
   if [ ${#CELLS[@]} -gt 1 ]; then sub="$OUT/cells/${c/:/_}"; [ -n "$dst" ] && dst="$DEST/cells/${c/:/_}"; fi
-  ( python -m mb.evolve.broker run --cand "$CAND" --cell "$c" --split "${SPLIT:-search}" \
+  cand="$CAND"; [ -n "${PER_CELL:-}" ] && cand="$CAND/${c/:/_}"
+  ( python -m mb.evolve.broker run --cand "$cand" --cell "$c" --split "${SPLIT:-search}" \
       --n "${N:-30}" --out "$sub" ${SMOKE:+--smoke} --workers $W
     [ -n "$dst" ] && python -m mb.evolve.broker export --out "$sub" --dest "$dst" ) &
 done

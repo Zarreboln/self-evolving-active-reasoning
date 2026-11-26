@@ -34,8 +34,7 @@ submitted a guess it already knew was invalid (NICE, 4 letters), twice, and lost
 ## Other notes
 - DeepSeek runs with thinking on: about 11 times slower than Opus here, and about 9 times more tokens read.
 - Prime-hosted Qwen models are reachable only through an Anthropic-to-OpenAI bridge
-  (`sandbox/bridge/`, LiteLLM). The bridge is built but not run yet; this waits for the user's go-ahead,
-  because it spends Prime credits (estimate under $1).
+  (`sandbox/bridge/`, LiteLLM). It was run after the user's go-ahead; results below.
 
 ## Qwen as proposer, through the LiteLLM bridge to Prime (run 10:30–11:16 UTC)
 | Proposer | Time | Assistant turns | Tool calls | Stream errors | Change made |

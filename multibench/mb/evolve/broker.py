@@ -47,7 +47,7 @@ CHILD = os.path.join(HERE, "child.py")
 LIB = os.path.join(HERE, "ws_template")          # harness_lib.py lives here
 CHAT_CAP = 8                  # model calls per environment step, on average over the episode
 MAX_TOKENS = 8192             # cap on every reply (2026-11-26); harness_lib's chat() default is the same
-EPISODE_TIMEOUT = 7200          # wall clock; a timeout is infrastructure and is rerun
+EPISODE_TIMEOUT = 14400         # wall clock (4 h); a timeout is infrastructure and is rerun. BabyAI Open episodes run up to 576 steps (8-21 min on an idle GPU)
 _TOK = re.compile(r"[a-z0-9]+")
 _FORMAT_TOKENS = {"action"}
 

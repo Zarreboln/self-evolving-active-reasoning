@@ -299,6 +299,7 @@ def main():
     ap.add_argument("--order", type=Path, help="the fixed test order shared by every method")
     ap.add_argument("--build-per", choices=["task", "problem"], default="task")
     ap.add_argument("--rounds", type=int, default=ROUNDS)
+    ap.add_argument("--tasks", default="", help="test: only these test tasks (comma-separated), to run tasks in parallel")
     ap.add_argument("--model", default="claude-opus-5-5")
     a = ap.parse_args()
     if a.cmd == "status":
@@ -312,7 +313,7 @@ def main():
     if a.cmd == "bank":
         m.bank_phase(a.rounds)
     else:
-        m.test_phase(jload(a.order), a.build_per)
+        m.test_phase(jload(a.order), a.build_per, tasks=[t for t in a.tasks.split(",") if t] or None)
 
 
 if __name__ == "__main__":

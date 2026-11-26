@@ -35,7 +35,7 @@ def running(jid):
     return any(sh(f"squeue -h -j {j}", check=False).stdout.strip() for j in str(jid).split(",") if j)
 
 
-def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log):
+def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log, drain=False):
     box.pull()
     def asked(d):                                   # first come, first served (not by name: "ours"
         try:                                        # would wait behind every "abl_*"/"mh_*" request)
@@ -79,6 +79,9 @@ def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log
                 log(f"{key}: gave up after {s['tries']} tries")
                 state.pop(key)
                 continue
+        if drain:                                     # long-lived workers serve new requests
+            state.pop(key, None)
+            continue
         free = [i for i, (_, cap) in enumerate(places) if used[i] < cap]
         if in_flight >= max_jobs or not free:
             continue
@@ -128,6 +131,7 @@ def main():
     ap.add_argument("--cluster", required=True, choices=sorted(SBATCH_ARGS))
     ap.add_argument("--runs", required=True)
     ap.add_argument("--max-jobs", type=int, default=6)
+    ap.add_argument("--drain", action="store_true", help="publish the jobs already submitted, submit no new ones")
     ap.add_argument("--poll", type=int, default=60)
     ap.add_argument("--until", type=float, default=0, help="unix time to exit at (0 = never)")
     a = ap.parse_args()
@@ -142,7 +146,7 @@ def main():
 
     while not stop.exists() and not (a.until and time.time() > a.until):
         try:
-            step(box, runs, a.cluster, a.max_jobs, state, log)
+            step(box, runs, a.cluster, a.max_jobs, state, log, a.drain)
         except Exception as e:                                  # git or slurm hiccup: try again next loop
             import traceback
             log(f"loop error: {e!r}\n{traceback.format_exc(limit=4)}")

@@ -32,6 +32,118 @@ from pathlib import Path
 from mb.evolve.remote import Mailbox
 
 
+ME = os.environ.get("SLURM_JOB_ID") or f"pid{os.getpid()}"
+
+
+def alive(owner: str) -> bool:
+    if owner.startswith("pid"):
+        try:
+            os.kill(int(owner[3:]), 0)
+            return True
+        except Exception:
+            return False
+    r = subprocess.run(["squeue", "-h", "-j", owner], capture_output=True, text=True)
+    return bool(r.stdout.strip())
+
+
+def claim(work: Path) -> bool:
+    """Atomic claim of one request on the shared filesystem (work/claim/job), so that several workers
+    (and the eval jobs of race.sh) never play the same request at once. A claim whose owner is no longer
+    queued or running is taken over; the broker then resumes from the episodes already on disk."""
+    work.mkdir(parents=True, exist_ok=True)
+    d = work / "claim"
+    try:
+        d.mkdir()
+    except FileExistsError:
+        owner = (d / "job").read_text().strip() if (d / "job").exists() else ""
+        if owner and owner != ME and alive(owner):
+            return False
+    (d / "job").write_text(ME)
+    return True
+
+
+def _broker_cell(cand, cell, split, n, sub, dst, smoke, workers):
+    subprocess.run([sys.executable, "-m", "mb.evolve.broker", "run", "--cand", str(cand), "--cell", cell,
+                    "--split", split, "--n", str(n), "--out", str(sub), "--workers", str(workers)]
+                   + (["--smoke"] if smoke else []), capture_output=True, text=True)
+    if dst:
+        subprocess.run([sys.executable, "-m", "mb.evolve.broker", "export", "--out", str(sub), "--dest", str(dst)],
+                       capture_output=True, text=True)
+
+
+def _combine(out: Path):
+    """eval_cand.sbatch's combined OUT/summary.json (or rejected.json) over the per-task sub-runs."""
+    import statistics
+    cells = sorted(p.name for p in (out / "cells").iterdir())
+    rej, summ = [], {}
+    for c in cells:
+        d = out / "cells" / c
+        if (d / "rejected.json").exists():
+            rej += [f"{c}: {r}" for r in json.loads((d / "rejected.json").read_text())["rejected"]]
+        elif (d / "summary.json").exists():
+            summ[c] = json.loads((d / "summary.json").read_text())
+    if rej:
+        (out / "rejected.json").write_text(json.dumps({"rejected": rej}, indent=1))
+    elif len(summ) == len(cells):
+        (out / "summary.json").write_text(json.dumps(
+            {"cells": summ, "infra_errors": sum(x["infra_errors"] for x in summ.values()),
+             "mean_score": statistics.mean(x["mean_score"] for x in summ.values())}, indent=1))
+
+
+def serve_eval(box: Mailbox, eval_runs: Path, key: str, log):
+    """One evaluation request (requests/<key>, the format eval_cand.sbatch serves) on this worker's
+    server: same broker calls, same files, published to results/<key>/ as the driver would."""
+    req = box.repo / "requests" / key
+    params = json.loads((req / "request.json").read_text())
+    work = eval_runs / key
+    out, dest = work / "out", work / "export"
+    stamp = work / "submitted"
+    if not stamp.exists() or stamp.read_text() != str(params["submitted"]):   # a new request starts clean
+        for d in (out, dest, work / "harness"):
+            shutil.rmtree(d, ignore_errors=True)
+        stamp.write_text(str(params["submitted"]))
+    (work / "harness").mkdir(parents=True, exist_ok=True)
+    cells = params["cell"].split(",")
+    if params.get("per_cell"):
+        for h in req.glob("harness_*.py"):
+            d = work / "harness" / h.stem[len("harness_"):]
+            d.mkdir(parents=True, exist_ok=True)
+            shutil.copy(h, d / "harness.py")
+    else:
+        shutil.copy(req / "harness.py", work / "harness" / "harness.py")
+    workers = max(8, 48 // len(cells))
+    for attempt in range(4):
+        jobs = []
+        for c in cells:
+            slug = c.replace(":", "_")
+            sub = out if len(cells) == 1 else out / "cells" / slug
+            dst = (dest if len(cells) == 1 else dest / "cells" / slug) if params.get("export") else None
+            cand = work / "harness" / slug if params.get("per_cell") else work / "harness"
+            jobs.append((cand, c, params["split"], params["n"], sub, dst, params.get("smoke") and attempt == 0,
+                         workers))
+        with ThreadPoolExecutor(len(jobs)) as ex:
+            list(ex.map(lambda j: _broker_cell(*j), jobs))
+        if len(cells) > 1:
+            _combine(out)
+        summ = out / "summary.json"
+        if (out / "rejected.json").exists() or (summ.exists() and json.loads(summ.read_text())["infra_errors"] == 0):
+            break
+    with box.lock():
+        res = box.repo / "results" / key
+        shutil.rmtree(res, ignore_errors=True)
+        res.mkdir(parents=True)
+        if (out / "rejected.json").exists():
+            shutil.copy(out / "rejected.json", res / "rejected.json")
+        elif (out / "summary.json").exists() and json.loads((out / "summary.json").read_text())["infra_errors"] == 0:
+            shutil.copy(out / "summary.json", res / "summary.json")
+            if params.get("export") and dest.exists():
+                shutil.copytree(dest, res / "export", dirs_exist_ok=True)
+        else:
+            (res / "failed.json").write_text(json.dumps({"worker": ME, "tries": 4}))
+    log(f"eval {key}: published")
+    return "eval:" + key
+
+
 def serve_one(box: Mailbox, runs: Path, key: str, log):
     req = box.repo / "play_requests" / key
     params = json.loads((req / "request.json").read_text())
@@ -87,7 +199,7 @@ def _publish(box, work, out, params, key, log):
         priv["per_episode"] = json.loads((exp / "scores.json").read_text()).get("per_episode")
     (res / "private.json").write_text(json.dumps(priv, indent=1))
     log(f"{key}: done ({priv.get('mean_score')})")
-    return key
+    return "play:" + key
 
 
 def main():
@@ -97,8 +209,11 @@ def main():
     ap.add_argument("--until", type=float, default=0)
     ap.add_argument("--parallel", type=int, default=8, help="requests served at once")
     ap.add_argument("--poll", type=int, default=10)
+    ap.add_argument("--eval-runs", default="", help="also serve evaluation requests (requests/), working here")
+    ap.add_argument("--name", default="play_worker", help="heartbeat file name")
     a = ap.parse_args()
     box, runs = Mailbox(Path(a.mailbox)), Path(a.runs).expanduser()
+    eval_runs = Path(a.eval_runs).expanduser() if a.eval_runs else None
     stop = Path.home() / "mailbox_STOP"
 
     def log(msg):
@@ -111,17 +226,37 @@ def main():
                 box.pull()
                 done = [k for k, f in busy.items() if f.done()]
                 for k in done:
-                    busy.pop(k).result()
+                    try:
+                        busy.pop(k).result()
+                    except Exception as e:
+                        log(f"{k}: error {e!r}")
                 if done:
                     box.push("play: " + ", ".join(done))
-                for rj in sorted((box.repo / "play_requests").rglob("request.json")):
+                todo = []                                     # (submitted, kind, key), oldest first
+                for rj in (box.repo / "play_requests").rglob("request.json"):
                     key = str(rj.parent.relative_to(box.repo / "play_requests"))
-                    if key in busy or (box.repo / "play_results" / key / "private.json").exists():
+                    if ("play:" + key) in busy or (box.repo / "play_results" / key / "private.json").exists():
                         continue
-                    if len(busy) < a.parallel:
-                        busy[key] = ex.submit(serve_one, box, runs, key, log)
-                        log(f"{key}: started")
-                hb = box.repo / "heartbeat" / "play_worker.json"
+                    todo.append((json.loads(rj.read_text()).get("submitted", 0), "play", key))
+                if eval_runs:
+                    for rj in (box.repo / "requests").rglob("request.json"):
+                        key = str(rj.parent.relative_to(box.repo / "requests"))
+                        res = box.repo / "results" / key
+                        if ("eval:" + key) in busy or any((res / f).exists() for f in
+                                                          ("summary.json", "rejected.json", "failed.json")):
+                            continue
+                        todo.append((json.loads(rj.read_text()).get("submitted", 0), "eval", key))
+                for _, kind, key in sorted(todo):
+                    if len(busy) >= a.parallel:
+                        break
+                    if not claim((runs if kind == "play" else eval_runs) / key):
+                        continue
+                    if kind == "play":
+                        busy["play:" + key] = ex.submit(serve_one, box, runs, key, log)
+                    else:
+                        busy["eval:" + key] = ex.submit(serve_eval, box, eval_runs, key, log)
+                    log(f"{kind} {key}: started")
+                hb = box.repo / "heartbeat" / f"{a.name}.json"
                 hb.parent.mkdir(exist_ok=True)
                 hb.write_text(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "busy": sorted(busy)}))
             except Exception as e:                            # git hiccup: try again next loop

@@ -14,13 +14,19 @@ REPO=Qwen/Qwen3.5-9B
 export VLLM_USE_FLASHINFER_SAMPLER=0 VLLM_USE_DEEP_GEMM=0 VLLM_ATTENTION_BACKEND=FLASH_ATTN
 export HF_HOME=${HF_HOME:-$HOME/hf_cache} VLLM_LOGGING_LEVEL=WARNING
 source "$HOME/code/multibench/mb/evolve/race.sh"
-mkdir -p "$RUNS"
-race_claim "$RUNS" || { echo "another worker is running; exiting"; exit 0; }
-NEXT=$(race_submit mb_worker "--dependency=afterany:$SLURM_JOB_ID --requeue -c $SLURM_CPUS_PER_TASK --mem=64G -t 05:59:00 --export=ALL" \
+SLOT=${SLOT:-1}; RUNS=${RUNS:-$HOME/results/mb/play}; EVAL_RUNS=${EVAL_RUNS:-$HOME/results/mb/evo_b}
+MAILBOX=${MAILBOX:-$HOME/mailbox_w$SLOT}
+[ -d "$MAILBOX/.git" ] || git clone -q "$(git -C "$HOME/mailbox" remote get-url origin)" "$MAILBOX"
+git -C "$MAILBOX" config user.name "$(git -C "$HOME/mailbox" config user.name)"
+git -C "$MAILBOX" config user.email "$(git -C "$HOME/mailbox" config user.email)"
+mkdir -p "$RUNS/slot$SLOT"
+race_claim "$RUNS/slot$SLOT" || { echo "slot $SLOT already has a worker; exiting"; exit 0; }
+export SLOT RUNS EVAL_RUNS MAILBOX
+NEXT=$(race_submit mb_worker$SLOT "--dependency=afterany:$SLURM_JOB_ID --requeue -c $SLURM_CPUS_PER_TASK --mem=64G -t 05:59:00 --export=ALL" \
        "$HOME/code/multibench/mb/evolve/worker.sbatch")
 PORT=$(( 9000 + RANDOM % 800 ))
 ${VLLM_BIN:-$HOME/venv/bin/vllm} serve "$REPO" --port "$PORT" --max-model-len 65536 \
-  --gpu-memory-utilization 0.90 --max-num-seqs 64 --enable-prefix-caching \
+  --gpu-memory-utilization 0.90 --max-num-seqs 128 --enable-prefix-caching \
   --default-chat-template-kwargs '{"enable_thinking": false}' > "$HOME/logs/vllm_worker_${SLURM_JOB_ID}.log" 2>&1 &
 SERVER=$!
 for i in $(seq 1 120); do curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null && break; sleep 10; done
@@ -28,6 +34,7 @@ curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null || { echo "serve failed
 echo "host=$(hostname) server up after ${SECONDS}s next=$NEXT"
 cd "$HOME/code/multibench" && source mb/env.sh
 export POLICY_MODEL="$REPO" POLICY_BASE_URLS="http://127.0.0.1:$PORT/v1"
-python -m mb.evolve.worker --mailbox "$MAILBOX" --runs "$RUNS" --until $(( $(date +%s) + 5*3600 + 30*60 ))
+python -m mb.evolve.worker --mailbox "$MAILBOX" --runs "$RUNS" --eval-runs "$EVAL_RUNS" --name "worker$SLOT" \
+  --parallel "${PARALLEL:-8}" --until $(( $(date +%s) + 5*3600 + 30*60 ))
 [ -e "$HOME/mailbox_STOP" ] && scancel ${NEXT//,/ }
 kill $SERVER

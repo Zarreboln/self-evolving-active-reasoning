@@ -107,6 +107,11 @@ separately.
   - Its score on the development tasks comes from its round-0 search run. On ALFWorld and ScienceWorld
     grow-plant it is run once as a reference (57 episodes).
 
+- Added 2026-11-26 (user): one harness per benchmark is also run from the **same** start as the sharing
+  methods, TextArena's standard agent, on BabyAI, ScienceWorld and DC (runs `mh_pbta_*`; on Wordle and
+  Hangman the official agent already is that agent). Every method is also reported as its gain over its
+  own starting point.
+
 **One harness per benchmark, on a benchmark never seen.** No harness exists for it; this is the only method
 that needs a choice. Decided 2026-11-26: it uses that benchmark's **official default agent**. Nothing
 transfers, so its score there is the official baseline already measured, and no extra run is needed.

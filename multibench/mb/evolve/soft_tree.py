@@ -148,7 +148,8 @@ def mixed_config(tree, vec):
 
 def assemble(shared_src, config):
     """The task's harness: the shared code with CONFIG filled in (one file, as the broker runs it)."""
-    line = "CONFIG = " + json.dumps(config, sort_keys=True) + "\n"
+    # a Python literal (True/False/None), not JSON (true/false/null), which Python cannot read
+    line = "CONFIG = " + repr(dict(sorted(config.items()))) + "\n"
     assert "\nCONFIG = {}" in shared_src, "shared code must keep the `CONFIG = {}` line"
     return shared_src.replace("\nCONFIG = {}", "\n" + line.rstrip("\n"), 1)
 

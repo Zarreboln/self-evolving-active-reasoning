@@ -341,10 +341,11 @@ class Run:
 
     def essence(self, c, probe_tag):
         ws = self.dir / "workspaces" / f"{probe_tag}_essence"
-        shutil.rmtree(ws, ignore_errors=True)
-        ws.mkdir(parents=True)
-        self.add_evidence(ws, c, probe_tag)
-        (ws / "TASK.md").write_text(TASK_ESSENCE.format(tid=self.tid(c)))
+        if not ((self.dir / "private" / f"{probe_tag}_essence_proposed.json").exists() and ws.exists()):
+            shutil.rmtree(ws, ignore_errors=True)
+            ws.mkdir(parents=True)
+            self.add_evidence(ws, c, probe_tag)
+            (ws / "TASK.md").write_text(TASK_ESSENCE.format(tid=self.tid(c)))
         self.propose(ws, f"{probe_tag}_essence")
         try:
             return (ws / "essence.txt").read_text().strip()[:600] or c
@@ -352,16 +353,24 @@ class Run:
             return c
 
     def edit_leaf(self, tag, c, shared, tree, meta):
-        ws = self.base_ws(tag, shared, tree, meta)
         lf = leaf(c)
+        ws = self.dir / "workspaces" / tag
+        if (self.dir / "private" / f"{tag}_proposed.json").exists() and ws.exists():
+            return self.score_edit(tag, c, shared, tree, meta, ws, resumed=True)
+        ws = self.base_ws(tag, shared, tree, meta)
         inherited = mix({p: resolve(tree, p) for p in tree["nodes"][lf]["parents"]}, tree["nodes"][lf]["parents"])
         (ws / "inherited_config.json").write_text(json.dumps(inherited, indent=1))
         (ws / "leaf_config.json").write_text(json.dumps(tree["nodes"][lf]["config"], indent=1))
         self.add_evidence(ws, c, meta["last_export"][c])
         (ws / "TASK.md").write_text(TASK_LEAF.format(tid=self.tid(c), n=self.a.n))
+        return self.score_edit(tag, c, shared, tree, meta, ws)
+
+    def score_edit(self, tag, c, shared, tree, meta, ws, resumed=False):
+        lf = leaf(c)
         t0 = time.time()
-        rc = self.propose(ws, tag)
-        rec = {"task": c, "kind": "edit", "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
+        rc = self.propose(ws, tag)                     # returns at once when the session already ran
+        rec = {"task": c, "kind": "edit", "proposer_rc": rc, "proposer_seconds": round(time.time() - t0),
+               "resumed": resumed}
         try:
             new_cfg = json.loads((ws / "leaf_config.json").read_text())
         except Exception as e:
@@ -405,7 +414,13 @@ class Run:
     def extract(self, tag, c, shared, tree, meta):
         """The model moves what this leaf and its nearest other leaves share into an internal node."""
         others = sorted([x for x in tree["order"] if x != c], key=lambda x: dist(tree["vecs"][x], tree["vecs"][c]))[:3]
-        ws = self.base_ws(tag, shared, tree, meta)
+        ws = self.dir / "workspaces" / tag
+        if not ((self.dir / "private" / f"{tag}_proposed.json").exists() and ws.exists()):
+            ws = self.base_ws(tag, shared, tree, meta)
+            self.fill_extract_ws(ws, c, others, tree, meta)
+        return self.finish_extract(tag, c, others, shared, tree, meta, ws)
+
+    def fill_extract_ws(self, ws, c, others, tree, meta):
         leaves = {self.tid(x): {"own": tree["nodes"][leaf(x)]["config"], "resolved": resolve(tree, leaf(x)),
                                 "essence": tree["essence"].get(x, "")} for x in [c] + others}
         (ws / "leaves.json").write_text(json.dumps(leaves, indent=1))
@@ -414,6 +429,8 @@ class Run:
         for x in [c] + others:
             self.add_evidence(ws, x, meta["last_export"][x], k=4)
         (ws / "TASK.md").write_text(TASK_EXTRACT.format(tid=self.tid(c)))
+
+    def finish_extract(self, tag, c, others, shared, tree, meta, ws):
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "extract", "proposer_rc": rc, "neighbours": others}
         try:

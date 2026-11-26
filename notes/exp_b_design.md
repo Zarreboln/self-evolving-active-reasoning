@@ -49,9 +49,26 @@ If it also helps other tasks beyond noise (in at least two benchmarks), it moves
 moving up while it helps the tasks under the next node without hurting any. A change that helps a set of
 tasks no existing node matches opens a new node (DPM spawn rule), which is how the tree gets deeper.
 
-A new task attaches to the branches of the tree by its similarity to the development tasks (task
-instructions, action format, first episode; HSML-style soft assignment), starts with an empty leaf, and
-then updates its weights from the wins and losses the environment reports during play.
+**A new task at test time.**
+1. **Attach.** It attaches to the branches of the tree by its similarity to the development tasks (task
+   instructions, action format, first episode; HSML-style soft assignment), starts with an empty leaf, and
+   updates its weights from the wins and losses the environment reports during play.
+2. **Grow a new leaf when nothing fits.** Triggered when the borrowed weights are nearly flat (no branch is
+   clearly similar), or when every candidate harness keeps losing on the first few problems by the
+   environment's own feedback. The model that edits code then reads this task's own traces (only what the
+   environment showed: wins, losses, hints, displayed scores; never answers or test splits) and writes a new
+   leaf for it. The leaf is kept if the wins and losses on the next problems improve, otherwise rolled back.
+   Problems used for this count toward the score as played; none are replayed.
+3. **Where the new leaf goes.** Under the branches with the highest weights, softly; under the root when the
+   weights are flat (a new top-level branch). At test time only the new leaf is written; shared nodes are not
+   changed, because without scores a change to a shared node could hurt other tasks unnoticed.
+4. **Moving up later.** If a later new task also benefits from this leaf, a new node is opened above the two
+   tasks and the shared part moves into it. Moving into an existing shared node or the root follows the same
+   rule as before deployment (re-test on the tasks under that node, no drop beyond noise), using scores on the
+   development tasks' search split; this is done between deployments.
+
+Reported for this step: the fraction of new tasks that trigger it, its cost (code-editing calls), and the
+score change it brings.
 
 ## Two phases for every method
 1. **Before deployment** (development tasks): scores on the search split are available. Budget: the same
@@ -70,7 +87,7 @@ then updates its weights from the wins and losses the environment reports during
 | Learning Meta-Skills | build the skill bank | write a harness per problem |
 | ACE | offline playbook | update the playbook online (online-only also reported) |
 | Harness² | run its stream over the development tasks (no scores) | its own loop (empty-library version also reported) |
-| Ours | soft tree of harnesses + γ | γ-weighted branches + empty leaf; γ updated from environment feedback |
+| Ours | soft tree of harnesses + γ | γ-weighted branches + empty leaf; γ updated from environment feedback; a new leaf grown from environment feedback when nothing fits |
 
 **Ablations of our method** (same code, only the membership rule changes): hard tree fixed by hand
 (by benchmark or task type; fixed TreeMAML), hard tree learned by clustering rows of the gain table

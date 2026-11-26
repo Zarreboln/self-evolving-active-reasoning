@@ -78,5 +78,9 @@ The idea comes from TreeMAML, so the structure is a tree, not a flat set of comp
   new node (§5 spawn), which is how depth grows. A change that hurts tasks of its node is forked (§6).
   **(ours: growth by measured gain; TreeMAML grows by gradient similarity, Alg. 2)**
 - **New task**: γ from similarity (HSML) at each level + empty leaf; γ then updated from environment feedback.
+  When nothing fits (flat γ, or all candidates keep losing by environment feedback), the code-editing model
+  writes a new leaf from the task's own environment-visible traces, placed under the highest-γ nodes (under
+  the root when γ is flat) = a DPM spawn at test time **(ours)**. Shared nodes are not edited at test time;
+  promotion out of the new leaf follows the rule above, between deployments.
 - **Limits**: τ → 0 gives a hard tree (TreeMAML); τ → ∞ gives one shared harness; depth 1 gives the flat
   soft version of §1. All three are ablations.

@@ -107,12 +107,9 @@ separately.
   - Its score on the development tasks comes from its round-0 search run. On ALFWorld and ScienceWorld
     grow-plant it is run once as a reference (57 episodes).
 
-**One harness per benchmark, on a benchmark never seen.** No harness exists for it. This is the only method
-that needs a choice by hand. Both options are reported:
-1. **The benchmark's official default agent.** Nothing transfers, so the score is the official baseline
-   already measured.
-2. **The harness of the benchmark judged most similar by hand.** The mapping is confirmed with the user
-   before the test runs.
+**One harness per benchmark, on a benchmark never seen.** No harness exists for it; this is the only method
+that needs a choice. Decided 2026-11-26: it uses that benchmark's **official default agent**. Nothing
+transfers, so its score there is the official baseline already measured, and no extra run is needed.
 
 ## Budget (estimate)
 | Item | Episodes | GPU hours |

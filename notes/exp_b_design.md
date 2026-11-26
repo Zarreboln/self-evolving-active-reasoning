@@ -23,14 +23,16 @@ count more.
 
 ## Method
 The harness is split into a fixed set of component types (following the seven families of Learning
-Meta-Skills, 2609.38143). Components are organised as a **soft tree** with three levels, following the
-tree of TreeMAML (Garcia et al., 2021) and the per-level soft assignment of HSML (Yao et al., 2019):
+Meta-Skills, 2609.38143). Components are organised as a **soft tree**, following the tree of TreeMAML (Garcia et al., 2021) and the
+per-level soft assignment of HSML (Yao et al., 2019): one big harness at the root splits level by level into
+smaller harnesses (h → h1, h2 → h1.1, h1.2, ... → one task). The depth is not fixed; a level is added when
+the data supports a split.
 
-- **Root**: components every task uses.
-- **Group nodes**: components shared by a subset of tasks. A task attaches to group nodes with weights
-  γ(t, g) = softmax over groups of gain(t, g) / τ, and can attach to several groups at once. This is the
-  difference from TreeMAML, where each task follows exactly one path.
-- **Leaves**: each task's own components.
+- Each node holds the components shared by the tasks below it; the root holds what every task uses, the
+  leaves what only one task uses.
+- A task attaches to the nodes of each level with weights γ(t, n) = softmax over that level's nodes of
+  gain(t, n) / τ, and can follow several branches at once. This is the difference from TreeMAML, where each
+  task follows exactly one path.
 
 A table records, for every component and task, how much the score on the task changes when the component
 is added (the gain table). Each round alternates two steps, following the E/M structure of DPM
@@ -43,11 +45,11 @@ is added (the gain table). Each round alternates two steps, following the E/M st
   that use it; if a task drops beyond noise, the component is forked instead of overwritten (OSML).
 
 **Where a change lives is decided by the data.** A change starts at the leaf of the task it was made for.
-If it also helps other tasks beyond noise (in at least two benchmarks), it moves up to a group node; if it
-helps all groups without hurting any, it moves to the root. A change that helps a set of tasks no existing
-group matches opens a new group (DPM spawn rule).
+If it also helps other tasks beyond noise (in at least two benchmarks), it moves up one level, and keeps
+moving up while it helps the tasks under the next node without hurting any. A change that helps a set of
+tasks no existing node matches opens a new node (DPM spawn rule), which is how the tree gets deeper.
 
-A new task mounts the root, attaches to group nodes by its similarity to the development tasks (task
+A new task attaches to the branches of the tree by its similarity to the development tasks (task
 instructions, action format, first episode; HSML-style soft assignment), starts with an empty leaf, and
 then updates its weights from the wins and losses the environment reports during play.
 
@@ -68,7 +70,7 @@ then updates its weights from the wins and losses the environment reports during
 | Learning Meta-Skills | build the skill bank | write a harness per problem |
 | ACE | offline playbook | update the playbook online (online-only also reported) |
 | Harness² | run its stream over the development tasks (no scores) | its own loop (empty-library version also reported) |
-| Ours | soft tree of components + γ | root + γ-weighted groups + empty leaf; γ updated from environment feedback |
+| Ours | soft tree of harnesses + γ | γ-weighted branches + empty leaf; γ updated from environment feedback |
 
 **Ablations of our method** (same code, only the membership rule changes): hard tree fixed by hand
 (by benchmark or task type; fixed TreeMAML), hard tree learned by clustering rows of the gain table

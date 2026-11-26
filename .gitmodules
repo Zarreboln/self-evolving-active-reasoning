@@ -7,3 +7,6 @@
 [submodule "third_party_b/ace"]
 	path = third_party_b/ace
 	url = https://github.com/ace-agent/ace.git
+[submodule "third_party_b/harness2"]
+	path = third_party_b/harness2
+	url = https://github.com/google-research/harness2

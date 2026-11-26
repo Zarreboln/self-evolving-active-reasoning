@@ -28,3 +28,4 @@ changed is described at the top of each script in `multibench/mb/official/` and 
 
 The other submodules used by the earlier MAS.S62 active-reasoning project (BALAR, TTHE, RRSI,
 EvoHarness-RL, meta-harness-tbench2-artifact) are kept under the tag `mas-s62-ar-report`.
+| `third_party_b/harness2` | google-research/harness2 @ 6868817 (submodule) | Apache-2.0 | Harness² baseline: official prompts and library code, imported by `multibench/mb/baselines/harness2/` |

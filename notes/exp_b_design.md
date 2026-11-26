@@ -141,13 +141,12 @@ transfers, so its score there is the official baseline already measured, and no 
     with score 0. Wall-clock timeouts depend on server load, so they are infrastructure and rerun
     (limit 2 h per episode). Before this, 3 published candidates scored timeouts as 0
     (mh_pb_hangman c001: 11 episodes; mh_pbta_babyai c000: 18; mh_pbta_sciworld c001: 2); they are kept.
-- **The model decides every action** (user, 2026-11-26; stated to every method's code model). Code may
-  build the prompt, check or repair the format, track state, or choose among candidates the model
-  proposed; it must not decide the action without the model. A harness that plays an episode without
-  calling the model is rejected. Reported per method: the share of actions from model / model-picked / code.
-  mh_pb_babyai c002 (a code-only solver) was rejected before the rule was stated.
-- **What the code-editing model sees.** What the playing model saw, including answers the environment
-  reveals. It never sees the selection or test splits, or the environment's hidden state.
+- **Code may decide actions** (user, 2026-11-26; replaces a stricter rule stated for about an hour the same
+  day). A harness may solve a task in code, even without calling the model; only a harness that cannot run
+  is rejected. No extra rule in our method: its keep / split decision already moves an edit that helps only
+  some tasks down to a child holding those tasks. Reported per method and per tree level: the share of
+  actions decided by the model / model-picked / code. mh_pb_babyai c002 (a code-only solver, first
+  rejected) is re-scored and that run continues from it.
 
 ## What is reported
 1. Average score on the new tasks' test problems, with unseen and seen benchmarks separately.

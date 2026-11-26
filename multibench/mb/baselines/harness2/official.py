@@ -103,9 +103,6 @@ it must never change the FORMAT the environment asks for. Where the instructions
 (brackets, a command vocabulary, a choice letter), every action sent must follow it exactly."""
 
 
-_MODEL_RULE = ("ONE MORE RULE (all methods of this study): " + "Every action sent to the environment must come from a model reply in that step. Code may build the prompt, check or repair the format of the model's answer, track state, or choose among candidates the model proposed; it must not decide the action without the model. A harness that plays an episode without calling the model is rejected.")
-
-
 def _surface_md() -> str:
     oc = P._SURFACE_OPENCODE
     middle = P._surface_part(oc, "Change only what a trajectory shows", "THREE RULES THAT DISCARD")
@@ -113,7 +110,7 @@ def _surface_md() -> str:
         "trimming noisy or oversized tool output so it stops crowding context",
         "trimming noisy or oversized observations so they stop crowding context")
     how = P._surface_part(oc, "# HOW TO MAKE A CHANGE")
-    return "\n\n".join([_HEAD, middle, _RULES, _MODEL_RULE, how])
+    return "\n\n".join([_HEAD, middle, _RULES, how])
 
 
 # Harness²'s GENERALIZE block tells the editor to write verified facts of the current workspace into

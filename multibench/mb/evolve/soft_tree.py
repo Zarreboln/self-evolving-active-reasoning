@@ -520,7 +520,7 @@ You may change two things:
    Keep the `CONFIG = {{}}` line. Then switch it on in `node_config.json` if this node's games need it.
 
 Rules: never write game names, benchmark names or answers anywhere; the change must make sense for any game
-of this kind. Every action sent to the environment must come from a model reply in that step. Code may build the prompt, check or repair the format of the model's answer, track state, or choose among candidates the model proposed; it must not decide the action without the model. A harness that plays an episode without calling the model is rejected. One mechanism per change, as small as possible. `check_harness.py` applies the static rules
+of this kind. One mechanism per change, as small as possible. `check_harness.py` applies the static rules
 (allowed imports: re, json, math, itertools, collections, random, string, functools, heapq, typing,
 dataclasses, harness_lib); `mock_env.py` runs a harness against a fake game to check it runs.
 

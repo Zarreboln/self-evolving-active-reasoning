@@ -4,3 +4,6 @@
 [submodule "meta_harness_official"]
 	path = meta_harness_official
 	url = https://github.com/stanford-iris-lab/meta-harness.git
+[submodule "third_party_b/ace"]
+	path = third_party_b/ace
+	url = https://github.com/ace-agent/ace.git

@@ -10,6 +10,7 @@ git clone --recurse-submodules https://github.com/Zarreboln/self-evolving-active
 |---|---|---|---|
 | `AR-Bench/` | tmlr-group/AR-Bench | no license file at the top level, so the code is not copied here, only fetched as a submodule | none |
 | `meta_harness_official/` | stanford-iris-lab/meta-harness | MIT | none |
+| `third_party_b/ace/` | ace-agent/ace @ 82709de (its `ace-appworld` submodule @ 9f3e921) | Apache-2.0 | none; loaded at run time by `multibench/mb/baselines/ace/official.py` |
 
 ## Code copied into this repository
 

@@ -145,9 +145,10 @@ class MailboxExecutor(Executor):
     """Batches through mb/evolve/remote.py. Requests are keyed <run>/<tag>/<split>, so a resubmitted
     request after a Mac restart is the same request (the driver resumes episodes on disk)."""
 
-    def __init__(self, spec: str, run: str, cards_dir: Path, poll: int = 60):
+    def __init__(self, spec: str, run: str, cards_dir: Path, poll: int = 60, via_worker: bool = True):
         from mb.evolve import remote
         self.remote, self.run, self.cards, self.poll = remote.make(spec), run, Path(cards_dir), poll
+        self.via_worker = via_worker          # search batches on the long-lived worker, not a GPU job each
 
     def public_card(self, cell, instance):
         from mb.baselines.metaskill.prep_cluster import opaque
@@ -160,6 +161,8 @@ class MailboxExecutor(Executor):
     def play(self, harness_path, cell, split, instances, tag):
         key = f"metaskill/{self.run}/{tag}/{split}"
         params = {"cell": cell, "split": split, "export": split == "search", "smoke": False}
+        if isinstance(instances, int) and getattr(self, "via_worker", False):
+            return self._play_first_n(harness_path, cell, split, instances, key)
         if isinstance(instances, int):
             params["n"] = instances
         else:
@@ -187,6 +190,33 @@ class MailboxExecutor(Executor):
                         "model_calls": res.get("model_calls"), "trace": (d / "trace.md").read_text()})
         return eps
 
+
+    def _play_first_n(self, harness_path, cell, split, n, key):
+        """Search episodes (the first n of the split) on the long-lived worker instead of one GPU job
+        each; the worker returns the broker's export, the same files fetch_export gives."""
+        from mb.evolve import remote
+        for _ in range(3):
+            vis = remote.play(self.remote, key, str(harness_path), cell, split, [], visible_only=False,
+                              extra={"n": n})
+            if (vis / "rejected.json").exists():
+                r = json.loads((vis / "rejected.json").read_text())
+                return [{"instance": None, "score": 0.0, "success": False, "steps": 0, "end": "rejected",
+                         "error": "; ".join(r.get("rejected", [])), "model_calls": 0, "trace": ""}]
+            priv = json.loads((vis.parent / "private.json").read_text())
+            if priv.get("infra_errors", 0) == 0 and (vis / "episodes").is_dir():
+                eps = []
+                for d in sorted((vis / "episodes").iterdir()):
+                    res = json.loads((d / "result.json").read_text())
+                    eps.append({"instance": res.get("instance_id"), "score": res.get("score"),
+                                "success": res.get("success"), "steps": res.get("steps"), "end": res.get("end"),
+                                "error": res.get("error"), "model_calls": res.get("model_calls"),
+                                "trace": (d / "trace.md").read_text()})
+                return eps
+            with self.remote.lock():
+                import shutil
+                shutil.rmtree(vis.parent, ignore_errors=True)
+                self.remote._push(f"retry {key}")
+        raise RuntimeError(f"{key}: worker could not play the search problems after 3 tries")
 
     def _play_listed(self, harness_path, cell, split, ids, key):
         """Test episodes on the worker. Per-episode scores come from private.json, which only our

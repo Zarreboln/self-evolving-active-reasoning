@@ -6,7 +6,8 @@ vLLM server up, plays it at once with mb/evolve/broker.py and pushes the result 
 queued per problem.
 
 Mailbox layout (key = "<run>/<task>/<step>"):
-    play_requests/<key>/harness.py, request.json      {"cell", "split", "instances": [...], "visible_only"}
+    play_requests/<key>/harness.py, request.json      {"cell", "split", "instances": [...] (or "n": the
+                                                       first n of the split), "visible_only"}
     play_results/<key>/visible/...                     what the method may read
     play_results/<key>/private.json                    scores, for our reports only (the method's
                                                        play() never reads it)
@@ -41,8 +42,9 @@ def serve_one(box: Mailbox, runs: Path, key: str, log):
     for attempt in range(4):                       # reruns only episodes marked `infra`
         subprocess.run([sys.executable, "-m", "mb.evolve.broker", "run", "--cand", str(work / "harness"),
                             "--cell", params["cell"], "--split", params["split"],
-                            "--instances", ",".join(params["instances"]), "--out", str(out),
-                            "--workers", str(min(16, len(params["instances"])))],
+                            *(["--instances", ",".join(params["instances"])] if params.get("instances")
+                              else ["--n", str(params["n"])]), "--out", str(out),
+                            "--workers", str(min(16, len(params.get("instances") or []) or int(params.get("n", 16))))],
                            capture_output=True, text=True)
         summ = out / "summary.json"
         if (out / "rejected.json").exists() or (summ.exists() and json.loads(summ.read_text())["infra_errors"] == 0):

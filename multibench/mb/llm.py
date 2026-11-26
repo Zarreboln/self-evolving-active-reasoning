@@ -28,7 +28,9 @@ def make_chat(base_url: str, model: str, counter: Counter | None = None, retries
     url = base_url.rstrip("/") + "/chat/completions"
 
     def chat(messages, temperature=0.7, max_tokens=None, top_p=None, stop=None):
-        body = {"model": model, "messages": messages, "temperature": temperature}
+        body = {"model": model, "messages": messages}
+        if temperature is not None:         # None: the server's default, as agents that pass none get
+            body["temperature"] = temperature
         if max_tokens:
             body["max_tokens"] = max_tokens
         if top_p is not None:

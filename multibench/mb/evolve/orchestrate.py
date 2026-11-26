@@ -39,7 +39,14 @@ HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE / "ws_template"
 SANDBOX = HERE.parents[2] / "sandbox"
 RUNS = Path.home() / "evo_b_runs"                 # outside every repo and workspace
-CELL = "wordle:basic5"
+CELLS = ["wordle:basic5"]     # set in main(); one harness is scored on all of them (mean over tasks)
+MULTI_NOTE = """
+## Several tasks
+
+This harness is scored on {k} tasks at once, and its score is the mean over the tasks. For a candidate,
+`scores.json` holds the mean and each task's score, and `cells/<task>/` holds that task's `scores.json` and
+`episodes/`, laid out as described above. One harness file serves every task.
+"""
 MODEL = "Qwen3.5-9B"
 TEMPERATURE = 0.05            # HW2: score difference that changes a parent's sampling weight by e
 CHAT_CAP = 8
@@ -123,6 +130,10 @@ def fill_workspace(ws, archive, parent, n):
             shutil.copy(src / "scores.json", dst / "scores.json")
         if (src / "episodes").exists():
             shutil.copytree(src / "episodes", dst / "episodes")
+        if (src / "cells").exists():
+            shutil.copytree(src / "cells", dst / "cells")
+    if len(CELLS) > 1:
+        (ws / "TASK.md").write_text((ws / "TASK.md").read_text() + MULTI_NOTE.format(k=len(CELLS)))
 
 
 def proposer_cost(log):
@@ -147,10 +158,10 @@ def propose(ws, log):
 REMOTE = None                 # set in main(): remote.make("ssh:bath") or remote.make("mailbox:<clone>")
 
 
-def evaluate(run, cid, harness, split="search", n=30, export=True, smoke=True, poll=30):
+def evaluate(run, cid, harness, split="search", n=20, export=True, smoke=True, poll=30, cells=None):
     """Score one harness on the cluster; returns its summary or {"rejected": [...]}."""
-    key = f"{run}/{cid}/{split}"
-    params = {"cell": CELL, "split": split, "n": n, "export": export, "smoke": smoke}
+    key = f"{run}/{cid}/{split}" + (f"_{'+'.join(c.replace(':', '_') for c in cells)}" if cells else "")
+    params = {"cell": ",".join(cells or CELLS), "split": split, "n": n, "export": export, "smoke": smoke}
     while True:
         REMOTE.submit(key, harness, params)
         print(f"  {key}: submitted", flush=True)
@@ -178,7 +189,15 @@ def score_candidate(run, archive, m, n):
         m.update(valid=False, reason="; ".join(r["rejected"])[:300])
     else:
         pull_export(run, cid, archive)
-        m.update(valid=True, scores=json.loads((archive.dir / cid / "scores.json").read_text()))
+        d = archive.dir / cid
+        if len(CELLS) > 1:                  # mean over tasks; episodes keyed task/instance for the noise
+            per = {c.name: json.loads((c / "scores.json").read_text()) for c in sorted((d / "cells").iterdir())}
+            comb = {"mean_score": statistics.mean(v["mean_score"] for v in per.values()),
+                    "success_rate": statistics.mean((v.get("success_rate") or 0) for v in per.values()),
+                    "per_task": {k: v["mean_score"] for k, v in per.items()},
+                    "per_episode": {f"{k}/{i}": e for k, v in per.items() for i, e in v["per_episode"].items()}}
+            (d / "scores.json").write_text(json.dumps(comb, indent=1))
+        m.update(valid=True, scores=json.loads((d / "scores.json").read_text()))
     archive.save(m)
     print(f"  {cid}: {m.get('reason') or m['scores']['mean_score']}", flush=True)
 
@@ -188,13 +207,16 @@ def loop(a):
     REMOTE.sync_code(HERE)
     if not (archive.dir / "c000" / "meta.json").exists():
         (archive.dir / "c000" / "harness").mkdir(parents=True, exist_ok=True)
-        shutil.copy(HERE / "seed_think.py", archive.dir / "c000" / "harness" / "harness.py")
-        (archive.dir / "c000" / "proposal.md").write_text("The seed: experiment A's `think` arm.\n")
+        shutil.copy(HERE / "seeds" / f"{a.seed}.py", archive.dir / "c000" / "harness" / "harness.py")
+        (archive.dir / "c000" / "proposal.md").write_text("The seed: the benchmark's official default agent.\n")
         print("c000 (seed)", flush=True)
         score_candidate(a.run, archive, {"id": "c000", "parent": None, "valid": False}, a.n)
     while True:
         done = len(archive.all()) - 1
         if done >= a.rounds:
+            break
+        if stalled(archive, a.patience):
+            print(f"early stop: {a.patience} rounds in a row without a gain beyond noise", flush=True)
             break
         cid = f"c{done + 1:03d}"
         parent = select_parent(archive)
@@ -226,40 +248,64 @@ def loop(a):
         score_candidate(a.run, archive, m, a.n)
 
 
+def stalled(archive, patience):
+    """True if each of the last `patience` candidates failed to beat the best score before it by more
+    than the combined noise (invalid candidates count as no gain)."""
+    ms = archive.all()
+    if len(ms) <= patience:
+        return False
+    for i in range(len(ms) - patience, len(ms)):
+        before = [m for m in ms[:i] if m["valid"] and m.get("scores")]
+        m = ms[i]
+        if before and m["valid"] and m.get("scores"):
+            best = max(before, key=lambda x: x["scores"]["mean_score"])
+            if m["scores"]["mean_score"] - best["scores"]["mean_score"] > math.hypot(noise(m), noise(best)):
+                return False
+    return True
+
+
 def final(a):
-    """After the loop: every valid candidate on the selection split; the best of them and the seed on
-    test. Nothing here goes back into any workspace."""
+    """After the loop (settings of notes/exp_b_design.md): the 3 valid candidates with the best search
+    score go to the selection split; the best of them is then run on the test tasks. Nothing here goes
+    back into any workspace."""
     archive = Archive(a.run)
     priv = RUNS / a.run / "private"
+    valid = [m for m in archive.all() if m["valid"] and m.get("scores")]
+    top = sorted(valid, key=lambda m: m["scores"]["mean_score"], reverse=True)[:3]
     sel = {}
-    for m in archive.all():
-        if m["valid"]:
-            r = evaluate(a.run, m["id"], archive.dir / m["id"] / "harness" / "harness.py",
-                         split="selection", n=a.n_final, export=False, smoke=False)
-            sel[m["id"]] = r
-            (priv / m["id"]).mkdir(parents=True, exist_ok=True)
-            (priv / m["id"] / "selection_summary.json").write_text(json.dumps(r, indent=1))
+    for m in top:
+        r = evaluate(a.run, m["id"], archive.dir / m["id"] / "harness" / "harness.py",
+                     split="selection", n=a.n_selection, export=False, smoke=False)
+        sel[m["id"]] = r
+        (priv / m["id"]).mkdir(parents=True, exist_ok=True)
+        (priv / m["id"] / "selection_summary.json").write_text(json.dumps(r, indent=1))
     best = max(sel, key=lambda c: sel[c]["mean_score"])
     print("selection:", {c: r["mean_score"] for c, r in sel.items()}, "best", best, flush=True)
-    for cid in sorted({best, "c000"}):
-        r = evaluate(a.run, cid, archive.dir / cid / "harness" / "harness.py",
-                     split="test", n=a.n_final, export=False, smoke=False)
-        (priv / cid / "test_summary.json").write_text(json.dumps(r, indent=1))
-        print("test", cid, r["mean_score"], flush=True)
+    (RUNS / a.run / "chosen.json").write_text(json.dumps({"best": best, "selection": {
+        c: r["mean_score"] for c, r in sel.items()}}, indent=1))
+    for cell in (a.test_cells.split(",") if a.test_cells else []):
+        r = evaluate(a.run, best, archive.dir / best / "harness" / "harness.py", split="test",
+                     n=a.n_test, export=False, smoke=False, cells=[cell])
+        (priv / best / f"test_{cell.replace(':', '_')}.json").write_text(json.dumps(r, indent=1))
+        print("test", best, cell, r.get("mean_score", r), flush=True)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
     ap.add_argument("--rounds", type=int, default=8)
-    ap.add_argument("--n", type=int, default=30)
-    ap.add_argument("--n-final", type=int, default=100)
+    ap.add_argument("--n", type=int, default=20, help="search episodes per task")
+    ap.add_argument("--n-selection", type=int, default=20)
+    ap.add_argument("--n-test", type=int, default=50)
+    ap.add_argument("--test-cells", default="", help="comma-separated new tasks the chosen harness is tested on")
+    ap.add_argument("--patience", type=int, default=3, help="early stop after this many rounds without a gain")
+    ap.add_argument("--seed", default="textarena_standard", help="file in mb/evolve/seeds/ (without .py)")
     ap.add_argument("--final", action="store_true")
     ap.add_argument("--remote", default="ssh:bath", help="ssh:<host> or mailbox:<path to clone>")
-    ap.add_argument("--cell", default="wordle:basic5")
+    ap.add_argument("--cells", default="wordle:basic5", help="comma-separated development tasks")
     a = ap.parse_args()
-    global REMOTE, CELL
-    REMOTE, CELL = remote.make(a.remote), a.cell
+    global REMOTE, CELLS
+    REMOTE, CELLS = remote.make(a.remote), a.cells.split(",")
     final(a) if a.final else loop(a)
 
 

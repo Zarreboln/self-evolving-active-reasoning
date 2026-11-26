@@ -30,6 +30,13 @@ SBATCH_ARGS = {
     "bath": "--partition=h100_1 --qos=lowprio --gres=gpu:1",
     "orcd": "--partition=mit_preemptable --gres=gpu:l40s:1 --cpus-per-task=8 --mem=48G",
 }
+# Where the driver may place jobs, in order of preference, with the per-user cap of each partition.
+# ORCD: mit_normal_gpu is not preempted (2 GPUs, 6 h); mit_preemptable adds 4 more but can be preempted.
+PLACES = {
+    "bath": [("--partition=h100_1 --qos=lowprio --gres=gpu:1", 8)],
+    "orcd": [("--partition=mit_normal_gpu --gres=gpu:l40s:1 --cpus-per-task=8 --mem=48G --time=05:59:00", 2),
+             ("--partition=mit_preemptable --gres=gpu:l40s:1 --cpus-per-task=8 --mem=48G", 4)],
+}
 
 
 def sh(cmd, check=True):

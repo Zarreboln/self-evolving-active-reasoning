@@ -19,7 +19,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from mb.evolve.remote import SBATCH_ARGS, Mailbox, env_for
+from mb.evolve.remote import PLACES, SBATCH_ARGS, Mailbox, env_for
 
 HERE = Path(__file__).resolve().parent
 MAX_TRIES = 6
@@ -36,7 +36,10 @@ def running(jid):
 def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log):
     box.pull()
     reqs = sorted(p.parent for p in (box.repo / "requests").rglob("request.json"))
-    in_flight = sum(1 for s in state.values() if s.get("job") and running(s["job"]))
+    places = PLACES[cluster]
+    used = [sum(1 for s in state.values() if s.get("job") and s.get("place") == i and running(s["job"]))
+            for i in range(len(places))]
+    in_flight = sum(used)
     changed = []
     for req in reqs:
         key = str(req.relative_to(box.repo / "requests"))
@@ -69,8 +72,10 @@ def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log
                 log(f"{key}: gave up after {s['tries']} tries")
                 state.pop(key)
                 continue
-        if in_flight >= max_jobs:
+        free = [i for i, (_, cap) in enumerate(places) if used[i] < cap]
+        if in_flight >= max_jobs or not free:
             continue
+        place = free[0]
         if not s:
             work.mkdir(parents=True, exist_ok=True)
             (work / "harness").mkdir(exist_ok=True)
@@ -80,11 +85,12 @@ def step(box: Mailbox, runs: Path, cluster: str, max_jobs: int, state: dict, log
             s = {"submitted": params["submitted"], "tries": 0}
         p = dict(params, smoke=params.get("smoke") and s["tries"] == 0)
         env = " ".join(f"{k}={v}" for k, v in env_for(p, work / "harness", out, work / "export").items())
-        jid = sh(f"cd ~/logs && {env} sbatch --parsable {SBATCH_ARGS[cluster]} "
+        jid = sh(f"cd ~/logs && {env} sbatch --parsable {places[place][0]} "
                  f"{HERE}/eval_cand.sbatch").stdout.strip()
-        s.update(job=jid, tries=s["tries"] + 1)
+        s.update(job=jid, tries=s["tries"] + 1, place=place)
         state[key] = s
         in_flight += 1
+        used[place] += 1
         log(f"{key}: submitted job {jid} (try {s['tries']})")
     hb = box.repo / "heartbeat" / f"{cluster}.json"
     hb.parent.mkdir(exist_ok=True)
@@ -98,7 +104,7 @@ def main():
     ap.add_argument("--mailbox", required=True)
     ap.add_argument("--cluster", required=True, choices=sorted(SBATCH_ARGS))
     ap.add_argument("--runs", required=True)
-    ap.add_argument("--max-jobs", type=int, default=4)
+    ap.add_argument("--max-jobs", type=int, default=6)
     ap.add_argument("--poll", type=int, default=60)
     ap.add_argument("--until", type=float, default=0, help="unix time to exit at (0 = never)")
     a = ap.parse_args()

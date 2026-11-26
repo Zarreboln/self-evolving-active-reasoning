@@ -7,7 +7,7 @@
 #SBATCH --job-name=mb_evo_b
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=96G
-#SBATCH --time=01:00:00
+#SBATCH --time=03:00:00
 #SBATCH --requeue
 #SBATCH --open-mode=append
 #SBATCH --output=%x_%j.out
@@ -29,9 +29,36 @@ echo "server up after ${SECONDS}s"
 
 cd "$HOME/code/multibench" && source mb/env.sh
 export POLICY_MODEL="$REPO" POLICY_BASE_URLS="http://127.0.0.1:$PORT/v1"
-python -m mb.evolve.broker run --cand "$CAND" --cell "${CELL:-wordle:basic5}" --split "${SPLIT:-search}" \
-  --n "${N:-30}" --out "$OUT" ${SMOKE:+--smoke} --workers 32
-[ -n "${DEST:-}" ] && python -m mb.evolve.broker export --out "$OUT" --dest "$DEST"
+# CELL may list several tasks (comma-separated): one sub-run per task, all against this one server,
+# then a combined OUT/summary.json (or OUT/rejected.json if any task rejected the candidate).
+IFS=, read -ra CELLS <<< "${CELL:-wordle:basic5}"
+W=$(( 48 / ${#CELLS[@]} )); [ $W -lt 8 ] && W=8
+for c in "${CELLS[@]}"; do
+  sub="$OUT"; dst="${DEST:-}"
+  if [ ${#CELLS[@]} -gt 1 ]; then sub="$OUT/cells/${c/:/_}"; [ -n "$dst" ] && dst="$DEST/cells/${c/:/_}"; fi
+  ( python -m mb.evolve.broker run --cand "$CAND" --cell "$c" --split "${SPLIT:-search}" \
+      --n "${N:-30}" --out "$sub" ${SMOKE:+--smoke} --workers $W
+    [ -n "$dst" ] && python -m mb.evolve.broker export --out "$sub" --dest "$dst" ) &
+done
+wait
+[ ${#CELLS[@]} -gt 1 ] && python - "$OUT" <<'PY'
+import json, os, statistics, sys
+out = sys.argv[1]
+cells = sorted(os.listdir(os.path.join(out, "cells")))
+rej, summ = [], {}
+for c in cells:
+    d = os.path.join(out, "cells", c)
+    if os.path.exists(os.path.join(d, "rejected.json")):
+        rej += [f"{c}: {r}" for r in json.load(open(os.path.join(d, "rejected.json")))["rejected"]]
+    elif os.path.exists(os.path.join(d, "summary.json")):
+        summ[c] = json.load(open(os.path.join(d, "summary.json")))
+if rej:
+    json.dump({"rejected": rej}, open(os.path.join(out, "rejected.json"), "w"), indent=1)
+elif len(summ) == len(cells):
+    json.dump({"cells": summ, "infra_errors": sum(s["infra_errors"] for s in summ.values()),
+               "mean_score": statistics.mean(s["mean_score"] for s in summ.values())},
+              open(os.path.join(out, "summary.json"), "w"), indent=1)
+PY
 echo "end=$(date -Is)"
 touch "$OUT/DONE"
 kill $SERVER

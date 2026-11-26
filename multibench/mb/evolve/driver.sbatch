@@ -17,6 +17,6 @@ NEXT=$(sbatch --parsable --dependency=afterany:$SLURM_JOB_ID --partition="$SLURM
        --export=ALL "$HOME/code/multibench/mb/evolve/driver.sbatch")
 echo "host=$(hostname) start=$(date -Is) next=$NEXT"
 python -m mb.evolve.driver --mailbox "$MAILBOX" --cluster "$CLUSTER" --runs "$RUNS" \
-  --max-jobs "${MAX_JOBS:-4}" --until $(( $(date +%s) + 11*3600 + 30*60 ))
+  --max-jobs "${MAX_JOBS:-6}" --until $(( $(date +%s) + 11*3600 + 30*60 ))
 [ -e "$HOME/mailbox_STOP" ] && scancel "$NEXT"
 echo "end=$(date -Is)"

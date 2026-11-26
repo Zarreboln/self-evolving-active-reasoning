@@ -19,6 +19,7 @@ Rules, as in MAS.S62 HW2 (README, "What the loop saves"), adapted to this suite:
 Errors: a harness that raises, returns early, or calls the model more than CHAT_CAP times per step
 keeps the score the environment gives at that point; that is the harness's result. An unreachable
 model server is infrastructure, not the harness: the episode is marked `infra` and reruns on resume.
+An episode that runs past EPISODE_TIMEOUT is the harness's failure (score 0), not infrastructure.
 
     python -m mb.evolve.broker run    --cand DIR --cell wordle:basic5 --split search --n 30 --out OUT
     python -m mb.evolve.broker export --out OUT --dest DIR
@@ -182,7 +183,12 @@ def _one_subprocess(job):
             return inst, json.load(open(_path(out, bench, sub, inst))).get("score")
         err = f"exit {cp.returncode}: {cp.stderr.strip()[-400:]}"
     except subprocess.TimeoutExpired:
-        err = f"timeout after {EPISODE_TIMEOUT}s"
+        # runaway output (e.g. no max_tokens and a model that does not stop): the agent's failure,
+        # scored as such and not rerun (notes/exp_b_design.md, "Failures")
+        _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst, "score": 0.0,
+                                              "success": False, "end": "timeout", "steps_log": [], "calls": [],
+                                              "error": f"episode exceeded {EPISODE_TIMEOUT}s"})
+        return inst, 0.0
     # a broker failure (not a harness error, which is recorded inside the episode) reruns on resume
     _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst,
                                           "score": float("nan"), "infra": err})

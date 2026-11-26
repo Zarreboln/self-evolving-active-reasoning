@@ -33,6 +33,7 @@ export POLICY_MODEL="$REPO" POLICY_BASE_URLS="http://127.0.0.1:$PORT/v1"
 # then a combined OUT/summary.json (or OUT/rejected.json if any task rejected the candidate).
 IFS=, read -ra CELLS <<< "${CELL:-wordle:basic5}"
 W=$(( 48 / ${#CELLS[@]} )); [ $W -lt 8 ] && W=8
+PIDS=()
 for c in "${CELLS[@]}"; do
   sub="$OUT"; dst="${DEST:-}"
   if [ ${#CELLS[@]} -gt 1 ]; then sub="$OUT/cells/${c/:/_}"; [ -n "$dst" ] && dst="$DEST/cells/${c/:/_}"; fi
@@ -40,8 +41,9 @@ for c in "${CELLS[@]}"; do
   ( python -m mb.evolve.broker run --cand "$cand" --cell "$c" --split "${SPLIT:-search}" \
       --n "${N:-30}" --out "$sub" ${SMOKE:+--smoke} --workers $W
     [ -n "$dst" ] && python -m mb.evolve.broker export --out "$sub" --dest "$dst" ) &
+  PIDS+=($!)
 done
-wait
+wait "${PIDS[@]}"          # not a bare `wait`: that would also wait for the vLLM server
 [ ${#CELLS[@]} -gt 1 ] && python - "$OUT" <<'PY'
 import json, os, statistics, sys
 out = sys.argv[1]

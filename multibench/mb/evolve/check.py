@@ -72,6 +72,11 @@ def leaks(src: str, seen, unseen) -> str | None:
     hits exceed their expectation under the unseen rate by more than 2 + 2 sd.
     """
     low = src.lower()
+    # ids that are bare numbers (BabyAI, Hangman seeds) are not answer text: any code has digits
+    seen = [a for a in seen if not str(a).strip().isdigit()]
+    unseen = [a for a in unseen if not str(a).strip().isdigit()]
+    if not seen:
+        return None
     hs, hu = _hits(low, seen), _hits(low, unseen)
     rate = len(hu) / max(len(unseen), 1)
     exp = rate * len(seen)

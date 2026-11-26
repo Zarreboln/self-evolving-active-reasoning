@@ -94,8 +94,12 @@ class Mailbox:
                 fcntl.flock(f, fcntl.LOCK_UN)
 
     def pull(self):
+        """A failed pull (network, GitHub) is left for the next poll: callers poll in a loop."""
         with self.lock():
-            self._git("pull", "-q", "--rebase")
+            r = self._git("pull", "-q", "--rebase", check=False)
+            if r.returncode != 0:
+                self._git("rebase", "--abort", check=False)
+                print(f"mailbox pull failed (will retry): {(r.stderr or '').strip()[-200:]}", flush=True)
 
     def push(self, msg):
         with self.lock():
@@ -116,9 +120,20 @@ class Mailbox:
         pass                                    # the cluster runs the code its own checkout holds
 
     def submit(self, key, harness, params):
+        """Idempotent: the same harness(es) and parameters under an existing key keep the request (and
+        whatever the driver has already played or published for it), so a restarted Mac loop resumes."""
         with self.lock():
-            self._git("pull", "-q", "--rebase")
+            self._git("pull", "-q", "--rebase", check=False)
             req = self.repo / "requests" / key
+            if (req / "request.json").exists():
+                old = json.loads((req / "request.json").read_text())
+                want = {**params, **({"per_cell": True} if isinstance(harness, dict) else {})}
+                files = ({f"harness_{c.replace(':', '_')}.py": h for c, h in harness.items()}
+                         if isinstance(harness, dict) else {"harness.py": harness})
+                same_files = (sorted(f.name for f in req.glob("harness*.py")) == sorted(files) and
+                              all((req / n).read_bytes() == Path(h).read_bytes() for n, h in files.items()))
+                if same_files and {k: old.get(k) for k in want} == want:
+                    return
             shutil.rmtree(self.repo / "results" / key, ignore_errors=True)
             req.mkdir(parents=True, exist_ok=True)
             if isinstance(harness, dict):        # one harness file per task: {cell: path}

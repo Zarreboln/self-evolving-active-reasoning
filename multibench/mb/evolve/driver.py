@@ -127,7 +127,8 @@ def main():
         try:
             step(box, runs, a.cluster, a.max_jobs, state, log)
         except Exception as e:                                  # git or slurm hiccup: try again next loop
-            log(f"loop error: {e!r}")
+            import traceback
+            log(f"loop error: {e!r}\n{traceback.format_exc(limit=4)}")
         state_file.write_text(json.dumps(state, indent=1))
         time.sleep(a.poll)
     log("driver exiting")

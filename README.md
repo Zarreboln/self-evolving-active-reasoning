@@ -1,11 +1,12 @@
-# Partial Sharing of Harnesses Across Tasks
+# Soft Hierarchies for Sharing Harnesses Across Tasks
 
 **Zining Liu** — Massachusetts Institute of Technology
 
 The code around a frozen language model (its harness: prompts, how the history is kept, control flow,
 tools) can be improved automatically. When existing methods share a harness across several tasks, the
-scope of sharing is fixed by hand: either one harness for all tasks, or one per benchmark. This project
-asks whether the data can decide **which parts of a harness are shared between which tasks**, so that a
+scope of sharing is fixed by hand: either one harness for all tasks, or one per benchmark, a hard
+hierarchy. This project learns a **soft hierarchy** instead: the data decides **which parts of a harness
+are shared between which tasks**, and a task can belong to several groups to different degrees, so that a
 new task, including one from a benchmark not seen before, adapts faster, at lower cost, and with less
 overfitting.
 

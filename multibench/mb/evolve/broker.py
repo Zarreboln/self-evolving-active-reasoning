@@ -234,7 +234,8 @@ def run(a):
         _one_subprocess(jobs[0])
         e = json.load(open(_path(a.out, bench, sub, jobs[0][3])))
         why = ("crashes: " + (e.get("error") or "")[-300:] if e.get("end") == "crash"
-               else "made no model call" if "infra" not in e and not e.get("calls") else "")
+               else "made no model call" if "infra" not in e and not e.get("calls")
+               and e.get("end") != "timeout" else "")   # a timeout is the harness's failure, scored 0
         if why:
             json.dump({"rejected": [why]}, open(os.path.join(a.out, "rejected.json"), "w"), indent=1)
             print("rejected:", why, flush=True)

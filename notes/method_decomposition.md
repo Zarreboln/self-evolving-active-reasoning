@@ -32,10 +32,18 @@ The cost is that the code-editing model must write general modules with switches
 
 ## What is soft
 - **Weights.** Each task t has a weight w(t, n) on every node n, as in HSML:
-  - the task is embedded as a vector e(t), from its description and its first traces;
-  - each node n has a centre c(n);
-  - at each level, w(t, child) = softmax over the children of −‖e(t) − c(child)‖² / τ;
-  - the weight on a leaf is the product of the weights along its path.
+  - **Task vector e(t).**
+    - At first, e(t) is computed from the task description only.
+    - After 3 episodes run with the root configuration, e(t) is recomputed from the description together
+      with a summary of these traces. Only environment-visible content is used, so this stays label-free.
+    - The same fixed local text-embedding model is used for development and new tasks.
+  - **Centres.** Each node n has a centre c(n). The initial tree and centres come from hierarchical
+    clustering of the development tasks' vectors.
+  - **Weights per level (HSML, Eq. 6).** w(t, child) ∝ exp(−‖(e(t) − c(child)) / σ‖² / 2), normalised over
+    the children of one node.
+    - Distances are first divided by the median pairwise distance between development tasks.
+    - σ = 1 is a fixed constant, not tuned. HSML also fixes σ, to 10 or 2 depending on the experiment.
+  - **Weight on a leaf.** The product of the weights along its path.
 - **Running.** A task runs a configuration mixed from the leaves by these weights:
   - continuous values are averaged by weight;
   - on/off switches and prompt snippets are on if their weighted vote is above one half.
@@ -50,13 +58,21 @@ The cost is that the code-editing model must write general modules with switches
    only if no task drops beyond noise and the mean improves beyond noise.
 3. **Configurations, top-down.** The root's configuration is fitted first, then each child's overrides on its
    tasks' weighted failures, then the leaves.
-4. **Centres.** Each node's centre moves toward the embeddings of the tasks that gained from it.
+4. **Centres.** Each node's centre is set to the weighted mean of its tasks' vectors. A task's weight here is
+   its weight on the node times its positive gain from the node (soft k-means; HSML learns centres by
+   gradient, which is not available here).
 5. **Reshape.**
    - **Split.** If a configuration change helps some tasks of a node and hurts others beyond noise, the node
      splits: the change goes to a new child for the tasks it helps.
    - **Promote.** If a child's override also helps the tasks of its siblings beyond noise, it moves up to the
      parent.
    - **Prune.** Children with little total weight are removed.
+
+**Noise test (used by keep, split and promote).**
+- Old and new versions run on the same problems with the same seeds.
+- Count the problems that only the new version solves and those that only the old version solves.
+- Start with 20 problems and decide at once if the difference is clear. Otherwise add problems up to 50 and
+  use a one-sided sign test at p < 0.1.
 
 ## Relation to TreeMAML and HSML
 - **TreeMAML.** The k-th inner step averages gradients within the level-k cluster. Here the level-k
@@ -69,10 +85,16 @@ The cost is that the code-editing model must write general modules with switches
   - The shape of the tree grows and shrinks.
 
 ## A new task at deployment (environment feedback only, no scores)
-1. **Start.** Its weights come from the distance of its embedding to the node centres, and it runs the mixed
-   configuration.
-2. **Adjust.** While it plays, its weights are adjusted from its wins and losses.
-3. **Grow.** If nothing fits (the weights stay flat, or the score keeps falling), a new leaf is grown under the
+1. **Start.** Its vector is computed as above (description first, then description and 3 traces). Its leaf
+   weights come from the distances to the node centres.
+2. **Choose by Thompson sampling.**
+   - For about the first 10 episodes, the task runs single leaves, not the mix, among the 3 leaves it weighs
+     most.
+   - Each leaf has a Beta distribution over its win rate. The prior comes from the distance weights.
+   - Each episode samples one value per leaf and runs the leaf with the largest value.
+   - A win adds 1 to that leaf's α, and a loss adds 1 to its β.
+   - Afterwards, the posterior means become the weights, and the task runs the mixed configuration.
+3. **Grow.** If nothing fits (the posteriors of all 3 leaves stay low), a new leaf is grown under the
    highest-weight node, or under the root if the weights are flat.
    - The new leaf is a new configuration, written from the task's environment-visible traces only.
    - Shared code and shared nodes are never edited at deployment.
@@ -88,9 +110,7 @@ The cost is that the code-editing model must write general modules with switches
 - A code diff per node instead of a configuration per node.
 
 ## Open (to decide)
-- How tasks are embedded: from the description only, or from the description and the first traces.
-- The value of τ, and how centres are updated.
-- The noise threshold for the keep, split and promote tests.
 - Whether to enlarge the development set (5 tasks may be too few for a tree). This changes the experiment
   design, so it is not decided yet.
-- How a task's weights are adjusted at deployment.
+- How the Beta prior is built from the distance weights, and the exact threshold for "posteriors stay low".
+- Which embedding model.

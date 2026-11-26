@@ -63,3 +63,20 @@ After experiment A: plug its 4×10 Δ matrix in as ℓ(t,c) at k = 0, plot γ fo
 - **Baseline: overfit-then-extract** at equal total budget (k = whole budget per task, extraction once at the end). If it adapts held-out tasks as well as the interleaved schedule, the interleaving is unnecessary.
 - Ablation: k ∈ {1, 2, 4}. Extraction by recurrence only (main) vs an LLM abstractor that rewrites a task-specific component into a general one (ablation; this is what Meta-Skills' keep/revise/add and Harness²'s Reflector do).
 - The hard split by the `world` label (pure / intermediate / world, as pre-registered in A) is a baseline only.
+
+## 8. Soft tree: three levels (decided 2026-11-25)
+The idea comes from TreeMAML, so the structure is a tree, not a flat set of components.
+- **Levels**: root (all tasks), group nodes (subsets of tasks), leaves (one task). Same three levels as the
+  "C_1 = 1 then C_K = m" case of §3, with group nodes in between.
+- **Soft attachment to group nodes**: γ(t, g) = softmax_g( gain(t, g) / τ ), gain(t, g) = score change on t
+  when g's components are mounted. Per-level soft assignment is what HSML does (Eq. 6, one σ^l per level);
+  TreeMAML assigns each task to exactly one node per level. A task mounts every group with γ(t, g) > η
+  (HSML gate, §2).
+- **Placement of a change (tree growth)**: a change starts at its task's leaf; moves to a group node if its
+  γ-weighted gain over that node's tasks is beyond noise and it helps tasks in ≥ 2 benches (§4 promotion);
+  moves to the root if it helps every group and hurts none beyond noise; opens a new group node when no
+  existing group matches the set of tasks it helps (§5 spawn). A change that hurts tasks of its node is
+  forked (§6). **(ours: growth by measured gain; TreeMAML grows by gradient similarity, Alg. 2)**
+- **New task**: root + γ from similarity (HSML) + empty leaf; γ then updated from environment feedback.
+- **Limits**: τ → 0 gives a hard tree (TreeMAML); τ → ∞ gives one shared harness; no group level gives the
+  flat soft version of §1. All three are ablations.

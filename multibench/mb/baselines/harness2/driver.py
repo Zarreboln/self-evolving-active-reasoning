@@ -44,7 +44,7 @@ def make_session(kind: str, run: Path):
 def make_play(spec: str, run: Path):
     kind, _, arg = spec.partition(":")
     if kind == "mailbox":
-        raw = MailboxPlay(arg)
+        raw = MailboxPlay(arg, prefix="harness2/" + str(run.relative_to(run.parents[2])))
     elif kind == "local":
         raw = LocalBrokerPlay(Path(arg or run / "private" / "local_play"))
     elif kind == "fake":

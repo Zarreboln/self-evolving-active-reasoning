@@ -163,9 +163,9 @@ class MailboxExecutor(Executor):
         if isinstance(instances, int):
             params["n"] = instances
         else:
-            # the driver must honor an explicit list (the parent's worker does); the stock broker plays
-            # the first n of the split, so only a list equal to that is played correctly by it
-            params["n"], params["instances"] = len(instances), list(instances)
+            # an explicit list (test: the shared fixed order) goes to the long-lived worker, which plays
+            # exactly these problems; the batch driver would play the first n of the split instead
+            return self._play_listed(harness_path, cell, split, list(instances), key)
         while True:
             self.remote.submit(key, str(harness_path), params)
             while (r := self.remote.result(key)) is None:
@@ -186,6 +186,29 @@ class MailboxExecutor(Executor):
                         "steps": res.get("steps"), "end": res.get("end"), "error": res.get("error"),
                         "model_calls": res.get("model_calls"), "trace": (d / "trace.md").read_text()})
         return eps
+
+
+    def _play_listed(self, harness_path, cell, split, ids, key):
+        """Test episodes on the worker. Per-episode scores come from private.json, which only our
+        report code reads: at test time the bank is frozen and nothing goes back to the Builder."""
+        from mb.evolve import remote
+        for _ in range(3):
+            vis = remote.play(self.remote, key, str(harness_path), cell, split, ids, visible_only=True)
+            res = vis.parent
+            if (vis / "rejected.json").exists():
+                r = json.loads((vis / "rejected.json").read_text())
+                return [{"instance": i, "score": 0.0, "success": False, "steps": 0, "end": "rejected",
+                         "error": "; ".join(r.get("rejected", [])), "model_calls": 0} for i in ids]
+            priv = json.loads((res / "private.json").read_text())
+            per = priv.get("per_episode") or {}
+            if priv.get("infra_errors", 0) == 0 and all(i in per for i in ids):
+                return [{"instance": i, **{k: per[i].get(k) for k in ("score", "success", "steps", "end", "error",
+                                                                      "model_calls")}} for i in ids]
+            with self.remote.lock():                       # incomplete: drop it so the next try replays
+                import shutil
+                shutil.rmtree(res, ignore_errors=True)
+                self.remote._push(f"retry {key}")
+        raise RuntimeError(f"{key}: worker could not play all problems after 3 tries")
 
 
 def mean_score(eps):

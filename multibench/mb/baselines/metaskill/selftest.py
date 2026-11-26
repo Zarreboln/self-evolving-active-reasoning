@@ -355,9 +355,26 @@ def main():
     assert [e["score"] for e in eps] == [0, 1] and eps[0]["trace"] == "# episode"
     assert mx.remote.sent[0] == ("metaskill/t/r01_t0/search", {"cell": "wordle:basic5", "split": "search",
                                                               "export": True, "smoke": False, "n": 20})
-    summ_only = mx.play(Path("h.py"), "mastermind:basic", "test", ["a", "b"], "test_x")
-    assert mx.remote.sent[-1][1]["instances"] == ["a", "b"] and "summary" in summ_only[0]
-    ok.append("mailbox backend: search request (first n, export) and test request (explicit list, no export)")
+    from mb.evolve import remote as R
+    played = []
+
+    def fake_play(box, key, harness, cell, split, instances, visible_only=True, **kw):
+        played.append((key, cell, split, list(instances), visible_only))
+        d = root / "play_results" / key
+        (d / "visible").mkdir(parents=True, exist_ok=True)
+        (d / "private.json").write_text(json.dumps({"infra_errors": 0, "per_episode": {
+            i: {"score": float(j), "success": bool(j), "steps": 2, "end": "end", "error": None, "model_calls": 2}
+            for j, i in enumerate(instances)}}))
+        return d / "visible"
+    real, R.play = R.play, fake_play
+    try:
+        eps = mx.play(Path("h.py"), "mastermind:basic", "test", ["a", "b"], "test_x")
+    finally:
+        R.play = real
+    assert played == [("metaskill/t/test_x/test", "mastermind:basic", "test", ["a", "b"], True)]
+    assert [(e["instance"], e["score"]) for e in eps] == [("a", 0.0), ("b", 1.0)] and "trace" not in eps[0]
+    ok.append("mailbox backend: search request (first n, export) via the batch driver; test list via the "
+              "worker, exactly those problems, traces withheld")
     print("\n".join("ok  " + x for x in ok))
     shutil.rmtree(root, ignore_errors=True)
 

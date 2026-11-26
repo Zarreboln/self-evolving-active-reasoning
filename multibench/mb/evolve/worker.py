@@ -72,6 +72,14 @@ def _publish(box, work, out, params, key, log):
             (dst / "trace.md").write_text("\n".join(lines) + "\n")
     else:
         shutil.copytree(exp, res / "visible", dirs_exist_ok=True)
+    if params.get("raw"):                          # full episode records (calls, steps_log, score)
+        from mb.screen import _path
+        bench, sub = params["cell"].split(":", 1)
+        (res / "raw").mkdir()
+        for inst in params["instances"]:
+            p = Path(_path(str(out), bench, sub, inst))
+            if p.exists():
+                shutil.copy(p, res / "raw" / p.name)
     priv = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
     if (exp / "scores.json").exists():
         priv["per_episode"] = json.loads((exp / "scores.json").read_text()).get("per_episode")

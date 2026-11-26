@@ -262,17 +262,37 @@ class LocalBrokerPlay:
 
 
 class MailboxPlay:
-    """Placeholder for the ORCD worker reached through the git mailbox (mb/evolve/remote.py).
+    """The ORCD long-lived worker (mb/evolve/worker.py) reached through the git mailbox
+    (mb/evolve/remote.play). One request per (key, instance), keyed `<prefix>/<key>/<instance>`, so a
+    resubmitted key after a restart returns the stored records. The worker runs the broker, which runs
+    mb.evolve.check on the harness first, and returns the raw episode records (calls, steps_log) that
+    LocalBrokerPlay would give; CachedPlay keeps them under private/."""
 
-    Contract for the implementation: ship `harness_path` and (cell, split, instance_ids, key); the
-    worker runs LocalBrokerPlay on them against its local vLLM server and returns the episode
-    records (the files the broker writes per instance, `calls` and `steps_log` included). The worker
-    should also run mb.evolve.check.leaks on the harness, as broker.run does. Requests must be
-    idempotent by `key`: a resubmitted key returns the stored records.
-    """
-
-    def __init__(self, clone: str):
-        self.clone = clone
+    def __init__(self, clone: str, prefix: str = "harness2"):
+        from mb.evolve.remote import Mailbox
+        self.box, self.prefix = Mailbox(Path(clone).expanduser()), prefix.strip("/")
 
     def __call__(self, harness_path, cell, split, instance_ids, *, key):
-        raise NotImplementedError("the ORCD play worker is not implemented yet (see MailboxPlay docstring)")
+        from mb.evolve import remote
+        out = []
+        for inst in instance_ids:
+            k = f"{self.prefix}/{key}/{re.sub(r'[^A-Za-z0-9_.-]+', '_', str(inst))}"
+            vis = remote.play(self.box, k, harness_path, cell, split, [inst], visible_only=False,
+                              extra={"raw": True})
+            res = vis.parent
+            if (res / "visible" / "rejected.json").exists():
+                why = json.loads((res / "visible" / "rejected.json").read_text())
+                out.append({"instance_id": inst, "score": 0.0, "end": "rejected",
+                            "error": "; ".join(why.get("rejected", [])) if isinstance(why, dict) else str(why),
+                            "calls": [], "steps_log": []})
+                continue
+            raw = sorted((res / "raw").glob("*.json")) if (res / "raw").is_dir() else []
+            rec = json.loads(raw[0].read_text()) if raw else None
+            if rec is None or "infra" in rec:          # drop the stored answer so a retry plays again
+                with self.box.lock():
+                    shutil.rmtree(res, ignore_errors=True)
+                    self.box._push(f"retry {k}")
+                rec = {"instance_id": inst, "score": math.nan,
+                       "infra": (rec or {}).get("infra") or f"{k}: no episode record returned"}
+            out.append(rec)
+        return out

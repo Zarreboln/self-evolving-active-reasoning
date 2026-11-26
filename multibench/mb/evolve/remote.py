@@ -151,18 +151,27 @@ class Mailbox:
             shutil.copytree(self.repo / "results" / key / "export", dest, dirs_exist_ok=True)
 
 
-def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True, poll=10):
+def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True, poll=10, extra=None):
     """Play these instances with this harness on the cluster's long-lived worker (mb/evolve/worker.py);
     returns the local folder of what the method may read. Scores stay in play_results/<key>/private.json,
-    which the caller's method code must not read (our reports do)."""
+    which the caller's method code must not read (our reports do). `extra` adds fields to the request
+    (e.g. {"raw": True}: the worker also returns the raw episode records under play_results/<key>/raw/).
+    A key already answered for the same harness and problems is not played again (resume)."""
+    params = {"cell": cell, "split": split, "instances": list(instances), "visible_only": visible_only,
+              **(extra or {})}
     with box.lock():
         box._git("pull", "-q", "--rebase")
         req = box.repo / "play_requests" / key
+        res = box.repo / "play_results" / key
+        if (res / "private.json").exists() and (req / "harness.py").exists() \
+                and (req / "harness.py").read_bytes() == Path(harness).read_bytes():
+            old = json.loads((req / "request.json").read_text())
+            if {k: old.get(k) for k in params} == params:
+                return res / "visible"
         shutil.rmtree(box.repo / "play_results" / key, ignore_errors=True)
         req.mkdir(parents=True, exist_ok=True)
         shutil.copy(harness, req / "harness.py")
-        (req / "request.json").write_text(json.dumps({"cell": cell, "split": split, "instances": list(instances),
-                                                      "visible_only": visible_only, "submitted": time.time()}))
+        (req / "request.json").write_text(json.dumps({**params, "submitted": time.time()}))
         box._push(f"play request {key}")
     res = box.repo / "play_results" / key
     while True:

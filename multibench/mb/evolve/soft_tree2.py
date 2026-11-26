@@ -51,7 +51,7 @@ SIGMA = 0.3
 K_PARENTS = 3
 P_NOISE = 0.1
 EDITS = 3              # leaf edit rounds per task
-BUDGET_UNITS = 35      # 5 rounds x 7 tasks x 20 problems = 700 episodes, as every method gets
+BUDGET_UNITS = float("inf")  # no cap for now (user, 2026-11-26): run every step, record the units used; compare later
 ABLATION = ""          # "" | "flat" | "hard"
 ORDER_SEED = "exp_b/incremental/0"
 

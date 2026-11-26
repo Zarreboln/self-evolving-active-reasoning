@@ -174,6 +174,14 @@ def _one(job):
     _write(_path(out, bench, sub, inst), r)
 
 
+def timeout_record(bench, sub, inst):
+    """An episode killed at EPISODE_TIMEOUT: every field export and summarize read, scored 0."""
+    return {"bench": bench, "subtask": sub, "instance": inst, "instance_id": inst, "score": 0.0,
+            "success": False, "steps": 0, "end": "timeout", "steps_log": [], "calls": [],
+            "harness_stderr": "", "policy_tokens": {}, "responder_tokens": {}, "seconds": EPISODE_TIMEOUT,
+            "error": f"episode exceeded {EPISODE_TIMEOUT}s (killed; runaway output counts as failure)"}
+
+
 def _one_subprocess(job):
     cand, bench, sub, inst, url, out = job
     try:
@@ -185,9 +193,7 @@ def _one_subprocess(job):
     except subprocess.TimeoutExpired:
         # runaway output (e.g. no max_tokens and a model that does not stop): the agent's failure,
         # scored as such and not rerun (notes/exp_b_design.md, "Failures")
-        _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst, "score": 0.0,
-                                              "success": False, "end": "timeout", "steps_log": [], "calls": [],
-                                              "error": f"episode exceeded {EPISODE_TIMEOUT}s"})
+        _write(_path(out, bench, sub, inst), timeout_record(bench, sub, inst))
         return inst, 0.0
     # a broker failure (not a harness error, which is recorded inside the episode) reruns on resume
     _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst,

@@ -32,14 +32,14 @@ import time
 from collections import Counter
 from pathlib import Path
 
+from mb.evolve import remote
 from mb.evolve.check import problems
 
 HERE = Path(__file__).resolve().parent
 TEMPLATE = HERE / "ws_template"
 SANDBOX = HERE.parents[2] / "sandbox"
 RUNS = Path.home() / "evo_b_runs"                 # outside every repo and workspace
-REMOTE_CODE = "~/code/multibench"
-REMOTE_RUNS = "~/results/mb/evo_b"
+CELL = "wordle:basic5"
 MODEL = "Qwen3.5-9B"
 TEMPERATURE = 0.05            # HW2: score difference that changes a parent's sampling weight by e
 CHAT_CAP = 8
@@ -144,36 +144,28 @@ def propose(ws, log):
     return rc, proposer_cost(log) if log.exists() else None
 
 
-def sync_code():
-    sh(f"rsync -a --delete --exclude __pycache__ {HERE}/ bath:{REMOTE_CODE}/mb/evolve/")
+REMOTE = None                 # set in main(): remote.make("ssh:bath") or remote.make("mailbox:<clone>")
 
 
 def evaluate(run, cid, harness, split="search", n=30, export=True, smoke=True, poll=30):
-    """Ship one harness to bath, score it there, and pull back the exported files (or None if rejected)."""
-    rbase = f"{REMOTE_RUNS}/{run}/{cid}"
-    out = f"{rbase}/eval_{split}"
-    sh(f"ssh bath 'mkdir -p {rbase}/harness'")
-    sh(f"scp -q {harness} bath:{rbase}/harness/harness.py")
+    """Score one harness on the cluster; returns its summary or {"rejected": [...]}."""
+    key = f"{run}/{cid}/{split}"
+    params = {"cell": CELL, "split": split, "n": n, "export": export, "smoke": smoke}
     while True:
-        env = (f"CAND={rbase}/harness OUT={out} SPLIT={split} N={n}" + (f" DEST={rbase}/export" if export else "")
-               + (" SMOKE=1" if smoke else ""))
-        jid = sh(f"ssh bath 'cd ~/logs && {env} sbatch --parsable {REMOTE_CODE}/mb/evolve/eval_cand.sbatch'").stdout.strip()
-        print(f"  {cid}/{split}: job {jid}", flush=True)
-        while sh(f"ssh bath 'squeue -h -j {jid}'", check=False).stdout.strip():
+        REMOTE.submit(key, harness, params)
+        print(f"  {key}: submitted", flush=True)
+        while (r := REMOTE.result(key)) is None:
             time.sleep(poll)
-        rej = sh(f"ssh bath 'cat {out}/rejected.json 2>/dev/null'", check=False).stdout
-        if rej:
-            return {"rejected": json.loads(rej)["rejected"]}
-        summ = sh(f"ssh bath 'cat {out}/summary.json 2>/dev/null'", check=False).stdout
-        if summ and json.loads(summ)["infra_errors"] == 0:
-            return json.loads(summ)
-        print(f"  {cid}/{split}: incomplete ({summ.strip()[:120] or 'no summary'}), resubmitting", flush=True)
-        smoke = False
+        if "rejected" in r:
+            return r
+        if "summary" in r and r["summary"]["infra_errors"] == 0:
+            return r["summary"]
+        print(f"  {key}: incomplete ({str(r)[:120]}), resubmitting", flush=True)   # ssh backend only
+        params["smoke"] = False
 
 
 def pull_export(run, cid, archive):
-    d = archive.dir / cid
-    sh(f"rsync -a bath:{REMOTE_RUNS}/{run}/{cid}/export/ {d}/")
+    REMOTE.fetch_export(f"{run}/{cid}/search", archive.dir / cid)
 
 
 def score_candidate(run, archive, m, n):
@@ -193,7 +185,7 @@ def score_candidate(run, archive, m, n):
 
 def loop(a):
     archive = Archive(a.run)
-    sync_code()
+    REMOTE.sync_code(HERE)
     if not (archive.dir / "c000" / "meta.json").exists():
         (archive.dir / "c000" / "harness").mkdir(parents=True, exist_ok=True)
         shutil.copy(HERE / "seed_think.py", archive.dir / "c000" / "harness" / "harness.py")
@@ -263,7 +255,11 @@ def main():
     ap.add_argument("--n", type=int, default=30)
     ap.add_argument("--n-final", type=int, default=100)
     ap.add_argument("--final", action="store_true")
+    ap.add_argument("--remote", default="ssh:bath", help="ssh:<host> or mailbox:<path to clone>")
+    ap.add_argument("--cell", default="wordle:basic5")
     a = ap.parse_args()
+    global REMOTE, CELL
+    REMOTE, CELL = remote.make(a.remote), a.cell
     final(a) if a.final else loop(a)
 
 

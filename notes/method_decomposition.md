@@ -12,10 +12,14 @@ Figure: `~/Desktop/soft_hierarchy_fig/decomposition_tree.png`.
   output format).
 - Every node is a callable function with a fixed input/output. An edge means "calls".
 - The graph need not be balanced: an ability can call a primitive directly, skipping a level.
+- Tasks sit at the top (callers), primitives at the bottom (callees), as in a call graph. Because an ability
+  can have several callers, this is a layered hierarchy (a DAG), not a strict tree; the paper says
+  "hierarchy". Lower abilities tend to be called by more tasks; this is a tendency, not a rule.
 
 ## What is soft
-An ability can rely on several sub-abilities that do similar jobs, with weights w(caller, callee).
-Where two candidates fill the same role, the caller uses the one it weighs most. Weights come from
+A role (e.g. "prune by feedback") can have several versions. Each caller has weights over the versions of a
+role it calls and runs the one it weighs most (code cannot run half of two functions). The weights also
+decide where a change is credited and on which callers it is tested. Weights come from
 measured gain (below) through a softmax with temperature τ, as in DPM.
 
 ## How sharing grows (library learning)

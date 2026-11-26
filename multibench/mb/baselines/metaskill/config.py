@@ -31,7 +31,7 @@ TEST_TASKS = {
     "sciworld_grow_plant": ["sciworld:grow-plant"],
 }
 TEST_PROBLEMS = {"alfworld_pick_and_place_simple": 24, "sciworld_grow_plant": 33}   # others: 50
-ROUNDS = 8                    # equal budget: 8 rounds x 140 evaluated episodes
+ROUNDS = 5                    # equal budget: 5 rounds x 140 evaluated episodes (user, 2026-11-26)
 SEARCH_N = 20                 # search problems per development task, the same every round
 PATIENCE = 3                  # early stop: 3 rounds in a row without a gain beyond noise
 

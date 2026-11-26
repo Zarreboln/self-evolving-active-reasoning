@@ -329,51 +329,199 @@ class Run:
             # (a "kept" or "split" passed the paired noise test; anything else is no gain)
             last = [json.loads((self.dir / "rounds" / f"r{k:02d}.json").read_text())["outcome"]
                     for k in range(max(1, rnd - 3), rnd)]
-            if len(last) == 3 and not any(o.startswith(("kept", "split")) for o in last):
+            if len(last) == 3 and not any(o.startswith(("kept", "split", "factored", "regrouped")) for o in last):
                 print(f"early stop before r{rnd:02d}: 3 rounds in a row without a gain beyond noise", flush=True)
                 break
             cur = self.versions()[-1]
             shared, tree = self.load(cur)
             meta = json.loads((cur / "meta.json").read_text())
-            node = self.choose_node(tree, meta, rnd)
-            ws = self.dir / "workspaces" / f"r{rnd:02d}"
-            done_p = self.dir / "private" / f"r{rnd:02d}_proposed.json"
-            t0 = time.time()
-            if done_p.exists() and json.loads(done_p.read_text()).get("node") == node and ws.exists():
-                rc = json.loads(done_p.read_text())["rc"]    # resume: proposer finished, score only
-                print(f"r{rnd:02d}: resuming after the proposer (scoring only)", flush=True)
+            if meta.get("pending_factor"):                       # the round after a split: separate it
+                rec = self.factor_round(rnd, shared, tree, meta, cur)
             else:
-                ws = self.workspace(rnd, node, shared, tree, cur)
-                log = self.dir / "private" / f"r{rnd:02d}_proposer.jsonl"
-                sys.path.insert(0, str(SANDBOX))
-                import run_proposer
-                rc = run_proposer.run(ws, log)
-                (self.dir / "private").mkdir(exist_ok=True)
-                done_p.write_text(json.dumps({"node": node, "rc": rc}, default=str))
-            new_shared = (ws / "shared.py").read_text()
-            try:
-                new_cfg = json.loads((ws / "node_config.json").read_text())
-            except Exception as e:                       # a broken config file is a rejected change
-                new_cfg, rc = tree["nodes"][node]["config"], f"bad node_config.json: {e!r}"[:200]
-            cand = json.loads(json.dumps(tree))
-            cand["nodes"][node]["config"] = new_cfg
-            hm, bad = self.harnesses(new_shared, cand, self.dir / "tmp" / f"r{rnd:02d}")
-            rec = {"round": rnd, "node": node, "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
-            if bad or (new_shared == shared and new_cfg == tree["nodes"][node]["config"]):
-                rec["outcome"] = "rejected: " + ("; ".join(bad)[:300] if bad else "no change")
-                self.record(rnd, rec)
-                continue
-            key = f"{a.run}/r{rnd:02d}/search"
-            r = self.score(key, hm)
-            if "rejected" in r:
-                rec["outcome"] = "rejected on the cluster: " + "; ".join(r["rejected"])[:300]
-                self.record(rnd, rec)
-                continue
-            exp = self.dir / "exports" / f"r{rnd:02d}"
-            new = self.per_task(key, exp)
-            rec.update(self.decide(rnd, node, shared, tree, meta, new_shared, cand, new))
+                rec = None
+                if rnd % 3 == 0 and ABLATION != "flat":           # every third round: review the grouping
+                    rec = self.regroup_round(rnd, shared, tree, meta, cur)
+                if rec is None:
+                    rec = self.edit_round(rnd, shared, tree, meta, cur)
             self.record(rnd, rec)
-            print(f"r{rnd:02d} node {node}: {rec['outcome']}", flush=True)
+            print(f"r{rnd:02d}: {rec['outcome']}", flush=True)
+
+    # ----- round kinds -----
+    def propose(self, rnd, ws, tag=""):
+        """One code-editing session in `ws` (resumable: a finished session is not run again)."""
+        done_p = self.dir / "private" / f"r{rnd:02d}{tag}_proposed.json"
+        if done_p.exists() and ws.exists():
+            print(f"r{rnd:02d}{tag}: resuming after the proposer", flush=True)
+            return json.loads(done_p.read_text())["rc"]
+        sys.path.insert(0, str(SANDBOX))
+        import run_proposer
+        rc = run_proposer.run(ws, self.dir / "private" / f"r{rnd:02d}{tag}_proposer.jsonl")
+        done_p.write_text(json.dumps({"rc": rc}, default=str))
+        return rc
+
+    def evaluate(self, rnd, shared, cand, tag=""):
+        hm, bad = self.harnesses(shared, cand, self.dir / "tmp" / f"r{rnd:02d}{tag}")
+        if bad:
+            return None, "; ".join(bad)[:300]
+        r = self.score(f"{self.a.run}/r{rnd:02d}{tag}/search", hm)
+        if "rejected" in r:
+            return None, "rejected on the cluster: " + "; ".join(r["rejected"])[:300]
+        exp = self.dir / "exports" / f"r{rnd:02d}{tag}"
+        return self.per_task(f"{self.a.run}/r{rnd:02d}{tag}/search", exp), None
+
+    def edit_round(self, rnd, shared, tree, meta, cur):
+        node = self.choose_node(tree, meta, rnd)
+        ws = self.dir / "workspaces" / f"r{rnd:02d}"
+        resumed = (self.dir / "private" / f"r{rnd:02d}_proposed.json").exists() and ws.exists()
+        if not resumed:
+            ws = self.workspace(rnd, node, shared, tree, cur)
+        t0 = time.time()
+        rc = self.propose(rnd, ws)
+        rec = {"round": rnd, "kind": "edit", "node": node, "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
+        new_shared = (ws / "shared.py").read_text()
+        try:
+            new_cfg = json.loads((ws / "node_config.json").read_text())
+        except Exception as e:                           # a broken config file is a rejected change
+            rec["outcome"] = f"rejected: bad node_config.json: {e!r}"[:200]
+            return rec
+        # where the model says the change belongs (neural), within this node's path (checked by code)
+        try:
+            place = json.loads((ws / "placement.json").read_text())
+        except Exception:
+            place = {}
+        target = place.get("target_node") if place.get("target_node") in path(tree, node) else node
+        if ABLATION == "flat" and target != node:
+            target = "root" if target == "root" else node
+        rec["placement"] = {"claimed": place, "target": target}
+        desc = (ws / "node_description.txt").read_text().strip()[:300] if (ws / "node_description.txt").exists() else ""
+        cand = json.loads(json.dumps(tree))
+        old_cfg = tree["nodes"][node]["config"]
+        diff = {k: v for k, v in new_cfg.items() if old_cfg.get(k) != v}
+        if target != node:                               # move the change up to the claimed ancestor
+            cand["nodes"][target]["config"].update(diff)
+        else:
+            cand["nodes"][node]["config"] = new_cfg
+        if desc:
+            cand["nodes"][target]["desc"] = desc
+        if new_shared == shared and not diff:
+            rec["outcome"] = "rejected: no change"
+            return rec
+        new, err = self.evaluate(rnd, new_shared, cand)
+        if new is None:
+            rec["outcome"] = "rejected: " + err
+            return rec
+        rec.update(self.decide(rnd, target, shared, tree, meta, new_shared, cand, new,
+                               specific=place.get("level") == "specific"))
+        return rec
+
+    def factor_round(self, rnd, shared, tree, meta, cur):
+        """After a split: the model separates the change into a general part (at the parent, tested on all its
+        games, kept only if none gets worse) and a specific part (the child)."""
+        pf = meta["pending_factor"]
+        node, child = pf["node"], pf["child"]
+        ws = self.dir / "workspaces" / f"r{rnd:02d}f"
+        if not ((self.dir / "private" / f"r{rnd:02d}f_proposed.json").exists() and ws.exists()):
+            ws = self.workspace(rnd, node, shared, tree, cur, sub="f")
+            (ws / "before").mkdir()
+            (ws / "before" / "parent_config.json").write_text(json.dumps(pf["parent_before"], indent=1))
+            (ws / "parent_config.json").write_text(json.dumps(tree["nodes"][node]["config"], indent=1))
+            (ws / "child_config.json").write_text(json.dumps(tree["nodes"][child]["config"], indent=1))
+            (ws / "node_config.json").unlink(missing_ok=True)
+            (ws / "TASK.md").write_text(TASK_FACTOR.format(node=node, child=child,
+                                                           gained=", ".join(self.tid(c) for c in pf["gained"]),
+                                                           others=", ".join(self.tid(c) for c in pf["others"]) or "-"))
+        rc = self.propose(rnd, ws, "f")
+        rec = {"round": rnd, "kind": "factor", "node": node, "child": child, "proposer_rc": rc}
+        try:
+            pcfg = json.loads((ws / "parent_config.json").read_text())
+            ccfg = json.loads((ws / "child_config.json").read_text())
+        except Exception as e:
+            rec["outcome"] = f"rejected: bad config file: {e!r}"[:200]
+            self.clear_pending(cur, meta)
+            return rec
+        new_shared = (ws / "shared.py").read_text()
+        cand = json.loads(json.dumps(tree))
+        cand["nodes"][node]["config"] = pcfg
+        if child in cand["nodes"]:
+            cand["nodes"][child]["config"] = ccfg
+        if new_shared == shared and pcfg == tree["nodes"][node]["config"] and ccfg == tree["nodes"][child]["config"]:
+            rec["outcome"] = "rejected: no change (nothing general)"
+            self.clear_pending(cur, meta)
+            return rec
+        new, err = self.evaluate(rnd, new_shared, cand, "f")
+        if new is None:
+            rec["outcome"] = "rejected: " + err
+            self.clear_pending(cur, meta)
+            return rec
+        tests = self.tests(new, meta["per_episode"])
+        dropped = [c for c in self.cells if tests[c]["drop_p"] < P_NOISE]
+        if dropped:
+            rec["outcome"] = f"rejected: the general part hurt {dropped}"
+            self.clear_pending(cur, meta)
+        else:
+            gained = [c for c in self.cells if tests[c]["gain_p"] < P_NOISE]
+            self.update_centres(cand, tests, {c: node_weight(cand, cand["vecs"][c], node) for c in self.cells})
+            self.save(f"v{rnd:03d}", new_shared, cand, {"round": rnd, "node": node, "export": f"r{rnd:02d}f",
+                                                         "scores": {c: new[c]["mean_score"] for c in self.cells},
+                                                         "per_episode": {c: new[c]["per_episode"] for c in self.cells}})
+            rec["outcome"] = f"factored: general part kept at {node} (gained {gained}, none hurt)"
+        rec["tests"] = tests
+        return rec
+
+    def clear_pending(self, cur, meta):
+        meta = dict(meta)
+        meta.pop("pending_factor", None)
+        (cur / "meta.json").write_text(json.dumps(meta, indent=1))
+
+    def regroup_round(self, rnd, shared, tree, meta, cur):
+        """The model reviews the grouping; moves are kept only if the regrouped tree hurts no game.
+        Returns None when it proposes no move (the round then becomes an edit round)."""
+        ws = self.dir / "workspaces" / f"r{rnd:02d}g"
+        if not ((self.dir / "private" / f"r{rnd:02d}g_proposed.json").exists() and ws.exists()):
+            ws = self.workspace(rnd, "root", shared, tree, cur, sub="g")
+            for f in ("node_config.json", "inherited_config.json"):
+                (ws / f).unlink(missing_ok=True)
+            (ws / "TASK.md").write_text(TASK_REGROUP)
+        rc = self.propose(rnd, ws, "g")
+        try:
+            prop = json.loads((ws / "regroup.json").read_text())
+        except Exception:
+            prop = {}
+        cand = json.loads(json.dumps(tree))
+        for n, d in (prop.get("descriptions") or {}).items():
+            if n in cand["nodes"] and isinstance(d, str):
+                cand["nodes"][n]["desc"] = d[:300]
+        ids = {self.tid(c): c for c in self.cells}
+        moves = [m for m in prop.get("moves") or [] if m.get("task") in ids and m.get("to") in cand["nodes"]]
+        if not moves:
+            if cand != tree:                                 # descriptions only: no behaviour change
+                self.save(cur.name, shared, cand, meta)
+            return None
+        for m in moves:                                      # pull the target node's centre towards the game
+            c, to = ids[m["task"]], m["to"]
+            mem = set(cand["nodes"][to].get("members", [])) | {c}
+            cand["nodes"][to]["members"] = sorted(mem)
+            for n in path(cand, to)[1:]:
+                nm = set(cand["nodes"][n].get("members", [])) | {c}
+                cand["nodes"][n]["members"] = sorted(nm)
+                cand["nodes"][n]["centre"] = [sum(cand["vecs"][x][i] for x in nm) / len(nm)
+                                              for i in range(len(cand["vecs"][c]))]
+        new, err = self.evaluate(rnd, shared, cand, "g")
+        rec = {"round": rnd, "kind": "regroup", "proposer_rc": rc, "moves": moves}
+        if new is None:
+            rec["outcome"] = "rejected: " + err
+            return rec
+        tests = self.tests(new, meta["per_episode"])
+        dropped = [c for c in self.cells if tests[c]["drop_p"] < P_NOISE]
+        rec["tests"] = tests
+        if dropped:
+            rec["outcome"] = f"rejected: regrouping hurt {dropped}"
+        else:
+            self.save(f"v{rnd:03d}", shared, cand, {"round": rnd, "node": "root", "export": f"r{rnd:02d}g",
+                                                     "scores": {c: new[c]["mean_score"] for c in self.cells},
+                                                     "per_episode": {c: new[c]["per_episode"] for c in self.cells}})
+            rec["outcome"] = f"regrouped: {[(m['task'], m['to']) for m in moves]}"
+        return rec
 
     def record(self, rnd, rec):
         (self.dir / "rounds").mkdir(exist_ok=True)
@@ -389,8 +537,8 @@ class Run:
             return sum(node_weight(tree, tree["vecs"][c], n) * (1 - (meta["scores"][c] or 0)) for c in self.cells)
         return max(by_depth[depth], key=mass)
 
-    def workspace(self, rnd, node, shared, tree, cur):
-        ws = self.dir / "workspaces" / f"r{rnd:02d}"
+    def workspace(self, rnd, node, shared, tree, cur, sub=""):
+        ws = self.dir / "workspaces" / f"r{rnd:02d}{sub}"
         if ws.exists():
             shutil.rmtree(ws)
         ws.mkdir(parents=True)
@@ -408,59 +556,132 @@ class Run:
         last = self.dir / "exports" / json.loads((cur / "meta.json").read_text())["export"]
         ev = ws / "evidence"
         weights = {c: node_weight(tree, tree["vecs"][c], node) for c in self.cells}
-        for k, c in enumerate(sorted(self.cells, key=lambda c: -weights[c])):
+        for c in sorted(self.cells, key=lambda c: -weights[c]):
             w = weights[c]
             if w < 0.05:
                 continue
             src = last / "cells" / c.replace(":", "_")
-            dst = ev / f"task{k + 1}"
+            dst = ev / self.tid(c)
             dst.mkdir(parents=True)
             shutil.copy(src / "scores.json", dst / "scores.json")
             eps = sorted((src / "episodes").iterdir())
             for e in eps[:max(2, round(w * len(eps)))]:
                 shutil.copytree(e, dst / "episodes" / e.name)
             (dst / "weight.txt").write_text(f"{w:.2f}\n")
+        (ws / "tree.md").write_text(self.tree_md(tree, cur))
         (ws / "TASK.md").write_text(TASK.format(node=node, n=self.a.n, depth=len(path(tree, node)) - 1))
         return ws
 
-    def decide(self, rnd, node, shared, tree, meta, new_shared, cand, new):
-        old = meta["per_episode"]
-        tests = {}
+    # ----- shared by the three kinds of round -----
+    def tid(self, c):
+        """A game's id in every workspace (stable across rounds; never its name)."""
+        return f"task{self.cells.index(c) + 1}"
+
+    def tree_md(self, tree, cur):
+        """The tree as the code-editing model sees it: descriptions, games below each node, how they end."""
+        meta = json.loads((cur / "meta.json").read_text())
+        last = self.dir / "exports" / meta["export"]
+        ends = {}
+        for c in self.cells:
+            f = last / "cells" / c.replace(":", "_") / "scores.json"
+            per = json.loads(f.read_text()).get("per_episode", {}) if f.exists() else {}
+            cnt = {}
+            for e in per.values():
+                k = e.get("end") or "?"
+                k = "win" if e.get("success") else k
+                cnt[k] = cnt.get(k, 0) + 1
+            ends[c] = cnt
+        lines = ["# The tree (node: description; games below it with their weight on the node)", ""]
+        for n in sorted(tree["nodes"], key=lambda n: (len(path(tree, n)), n)):
+            nd = tree["nodes"][n]
+            ws_ = {c: node_weight(tree, tree["vecs"][c], n) for c in self.cells}
+            below = ", ".join(f"{self.tid(c)} ({w:.2f})" for c, w in sorted(ws_.items(), key=lambda x: -x[1]) if w >= 0.05)
+            lines.append(f"- `{n}` (depth {len(path(tree, n)) - 1}, parent {nd['parent']}): "
+                         f"{nd.get('desc') or '(no description yet)'}; config {json.dumps(nd['config'])}; games: {below}")
+        lines += ["", "## How each game's episodes end (latest scored version)", ""]
+        for c in self.cells:
+            lines.append(f"- {self.tid(c)}: mean score {meta['scores'].get(c)}; ends {json.dumps(ends[c])}")
+        return "\n".join(lines) + "\n"
+
+
+    def tests(self, new, old):
+        out = {}
         for c in self.cells:
             w, l = paired(new[c]["per_episode"], old[c])
-            tests[c] = {"wins": w, "losses": l, "gain_p": sign_test_p(w, l), "drop_p": sign_test_p(l, w)}
+            out[c] = {"wins": w, "losses": l, "gain_p": sign_test_p(w, l), "drop_p": sign_test_p(l, w)}
+        return out
+
+    def decide(self, rnd, node, shared, tree, meta, new_shared, cand, new, specific=False):
+        """Data decides where the change stays. Kept at `node` only if no game gets worse and the games that
+        gained carry most of the node's weight (or the node is a leaf); if only some of its games gained,
+        the change moves down to a new child for those games (split), and the next round separates its
+        general part. `specific` is the model's own claim; it is recorded, the test decides."""
+        old = meta["per_episode"]
+        tests = self.tests(new, old)
         weights = {c: node_weight(tree, tree["vecs"][c], node) for c in self.cells}
         mine = [c for c in self.cells if weights[c] >= 0.2]
         gained = [c for c in mine if tests[c]["gain_p"] < P_NOISE]
         dropped = [c for c in self.cells if tests[c]["drop_p"] < P_NOISE]
+        outside_dropped = [c for c in dropped if c not in mine]
         dw = sum(weights[c] * (tests[c]["wins"] - tests[c]["losses"]) for c in mine)
+        pooled = sign_test_p(sum(tests[c]["wins"] for c in mine), sum(tests[c]["losses"] for c in mine))
         scores = {c: new[c]["mean_score"] for c in self.cells}
         per = {c: new[c]["per_episode"] for c in self.cells}
-        out = {"tests": tests, "weights": weights, "scores": scores}
-        code_changed = new_shared != shared
-        pooled = sign_test_p(sum(tests[c]["wins"] for c in mine), sum(tests[c]["losses"] for c in mine))
-        if not dropped and (gained or (dw > 0 and pooled < P_NOISE)):
+        out = {"tests": tests, "weights": weights, "scores": scores, "claimed_specific": specific}
+        is_leaf = not tree["nodes"][node]["children"]
+        share = sum(weights[c] for c in gained) / max(sum(weights[c] for c in mine), 1e-9)
+        broad = is_leaf or share >= 0.5 or (not gained and dw > 0 and pooled < P_NOISE)
+        if not dropped and (gained or (dw > 0 and pooled < P_NOISE)) and broad:
             tree2 = cand
             self.update_centres(tree2, tests, weights)
             self.save(f"v{rnd:03d}", new_shared, tree2, {"round": rnd, "node": node, "export": f"r{rnd:02d}",
                                                          "scores": scores, "per_episode": per})
-            out["outcome"] = f"kept (gained: {gained})"
-        elif gained and dropped and not code_changed and len(path(tree, node)) < MAX_DEPTH:
-            # split: the new configuration goes to a new child for the tasks that gained
+            out["outcome"] = f"kept at {node} (gained: {gained})"
+        elif gained and not outside_dropped and (home := self.existing_home(tree, node, gained, mine)):
+            # an existing node below already holds the games that gained (and few others): the change moves
+            # there; games outside it get their old configuration back
+            tree2 = json.loads(json.dumps(tree))
+            diff = {k: v for k, v in cand["nodes"][node]["config"].items() if tree["nodes"][node]["config"].get(k) != v}
+            tree2["nodes"][home]["config"].update(diff)
+            if cand["nodes"][node].get("desc"):
+                tree2["nodes"][home]["desc"] = cand["nodes"][node]["desc"]
+            self.save(f"v{rnd:03d}", new_shared, tree2, {
+                "round": rnd, "node": home, "scores": meta["scores"], "export": meta["export"], "per_episode": old,
+                "split_pending_rescore": True})
+            out["outcome"] = f"split: moved down to existing node {home} for {gained}; dropped {dropped}"
+        elif gained and not outside_dropped and len(path(tree, node)) < MAX_DEPTH:
+            # split: the change goes to a new child for the games that gained; the node keeps its old config.
+            # New shared code stays (its modules are off by default; no game outside the node got worse).
             tree2 = json.loads(json.dumps(tree))
             kid = f"{node}.s{rnd}"
             tree2["nodes"][kid] = {"parent": node, "children": [], "config": cand["nodes"][node]["config"],
                                    "centre": [sum(x) / len(gained) for x in zip(*[tree["vecs"][c] for c in gained])],
-                                   "members": gained}
+                                   "members": gained, "desc": cand["nodes"][node].get("desc", "")}
             tree2["nodes"][node]["children"].append(kid)
             self.prune(tree2)
-            self.save(f"v{rnd:03d}", shared, tree2, {"round": rnd, "node": node, "scores": meta["scores"],
-                                                    "export": meta["export"], "per_episode": old,
-                                                    "split_pending_rescore": True})
-            out["outcome"] = f"split: new child {kid} for {gained}; {dropped} dropped"
+            others = [c for c in mine if c not in gained]
+            self.save(f"v{rnd:03d}", new_shared, tree2, {
+                "round": rnd, "node": node, "scores": meta["scores"], "export": meta["export"], "per_episode": old,
+                "split_pending_rescore": True,
+                "pending_factor": {"node": node, "child": kid, "gained": gained, "others": others,
+                                   "parent_before": tree["nodes"][node]["config"]}})
+            out["outcome"] = f"split: new child {kid} for {gained}; others {others}; dropped {dropped}"
         else:
             out["outcome"] = f"rejected (gained {gained}, dropped {dropped})"
         return out
+
+    def existing_home(self, tree, node, gained, mine):
+        """The lowest node below `node` that clearly belongs to the games that gained: each of them weighs at
+        least 0.25 on it and every other game of `node` weighs at most half the smallest of those; None if
+        there is none. (Soft weights spread, so the test is relative.)"""
+        best = None
+        for d in descendants(tree, node):
+            wg = [node_weight(tree, tree["vecs"][c], d) for c in gained]
+            wo = [node_weight(tree, tree["vecs"][c], d) for c in mine if c not in gained]
+            if min(wg) >= 0.25 and (not wo or max(wo) <= 0.5 * min(wg)):
+                if best is None or len(path(tree, d)) > len(path(tree, best)):
+                    best = d
+        return best
 
     def update_centres(self, tree, tests, weights):
         for n, nd in tree["nodes"].items():
@@ -520,13 +741,71 @@ You may change two things:
    Keep the `CONFIG = {{}}` line. Then switch it on in `node_config.json` if this node's games need it.
 
 Rules: never write game names, benchmark names or answers anywhere; the change must make sense for any game
-of this kind. One mechanism per change, as small as possible. `check_harness.py` applies the static rules
+of this kind. One mechanism per change, as small as possible.
+
+Write mechanisms for the problem, not for its surface. Games that are the same problem can differ in
+symbols and formats (guessing letters vs digits, a word of 5 vs 4 characters, colour feedback vs counts).
+Keep such details out of the logic: make them CONFIG parameters (alphabet, length, feedback format), or let
+the model turn the observation into the structure your code expects. When a module cannot read an
+observation, it must hand the decision back to the model instead of failing or guessing. A module written
+this way can be reused by a new game with a config change or a few lines, not a rewrite. `check_harness.py` applies the static rules
 (allowed imports: re, json, math, itertools, collections, random, string, functools, heapq, typing,
 dataclasses, harness_lib); `mock_env.py` runs a harness against a fake game to check it runs.
 
 How to read the evidence: tabulate how episodes end (win, out of turns, invalid move, error) before reading
 traces; read the last steps of failing traces; a change worth making moves several episodes, not one.
 Write a short `proposal.md`: what you saw, what you changed, and why it should help the games below this node.
+
+## How the tree works (read before deciding where your change belongs)
+
+- The root holds what every game uses: a change there must help the games or at least hurt none of them.
+- A branch holds what the games below it share; a change there only needs to help those games.
+- A leaf may be specific to one game or a small family, including code that decides actions itself.
+- `tree.md` shows the current tree: each node's one-line description, the games below it (task ids as in
+  `evidence/`) and how they end. The grouping is not fixed: it comes from the data and from your judgement.
+- Your change is tested, problem by problem, on every game below the node it is placed at. If some of them
+  do not gain, it does not stay there: it is moved down to a new child holding only the games that gained,
+  and you may later be asked to separate its general part from its specific part.
+
+Two more files to write:
+- `placement.json`: {{"level": "general" or "specific", "target_node": "<this node or one of its ancestors>",
+  "why": "<one sentence>"}}. Choose the highest node whose games should all benefit; say "specific" if only
+  some of this node's games should. Moving a change up means it is tested on more games.
+- `node_description.txt`: one line saying what the games under `target_node` have in common, in terms of the
+  problem (for example "guess a hidden item from structured feedback"), never game or benchmark names.
+"""
+
+TASK_FACTOR = """# Separate a change into its general and its specific part
+
+An earlier change to node `{node}` helped some games below it ({gained}) and did not help, or hurt, others
+({others}). It now lives in a new child node `{child}` that only the games it helped use.
+
+Your job: split it. Put what is useful to every game below `{node}` into `parent_config.json` (and, if needed,
+into `shared.py` behind CONFIG keys whose defaults keep current behaviour), and put what is specific to the
+helped games into `child_config.json`. A general mechanism with game-specific details as CONFIG parameters
+(an alphabet, a length, a feedback format) is the ideal shape. If nothing is general, leave
+`parent_config.json` as it is.
+
+Files: `shared.py`, `parent_config.json` (node `{node}`), `child_config.json` (node `{child}`),
+`inherited_config.json` (read-only), `before/` (the configurations before the change), `evidence/` (traces;
+task ids as in `tree.md`), `tree.md`. The general part is then tested on every game below `{node}`: it is kept
+only if no game gets worse. Rules as before: no game or benchmark names or answers; `check_harness.py` and
+`mock_env.py` to check that it runs. Write `proposal.md` (what is general, what is specific, why).
+"""
+
+TASK_REGROUP = """# Review how games are grouped in the tree
+
+`tree.md` shows the tree: each node's description, the games below it (task ids), how their episodes end, and
+the first instructions each game gives. `evidence/` has a few traces per game.
+
+Games that fail for the same underlying reason should share a branch, even if they look different (for
+example two games that both guess a hidden item from structured feedback, one over letters and one over
+digits). Games grouped together that fail for different reasons may be better apart.
+
+Write `regroup.json`: {{"moves": [{{"task": "task3", "to": "<existing node id>", "why": "<one sentence>"}}],
+"descriptions": {{"<node id>": "<one line, in terms of the problem, no game names>"}}}}. An empty "moves" list is
+a fine answer. Every move is tested: the regrouped tree is scored on every game and kept only if no game
+gets worse. Do not edit any other file.
 """
 
 
@@ -535,7 +814,7 @@ def main():
     ap.add_argument("--run", required=True)
     ap.add_argument("--remote", default="mailbox:~/evo_b_mailbox")
     ap.add_argument("--cells", required=True)
-    ap.add_argument("--rounds", type=int, default=8)
+    ap.add_argument("--rounds", type=int, default=5)
     ap.add_argument("--n", type=int, default=20)
     ap.add_argument("--n-selection", type=int, default=20)
     ap.add_argument("--final", action="store_true")

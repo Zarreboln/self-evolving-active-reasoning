@@ -301,7 +301,7 @@ def final(a):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--run", required=True)
-    ap.add_argument("--rounds", type=int, default=8)
+    ap.add_argument("--rounds", type=int, default=5)
     ap.add_argument("--n", type=int, default=20, help="search episodes per task")
     ap.add_argument("--n-selection", type=int, default=20)
     ap.add_argument("--n-test", type=int, default=50)

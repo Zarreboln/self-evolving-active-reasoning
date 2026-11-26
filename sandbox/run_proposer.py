@@ -19,6 +19,8 @@ of the container; they are never written into /work.
 from __future__ import annotations
 
 import argparse
+import time
+import re
 import os
 import subprocess
 from pathlib import Path
@@ -107,7 +109,44 @@ def prime_cost(log: Path):
     return round(cost, 4)
 
 
-def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=True):
+LIMIT_RX = re.compile(r"hit your [^\"]*limit[^\"]*?resets\s+(\d{1,2})(?::(\d{2}))?\s*([ap]m)\s*\(UTC\)", re.I)
+
+
+def limit_reset(log: Path):
+    """If the session ended on the subscription's usage limit, the UTC datetime it resets at, else None."""
+    try:
+        text = log.read_text(errors="ignore")
+    except FileNotFoundError:
+        return None
+    m = LIMIT_RX.search(text)
+    if not m:
+        return None
+    import datetime as dt
+    h, mi, ap = int(m.group(1)), int(m.group(2) or 0), m.group(3).lower()
+    h = h % 12 + (12 if ap == "pm" else 0)
+    now = dt.datetime.now(dt.timezone.utc)
+    t = now.replace(hour=h, minute=mi, second=0, microsecond=0)
+    if t <= now:
+        t += dt.timedelta(days=1)
+    return t
+
+
+def run(ws: Path, log: Path, model="claude-opus-5-5", timeout=45 * 60, network=True, max_waits=12):
+    """One session; if it hit the subscription's usage limit, wait until the limit resets and run it again
+    (a limit is not the proposer's doing: it must never count as a round without a change)."""
+    import datetime as dt
+    for _ in range(max_waits):
+        rc = _run_once(ws, log, model, timeout, network)
+        t = limit_reset(log)
+        if t is None:
+            return rc
+        wait = (t - dt.datetime.now(dt.timezone.utc)).total_seconds() + 180
+        print(f"[run_proposer] usage limit; waiting {wait / 60:.0f} min until {t:%H:%M} UTC", flush=True)
+        time.sleep(max(60, wait))
+    return rc
+
+
+def _run_once(ws: Path, log: Path, model, timeout, network):
     ws = ws.resolve()
     task = "Follow the instructions in TASK.md (they are repeated here).\n\n" + (ws / "TASK.md").read_text()
     extra = {}

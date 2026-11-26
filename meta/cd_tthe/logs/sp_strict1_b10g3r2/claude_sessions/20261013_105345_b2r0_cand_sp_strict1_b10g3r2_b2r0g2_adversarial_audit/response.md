@@ -1,1 +1,0 @@
-Reading the parent harness and the ten b2 traces before I change anything.Now the docstring, then the real run.

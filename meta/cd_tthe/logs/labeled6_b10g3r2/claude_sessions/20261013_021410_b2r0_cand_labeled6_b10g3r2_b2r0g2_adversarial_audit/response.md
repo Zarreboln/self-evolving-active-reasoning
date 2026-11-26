@@ -1,1 +1,0 @@
-Parent harness is 10/10 on this batch; bare is 0/10. I'm checking the one veto in the parent traces (i266) for any weak point worth hardening.

@@ -1,8 +1,0 @@
-[project]
-name = "arbench-mh-dc"
-version = "0"
-requires-python = ">=3.10"
-dependencies = ["pyyaml", "arbench-mh"]
-
-[tool.uv.sources]
-arbench-mh = { path = "../../..", editable = true }

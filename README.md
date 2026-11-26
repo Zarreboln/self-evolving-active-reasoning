@@ -1,128 +1,32 @@
-# Meta-Harness for Multi-Turn Active Reasoning
+# Harness 的部分共享:跨任务族的快速适应
 
-**Zining Liu** (ziningl@mit.edu) · **Yangzi Sun** (sunyz@mit.edu) — Massachusetts Institute of Technology
+**Zining Liu** — Massachusetts Institute of Technology
 
-Active reasoning requires an agent to interact with external sources and gather missing information over multiple
-turns before it can solve a problem. It involves two abilities:
+围绕冻结模型的代码(harness)可以自动进化,但现有方法共享 harness 的边界都是人定的:要么所有任务共用一份,要么按 benchmark 各自一份。
+这个项目研究的是:**让数据决定 harness 的哪些组件在哪些任务之间共享**,从而让新任务(包括来自没见过的 benchmark 的任务)适应得更快、更便宜、更不容易过拟合。
 
-- **information acquisition (IA):** selecting questions that reduce uncertainty about the answer;
-- **belief tracking (BT):** updating the agent's belief from the responses.
+## 当前进度
 
-Existing methods train these abilities into the model weights with reinforcement learning. We ask whether they can
-instead be acquired without weight updates, through **harness search**. In harness search, a proposer model reads
-execution traces and rewrites the code around a frozen model.
+- **官方默认 baseline**:每个任务用它所在 benchmark 自己的默认 agent,原样运行。结果见 [docs/official_baselines.md](docs/official_baselines.md)。
+- **对照方法**(进行中):Meta-Harness(按 benchmark 分组、全局两种)、Harness²、ACE、Learning Meta-Skills,都用各自的官方代码。
+- **我们的方法**(进行中):组件 = 固定槽位里的内容;任务对组件的隶属度连续可调;交替进化与提取。公式见 [notes/method_formulas.md](notes/method_formulas.md)。
 
-We freeze Qwen2.5-7B-Instruct and apply [Meta-Harness](https://arxiv.org/abs/2603.28052) to the three AR-Bench tasks:
-Guess Number (GN), Detective Cases (DC) and Situation Puzzles (SP).
+## 仓库结构
 
-![Overview](figures/paper/fig_overview.png)
-
-## Findings
-
-1. **Main finding: the two abilities improve differently.** At turn 25, belief tracking improves by 26.7 to 93.3
-   points across the three tasks, whereas information acquisition remains nearly unchanged.
-2. **Hypothesized explanation: the counterfactual credit-assignment problem.** Belief-tracking errors are visible in
-   the execution trace. The quality of a question, however, depends on alternative questions that were not asked,
-   and those are absent from the trace.
-3. **Secondary finding: overfitting to the validation set.** From the validation set to the test set, the selected
-   harnesses lose 17.0 points on DC and 8.5 on SP.
-
-## Setup
-
-| | |
+| 路径 | 内容 |
 |---|---|
-| Tasks | AR-Bench Guess Number, Detective Cases and Situation Puzzles, with a 25-turn budget |
-| Splits | search 50, validation 100 and test 100 episodes per task |
-| Reasoner | Qwen2.5-7B-Instruct, frozen, bf16, served with vLLM (`max-model-len` 16384, `max-num-seqs` 48), 16 concurrent episodes on one H100 80GB |
-| Proposer | Claude Opus 5.5 at maximum effort; each task runs five iterations of three candidates |
-| Environment | Structured responses (the SP referee's Yes / No / Unknown and the final-answer judgment) come from `jev-1.14.0`. The free-form suspect testimony on DC comes from the locally served Qwen2.5-7B-Instruct. |
-| Metrics | accuracy and input + output tokens per episode on 100 episodes per cell; IA and BT per turn on 30 episodes |
+| `multibench/mb/benches/` | 17 个 benchmark、101 个子任务的统一接口适配器(环境协议照各 benchmark 官方) |
+| `multibench/mb/official/` | 各 benchmark 官方默认 agent 的运行脚本(只加接入层) |
+| `multibench/mb/evolve/` | harness 进化的基础设施:候选在隔离子进程里运行、静态检查、防抄答案、评测与导出 |
+| `sandbox/` | proposer(Claude Code)的 Docker 隔离沙箱:只挂载工作区,只放行 Anthropic API |
+| `notes/` | 预注册、实验结果、方法公式、官方 agent 核查、时间表、论文精读笔记 |
+| `meta/arbench_mh/` | AR-Bench DC、SP 环境(适配器导入用) |
 
-**How the two abilities are measured.**
+## 之前的项目
 
-- **Belief tracking at turn *t*:** stop the episode at turn *t*, ask the system for its answer, and score that
-  answer.
-- **Information acquisition:** the information about the hidden answer contained in the questions and answers so
-  far, independently of how the system uses it.
-  - On GN it is exact: the probability of the correct number among the numbers consistent with the feedback.
-  - On DC and SP the possible answers cannot be enumerated, so, following T³, we use proxies read from the
-    transcript: on DC, the percentage of the five suspects questioned; on SP, the percentage of turns answered Yes or
-    No rather than Unknown.
+MAS.S62 课程的主动推理项目(Meta-Harness on AR-Bench,与 Yangzi Sun 合作)完整保存在标签
+[`mas-s62-ar-report`](../../tree/mas-s62-ar-report) 里。
 
-## Results
+## 第三方代码
 
-Test set, 100 episodes per cell. All baselines are re-run under our setup.
-
-| Method | GN acc. | GN tok/ep | DC acc. | DC tok/ep | SP acc. | SP tok/ep |
-|---|---:|---:|---:|---:|---:|---:|
-| Zero-shot | 0.0 | 31,094 | 33.0 | 143,614 | 7.0 | 37,568 |
-| Few-shot | 0.0 | 42,378 | 32.0 | 268,291 | 3.5 | 52,450 |
-| Few-shot with instruction | 1.0 | 54,925 | 39.0 | 286,701 | 5.5 | 54,713 |
-| Proactive CoT | 2.0 | 45,509 | 27.0 | 160,959 | 0.0 | 45,997 |
-| Tree of Thoughts | 6.0 | 21,196 | 34.0 | 244,318 | 9.0 | 11,360 |
-| Ask nothing (anchor) | 0.0 | 226 | 36.0 | **847** | 10.5 | **215** |
-| **Ours**, cost-efficient | **100.0** | **7** | 57.0 | 18,308 | 31.5 | 10,913 |
-| **Ours**, best | **100.0** | **7** | **63.0** | 25,715 | **32.5** | 16,142 |
-
-**Information acquisition and belief tracking at turn 25** (before → after evolution, *n* = 30):
-
-| | GN | DC | SP |
-|---|---|---|---|
-| Belief tracking | 6.7 → 100.0 | 40.0 → 83.3 | 10.0 → 36.7 |
-| Information acquisition | 95.0 → 100.0 | 100.0 → 100.0 | 52.9 → 40.1 |
-
-![IA and BT per turn](figures/paper/fig_ia_bt.png)
-
-The modules responsible for the gains all operate on the belief:
-
-- `verified_menu` (GN) maintains the consistent candidate set outside the model;
-- `prior_verify_stop` (DC) stops once sufficient evidence has been collected;
-- `certify_switch` (SP) accepts a claim only after two differently worded questions both receive Yes.
-
-GN is the one exception on the question side. Its observation model is a deterministic function, so the search
-produced a module that scores guesses by how many candidates each would leave.
-
-**Overfitting.** The selected harnesses lose 17.0 points on DC and 8.5 on SP from the validation set to the test
-set. The harness that asks no questions loses at most 1.5, and GN shows no gap.
-
-![Validation-test gap](figures/paper/fig_gap.png)
-
-## Next steps
-
-1. **Counterfactual intervention.** At each question point, send *K* alternative questions to the real environment
-   and write their answers into the trace read by the proposer. Nothing else changes. If information acquisition
-   still does not improve, the hypothesis is rejected.
-2. **A Bayesian skeleton.** If step 1 fails, fix the factors of the Bayesian agent as interfaces and let the proposer
-   evolve only their implementations:
-   - hypothesis generation;
-   - observation model;
-   - belief update;
-   - question selection by expected information gain;
-   - stopping.
-3. **Reducing overfitting.**
-   - Compare proposer prompts with and without task-specific guidance.
-   - Search across all three tasks at once.
-   - Test on active-reasoning tasks that were not used in the search.
-
-## Code
-
-| path | content |
-|---|---|
-| [`meta/arbench_mh/`](meta/arbench_mh/) | the three AR-Bench tasks for Meta-Harness: `gn/`, `dc/`, `sp/` (environment, harness base class, seed harnesses, and the evolved GN harnesses), and `mh_benchmark.py`, the benchmark entry point that Meta-Harness's loop calls |
-| [`meta/tools/`](meta/tools/) | scoring (`score_val.py`, `score_test_grid.py`), the per-turn IA/BT measurement (`ia_bt.py`) and the figure scripts |
-| [`notes/arbench_mh/`](notes/arbench_mh/) | run log, main-table source, IA/BT curves, published baselines and the domain specification given to the proposer |
-| [`figures/paper/`](figures/paper/) | the figures of the report |
-| `meta_harness_official/` | the pinned Meta-Harness repository (submodule; see [`THIRD_PARTY.md`](THIRD_PARTY.md)) |
-
-```bash
-cd meta/arbench_mh
-python mh_benchmark.py --task dc --memory baseline_tot                    # score one harness
-python mh_benchmark.py --task dc --frontier --model Qwen2.5-7B-Instruct   # accuracy-cost frontier
-python mh_benchmark.py --task dc --results
-```
-
-## Earlier experiments
-
-Before this report, we ran test-time harness evolution with a label-free judge on Circuit Decoding (Multi-Turn
-Puzzles) and Situation Puzzles, together with an audit of SP's character-level F1. These experiments are not part of
-the report. They are logged in [`notes/EXPERIMENTS_LOG.md`](notes/EXPERIMENTS_LOG.md) and [`experiments/`](experiments/).
+见 [THIRD_PARTY.md](THIRD_PARTY.md)。

@@ -1,52 +1,26 @@
-# Third-party code, pinned as submodules
+# 第三方代码
 
-Every repository this project runs against or mirrors is a submodule at an exact commit, so a
-reproduction gets the same code we ran and not whatever upstream has moved to:
+## 子模块(固定到具体 commit)
 
 ```bash
 git clone --recurse-submodules https://github.com/Zarreboln/self-evolving-active-reasoning.git
-# or, in an existing clone
-git submodule update --init
 ```
 
-They are submodules rather than copies for two reasons. A pinned commit is what reproduction needs,
-and it is lost the moment a tree is copied in. And `git -C <dir> status` then answers "did we modify
-their code?" directly — which is how the two facts in the last column below were established.
+| 目录 | 仓库 | 许可证 | 我们的改动 |
+|---|---|---|---|
+| `AR-Bench/` | tmlr-group/AR-Bench | 顶层无许可证文件,所以不复制代码,只用子模块拉取 | 无 |
+| `meta_harness_official/` | stanford-iris-lab/meta-harness | MIT | 无 |
 
-| Directory | Repository | Pinned commit | Licence | Our changes to it |
-|---|---|---|---|---|
-| `AR-Bench/` | tmlr-group/AR-Bench | `9971322` | **none at top level** | **none** — clean tree |
-| `balar_official/` | AymenEcharghaoui/BALAR | `499d9a9` | MIT | none — clean tree |
-| `tthe_official/` | junnie00/TTHE | `69a614d` | MIT | none — clean tree |
-| `meta_harness_official/` | stanford-iris-lab/meta-harness | `8123cca` | MIT | none — clean tree |
-| `meta_harness_repo/` | stanford-iris-lab/meta-harness-tbench2-artifact | `57fefdb` | none | none — clean tree |
-| `rrsi_official/` | google-research/rrsi | `be50316` | present (Google) | none — clean tree |
-| `evoharness_rl_official/` | EvoHarnessRL/EvoHarness-RL | `1c1e63a` | MIT | **4 paths**: `evoharness/envs/__init__.py` edited to register the env, plus `configs/eval/circuitdecoding.yaml`, `evoharness/envs/circuitdecoding/` and `scripts/cd_smoke.py` added — the same files kept in `baselines/evoharness_cd/` |
+## 复制进仓库的代码
 
-AR-Bench ships no licence file, so its tree is not redistributed here; the submodule fetches it from
-upstream instead. That is also why nothing in this repository patches it: the Jev referee shim
-(`runner/jev_referee_shim.py`) speaks the OpenAI API so the official evaluators run unmodified, which
-`git -C AR-Bench status` can confirm at any time.
-
-## What we re-implemented rather than imported, and why
-
-| Ours | Mirrors | Why not their code directly |
+| 位置 | 来源 | 许可证 |
 |---|---|---|
-| `meta/cd_tthe/` | `tthe_official/` | TTHE ships one package per domain (`ase`, `swe`, `livecodebench`, `ds1000`), each a copy of the same files; ours is that pattern for Circuit Decoding and Situation Puzzles, which do not exist upstream |
-| `meta/cd_evolve/` | `meta_harness_official/` + `rrsi_official/` | the Meta-Harness loop and RRSI's selection-side rules, for our tasks; `claude_wrapper.py` is copied verbatim (MIT) with its provenance in its first line |
-| `baselines/evoharness_cd/` | `evoharness_rl_official/` | an env written to their plugin interface; it has to live inside their tree to run, hence the four changed paths above |
-| `runner/md_evaluator.py` | `balar_official/` (`icraft-md`) | runs AR-Bench's prompt baselines on BALAR's dataset. It is **not** BALAR: BALAR's method is `run.py` + `agent.py` and reproducing *that* means running their code, not ours |
+| `multibench/mb/vendor/balrog_babyai/` | balrog-ai/BALROG 的 BabyAI 文本包装 | MIT(文件夹内附) |
 
-## Data
+## 运行时使用、不在仓库里的
 
-`balar_official/data/arbench/{sp,dc}/test.json` is **byte-identical** to `AR-Bench/data/{sp,dc}/test.json`
-(md5 `8416d136…` and `0b476dba…`, 100 instances each), so the two repositories agree on the test sets.
-BALAR additionally ships the `train.json` splits, which we do not use, and `data/mediQ/all_craft_md.jsonl`
-(140 instances), which is the only iCraft-MD source — MediQ proper is not included, so the MediQ Expert
-baseline would have to come from `stellalisy/mediQ`. BALAR has no Guess Number prompts: it does not
-cover that task.
+官方 baseline 运行时还用到这些项目的代码(安装在服务器上,或运行时下载):
+TextArena、BALROG、ALFWorld、ScienceWorld、ysymyth/ReAct(提示文件)、SwiftSage `science_world` 分支(提示文件和 `eval_utils.py`)。
+各自的用法和改动见 `multibench/mb/official/` 里每个脚本的开头说明,以及 `notes/official_initial_agents.md`。
 
-`mt_puzzles/` holds the CircuitDecoding split of Multi-Turn Puzzles
-(https://huggingface.co/datasets/arianhosseini/mt_puzzles, CC-BY-4.0) and is committed here, not a
-submodule. TurtleBench (https://github.com/mazzzystar/TurtleBench) is cloned on the cluster for judge
-calibration.
+之前 MAS.S62 主动推理项目用到的其他子模块(BALAR、TTHE、RRSI、EvoHarness-RL、meta-harness-tbench2-artifact),保留在标签 `mas-s62-ar-report` 里。

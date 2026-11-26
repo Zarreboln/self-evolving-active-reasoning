@@ -429,7 +429,8 @@ class Run:
             self.record(tag, rec)
             return shared, tree, meta
         cand = json.loads(json.dumps(tree))
-        nid = node if node in internal(cand) else f"n{len(internal(cand)) + 1}"
+        same = [n for n in internal(cand) if all(cand["nodes"][n]["config"].get(k) == v for k, v in cfg.items())]
+        nid = node if node in internal(cand) else (same[0] if same else f"n{len(internal(cand)) + 1}")
         if nid not in cand["nodes"]:
             cand["nodes"][nid] = {"parents": {"root": 1.0}, "config": {}, "desc": "", "centre": []}
         cand["nodes"][nid]["config"].update(cfg)

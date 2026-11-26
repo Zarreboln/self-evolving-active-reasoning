@@ -1,74 +1,79 @@
-# Method: abilities decomposed into shared sub-abilities (chosen 2026-11-25, draft)
+# Method: a soft general-to-specific tree of harnesses (decided 2026-11-26, draft)
 
-Replaces the specialization tree of `method_formulas.md` §8 as the main method. The specialization tree
-(TreeMAML-style, general at the root, specific at the leaves) stays as a figure and as a comparison.
-Figure: `~/Desktop/soft_hierarchy_fig/decomposition_tree.png`.
+Main figure: `~/Desktop/soft_hierarchy_fig/soft_hierarchy.png`.
+Earlier readings are kept for reference only: the ability decomposition (`decomposition_tree.png`, and this
+file before commit 13695a9) and the atomic-ability tree (`soft_hierarchy_atomic.png`).
 
-## Structure (main figure: `~/Desktop/soft_hierarchy_fig/soft_hierarchy.png`, revised 2026-11-26)
-**Superseded twice on 2026-11-26.** First the tree was "composite ability → atomic abilities". The user then
-said that is not the intended meaning. The intended tree is TreeMAML-style descent, general → specific:
-- The root harness h is improved on the pooled failures of **all** tasks (every task can gain from it).
-- Each child starts from a copy of its parent and is improved further on the failures of its own group only.
-  Lower nodes therefore fit fewer tasks, and fit them better. Leaves are the most specific versions.
-- Soft: a task belongs to several branches with weights. A node is improved on the failures of the tasks below
-  it, weighted by these weights. A task runs the leaf it weighs most. The weights and the shape of the tree
-  (how many children, how deep) are learned from scores.
-- Hard version (TreeMAML): the same tree, but each task belongs to exactly one path.
-- The "atomic abilities" picture is kept as `soft_hierarchy_atomic.png`. The sections below were written for
-  the ability-decomposition reading and still need to be rewritten for this one.
+## Structure
+The tree follows TreeMAML: each level is one more step of improvement on a smaller group of tasks.
+- **Root h.** Improved on the pooled failures of all tasks, so every task can gain from it.
+- **Inner nodes (h1, h2, ...).** Each starts from its parent and is improved further on the failures of its own
+  group only.
+- **Leaves (h1.1, ..., h2.3).** The most specific versions. Lower nodes fit fewer tasks, and fit them better.
+- **Storage.** A node is stored as its parent plus its own changes (a diff). A change to a parent therefore
+  reaches every node below it. If a child's diff no longer applies, the code-editing model merges it.
+- **Shape.** A node can have any number of children, and branches can have different depths.
 
-## What is soft: splits into smaller versions
-When two tasks want a shared ability changed in conflicting ways (the change helps one and hurts the other
-beyond noise), the ability is not overwritten and not copied. It splits: the common part stays in the
-ability, and the differing part becomes smaller versions below it. Example: "prune by feedback" keeps
-"read which candidates the feedback rules out"; below it, "strict" deletes them (task A, exact feedback) and
-"tolerant" down-weights them (task B, answers that are sometimes wrong).
-Each task has weights over the smaller versions of a split (e.g. A: strict 0.9, tolerant 0.1) and runs the
-one it weighs most (code cannot run half of two functions). Weights come from measured gain through a
-softmax with temperature τ, as in DPM. They also decide where a change is credited and on which callers it
-is tested, and a new task borrows them from similar tasks. Without conflicts there is only one version and
-no weight.
+## What is soft
+- Each task t has a weight w(t, n) on every node n, and the weights over the children of one node sum to 1.
+  This is the same soft assignment as HSML, one level at a time.
+- **Editing.** A node is improved on the failures of the tasks below it. Each task's failures count in
+  proportion to its weight on that node, so the code-editing model sees more traces from tasks that weigh it
+  more.
+- **Running.** A task runs the leaf it weighs most. Code cannot run half of two harnesses.
+- **Hard version (TreeMAML).** The same tree, but every weight is 0 or 1, so each task follows exactly one
+  path.
 
-## How sharing grows (library learning)
-1. A change is first made inside one task's ability (the code-editing model, Claude Code, sees only that
-   task's traces).
-2. If the same change also helps other tasks beyond noise (in at least two benchmarks), it is pulled out into
-   a sub-ability below them and both call it.
-3. If it keeps helping more tasks, it sinks further toward the primitives.
-4. Before a shared sub-ability is changed, it is re-tested on its callers; if a caller drops beyond noise, the
-   sub-ability splits as above instead of being overwritten (the replay test follows OSML).
-Closest published precedent: library learning in program synthesis (DreamCoder, Ellis et al., 2021; LILO,
-Grand et al., 2024) and compositional skill libraries (Voyager, Wang et al., 2023). To be checked against the
-papers before any formula is written down.
+## One round before deployment (scores available)
+1. **Scores.** Run every task on the leaves it weighs most and record the scores on the search split.
+2. **Weights.** w(t, child) = softmax over children of gain(t, child) / τ, as in DPM. Here gain is the task's
+   score on that child's subtree minus its score on the parent.
+3. **Improve, top-down.**
+   - The root is edited first, on the failures of all tasks. The edit is kept only if the mean score over all
+     tasks improves beyond noise.
+   - Each child is then edited on its tasks' weighted failures. Its edit is kept if the weighted score of its
+     tasks improves beyond noise.
+   - Leaves are edited last.
+4. **Reshape.**
+   - **Split.** If an edit to a node helps some of its tasks and hurts others beyond noise, the node splits:
+     the edit goes to a new child for the tasks it helps, and the others keep the node as it was.
+   - **Promote.** If an edit made in one child also helps the tasks of its siblings beyond noise, it moves up
+     to the parent.
+   - **Prune.** Children with little total weight are removed.
 
-## Gain (credit)
-gain(caller, callee) = score change of the caller's task when the callee is swapped out (for the next-best
-alternative) or removed. Measured on the search split before deployment.
+**Cost per round.** About one call to the code-editing model per node edited (root + inner nodes + leaves),
+plus the evaluations. This matches the faithful harness version of TreeMAML.
 
-## A new task: how the hierarchy is updated
-At deployment (no scores, only the environment's wins and losses):
-1. A top-level node is created for the task. Its first ability is composed of existing sub-abilities chosen
-   by similarity; at each split it borrows the weights of similar tasks.
-2. While playing, it adjusts its weights at each split from wins and losses.
-3. If that is not enough, the code-editing model edits only this task's own top-level code. Shared abilities
-   are never edited at deployment.
-Between deployments (scores on the development tasks' search split are available):
-4. New code in the task's ability that also helps other tasks is pulled out and sinks down; if it does the
-   same job as an existing ability, it becomes a smaller version under that ability.
-5. If the task needs a shared ability changed in a way that hurts its other callers, the ability splits.
-6. Smaller versions that no task weighs much are removed, so the library does not keep growing.
-Old tasks change only when a change has been re-tested on them with no drop beyond noise.
+## Relation to TreeMAML and HSML
+- **TreeMAML.** The k-th inner step averages gradients within the level-k cluster. Here the k-th level is
+  edited on the pooled failures of its cluster.
+- **Differences from TreeMAML.**
+  - Nodes are kept between rounds. TreeMAML has one shared initialisation and rebuilds its clusters for each
+    batch.
+  - Membership is soft.
+  - The shape of the tree grows and shrinks.
+- **HSML.** Like HSML, assignment is soft, level by level. Unlike HSML, each node holds its own code instead of
+  a gate over one shared set of parameters.
 
-Previous summary of this step:
-Composes existing sub-abilities, weighted by similarity to the tasks that use them; adjusts the weights from
-the wins and losses the environment reports. If nothing fits (flat weights, or every candidate keeps losing),
-the code-editing model writes a new sub-ability from the task's environment-visible traces, built on the
-existing primitives; it is kept only if the following problems improve. Shared nodes are not edited at test
-time.
+## A new task at deployment (environment feedback only, no scores)
+1. Its first weights are borrowed from the most similar development tasks. It runs the leaf it weighs most.
+2. While it plays, its weights move toward the branches where it wins more. It may switch leaves.
+3. If no leaf fits (the weights stay flat, or every candidate keeps losing), the code-editing model grows a new
+   leaf for it. The leaf starts from the highest-weight node, or from the root if the weights are flat, and is
+   written from the task's environment-visible traces only. Shared nodes are never edited at deployment.
+4. Between deployments, with scores on the development tasks' search split, the new leaf's changes can be
+   promoted upward by step 4 above. Old tasks change only if the change is re-tested on them with no drop
+   beyond noise.
+
+## Ablations
+- Hard tree (TreeMAML: one path per task).
+- One harness for all tasks (root only).
+- One harness per task (leaves only, no sharing).
+- A tree fixed by hand (one branch per benchmark).
+- No reshaping: the shape of the tree is fixed after the first round.
 
 ## Open (to decide)
-- Exact softmax and gain formulas, once the precedent papers are read.
-- How the seven slot families of Learning Meta-Skills map onto abilities (slots may become the fixed
-  interfaces of primitives).
-- Ablations: hard composition (each role filled by exactly one callee), flat library (no levels), one shared
-  harness, and the specialization tree as a comparison.
+- Whether weights come from gain (DPM style) or from a task embedding and distance to node centres (HSML
+  style), and the value of τ.
+- The noise threshold used in the keep, split and promote tests (number of problems per test).
+- How the seven slot families of Learning Meta-Skills map onto what a node may change.

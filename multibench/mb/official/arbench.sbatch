@@ -12,7 +12,6 @@
 #SBATCH --mem=96G
 #SBATCH --time=06:00:00
 #SBATCH --qos=lowprio
-#SBATCH --nodelist=ml-16-node-001
 #SBATCH --requeue
 #SBATCH --open-mode=append
 #SBATCH --output=%x_%j.out

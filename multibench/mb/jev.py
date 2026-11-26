@@ -42,7 +42,7 @@ class Jev:
         self.calls = self.in_tok = 0
         self._lock = threading.Lock()
 
-    def choose(self, state, instructions, criteria, retries=5):
+    def choose(self, state, instructions, criteria, retries=8):
         body = {"model": self.model, "state": state,
                 "questions": {"answer": {"type": "choice", "instructions": instructions,
                                          "criteria": criteria}}}
@@ -65,7 +65,9 @@ class Jev:
                                    f"state={json.dumps(state)[:300]}")
             except Exception as e:          # 429 / 5xx / transport
                 last = e
-            time.sleep(1.5 * (a + 1))
+            # JevHub intermittently answers a 400 'Unknown model' under concurrent load (a short request
+            # that fails in a burst succeeds alone), so back off long enough to ride it out
+            time.sleep(min(60.0, 1.5 * 2 ** a))
         raise RuntimeError(f"Jev failed after {retries} attempts: {last}")
 
     def usage(self):

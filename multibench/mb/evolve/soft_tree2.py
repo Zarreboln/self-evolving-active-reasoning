@@ -413,7 +413,8 @@ class Run:
 
     def extract(self, tag, c, shared, tree, meta):
         """The model moves what this leaf and its nearest other leaves share into an internal node."""
-        others = sorted([x for x in tree["order"] if x != c], key=lambda x: dist(tree["vecs"][x], tree["vecs"][c]))[:3]
+        # every task already in the tree, nearest first (at most 6 here): the model decides what is shared
+        others = sorted([x for x in tree["order"] if x != c], key=lambda x: dist(tree["vecs"][x], tree["vecs"][c]))
         ws = self.dir / "workspaces" / tag
         if not ((self.dir / "private" / f"{tag}_proposed.json").exists() and ws.exists()):
             ws = self.base_ws(tag, shared, tree, meta)
@@ -422,12 +423,14 @@ class Run:
 
     def fill_extract_ws(self, ws, c, others, tree, meta):
         leaves = {self.tid(x): {"own": tree["nodes"][leaf(x)]["config"], "resolved": resolve(tree, leaf(x)),
-                                "essence": tree["essence"].get(x, "")} for x in [c] + others}
+                                "essence": tree["essence"].get(x, ""),
+                                "distance_to_new_game": round(dist(tree["vecs"][x], tree["vecs"][c]), 3)}
+                  for x in [c] + others}
         (ws / "leaves.json").write_text(json.dumps(leaves, indent=1))
         (ws / "internal_nodes.json").write_text(json.dumps(
             {n: {"config": tree["nodes"][n]["config"], "desc": tree["nodes"][n].get("desc", "")} for n in internal(tree)}, indent=1))
         for x in [c] + others:
-            self.add_evidence(ws, x, meta["last_export"][x], k=4)
+            self.add_evidence(ws, x, meta["last_export"][x], k=3)
         (ws / "TASK.md").write_text(TASK_EXTRACT.format(tid=self.tid(c)))
 
     def finish_extract(self, tag, c, others, shared, tree, meta, ws):
@@ -540,8 +543,9 @@ changed, why). The change is kept only if this game gains on the same problems, 
 
 TASK_EXTRACT = """# Extract what games share into an internal node
 
-Game `{tid}` has just been added. `leaves.json` shows its leaf and the nearest other games' leaves: their own
-overrides, their resolved configurations and a description of each problem. `internal_nodes.json` shows the
+Game `{tid}` has just been added. `leaves.json` shows its leaf and every other game's leaf, nearest first
+(`distance_to_new_game`, in the space of the problem descriptions): their own overrides, their resolved
+configurations and a description of each problem. Games far apart can still share a mechanism. `internal_nodes.json` shows the
 existing internal nodes. `evidence/` has a few traces per game; `tree.md` the whole tree.
 
 Find what at least two of these games share in a way that is about the problem (a mechanism, a setting) and

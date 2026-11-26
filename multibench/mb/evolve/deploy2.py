@@ -244,7 +244,7 @@ class Deploy:
     def extract(self, name, cell, seen):
         """C, D: what this task's leaf shares with earlier leaves goes into an internal node; no check."""
         others = sorted([x for x in self.tree["order"] if x != cell and S.leaf(x) in self.tree["nodes"]],
-                        key=lambda x: dist(self.tree["vecs"][x], self.tree["vecs"][cell]))[:3]
+                        key=lambda x: dist(self.tree["vecs"][x], self.tree["vecs"][cell]))   # all earlier leaves
         if not others:
             return
         w = self.ws(f"{name}_extract")

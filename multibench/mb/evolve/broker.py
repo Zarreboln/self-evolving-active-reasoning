@@ -321,17 +321,32 @@ def _all_loads():
     return rows
 
 
-def low_priority_allowance(out, mine):
-    """How many episodes this broker may run: no limit unless it is priority 2 and an evaluation of ours is
-    running, then LOW_PRIORITY_CAP for the whole evaluation (all its brokers together)."""
-    if priority(out) < 2:
+def ours_running(root=os.path.expanduser("~/results/mb/evo_b")):
+    """Is any episode of our method or its ablations being played? (a live claim: touched every minute)"""
+    import glob
+    for c in glob.glob(os.path.join(root, "ours3*", "*", "*", "out", "**", "*.claim"), recursive=True):
+        try:
+            if time.time() - os.path.getmtime(c) < 150:
+                return True
+        except OSError:
+            pass
+    return False
+
+
+def low_priority_allowance(out, assist):
+    """How many episodes this broker may run: no limit unless it serves a priority-2 evaluation while ours are
+    running. Then helpers step aside and the owner runs LOW_PRIORITY_CAP episodes for the whole evaluation:
+    1 each for its first LOW_PRIORITY_CAP tasks (a fixed split, so brokers do not chase each other's counts)."""
+    if priority(out) < 2 or not ours_running():
         return None
-    rows = _all_loads()
-    if not any(x.get("prio", 2) < 2 and x["n"] > 0 for _, x in rows):
-        return None
-    me = f"{os.getpid()}.json"
-    others = sum(x["n"] for f, x in rows if x.get("out") == str(out) and not f.endswith(os.sep + me))
-    return max(0, LOW_PRIORITY_CAP - others)
+    if assist:
+        return 0
+    o = str(out).rstrip(os.sep)
+    parent, name = os.path.dirname(o), os.path.basename(o)
+    if os.path.basename(parent) == "cells":
+        cells = sorted(d for d in os.listdir(parent) if os.path.isdir(os.path.join(parent, d)))
+        return 1 if name in cells[:LOW_PRIORITY_CAP] else 0
+    return LOW_PRIORITY_CAP
 
 
 def _drop_load():
@@ -630,7 +645,7 @@ def _run_jobs(a, jobs, done, bench, sub):
             if time.time() - last_pr > 60:
                 last_pr = time.time()
                 try:
-                    allow = low_priority_allowance(a.out, len(running))
+                    allow = low_priority_allowance(a.out, a.assist)
                 except Exception:
                     allow = None
                 if allow is not None and len(running) > allow:      # make room for ours: hand back (journal kept)

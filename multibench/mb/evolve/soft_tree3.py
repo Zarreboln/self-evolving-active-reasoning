@@ -52,6 +52,7 @@ BASE_AGENT = HERE / "seeds" / "textarena_standard.py"
 SIGMA, K_NODES, K_TASKS = 0.3, 3, 2
 AFF_UP, AFF_DOWN, AFF_MAX = 1.5, 0.5, 3.0
 EDITS = 5
+MAX_FIXES = 10          # repair sessions until the harness runs (user, 2026-11-27: fix until it passes; a safety cap)
 ABLATION = ""
 ORDER_SEED = st2.ORDER_SEED
 NODE_ID = re.compile(r"^[a-z][a-z0-9_]{0,40}$")
@@ -145,7 +146,59 @@ class Run(st2.Run):
         for f in ("harness_lib.py", "mock_env.py"):
             shutil.copy(HERE / "ws_template" / f, ws / f)
         shutil.copy(HERE / "check.py", ws / "check_harness.py")
+        shutil.copy(HERE / "ws_template" / "replay_test.py", ws / "replay_test.py")
         return ws
+
+    def crash_report(self, code, traces):
+        """'' if `code` passes the static rules and runs on the recorded traces (replay_test.py), else the
+        report: the static problems, or the crash output."""
+        bad = problems(code)
+        if bad:
+            return "Static check failed:\n" + "\n".join(bad)
+        import subprocess, tempfile
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            for f in ("harness_lib.py", "replay_test.py"):
+                shutil.copy(HERE / "ws_template" / f, d / f)
+            (d / "harness.py").write_text(code)
+            for k, t in enumerate(traces[:3]):
+                (d / "t" / str(k)).mkdir(parents=True)
+                shutil.copy(t, d / "t" / str(k) / "trace.md")
+            args = [sys.executable, "-I", "replay_test.py", "harness.py"] + [f"t/{k}/trace.md" for k in range(len(traces[:3]))]
+            if not traces:
+                return ""
+            try:
+                r = subprocess.run(args, cwd=d, capture_output=True, text=True, timeout=300)
+            except subprocess.TimeoutExpired:
+                return "The harness did not finish replaying a recorded episode within 300 s (an endless loop?)."
+            return "" if r.returncode == 0 else (r.stdout + r.stderr)[-4000:]
+
+    def until_it_runs(self, tag, c, ws, code, doc):
+        """Repair sessions until the harness runs on this game's recorded traces (user, 2026-11-27).
+        Returns (code, doc, fixes) or (None, None, fixes) if it still crashes after MAX_FIXES."""
+        traces = sorted(str(p) for p in (ws / "evidence").glob("*/episodes/*/trace.md"))
+        fixes = 0
+        while (report := self.crash_report(code, traces)):
+            if fixes >= MAX_FIXES:
+                print(f"{tag}: still crashing after {fixes} repairs", flush=True)
+                return None, None, fixes
+            fixes += 1
+            ftag = f"{tag}_fix{fixes}"
+            fws = self.dir / "workspaces" / ftag
+            if self.fresh(ftag):
+                fws = self.ws(ftag)
+                (fws / "harness.py").write_text(code)
+                (fws / "harness.md").write_text(doc or "")
+                (fws / "crash.txt").write_text(report)
+                if (ws / "evidence").exists():
+                    shutil.copytree(ws / "evidence", fws / "evidence")
+                (fws / "TASK.md").write_text(TASK_FIX.format(tid=self.tid(c)))
+            self.propose(fws, ftag)
+            code = (fws / "harness.py").read_text() if (fws / "harness.py").exists() else code
+            doc = (fws / "harness.md").read_text().strip() if (fws / "harness.md").exists() else doc
+        if fixes:
+            print(f"{tag}: runs after {fixes} repair(s)", flush=True)
+        return code, doc, fixes
 
     def fresh(self, tag):
         """True if the proposer session of `tag` has not run yet (the workspace must be built)."""
@@ -353,16 +406,18 @@ class Run(st2.Run):
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
         code = (ws / "harness.py").read_text() if (ws / "harness.py").exists() else ""
-        if problems(code):
-            print(f"{tag}: composed harness fails the static rules {problems(code)[:2]}; base agent used", flush=True)
-            code = BASE_AGENT.read_text()
+        doc0 = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
+        code, doc0, fixes = self.until_it_runs(tag, c, ws, code, doc0)
+        if code is None:
+            print(f"{tag}: composed harness never ran; base agent used", flush=True)
+            code, doc0 = BASE_AGENT.read_text(), BASE_AGENT_DOC
         try:
             used = [n for n in json.loads((ws / "compose.json").read_text()).get("used_nodes", [])
                     if n in workflows or n in modules]
         except Exception:
             used = []
         used = {n: workflows.get(n) for n in used}
-        doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
+        doc = doc0
         if code == BASE_AGENT.read_text() and not doc:
             doc = BASE_AGENT_DOC
         print(f"{tag}: rc {rc}, used nodes {sorted(used)}, description {len(doc)} chars", flush=True)
@@ -381,6 +436,14 @@ class Run(st2.Run):
         rec = {"task": c, "kind": "edit", "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
         new_code = (ws / "harness.py").read_text() if (ws / "harness.py").exists() else ""
         new_doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
+        if new_code != g["leaves"][c]["code"]:
+            fixed, fixed_doc, fixes = self.until_it_runs(tag, c, ws, new_code, new_doc)
+            rec["repairs"] = fixes
+            if fixed is None:
+                rec["outcome"] = f"rejected: still crashing after {fixes} repairs"
+                self.record(tag, rec)
+                return g, meta
+            new_code, new_doc = fixed, fixed_doc
         if new_code == g["leaves"][c]["code"]:
             if new_doc and new_doc != g["leaves"][c].get("doc"):   # a description alone changes no behaviour
                 g = json.loads(json.dumps(g))
@@ -562,7 +625,8 @@ to run: its formats, symbols, lengths, wording of its messages. Do not add new s
 traces; improving it is the next step. If nothing fits, keep the base agent. Write `harness.md`: how the harness
 works, its main functions and what each does, its parameters. Write `compose.json`:
 {{"used_nodes": ["<node id>", ...], "used_games": ["taskN", ...], "notes": "<what you took from where>"}}.
-No game or benchmark names or answers anywhere. `check_harness.py` and `mock_env.py` check that it runs.
+No game or benchmark names or answers anywhere. `check_harness.py` checks the static rules; `replay_test.py`
+replays this game's recorded episodes to it (`python replay_test.py harness.py`): it must pass.
 """
 
 TASK_EDIT = """# Improve one game's harness
@@ -573,7 +637,8 @@ traces. Tabulate how episodes end before reading traces; read the last steps of 
 actions; a part that cannot read an observation should hand the decision back to the model. Write mechanisms for
 the problem, not its surface: keep symbols, lengths and formats as named parameters, and keep functions small and
 named for what they do (later, what several games share is distilled from their harnesses). No game or benchmark
-names or answers anywhere. `check_harness.py` and `mock_env.py` check that it runs. Keep `harness.md` (how the
+names or answers anywhere. `check_harness.py` checks the static rules; `replay_test.py` replays this game's recorded
+episodes to the harness (`python replay_test.py harness.py`): it must pass. Keep `harness.md` (how the
 harness works, its main functions and what each does, its parameters) up to date with the code; write it if it is
 empty. Write `proposal.md` (what you saw, what you changed, why). The change is kept only if this game's mean
 score on the same problems rises.
@@ -615,6 +680,14 @@ Write `review.md`.
 BASE_AGENT_DOC = ("The base agent: each turn it sends a fixed system prompt and the current observation to the "
                 "model, with no memory of earlier turns, and sends the model's whole reply as the action. One function, "
                 "run_episode; no parameters.")
+
+TASK_FIX = """# Fix a crash
+
+Game `{tid}`'s harness `harness.py` (described in `harness.md`) crashes or breaks the static rules: `crash.txt`
+has the output. Fix the bug so that it runs; change nothing else (no new strategy). `replay_test.py` replays
+this game's recorded episodes (`evidence/`) to the harness: run `python replay_test.py harness.py` until it
+passes; `check_harness.py` checks the static rules. Keep `harness.md` accurate.
+"""
 
 HARD_NOTE = "\nEach node has at most one parent (a strict tree): the first one listed is kept.\n"
 

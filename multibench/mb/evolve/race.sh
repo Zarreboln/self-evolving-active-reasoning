@@ -10,6 +10,8 @@ race_claim() {
   local d=$1/claim me=$SLURM_JOB_ID owner
   if ! mkdir "$d" 2>/dev/null; then
     owner=$(cat "$d/job" 2>/dev/null)
+    # two copies starting in the same second: the winner made the dir but has not written its id yet
+    for _ in 1 2 3 4 5; do [ -n "$owner" ] && break; sleep 2; owner=$(cat "$d/job" 2>/dev/null); done
     if [ -n "$owner" ] && [ "$owner" != "$me" ] && squeue -h -j "$owner" 2>/dev/null | grep -q .; then
       return 1
     fi

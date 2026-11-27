@@ -98,10 +98,18 @@ class Mailbox:
     def pull(self):
         """A failed pull (network, GitHub) is left for the next poll: callers poll in a loop."""
         with self.lock():
-            r = self._git("pull", "-q", "--rebase", "--autostash", check=False)
+            r = self._pull_rebase()
             if r.returncode != 0:
-                self._git("rebase", "--abort", check=False)
                 print(f"mailbox pull failed (will retry): {(r.stderr or '').strip()[-200:]}", flush=True)
+
+    def _pull_rebase(self):
+        """Rebase local commits onto the remote. When two workers published the same result (one took over a
+        request from a worker that later finished it too), the copy already on the remote wins (-X ours is
+        upstream during a rebase): the method may have read it. A failure never leaves a rebase behind."""
+        r = self._git("pull", "-q", "--rebase", "--autostash", "-X", "ours", check=False)
+        if r.returncode != 0:
+            self._git("rebase", "--abort", check=False)
+        return r
 
     def push(self, msg):
         with self.lock():
@@ -115,7 +123,7 @@ class Mailbox:
         for _ in range(5):                      # the driver may have pushed in between
             if self._git("push", "-q", check=False).returncode == 0:
                 return
-            self._git("pull", "-q", "--rebase", "--autostash")
+            self._pull_rebase()
         raise RuntimeError("mailbox push failed 5 times")
 
     def sync_code(self, here):

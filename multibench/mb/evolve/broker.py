@@ -395,7 +395,14 @@ def _run_jobs(a, jobs, done, bench, sub):
             return
         jobs = jobs[1:]
     if a.assist:                              # a helper plays what nobody has claimed; the owner summarizes
-        with ThreadPoolExecutor(a.workers) as ex:
+        # its even share of the unclaimed episodes, so the first helper to arrive does not take them all
+        n_free = sum(1 for j in jobs if not _finished(_path(j[5], j[1], j[2], j[3]))
+                     and not _claimed_by_other(_path(j[5], j[1], j[2], j[3])))
+        try:
+            k = max(1, len(idle_workers()))
+        except Exception:
+            k = 1
+        with ThreadPoolExecutor(max(1, min(a.workers, math.ceil(n_free / k)))) as ex:
             for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
                 f.result()
         return

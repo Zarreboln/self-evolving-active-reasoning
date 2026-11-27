@@ -133,7 +133,7 @@ class Mailbox:
         """Idempotent: the same harness(es) and parameters under an existing key keep the request (and
         whatever the driver has already played or published for it), so a restarted Mac loop resumes."""
         with self.lock():
-            self._git("pull", "-q", "--rebase", "--autostash", check=False)
+            self._pull_rebase()
             req = self.repo / "requests" / key
             if (req / "request.json").exists():
                 old = json.loads((req / "request.json").read_text())
@@ -185,7 +185,7 @@ def play(box: "Mailbox", key, harness, cell, split, instances, visible_only=True
     params = {"cell": cell, "split": split, "instances": list(instances), "visible_only": visible_only,
               **(extra or {})}
     with box.lock():
-        box._git("pull", "-q", "--rebase", "--autostash")
+        box._pull_rebase()
         req = box.repo / "play_requests" / key
         res = box.repo / "play_results" / key
         if (res / "private.json").exists() and (req / "harness.py").exists() \

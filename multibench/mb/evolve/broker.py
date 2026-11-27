@@ -393,9 +393,10 @@ def _run_jobs(a, jobs, done, bench, sub):
         jobs = jobs[1:]
     # An episode is claimed when a thread starts it, so the owner runs only its even share at once and leaves
     # the rest unclaimed for idle workers (with 48 threads it claimed all 20 at once and helpers found nothing)
-    share = a.workers if a.assist else min(a.workers, owner_share(len(jobs), os.environ.get("MB_WORKER_NAME")))
+    left_n = sum(1 for j in jobs if not _finished(_path(j[5], j[1], j[2], j[3])))   # a resumed run skips finished ones
+    share = a.workers if a.assist else min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
     if not a.assist:
-        print(f"owner plays {share} of {len(jobs)} episodes at once; idle workers take the rest", flush=True)
+        print(f"owner plays {share} of {left_n} unfinished episodes at once; idle workers take the rest", flush=True)
     with ThreadPoolExecutor(share) as ex:
         for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
             f.result()

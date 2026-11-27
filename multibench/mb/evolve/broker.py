@@ -280,6 +280,79 @@ def timeout_record(bench, sub, inst):
 CLAIM_STALE = 900
 
 
+LOAD_DIR = os.path.expanduser("~/results/mb/load")   # <slurm job>/<pid>.json: episodes each broker is running
+REBALANCE_EVERY = 120          # seconds between load checks
+RELEASE_HOLD = 300             # a handed-back episode is not taken back by the same broker for this long
+
+
+def _write_load(n):
+    job = os.environ.get("SLURM_JOB_ID")
+    if not job:
+        return
+    d = os.path.join(LOAD_DIR, job)
+    os.makedirs(d, exist_ok=True)
+    _write(os.path.join(d, f"{os.getpid()}.json"), {"n": n, "t": time.time()})
+
+
+def _drop_load():
+    try:
+        os.remove(os.path.join(LOAD_DIR, os.environ.get("SLURM_JOB_ID", "-"), f"{os.getpid()}.json"))
+    except OSError:
+        pass
+
+
+def gpu_loads():
+    """{slurm job of every running worker: episodes its brokers are running} (fresh load files only)."""
+    r = subprocess.run(["squeue", "-h", "-u", os.environ.get("USER", ""), "-t", "RUNNING", "-o", "%i %j"],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode != 0:
+        return {}
+    jobs = [l.split()[0] for l in r.stdout.splitlines() if len(l.split()) > 1 and l.split()[1].startswith("mb_worker")]
+    gpu_loads.names = {l.split()[0]: l.split()[1][3:] for l in r.stdout.splitlines() if len(l.split()) > 1}
+    loads = {}
+    for j in jobs:
+        n = 0
+        for f in (os.listdir(os.path.join(LOAD_DIR, j)) if os.path.isdir(os.path.join(LOAD_DIR, j)) else []):
+            try:
+                x = json.load(open(os.path.join(LOAD_DIR, j, f)))
+                if time.time() - x["t"] < 90:
+                    n += x["n"]
+            except (OSError, ValueError, KeyError):
+                pass
+        loads[j] = n
+    return loads
+
+
+def rebalance(running):
+    """Hand back episodes this broker runs on a GPU busier than the others while some GPU sits idle: the
+    episode is stopped, its journal stays, and an idle worker resumes it (user, 2026-11-27: "自动再平衡")."""
+    me = os.environ.get("SLURM_JOB_ID")
+    if not me or len(running) < 2:
+        return
+    try:
+        loads = gpu_loads()
+    except Exception:
+        return
+    if me not in loads or len(loads) < 2:
+        return
+    helping = set(idle_workers(fresh=180, max_busy=99))      # workers that say they take others' episodes
+    idle = [j for j, n in loads.items() if n == 0 and j != me and gpu_loads.names.get(j) in helping]
+    fair = math.ceil(sum(loads.values()) / len(loads))
+    extra = min(loads[me] - fair, len(running) - 1, 2 * len(idle))
+    if not idle or extra <= 0:
+        return
+    with _HELD_LOCK:
+        cands = [i for i in running if i in _PROCS]
+    for inst in cands[-extra:]:                 # the latest started have the least to replay
+        _RELEASED[inst] = time.time()
+        with _HELD_LOCK:
+            proc = _PROCS.get(inst)
+        if proc:
+            proc.terminate()
+    print(f"rebalance: handed back {min(extra, len(cands))} episodes (this GPU {loads[me]}, fair {fair}, "
+          f"idle GPUs {len(idle)})", flush=True)
+
+
 OWNER_GRACE = 150        # seconds an episode waits for a helper before the owner plays it
 
 
@@ -385,18 +458,31 @@ def _one_subprocess(job):
         _release_ep(p)
 
 
+_PROCS = {}                    # instance -> its running "broker one" process (for rebalancing)
+_RELEASED = {}                 # instance -> when this broker handed it back for an idle GPU
+
+
 def _one_subprocess_claimed(job):
     cand, bench, sub, inst, url, out = job
+    proc = subprocess.Popen([sys.executable, "-m", "mb.evolve.broker", "one", json.dumps(job)],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    with _HELD_LOCK:
+        _PROCS[inst] = proc
     try:
-        cp = subprocess.run([sys.executable, "-m", "mb.evolve.broker", "one", json.dumps(job)],
-                            capture_output=True, text=True, timeout=EPISODE_TIMEOUT)
-        if cp.returncode == 0:
+        _, stderr = proc.communicate(timeout=EPISODE_TIMEOUT)
+        if proc.returncode == 0:
             return inst, json.load(open(_path(out, bench, sub, inst))).get("score")
-        err = f"exit {cp.returncode}: {cp.stderr.strip()[-400:]}"
+        err = f"exit {proc.returncode}: {(stderr or '').strip()[-400:]}"
+        if inst in _RELEASED:
+            err = "handed to an idle GPU (resumes from its journal)"
     except subprocess.TimeoutExpired:
+        proc.kill()
         # wall-clock time depends on the server's load, not only on the agent: infrastructure, rerun.
         # Runaway output is judged by tokens instead (a reply that fills MAX_TOKENS ends the episode).
         err = f"timeout after {EPISODE_TIMEOUT}s (rerun)"
+    finally:
+        with _HELD_LOCK:
+            _PROCS.pop(inst, None)
     # a broker failure (not a harness error, which is recorded inside the episode) reruns on resume
     _write(_path(out, bench, sub, inst), {"bench": bench, "subtask": sub, "instance": inst,
                                           "score": float("nan"), "infra": err})
@@ -488,14 +574,15 @@ def _run_jobs(a, jobs, done, bench, sub):
     else:
         share = min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
     print(f"{'helper' if a.assist else 'owner'} starts {share} of {left_n} unclaimed episodes", flush=True)
-    t0, running, tries = time.time(), {}, {}
+    t0, running, tries, last_rb = time.time(), {}, {}, time.time()
     with ThreadPoolExecutor(a.workers) as ex:
         while True:
             running = {i: f for i, f in running.items() if not f.done()}
             todo = [j for j in jobs if not _finished(rec(j))]
             free = [j for j in todo if j[3] not in running and not _claimed_by_other(rec(j))   # a stale claim is free
-                    and tries.get(j[3], 0) < 2]
-            others = [j for j in todo if _claimed_by_other(rec(j))]
+                    and tries.get(j[3], 0) < 4 and time.time() - _RELEASED.get(j[3], 0) > RELEASE_HOLD]
+            others = [j for j in todo if _claimed_by_other(rec(j))
+                      or time.time() - _RELEASED.get(j[3], 0) <= RELEASE_HOLD]   # handed back, not yet taken
             if not running and not free and (a.assist or not others):
                 break                             # done (a helper does not wait for the others), or only
                                                   # infrastructure failures left (rerun on resume)
@@ -503,7 +590,12 @@ def _run_jobs(a, jobs, done, bench, sub):
             for j in free[:max(0, limit - len(running))]:
                 tries[j[3]] = tries.get(j[3], 0) + 1
                 running[j[3]] = ex.submit(_one_subprocess, j)
+            _write_load(len(running))
+            if time.time() - last_rb > REBALANCE_EVERY:
+                last_rb = time.time()
+                rebalance(list(running))
             time.sleep(15)
+    _drop_load()
     if a.assist:                              # a helper: the owner summarizes
         return
     summarize(a.out)

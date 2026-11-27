@@ -599,14 +599,14 @@ class Run(st2.Run):
         return g, meta
 
     def history_md(self, x, meta):
-        """A game's evolution as a summary (user, 2026-11-27): every version with its parent, its search score,
-        whether it is on the line to the final harness, and its author's notes on what changed and why."""
+        """A game's history (user, 2026-11-27): every version with its parent, its search score, whether its
+        change is in the final harness, and its author's notes on what changed and why."""
         d = self.arc(x)
         if not d.exists():
             return "(no recorded versions)\n"
         final = meta.get("leaf_cand", {}).get(x)
         par = {}
-        rows, notes = ["| version | parent | search score | on the final line |", "|---|---|---|---|"], []
+        rows, notes = ["| version | parent | search score | its change is in the final harness |", "|---|---|---|---|"], []
         for v in sorted(p for p in d.iterdir() if (p / "full.json").exists()):
             m = json.loads((v / "full.json").read_text())
             par[m["id"]] = m.get("parent")
@@ -625,6 +625,30 @@ class Run(st2.Run):
                 notes.append(f"### {m['id']}\n\n{prop[:2500]}")
         return "# Versions\n\n" + "\n".join(rows) + "\n\n# What each version changed and why\n\n" + "\n\n".join(notes) + "\n"
 
+    def node_history_md(self, n, g, meta):
+        """A node's history (user, 2026-11-27): where it came from (each member's part, evidence and differences;
+        the games' own history files say which version introduced that code), every review that created or
+        changed it with that review's notes, and how it has been used."""
+        nd = g["nodes"].get(n)
+        L = [f"# Node `{n}`" + ("" if nd else " (removed)"), ""]
+        if nd:
+            L += [f"Kind: {nd.get('kind')}. Description: {nd.get('desc', '')}", "", "## Distilled from", ""]
+            for x, v in nd.get("members", {}).items():
+                ev = v.get("evidence", {})
+                L.append(f"- {self.tid(x)}: {v.get('implements', '')} | functions {ev.get('functions', [])} | "
+                         f"differences: {v.get('differences', '')}")
+            L += ["", "(Each game's `history/taskN.md` says which of its versions introduced that code, and what "
+                  "it did to the score.)", ""]
+        L += ["## Changes", ""]
+        for e in g.get("node_history", {}).get(n, []):
+            L.append(f"- {e['review']} (after {e['after_game']}): {', '.join(e['change'])}; members {e['members']}")
+            note = g.get("review_notes", {}).get(e["review"])
+            if note:
+                L.append("  That review's notes: " + note.replace("\n", " ")[:1500])
+        u = meta.get("node_usage", {}).get(n)
+        L += ["", "## Use by new games", "", json.dumps(u) if u else "(not offered to a new game yet)"]
+        return "\n".join(L) + "\n"
+
     def review(self, tag, c, g, meta):
         ws = self.dir / "workspaces" / tag
         tids = {self.tid(x): x for x in g["order"]}
@@ -634,9 +658,11 @@ class Run(st2.Run):
             for x in g["order"]:
                 (ws / "games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
                 (ws / "games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
-            (ws / "history").mkdir()
+            (ws / "history" / "nodes").mkdir(parents=True)
             for x in g["order"]:
                 (ws / "history" / f"{self.tid(x)}.md").write_text(self.history_md(x, meta))
+            for n in sorted(set(g["nodes"]) | set(g.get("node_history", {}))):
+                (ws / "history" / "nodes" / f"{n}.md").write_text(self.node_history_md(n, g, meta))
             (ws / "games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x)}
                  for x in g["order"]}, indent=1))
@@ -713,6 +739,19 @@ class Run(st2.Run):
         rec.update(nodes={n: {"kind": nd["kind"], "members": [self.tid(x) for x in nd["members"]],
                               "lines": len(nd["code"].splitlines()), "parents": nd["parents"]} for n, nd in nodes.items()},
                    dropped=dropped, before=sorted(g["nodes"]))
+        hist = new_g.setdefault("node_history", {})
+        notes = (ws / "review.md").read_text().strip()[:3000] if (ws / "review.md").exists() else ""
+        for n in sorted(set(nodes) | set(g["nodes"])):
+            a, b = g["nodes"].get(n), nodes.get(n)
+            ch = (["created"] if a is None else ["removed"] if b is None else
+                  [k for k, what in (("code", "code changed"), ("desc", "description changed"),
+                                     ("members", "members changed"), ("parents", "parents changed"))
+                   if json.dumps(a.get(k), sort_keys=True) != json.dumps(b.get(k), sort_keys=True)])
+            if ch:
+                hist.setdefault(n, []).append({"review": tag, "after_game": self.tid(c), "change": ch,
+                                               "members": [self.tid(x) for x in (b or a).get("members", {})]})
+        if notes and any(e["review"] == tag for v in hist.values() for e in v):
+            new_g.setdefault("review_notes", {})[tag] = notes
         strip = lambda d: {n: {k: v for k, v in nd.items() if k != "desc_vec"} for n, nd in d.items()}
         if strip(nodes) == strip(g["nodes"]):
             rec["outcome"] = "no change to the graph" + (f" (dropped {sorted(dropped)})" if dropped else "")
@@ -843,11 +882,12 @@ Each node's `usage` says how often it was offered to a new game (`retrieved`), p
 games started from it beat the base agent on the same problems. A node never retrieved or never chosen is NOT a
 reason to delete it: later games may simply not have resembled it yet. Rewrite or remove a node only on evidence
 against it (chosen at least twice and worse than the base agent each time) or when it duplicates another node.
-`history/taskN.md` summarises how each game's harness evolved: every version with its parent, its score (before
-deployment) or the judge's choice (at test time), whether it led to the final harness, and its author's notes on
-what it changed and why. Use it as evidence of what each part of a harness is for and whether it helped: prefer
-distilling code that was introduced by versions that improved the game, and say in a node's `desc` which change
-introduced it and what that did.
+`history/taskN.md` is each game's history: every version of its harness with its parent, its score (before
+deployment) or the judge's choice (at test time), whether its change is in the final harness, and its author's
+notes on what it changed and why. `history/nodes/<id>.md` is each node's history: where it came from, every review
+that created or changed it (with that review's notes), and how new games used it. Use them as evidence of what each
+part of a harness is for and whether it helped: prefer distilling code that was introduced by versions that
+improved a game, and say in a node's `desc` which change introduced it and what that did.
 The base agent (`base_agent.py`) is fixed and is not a node. No game or benchmark names or answers anywhere.
 Write `review.md`.
 {hard}"""

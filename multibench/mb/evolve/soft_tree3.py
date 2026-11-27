@@ -9,7 +9,8 @@ Parts
                  operation    a small reusable piece (e.g. keep a compact record of past turns)
                  combination  a way of putting operations together for a family of problems
                A node lists the tasks it was distilled from and, per task, which of the task's own functions it
-               generalises and how the task differs from it. Nodes do not run inside the tasks' harnesses:
+               generalises and how the task differs from it (required); a link to a parent node says what the
+               node adds to that parent (required). Every harness and node carries a description. Nodes do not run inside the tasks' harnesses:
                they are templates for new tasks (and for test time). Several parents are allowed (a graph).
 
 For each task, in a fixed random order (seed "exp_b/incremental/0"):
@@ -310,7 +311,7 @@ class Run(st2.Run):
             for n in list(combos) + list(ops):
                 nd = g["nodes"][n]
                 (ws / "nodes" / f"{n}.py").write_text(nd["code"])
-                info = {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("parents", []),
+                info = {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("derives") or nd.get("parents", []),
                         "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}
                 if n in combos:
                     info["similarity"] = combos[n]
@@ -409,7 +410,7 @@ class Run(st2.Run):
             for n, nd in g["nodes"].items():
                 (ws / "nodes" / f"{n}.py").write_text(nd["code"])
                 (ws / "nodes" / f"{n}.json").write_text(json.dumps(
-                    {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("parents", []),
+                    {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("derives") or nd.get("parents", []),
                      "members": {self.tid(x): v for x, v in nd.get("members", {}).items()},
                      "usage": meta.get("node_usage", {}).get(n, {"retrieved": 0, "chosen": 0, "start_vs_skeleton": []})},
                     indent=1))
@@ -436,10 +437,13 @@ class Run(st2.Run):
             for t, v in (spec.get("members") or {}).items():
                 x = tids.get(t)
                 names = [s for s in (v.get("functions") or []) if isinstance(s, str)] if isinstance(v, dict) else []
-                if x and names and all(s in fns[x] for s in names):
-                    mem[x] = {"functions": names, "difference": str(v.get("difference", ""))[:600]}
-                else:
+                diff = str(v.get("difference", "")).strip() if isinstance(v, dict) else ""
+                if not (x and names and all(s in fns[x] for s in names)):
                     why.append(f"member {t}: functions {names} not all defined in its harness")
+                elif len(diff) < 10:
+                    why.append(f"member {t}: no difference note (how its version differs from this node)")
+                else:
+                    mem[x] = {"functions": names, "difference": diff[:600]}
             if len(mem) < 2:
                 why.append(f"distilled from {len(mem)} task(s); shared code needs at least 2")
             if len(str(spec.get("desc", "")).strip()) < 20:
@@ -447,11 +451,19 @@ class Run(st2.Run):
             if why:
                 dropped[n] = why
                 continue
+            par = spec.get("parents") or {}
+            par = {p: "" for p in par} if isinstance(par, list) else par
             nodes[n] = {"kind": spec.get("kind") if spec.get("kind") in ("operation", "combination") else "operation",
                         "desc": str(spec.get("desc", ""))[:400], "code": code, "members": mem,
-                        "parents": [p for p in (spec.get("parents") or []) if isinstance(p, str)]}
-        for n, nd in nodes.items():           # links only to kept nodes; "hard": one parent at most
-            nd["parents"] = [p for p in nd["parents"] if p in nodes and p != n][:1 if ABLATION == "hard" else None]
+                        "derives": {p: str(d).strip()[:600] for p, d in par.items() if isinstance(p, str)}}
+        for n, nd in nodes.items():           # links only to kept nodes, each with what this node adds to its parent
+            links = {p: d for p, d in nd.pop("derives").items() if p in nodes and p != n}
+            for p, d in list(links.items()):
+                if len(d) < 10:
+                    dropped[f"{n}<-{p}"] = ["link without a derivation note (what this node adds to that parent)"]
+                    del links[p]
+            links = dict(list(links.items())[:1]) if ABLATION == "hard" else links
+            nd["parents"], nd["derives"] = list(links), links
             nd["centre"] = [sum(g["vecs"][x][i] for x in nd["members"]) / len(nd["members"])
                             for i in range(len(g["vecs"][c]))]
         descs = [n for n in nodes if nodes[n]["desc"]]
@@ -552,9 +564,9 @@ Distil real shared code, layered by generality:
 Put each thing on the node shared by exactly the games that have it. You may add, change, merge, split or delete
 nodes. A node is a pair `nodes/<id>.py` (code: functions, no `run_episode` needed) + `nodes/<id>.json`:
 {{"kind": "operation" | "combination", "desc": "<required: what it does, when it fits, its parameters>",
-  "parents": ["<node id>", ...],
+  "parents": {{"<node id>": "<required: what this node adds to that parent, how it builds on it>", ...}},
   "members": {{"taskN": {{"functions": ["<names of that game's own functions this generalises>"],
-                         "difference": "<how that game's version differs from this node>"}}, ...}}}}
+                         "difference": "<required: how that game's version differs from this node>"}}, ...}}}}
 Each node's `usage` says how often it was offered to a new game (`retrieved`), picked (`chosen`), and whether the
 games started from it beat the plain skeleton on the same problems. A node never retrieved or never chosen is NOT
 a reason to delete it: later games may simply not have resembled it yet. Rewrite or remove a node only on evidence

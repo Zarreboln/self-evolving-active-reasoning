@@ -598,6 +598,33 @@ class Run(st2.Run):
         self.record(tag, rec)
         return g, meta
 
+    def history_md(self, x, meta):
+        """A game's evolution as a summary (user, 2026-11-27): every version with its parent, its search score,
+        whether it is on the line to the final harness, and its author's notes on what changed and why."""
+        d = self.arc(x)
+        if not d.exists():
+            return "(no recorded versions)\n"
+        final = meta.get("leaf_cand", {}).get(x)
+        par = {}
+        rows, notes = ["| version | parent | search score | on the final line |", "|---|---|---|---|"], []
+        for v in sorted(p for p in d.iterdir() if (p / "full.json").exists()):
+            m = json.loads((v / "full.json").read_text())
+            par[m["id"]] = m.get("parent")
+        line, cur = set(), final
+        while cur:
+            line.add(cur)
+            cur = par.get(cur)
+        for v in sorted(p for p in d.iterdir() if (p / "full.json").exists()):
+            m = json.loads((v / "full.json").read_text())
+            sc = (m.get("scores") or {}).get("mean_score", "-")
+            note = m.get("reason") or ""
+            rows.append(f"| {m['id']} | {m.get('parent') or '-'} | {sc} | {'yes' if m['id'] in line else 'no'}"
+                        + (f" ({note})" if note else "") + " |")
+            prop = (v / "proposal.md").read_text().strip() if (v / "proposal.md").exists() else ""
+            if prop:
+                notes.append(f"### {m['id']}\n\n{prop[:2500]}")
+        return "# Versions\n\n" + "\n".join(rows) + "\n\n# What each version changed and why\n\n" + "\n\n".join(notes) + "\n"
+
     def review(self, tag, c, g, meta):
         ws = self.dir / "workspaces" / tag
         tids = {self.tid(x): x for x in g["order"]}
@@ -607,6 +634,9 @@ class Run(st2.Run):
             for x in g["order"]:
                 (ws / "games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
                 (ws / "games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
+            (ws / "history").mkdir()
+            for x in g["order"]:
+                (ws / "history" / f"{self.tid(x)}.md").write_text(self.history_md(x, meta))
             (ws / "games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x)}
                  for x in g["order"]}, indent=1))
@@ -813,6 +843,11 @@ Each node's `usage` says how often it was offered to a new game (`retrieved`), p
 games started from it beat the base agent on the same problems. A node never retrieved or never chosen is NOT a
 reason to delete it: later games may simply not have resembled it yet. Rewrite or remove a node only on evidence
 against it (chosen at least twice and worse than the base agent each time) or when it duplicates another node.
+`history/taskN.md` summarises how each game's harness evolved: every version with its parent, its score (before
+deployment) or the judge's choice (at test time), whether it led to the final harness, and its author's notes on
+what it changed and why. Use it as evidence of what each part of a harness is for and whether it helped: prefer
+distilling code that was introduced by versions that improved the game, and say in a node's `desc` which change
+introduced it and what that did.
 The base agent (`base_agent.py`) is fixed and is not a node. No game or benchmark names or answers anywhere.
 Write `review.md`.
 {hard}"""

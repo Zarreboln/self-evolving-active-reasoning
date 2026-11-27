@@ -282,6 +282,29 @@ class Deploy(S.Run):
             pick, why = cur, f"no valid choice.json ({e!r}); the version in use stays"
         return pick, why, side
 
+    def history_md(self, x, meta):
+        """At test time: before deployment the graph's own games keep their summary; a test game's versions come
+        with the judge's choices instead of scores (none exist)."""
+        if not x.startswith("test:"):
+            return super().history_md(x, meta)
+        k = self.tasks.index(x[5:]) + 1 if x[5:] in self.tasks else None
+        d = self.dir / "archive" / x.replace(":", "_")
+        rows, notes = ["| version | parent | problems played |", "|---|---|---|"], []
+        for v in sorted(d.iterdir()) if d.exists() else []:
+            m = json.loads((v / "meta.json").read_text())
+            n = len(list((v / "episodes").iterdir())) if (v / "episodes").exists() else 0
+            rows.append(f"| {m['id']} | {m.get('parent') or '-'} | {n} |")
+            prop = (v / "proposal.md").read_text().strip() if (v / "proposal.md").exists() else ""
+            if prop:
+                notes.append(f"### {m['id']}\n\n{prop[:2500]}")
+        judged = []
+        for j in range(2, GROUPS + 1):
+            r = self.done(f"T{k}_g{j}_done") if k else None
+            if r and r.get("why"):
+                judged.append(f"- group {j}: {r['outcome']}. Why: {r['why']}")
+        return ("# Versions\n\n" + "\n".join(rows) + "\n\n# The judge's choices (no scores at test time)\n\n"
+                + ("\n".join(judged) or "(none)") + "\n\n# What each version changed and why\n\n" + "\n\n".join(notes) + "\n")
+
     # ----- one task -----
     def run_task(self, k, task, g, meta):
         c, items = self.cid(task), self.problems[task]

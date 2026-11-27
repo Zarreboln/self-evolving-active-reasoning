@@ -43,6 +43,8 @@ def alive(owner: str) -> bool:
         except Exception:
             return False
     r = subprocess.run(["squeue", "-h", "-j", owner], capture_output=True, text=True)
+    if r.returncode != 0:          # slurm controller unreachable: assume alive rather than steal the request
+        return True
     return bool(r.stdout.strip())
 
 

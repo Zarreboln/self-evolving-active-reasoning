@@ -16,19 +16,22 @@ export HF_HOME=${HF_HOME:-$HOME/hf_cache} VLLM_LOGGING_LEVEL=WARNING
 source "$HOME/code/multibench/mb/evolve/race.sh"
 SLOT=${SLOT:-1}; RUNS=${RUNS:-$HOME/results/mb/play}; EVAL_RUNS=${EVAL_RUNS:-$HOME/results/mb/evo_b}
 MAILBOX=${MAILBOX:-$HOME/mailbox_w$SLOT}
-[ -d "$MAILBOX/.git" ] || git clone -q "$(git -C "$HOME/mailbox" remote get-url origin)" "$MAILBOX"
-git -C "$MAILBOX" config user.name "$(git -C "$HOME/mailbox" config user.name)"
-git -C "$MAILBOX" config user.email "$(git -C "$HOME/mailbox" config user.email)"
 mkdir -p "$RUNS/slot$SLOT"
 race_claim "$RUNS/slot$SLOT" || { echo "slot $SLOT already has a worker; exiting"; exit 0; }
-export SLOT RUNS EVAL_RUNS MAILBOX
-NEXT=$(race_submit mb_worker$SLOT "--dependency=afterany:$SLURM_JOB_ID --requeue -c $SLURM_CPUS_PER_TASK --mem=64G -t 05:59:00 --export=ALL" \
-       "$HOME/code/multibench/mb/evolve/worker.sbatch")
+# start the server first: the next copy's submission and the mailbox setup (minutes when slurm is busy) run
+# while it loads
 PORT=$(( 9000 + RANDOM % 800 ))
 ${VLLM_BIN:-$HOME/venv/bin/vllm} serve "$REPO" --port "$PORT" --max-model-len 65536 \
   --gpu-memory-utilization 0.90 --max-num-seqs 128 --enable-prefix-caching \
   --default-chat-template-kwargs '{"enable_thinking": false}' > "$HOME/logs/vllm_worker_${SLURM_JOB_ID}.log" 2>&1 &
 SERVER=$!
+[ -d "$MAILBOX/.git" ] || git clone -q "$(git -C "$HOME/mailbox" remote get-url origin)" "$MAILBOX"
+git -C "$MAILBOX" config user.name "$(git -C "$HOME/mailbox" config user.name)"
+git -C "$MAILBOX" config user.email "$(git -C "$HOME/mailbox" config user.email)"
+rm -f "$MAILBOX/.git/index.lock"     # left by a worker killed mid-commit; nothing else uses this clone now
+export SLOT RUNS EVAL_RUNS MAILBOX
+NEXT=$(race_submit mb_worker$SLOT "--dependency=afterany:$SLURM_JOB_ID --requeue -c $SLURM_CPUS_PER_TASK --mem=64G -t 05:59:00 --export=ALL" \
+       "$HOME/code/multibench/mb/evolve/worker.sbatch")
 for i in $(seq 1 120); do curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null && break; sleep 10; done
 curl -sf -m 5 "http://127.0.0.1:$PORT/health" >/dev/null || { echo "serve failed"; kill $SERVER; exit 1; }
 echo "host=$(hostname) server up after ${SECONDS}s next=$NEXT"

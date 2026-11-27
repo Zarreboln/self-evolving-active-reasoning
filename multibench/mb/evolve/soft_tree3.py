@@ -52,7 +52,7 @@ from mb.evolve.orchestrate import CHAT_CAP, MODEL
 
 RUNS = Path.home() / "evo_b_runs"
 BASE_AGENT = HERE / "seeds" / "textarena_standard.py"
-SIGMA, K_NODES, K_TASKS = 0.3, 3, 2
+SIGMA, K_NODES, K_TASKS = 0.3, 3, 3          # top 3 of each, with their similarities; the model decides (user, 2026-11-27)
 AFF_UP, AFF_DOWN, AFF_MAX = 1.5, 0.5, 3.0
 EDITS = 5
 MAX_FIXES = 10          # repair sessions until the harness runs (user, 2026-11-27: fix until it passes; a safety cap)

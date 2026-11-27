@@ -35,6 +35,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import urllib.error
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -194,7 +195,88 @@ def timeout_record(bench, sub, inst):
             "error": f"episode exceeded {EPISODE_TIMEOUT}s (killed; runaway output counts as failure)"}
 
 
+# Episode claims, so that idle workers can help with a long evaluation (user, 2026-11-27: "有空卡的时候就把
+#长的分散到各个上面"). Before an episode starts it takes <record>.claim (an atomic mkdir on the shared
+# filesystem); a running broker touches its claims every minute, a claim untouched for CLAIM_STALE seconds
+# (its worker died or was preempted) is taken over. Who plays an episode never changes its record.
+CLAIM_STALE = 900
+_HELD = set()
+_HELD_LOCK = threading.Lock()
+
+
+def _claim_ep(p):
+    d = p + ".claim"
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    for _ in range(2):
+        try:
+            os.mkdir(d)
+            with _HELD_LOCK:
+                _HELD.add(d)
+            return True
+        except FileExistsError:
+            try:
+                if time.time() - os.path.getmtime(d) < CLAIM_STALE:
+                    return False
+                tmp = f"{d}.stale.{os.getpid()}.{threading.get_ident()}"
+                os.rename(d, tmp)              # only one of several takers succeeds
+                os.rmdir(tmp)
+            except OSError:
+                return False
+    return False
+
+
+def _release_ep(p):
+    d = p + ".claim"
+    with _HELD_LOCK:
+        _HELD.discard(d)
+    try:
+        os.rmdir(d)
+    except OSError:
+        pass
+
+
+def _claimed_by_other(p):
+    d = p + ".claim"
+    with _HELD_LOCK:
+        if d in _HELD:
+            return False
+    try:
+        return time.time() - os.path.getmtime(d) < CLAIM_STALE
+    except OSError:
+        return False
+
+
+def _heartbeat(stop):
+    while not stop.wait(60):
+        with _HELD_LOCK:
+            held = list(_HELD)
+        for d in held:
+            try:
+                os.utime(d)
+            except OSError:
+                pass
+
+
+def _finished(p):
+    """A record that is not an infrastructure failure (those rerun)."""
+    try:
+        return "infra" not in json.load(open(p))
+    except (OSError, ValueError):
+        return False
+
+
 def _one_subprocess(job):
+    cand, bench, sub, inst, url, out = job
+    p = _path(out, bench, sub, inst)
+    if _finished(p) or not _claim_ep(p):    # done, or another worker is playing it
+        return inst, None
+    try:
+        return _one_subprocess_claimed(job)
+    finally:
+        _release_ep(p)
+
+
+def _one_subprocess_claimed(job):
     cand, bench, sub, inst, url, out = job
     try:
         cp = subprocess.run([sys.executable, "-m", "mb.evolve.broker", "one", json.dumps(job)],
@@ -245,11 +327,27 @@ def run(a):
             continue
         jobs.append((os.path.abspath(a.cand), bench, sub, inst, urls[len(jobs) % len(urls)], a.out))
     print(f"{done} on disk, {len(jobs)} to run", flush=True)
+    marker = os.path.join(a.out, ".sharded")
+    if a.assist:
+        if not os.path.exists(marker) or not any(os.path.exists(_path(a.out, bench, sub, i)) for i in chosen):
+            return                            # owner not sharding, or its smoke episode not done yet
+    else:
+        open(marker, "w").close()
+    stop = threading.Event()
+    threading.Thread(target=_heartbeat, args=(stop,), daemon=True).start()
+    try:
+        _run_jobs(a, jobs, done, bench, sub)
+    finally:
+        stop.set()
+
+
+def _run_jobs(a, jobs, done, bench, sub):
     if a.smoke and jobs and not done:
         # HW2's smoke test (DGM): one episode first; a child that cannot run at all is rejected
         # before the rest. The reward is ignored, one episode says nothing about quality.
         _one_subprocess(jobs[0])
-        e = json.load(open(_path(a.out, bench, sub, jobs[0][3])))
+        p0 = _path(a.out, bench, sub, jobs[0][3])
+        e = json.load(open(p0)) if _finished(p0) else {}   # {}: another worker holds it (stale claim taken)
         # a harness may decide actions in code, even without calling the model (user, 2026-11-26);
         # only a harness that cannot run at all is rejected here
         why = "crashes: " + (e.get("error") or "")[-300:] if e.get("end") == "crash" else ""
@@ -261,6 +359,21 @@ def run(a):
     with ThreadPoolExecutor(a.workers) as ex:
         for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
             f.result()
+    if a.assist:                              # a helper: the owner summarizes
+        return
+    # the owner waits for episodes other workers are playing; one whose helper died is played here
+    def rec(j):
+        return _path(a.out, bench, sub, j[3])
+    while True:
+        left = [j for j in jobs if not os.path.exists(rec(j)) or (not _finished(rec(j)) and _claimed_by_other(rec(j)))]
+        if not left:
+            break
+        free = [j for j in left if not _claimed_by_other(rec(j))]
+        if free:
+            with ThreadPoolExecutor(a.workers) as ex:
+                list(ex.map(_one_subprocess, free))
+        else:
+            time.sleep(30)
     summarize(a.out)
 
 
@@ -366,6 +479,8 @@ def main():
     ap.add_argument("--workers", type=int, default=32)
     ap.add_argument("--instances", default="", help="comma-separated instance ids to play (default: first --n)")
     ap.add_argument("--smoke", action="store_true", help="run one episode first, reject a child that cannot run")
+    ap.add_argument("--assist", action="store_true", help="help another worker's run: play unclaimed episodes "
+                    "of it, never summarize")
     a = ap.parse_args()
     if a.cmd == "one":
         _one(tuple(json.loads(a.job)))

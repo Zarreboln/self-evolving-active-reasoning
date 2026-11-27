@@ -144,6 +144,36 @@ def serve_eval(box: Mailbox, eval_runs: Path, key: str, log):
     return "eval:" + key
 
 
+def assist_eval(box: Mailbox, eval_runs: Path, key: str, log):
+    """Help another worker's evaluation: play its still unclaimed episodes on this worker's server
+    (broker run --assist). The owner waits for them, summarizes and publishes; scores do not depend on
+    which worker played an episode."""
+    params = json.loads((box.repo / "requests" / key / "request.json").read_text())
+    work = eval_runs / key
+    stamp = work / "submitted"
+    if not stamp.exists() or stamp.read_text() != str(params["submitted"]):
+        return "assist:" + key                     # the owner has not set this request up yet
+    cells = params["cell"].split(",")
+    jobs = []
+    for c in cells:
+        slug = c.replace(":", "_")
+        sub = work / "out" if len(cells) == 1 else work / "out" / "cells" / slug
+        cand = work / "harness" / slug if params.get("per_cell") else work / "harness"
+        if not (cand / "harness.py").exists() or not (sub / ".sharded").exists():
+            continue
+        jobs.append((cand, c, sub))
+    def one(j):
+        cand, c, sub = j
+        subprocess.run([sys.executable, "-m", "mb.evolve.broker", "run", "--assist", "--cand", str(cand),
+                        "--cell", c, "--split", params["split"], "--n", str(params["n"]), "--out", str(sub),
+                        "--workers", "8"], capture_output=True, text=True)
+    if jobs:
+        with ThreadPoolExecutor(len(jobs)) as ex:
+            list(ex.map(one, jobs))
+        log(f"assist {key}: done")
+    return "assist:" + key
+
+
 def serve_one(box: Mailbox, runs: Path, key: str, log):
     req = box.repo / "play_requests" / key
     params = json.loads((req / "request.json").read_text())
@@ -224,6 +254,7 @@ def main():
         print(time.strftime("%m-%d %H:%M:%S"), msg, flush=True)
 
     busy = {}
+    assisted = {}                                         # key -> when this worker last helped it
     last_hb = 0.0
     with ThreadPoolExecutor(a.parallel) as ex:
         while not stop.exists() and not (a.until and time.time() > a.until):
@@ -235,7 +266,7 @@ def main():
                         busy.pop(k).result()
                     except Exception as e:
                         log(f"{k}: error {e!r}")
-                if done:
+                if [k for k in done if not k.startswith("assist:")]:
                     box.push("play: " + ", ".join(done))
                 todo = []                                     # (submitted, kind, key), oldest first
                 for rj in (box.repo / "play_requests").rglob("request.json"):
@@ -271,6 +302,25 @@ def main():
                     else:
                         busy["eval:" + key] = ex.submit(serve_eval, box, eval_runs, key, log)
                     log(f"{kind} {key}: started")
+                # idle capacity helps other workers' evaluations still running (user, 2026-11-27)
+                if eval_runs and not draining and len(busy) < a.parallel - 2:   # keep 2 slots for own requests
+                    for rj in sorted((box.repo / "requests").rglob("request.json")):
+                        if len(busy) >= a.parallel - 2:
+                            break
+                        key = str(rj.parent.relative_to(box.repo / "requests"))
+                        res = box.repo / "results" / key
+                        if (("eval:" + key) in busy or ("assist:" + key) in busy
+                                or time.time() - assisted.get(key, 0) < 300
+                                or any((res / f).exists() for f in ("summary.json", "rejected.json", "failed.json"))
+                                or (only and not any(key.startswith(x) for x in only))
+                                or (not only and any(key.startswith(x) for x in reserved))):
+                            continue
+                        cl = eval_runs / key / "claim" / "job"
+                        owner = cl.read_text().strip() if cl.exists() else ""
+                        if not owner or owner == ME or not alive(owner):
+                            continue
+                        assisted[key] = time.time()
+                        busy["assist:" + key] = ex.submit(assist_eval, box, eval_runs, key, log)
                 hb = box.repo / "heartbeat" / f"{a.name}.json"
                 hb.parent.mkdir(exist_ok=True)
                 hb.write_text(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "busy": sorted(busy)}))

@@ -218,9 +218,9 @@ def idle_workers(me=None, fresh=180, max_busy=6):
             continue
         name = os.path.basename(f)[:-5]
         if name not in best or t > best[name][0]:
-            best[name] = (t, hb.get("busy", []), hb.get("helps", True))
+            best[name] = (t, hb.get("busy", []), hb.get("helps"))   # only workers that say they help
     return [n for n, (t, busy, helps) in best.items()
-            if n != me and helps and time.time() - t < fresh and len(busy) < max_busy]
+            if n != me and helps is True and time.time() - t < fresh and len(busy) < max_busy]
 
 
 def owner_share(n_jobs, me=None):
@@ -394,26 +394,22 @@ def _run_jobs(a, jobs, done, bench, sub):
             print("rejected:", why, flush=True)
             return
         jobs = jobs[1:]
-    if a.assist:                              # a helper plays what nobody has claimed; the owner summarizes
-        # its even share of the unclaimed episodes, so the first helper to arrive does not take them all
-        n_free = sum(1 for j in jobs if not _finished(_path(j[5], j[1], j[2], j[3]))
-                     and not _claimed_by_other(_path(j[5], j[1], j[2], j[3])))
+    # The owner, and each helper, starts only its even share of the unclaimed episodes (an episode is claimed when
+    # it starts; with 48 threads the owner once claimed all 20 at once and nobody could help). After OWNER_GRACE
+    # seconds anyone still running takes whatever is unclaimed (no helper came, or a helper died); claims keep two
+    # workers from playing the same episode.
+    def rec(j):
+        return _path(a.out, bench, sub, j[3])
+    left_n = sum(1 for j in jobs if not _finished(rec(j)) and not _claimed_by_other(rec(j)))
+    if a.assist:
         try:
             k = max(1, len(idle_workers()))
         except Exception:
             k = 1
-        with ThreadPoolExecutor(max(1, min(a.workers, math.ceil(n_free / k)))) as ex:
-            for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
-                f.result()
-        return
-    # The owner starts only its even share and leaves the rest unclaimed for idle workers (an episode is claimed
-    # when it starts; with 48 threads the owner once claimed all 20 at once and helpers found nothing). An episode
-    # still unclaimed after OWNER_GRACE seconds (no helper came) or whose helper died is played here.
-    def rec(j):
-        return _path(a.out, bench, sub, j[3])
-    left_n = sum(1 for j in jobs if not _finished(rec(j)))   # a resumed run skips finished ones
-    share = min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
-    print(f"owner starts {share} of {left_n} unfinished episodes; idle workers take the rest", flush=True)
+        share = max(1, min(a.workers, math.ceil(left_n / k)))
+    else:
+        share = min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
+    print(f"{'helper' if a.assist else 'owner'} starts {share} of {left_n} unclaimed episodes", flush=True)
     t0, running, tries = time.time(), {}, {}
     with ThreadPoolExecutor(a.workers) as ex:
         while True:
@@ -421,13 +417,17 @@ def _run_jobs(a, jobs, done, bench, sub):
             todo = [j for j in jobs if not _finished(rec(j))]
             free = [j for j in todo if j[3] not in running and not _claimed_by_other(rec(j))   # a stale claim is free
                     and tries.get(j[3], 0) < 2]
-            if not running and not [j for j in todo if _claimed_by_other(rec(j))] and not free:
-                break                             # done, or only infrastructure failures left (rerun on resume)
+            others = [j for j in todo if _claimed_by_other(rec(j))]
+            if not running and not free and (a.assist or not others):
+                break                             # done (a helper does not wait for the others), or only
+                                                  # infrastructure failures left (rerun on resume)
             limit = share if time.time() - t0 < OWNER_GRACE else a.workers
             for j in free[:max(0, limit - len(running))]:
                 tries[j[3]] = tries.get(j[3], 0) + 1
                 running[j[3]] = ex.submit(_one_subprocess, j)
             time.sleep(15)
+    if a.assist:                              # a helper: the owner summarizes
+        return
     summarize(a.out)
 
 

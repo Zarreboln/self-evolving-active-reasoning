@@ -637,7 +637,7 @@ class Run(st2.Run):
                 ev = v.get("evidence", {})
                 L.append(f"- {self.tid(x)}: {v.get('implements', '')} | functions {ev.get('functions', [])} | "
                          f"differences: {v.get('differences', '')}")
-            L += ["", "(Each game's `history/taskN.md` says which of its versions introduced that code, and what "
+            L += ["", "(Each game's `history_summary/taskN.md` says which of its versions introduced that code, and what "
                   "it did to the score.)", ""]
         L += ["## Changes", ""]
         for e in g.get("node_history", {}).get(n, []):
@@ -658,11 +658,12 @@ class Run(st2.Run):
             for x in g["order"]:
                 (ws / "games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
                 (ws / "games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
-            (ws / "history" / "nodes").mkdir(parents=True)
+            hs = ws / "history_summary"
+            (hs / "nodes").mkdir(parents=True)
             for x in g["order"]:
-                (ws / "history" / f"{self.tid(x)}.md").write_text(self.history_md(x, meta))
+                (hs / f"{self.tid(x)}.md").write_text(self.history_md(x, meta))
             for n in sorted(set(g["nodes"]) | set(g.get("node_history", {}))):
-                (ws / "history" / "nodes" / f"{n}.md").write_text(self.node_history_md(n, g, meta))
+                (hs / "nodes" / f"{n}.md").write_text(self.node_history_md(n, g, meta))
             (ws / "games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x)}
                  for x in g["order"]}, indent=1))
@@ -882,12 +883,10 @@ Each node's `usage` says how often it was offered to a new game (`retrieved`), p
 games started from it beat the base agent on the same problems. A node never retrieved or never chosen is NOT a
 reason to delete it: later games may simply not have resembled it yet. Rewrite or remove a node only on evidence
 against it (chosen at least twice and worse than the base agent each time) or when it duplicates another node.
-`history/taskN.md` is each game's history: every version of its harness with its parent, its score (before
-deployment) or the judge's choice (at test time), whether its change is in the final harness, and its author's
-notes on what it changed and why. `history/nodes/<id>.md` is each node's history: where it came from, every review
-that created or changed it (with that review's notes), and how new games used it. Use them as evidence of what each
-part of a harness is for and whether it helped: prefer distilling code that was introduced by versions that
-improved a game, and say in a node's `desc` which change introduced it and what that did.
+`history_summary/` is there if you want it: `taskN.md` lists each version of a game's harness with its parent, its
+score (before deployment) or the judge's choice (at test time), whether its change is in the final harness, and
+its author's notes; `nodes/<id>.md` says where a node came from, which reviews changed it and how new games used
+it. You may consult it, for example to see which change introduced a piece of code and what it did; you need not.
 The base agent (`base_agent.py`) is fixed and is not a node. No game or benchmark names or answers anywhere.
 Write `review.md`.
 {hard}"""

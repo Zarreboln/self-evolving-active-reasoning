@@ -200,7 +200,34 @@ def timeout_record(bench, sub, inst):
 # filesystem); a running broker touches its claims every minute, a claim untouched for CLAIM_STALE seconds
 # (its worker died or was preempted) is taken over. Who plays an episode never changes its record.
 CLAIM_STALE = 900
-OWNER_PARALLEL = 6        # per cell; idle workers check every 5 minutes and play the rest
+
+
+def idle_workers(me=None, fresh=180, max_busy=6):
+    """Other workers that are alive and have free slots, from the heartbeat each worker writes into its own
+    mailbox clone every poll (~/mailbox*/heartbeat/<name>.json, the freshest copy per name)."""
+    import glob
+    best = {}
+    for f in glob.glob(os.path.expanduser("~/mailbox*/heartbeat/worker*.json")):
+        try:
+            hb = json.load(open(f))
+            t = time.mktime(time.strptime(hb["time"], "%Y-%m-%dT%H:%M:%S"))
+        except (OSError, ValueError, KeyError):
+            continue
+        name = os.path.basename(f)[:-5]
+        if name not in best or t > best[name][0]:
+            best[name] = (t, hb.get("busy", []))
+    return [n for n, (t, busy) in best.items()
+            if n != me and time.time() - t < fresh and len(busy) < max_busy]
+
+
+def owner_share(n_jobs, me=None):
+    """The owner plays its even share of the episodes and leaves the rest unclaimed for the idle workers,
+    which check every minute; with no idle worker it plays them all."""
+    try:
+        k = 1 + len(idle_workers(me))
+    except Exception:
+        k = 1
+    return max(1, math.ceil(n_jobs / k))
 _HELD = set()
 _HELD_LOCK = threading.Lock()
 
@@ -364,9 +391,12 @@ def _run_jobs(a, jobs, done, bench, sub):
             print("rejected:", why, flush=True)
             return
         jobs = jobs[1:]
-    # An episode is claimed when a thread starts it, so the owner runs at most OWNER_PARALLEL at once and leaves
+    # An episode is claimed when a thread starts it, so the owner runs only its even share at once and leaves
     # the rest unclaimed for idle workers (with 48 threads it claimed all 20 at once and helpers found nothing)
-    with ThreadPoolExecutor(a.workers if a.assist else min(a.workers, OWNER_PARALLEL)) as ex:
+    share = a.workers if a.assist else min(a.workers, owner_share(len(jobs), os.environ.get("MB_WORKER_NAME")))
+    if not a.assist:
+        print(f"owner plays {share} of {len(jobs)} episodes at once; idle workers take the rest", flush=True)
+    with ThreadPoolExecutor(share) as ex:
         for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
             f.result()
     if a.assist:                              # a helper: the owner summarizes

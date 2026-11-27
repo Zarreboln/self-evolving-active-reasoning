@@ -200,6 +200,7 @@ def timeout_record(bench, sub, inst):
 # filesystem); a running broker touches its claims every minute, a claim untouched for CLAIM_STALE seconds
 # (its worker died or was preempted) is taken over. Who plays an episode never changes its record.
 CLAIM_STALE = 900
+OWNER_PARALLEL = 6        # per cell; idle workers check every 5 minutes and play the rest
 _HELD = set()
 _HELD_LOCK = threading.Lock()
 
@@ -363,7 +364,9 @@ def _run_jobs(a, jobs, done, bench, sub):
             print("rejected:", why, flush=True)
             return
         jobs = jobs[1:]
-    with ThreadPoolExecutor(a.workers) as ex:
+    # An episode is claimed when a thread starts it, so the owner runs at most OWNER_PARALLEL at once and leaves
+    # the rest unclaimed for idle workers (with 48 threads it claimed all 20 at once and helpers found nothing)
+    with ThreadPoolExecutor(a.workers if a.assist else min(a.workers, OWNER_PARALLEL)) as ex:
         for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
             f.result()
     if a.assist:                              # a helper: the owner summarizes

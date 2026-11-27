@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import statistics
+import subprocess
 import time
 from pathlib import Path
 
@@ -51,17 +51,13 @@ def main():
         if all(r is not None for r in res.values()):
             break
         time.sleep(60)
-    out = {}
-    for task, (seed, cells, n) in PLAN.items():
-        want = {(c, i) for c, i in order[task]}
-        sc = []
-        for c in cells:
-            key = f"official_test/{task}/test_{c.replace(':', '_')}"
-            dest = RUNS / key.replace("/", "__")
-            box.fetch_export(key, dest)
-            per = json.loads((dest / "scores.json").read_text())["per_episode"]
-            sc += [e["score"] for iid, e in per.items() if (c, str(iid)) in want]
-        out[task] = {"agent": seed, "episodes": len(sc), "score": round(statistics.mean(sc), 4) if sc else None}
+    # exports hash episode ids: match the raw records on the cluster by real instance id
+    code = (Path(__file__).parent / "official_score_remote.py").read_text()
+    remote_cmd = "cat > /tmp/official_score_remote.py <<'PYEOF'\n" + code + "\nPYEOF\npython3 /tmp/official_score_remote.py"
+    out = json.loads(subprocess.run(["ssh", "-o", "BatchMode=yes", "engaging", remote_cmd], input=json.dumps(order),
+                                    capture_output=True, text=True, check=True).stdout)
+    for task in out:
+        out[task]["agent"] = PLAN[task][0]
         print(task, out[task], flush=True)
     out["alfworld_pick_and_place_simple"] = {"agent": "ReAct (reused, see docstring)", "episodes": 24,
                                              "score": 0.5833}

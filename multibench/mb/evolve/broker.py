@@ -409,8 +409,9 @@ def rebalance(running):
     if me not in loads or len(loads) < 2:
         return
     helping = set(idle_workers(fresh=180, max_busy=99))      # workers that say they take others' episodes
-    idle = [j for j, n in loads.items() if n == 0 and j != me and gpu_loads.names.get(j) in helping]
     fair = math.ceil(sum(loads.values()) / len(loads))
+    # GPUs well below the fair share (not only empty ones) take handed-back episodes
+    idle = [j for j, n in loads.items() if n <= fair - 2 and j != me and gpu_loads.names.get(j) in helping]
     extra = min(loads[me] - fair, len(running) - 1, 2 * len(idle))
     if not idle or extra <= 0:
         return

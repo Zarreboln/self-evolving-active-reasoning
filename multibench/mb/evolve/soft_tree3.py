@@ -17,7 +17,8 @@ For each task, in a fixed random order (seed "exp_b/incremental/0"):
   1. probe: 3 search problems with the base agent; the code-editing model writes a task description and the
      required capabilities, which are embedded
   2. retrieve: similar tasks and workflow nodes, top-k by similarity (workflows weighted by affinity), all module
-     nodes with their match to the required capabilities ("hard": one path; "flat": nothing)
+     nodes with their match to the required capabilities ("hard": one path; "flat": nothing; "retrieve": the
+     similar tasks only, no nodes and no review)
   3. compose: the model builds the task's first harness and its description from what was retrieved, adapting
      only what is needed to run on this task; no new optimisation. Skipped when nothing is retrieved
   4. start: 20 search problems (the transfer measurement); on the 3 probe problems the start is compared with
@@ -244,12 +245,14 @@ class Run(st2.Run):
         - module nodes: all of them (short and general: a single similarity would bury the most shared ones), each
           with its match to the task's required capabilities, the tasks using it and their similarity, and whether
           a retrieved workflow builds on it; "hard": only the modules on the retrieved workflow's path.
-        "flat": nothing."""
+        "flat": nothing. "retrieve": the similar tasks only (their full code), no nodes."""
         if ABLATION == "flat":
             return {}, {}, {}
         v = g["vecs"][c]
         tasks = sorted(((x, self.sim(v, g["vecs"][x])) for x in g["order"]), key=lambda t: -t[1])
         tasks = dict(tasks[:1 if ABLATION == "hard" else K_TASKS])
+        if ABLATION == "retrieve":              # retrieval without the hierarchy (user, 2026-11-27)
+            return tasks, {}, {}
         aff = g.get("affinity", {}).get(c, {})
         workflows = {}
         for n, nd in g["nodes"].items():
@@ -375,10 +378,10 @@ class Run(st2.Run):
                 continue
             g, meta = self.edit(tag, c, g, meta)
         # 6 review
-        if ABLATION != "flat" and len(g["order"]) >= 2:
+        if ABLATION not in ("flat", "retrieve") and len(g["order"]) >= 2:
             g, meta = self.review(f"{tp}_review", c, g, meta)
         else:
-            self.record(f"{tp}_review", {"outcome": "skipped (first task or flat)"})
+            self.record(f"{tp}_review", {"outcome": "skipped (first task, flat or retrieve)"})
         return g, meta
 
     def document(self, c, g, meta):
@@ -810,7 +813,7 @@ def main():
     ap.add_argument("--max-tasks", type=int, default=0, help="pilot: only the first k tasks of the order")
     ap.add_argument("--edits", type=int, default=5)
     ap.add_argument("--final", action="store_true")
-    ap.add_argument("--ablation", default="", choices=["", "hard", "flat"])
+    ap.add_argument("--ablation", default="", choices=["", "hard", "flat", "retrieve"])
     a = ap.parse_args()
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation

@@ -22,8 +22,10 @@ For each task, in a fixed random order (seed "exp_b/incremental/0"):
      only what is needed to run on this task; no new optimisation. Skipped when nothing is retrieved
   4. start: 20 search problems (the transfer measurement); on the 3 probe problems the start is compared with
      the base agent: better -> affinity to the used nodes x1.5 (max 3), worse -> x0.5
-  5. up to 5 edits of the task's own harness, each kept if its mean rises (as Meta-Harness keeps its best
-     candidate); early stop after 3 in a row not kept
+  5. up to 5 edits of the task's own harness, in Meta-Harness's own workspace (its TASK template, the archive of
+     this task's candidates with code, proposals, scores and traces), each kept if its mean rises; early stop
+     after 3 in a row not kept. Every new harness is replayed on recorded episodes first; a crash goes back to
+     the model until it runs
   6. review (from the 2nd task on, not "flat"): the model reads every task's harness and the graph, and may add,
      change, merge, split or delete nodes and links. No task's harness changes, so nothing is re-scored. Nodes
      failing the checks above (valid code, a description, at least 2 members with evidence) are not kept.
@@ -46,6 +48,7 @@ from pathlib import Path
 from mb.evolve import remote, soft_tree2 as st2
 from mb.evolve.check import problems
 from mb.evolve.soft_tree import HERE, dist, embed, paired
+from mb.evolve.orchestrate import CHAT_CAP, MODEL
 
 RUNS = Path.home() / "evo_b_runs"
 BASE_AGENT = HERE / "seeds" / "textarena_standard.py"
@@ -173,10 +176,11 @@ class Run(st2.Run):
                 return "The harness did not finish replaying a recorded episode within 300 s (an endless loop?)."
             return "" if r.returncode == 0 else (r.stdout + r.stderr)[-4000:]
 
-    def until_it_runs(self, tag, c, ws, code, doc):
-        """Repair sessions until the harness runs on this game's recorded traces (user, 2026-11-27).
-        Returns (code, doc, fixes) or (None, None, fixes) if it still crashes after MAX_FIXES."""
-        traces = sorted(str(p) for p in (ws / "evidence").glob("*/episodes/*/trace.md"))
+    def until_it_runs(self, tag, c, episodes, code, doc):
+        """Repair sessions until the harness runs on this game's recorded episodes (`episodes`: a folder of
+        episodes/<id>/trace.md) (user, 2026-11-27). Returns (code, doc, fixes), or (None, None, fixes) if it
+        still crashes after MAX_FIXES."""
+        traces = sorted(str(p) for p in Path(episodes).glob("*/trace.md")) if episodes else []
         fixes = 0
         while (report := self.crash_report(code, traces)):
             if fixes >= MAX_FIXES:
@@ -190,8 +194,8 @@ class Run(st2.Run):
                 (fws / "harness.py").write_text(code)
                 (fws / "harness.md").write_text(doc or "")
                 (fws / "crash.txt").write_text(report)
-                if (ws / "evidence").exists():
-                    shutil.copytree(ws / "evidence", fws / "evidence")
+                if episodes and Path(episodes).exists():
+                    shutil.copytree(episodes, fws / "evidence" / self.tid(c) / "episodes")
                 (fws / "TASK.md").write_text(TASK_FIX.format(tid=self.tid(c)))
             self.propose(fws, ftag)
             code = (fws / "harness.py").read_text() if (fws / "harness.py").exists() else code
@@ -275,7 +279,7 @@ class Run(st2.Run):
             g, meta = self.load(vs[-1])
         else:
             g = {"nodes": {}, "leaves": {}, "vecs": {}, "descriptions": {}, "order": [], "affinity": {}}
-            meta = {"scores": {}, "per_episode": {}, "last_export": {}, "start": {}, "used": {}, "units": 0}
+            meta = {"scores": {}, "per_episode": {}, "last_export": {}, "start": {}, "used": {}, "leaf_cand": {}, "units": 0}
             self.save_state(g, meta)
         self.units = meta.get("units", 0)
         for k, c in enumerate(self.order):
@@ -313,6 +317,9 @@ class Run(st2.Run):
             meta["per_episode"][c] = start[c]["per_episode"]
             meta["last_export"][c] = f"{tp}_start"
             meta["used"][c] = used
+            meta.setdefault("leaf_cand", {})[c] = "c000"
+            self.arc_add(c, "c000", None, code, START_NOTE.format(how=("composed from earlier games' code: " + json.dumps(
+                sorted(used))) if used or tasks else "the base agent"), export_tag=f"{tp}_start")
             us = meta.setdefault("node_usage", {})
             for n in list(workflows) + list(modules):
                 us.setdefault(n, {"retrieved": 0, "chosen": 0, "start_vs_base_agent": []})["retrieved"] += 1
@@ -407,7 +414,7 @@ class Run(st2.Run):
         rc = self.propose(ws, tag)
         code = (ws / "harness.py").read_text() if (ws / "harness.py").exists() else ""
         doc0 = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
-        code, doc0, fixes = self.until_it_runs(tag, c, ws, code, doc0)
+        code, doc0, fixes = self.until_it_runs(tag, c, ws / "evidence" / self.tid(c) / "episodes", code, doc0)
         if code is None:
             print(f"{tag}: composed harness never ran; base agent used", flush=True)
             code, doc0 = BASE_AGENT.read_text(), BASE_AGENT_DOC
@@ -423,27 +430,67 @@ class Run(st2.Run):
         print(f"{tag}: rc {rc}, used nodes {sorted(used)}, description {len(doc)} chars", flush=True)
         return code, used, doc
 
+    # ----- this task's candidates, laid out as Meta-Harness's archive (the inner loop is Meta-Harness's) -----
+    def arc(self, c):
+        return self.dir / "archive" / c.replace(":", "_")
+
+    def arc_add(self, c, cid, parent, code, proposal, export_tag=None, valid=True, reason=None):
+        d = self.arc(c) / cid
+        shutil.rmtree(d, ignore_errors=True)
+        (d / "harness").mkdir(parents=True)
+        (d / "harness" / "harness.py").write_text(code)
+        (d / "proposal.md").write_text(proposal or "")
+        scores = None
+        if export_tag:
+            src = self.dir / "exports" / export_tag
+            if (src / "scores.json").exists():
+                shutil.copy(src / "scores.json", d / "scores.json")
+                scores = json.loads((src / "scores.json").read_text())
+            if (src / "episodes").exists():
+                shutil.copytree(src / "episodes", d / "episodes")
+        (d / "meta.json").write_text(json.dumps({"id": cid, "parent": parent, "valid": valid, "reason": reason}, indent=1))
+        (d / "full.json").write_text(json.dumps({"id": cid, "parent": parent, "valid": valid, "reason": reason,
+                                                 "scores": scores}, indent=1))
+
+    def arc_fill(self, ws, c, parent):
+        """archive/summary.md and archive/<id>/ in the workspace, exactly as Meta-Harness shows its archive."""
+        arc = ws / "archive"
+        arc.mkdir()
+        rows = ["| id | parent | valid | mean score | success | reason |", "|---|---|---|---|---|---|"]
+        for d in sorted(p for p in self.arc(c).iterdir() if (p / "full.json").exists()):
+            m = json.loads((d / "full.json").read_text())
+            sc = m.get("scores") or {}
+            rows.append(f"| {m['id']} | {m.get('parent') or '-'} | {m['valid']} | {sc.get('mean_score', '-')} | "
+                        f"{sc.get('success_rate', '-')} | {m.get('reason') or ''} |")
+            dst = arc / m["id"]
+            shutil.copytree(d, dst, ignore=shutil.ignore_patterns("full.json"))
+        (arc / "summary.md").write_text("\n".join(rows) + "\n")
+        m = json.loads((self.arc(c) / parent / "full.json").read_text())
+        sc = [e["score"] for e in (m.get("scores") or {}).get("per_episode", {}).values() if e.get("score") is not None]
+        return statistics.stdev(sc) / math.sqrt(len(sc)) if len(sc) > 1 else 0.0
+
     def edit(self, tag, c, g, meta):
+        parent = meta["leaf_cand"][c]
+        cid = "c%03d" % int(tag.rsplit("_e", 1)[1])
         ws = self.dir / "workspaces" / tag
         if self.fresh(tag):
             ws = self.ws(tag)
-            (ws / "harness.py").write_text(g["leaves"][c]["code"])
+            (ws / "harness").mkdir()
+            (ws / "harness" / "harness.py").write_text(g["leaves"][c]["code"])
             (ws / "harness.md").write_text(g["leaves"][c].get("doc") or "")
-            self.add_evidence(ws, c, meta["last_export"][c])
-            (ws / "TASK.md").write_text(TASK_EDIT.format(tid=self.tid(c), n=self.a.n))
+            noise = self.arc_fill(ws, c, parent)
+            (ws / "TASK.md").write_text(
+                (HERE / "ws_template" / "TASK_template.md").read_text().format(
+                    model=MODEL, parent=parent, n=self.a.n, noise=noise, chat_cap=CHAT_CAP)
+                + EDIT_NOTE.format(tid=self.tid(c)))
         t0 = time.time()
         rc = self.propose(ws, tag)
-        rec = {"task": c, "kind": "edit", "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
-        new_code = (ws / "harness.py").read_text() if (ws / "harness.py").exists() else ""
+        rec = {"task": c, "kind": "edit", "candidate": cid, "parent": parent, "proposer_rc": rc,
+               "proposer_seconds": round(time.time() - t0)}
+        hp = ws / "harness" / "harness.py"
+        new_code = hp.read_text() if hp.exists() else ""
         new_doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
-        if new_code != g["leaves"][c]["code"]:
-            fixed, fixed_doc, fixes = self.until_it_runs(tag, c, ws, new_code, new_doc)
-            rec["repairs"] = fixes
-            if fixed is None:
-                rec["outcome"] = f"rejected: still crashing after {fixes} repairs"
-                self.record(tag, rec)
-                return g, meta
-            new_code, new_doc = fixed, fixed_doc
+        proposal = (ws / "proposal.md").read_text() if (ws / "proposal.md").exists() else ""
         if new_code == g["leaves"][c]["code"]:
             if new_doc and new_doc != g["leaves"][c].get("doc"):   # a description alone changes no behaviour
                 g = json.loads(json.dumps(g))
@@ -452,11 +499,21 @@ class Run(st2.Run):
             rec["outcome"] = "rejected: no change"
             self.record(tag, rec)
             return g, meta
+        fixed, fixed_doc, fixes = self.until_it_runs(tag, c, self.arc(c) / parent / "episodes", new_code, new_doc)
+        rec["repairs"] = fixes
+        if fixed is None:
+            self.arc_add(c, cid, parent, new_code, proposal, valid=False, reason=f"crashes after {fixes} repairs")
+            rec["outcome"] = f"rejected: still crashing after {fixes} repairs"
+            self.record(tag, rec)
+            return g, meta
+        new_code, new_doc = fixed, fixed_doc
         new, err = self.evaluate(g, [c], tag, srcs={c: new_code})
         if new is None:
+            self.arc_add(c, cid, parent, new_code, proposal, valid=False, reason=err[:200])
             rec["outcome"] = "rejected: " + err
             self.record(tag, rec)
             return g, meta
+        self.arc_add(c, cid, parent, new_code, proposal, export_tag=tag)
         w, l = paired(new[c]["per_episode"], meta["per_episode"][c])
         rec["tests"] = {"wins": w, "losses": l}
         if new[c]["mean_score"] > meta["scores"][c]:
@@ -465,6 +522,7 @@ class Run(st2.Run):
             g["leaves"][c]["doc"] = new_doc or g["leaves"][c].get("doc", "")
             meta["scores"][c], meta["per_episode"][c], meta["last_export"][c] = \
                 new[c]["mean_score"], new[c]["per_episode"], tag
+            meta["leaf_cand"][c] = cid
             self.save_state(g, meta)
             rec["outcome"] = f"kept ({c} {new[c]['mean_score']})"
         else:
@@ -629,20 +687,22 @@ No game or benchmark names or answers anywhere. `check_harness.py` checks the st
 replays this game's recorded episodes to it (`python replay_test.py harness.py`): it must pass.
 """
 
-TASK_EDIT = """# Improve one game's harness
+EDIT_NOTE = """
+## In this setting
 
-A frozen open model plays game `{tid}` through `harness.py` (`run_episode(env, chat)`), described in `harness.md`.
-This harness is this game's own: change it freely. Evidence: `evidence/{tid}/` has its scores ({n} problems) and
-traces. Tabulate how episodes end before reading traces; read the last steps of failing traces. Code may decide
-actions; a part that cannot read an observation should hand the decision back to the model. Write mechanisms for
-the problem, not its surface: keep symbols, lengths and formats as named parameters, and keep functions small and
-named for what they do (later, what several games share is distilled from their harnesses). No game or benchmark
-names or answers anywhere. `check_harness.py` checks the static rules; `replay_test.py` replays this game's recorded
-episodes to the harness (`python replay_test.py harness.py`): it must pass. Keep `harness.md` (how the
-harness works, its main functions and what each does, its parameters) up to date with the code; write it if it is
-empty. Write `proposal.md` (what you saw, what you changed, why). The change is kept only if this game's mean
-score on the same problems rises.
+- This harness belongs to game `{tid}` alone: other games have their own harnesses, so your change affects this
+  game only. Candidates in `archive/` are this game's.
+- Also keep `harness.md` (in the workspace root) up to date with the code: how the harness works, its main
+  functions and what each does, its parameters. Write it if it is empty. You may edit it besides
+  `harness/harness.py` and `proposal.md`.
+- Keep functions small and named for what they do, with symbols, lengths and formats as named parameters: later,
+  what several games share is distilled from their harnesses. No game or benchmark names anywhere.
+- `replay_test.py` replays this game's recorded episodes (from the archive) to a harness:
+  `python replay_test.py harness/harness.py` must pass, as well as `check_harness.py` and `mock_env.py`.
+- Your change is kept only if this game's mean score on the same problems rises above the parent's.
 """
+
+START_NOTE = "Starting harness of this game ({how}); not written by an edit.\n"
 
 TASK_REVIEW = """# Review: distil what the games share into shared code
 

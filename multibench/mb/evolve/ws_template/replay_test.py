@@ -3,7 +3,7 @@
 order and ends when they run out; the "model" answers with the recorded replies in order (then repeats the
 last one). It checks that the harness runs on real inputs without crashing, not how well it plays.
 
-    python replay_test.py harness.py                    # every trace under evidence/ (at most 5)
+    python replay_test.py harness/harness.py            # traces under evidence/ or archive/ (at most 5)
     python replay_test.py harness.py path/to/trace.md   # one trace
 Exit status 0 if the harness ran on every trace, 1 otherwise (the traceback is printed).
 """
@@ -91,7 +91,8 @@ def run(harness, trace):
 
 if __name__ == "__main__":
     harness = sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "harness.py")
-    traces = sys.argv[2:] or sorted(glob.glob(os.path.join(HERE, "evidence", "*", "episodes", "*", "trace.md")))[:5]
+    traces = sys.argv[2:] or (sorted(glob.glob(os.path.join(HERE, "evidence", "*", "episodes", "*", "trace.md")))
+                              + sorted(glob.glob(os.path.join(HERE, "archive", "*", "episodes", "*", "trace.md"))))[:5]
     if not traces:
         print("no trace to replay")
         sys.exit(0)

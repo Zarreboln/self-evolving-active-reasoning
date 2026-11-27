@@ -231,9 +231,13 @@ class MailboxExecutor(Executor):
                          "error": "; ".join(r.get("rejected", [])), "model_calls": 0} for i in ids]
             priv = json.loads((res / "private.json").read_text())
             per = priv.get("per_episode") or {}
-            if priv.get("infra_errors", 0) == 0 and all(i in per for i in ids):
-                return [{"instance": i, **{k: per[i].get(k) for k in ("score", "success", "steps", "end", "error",
-                                                                      "model_calls")}} for i in ids]
+            # the worker's results are keyed by the episode's hashed instance id (mb/core.py), not the raw id
+            import hashlib
+            bench, sub = cell.split(":", 1)
+            hid = {i: hashlib.md5(f"{bench}/{sub}/{i}".encode()).hexdigest()[:10] for i in ids}
+            if priv.get("infra_errors", 0) == 0 and all(hid[i] in per for i in ids):
+                return [{"instance": i, **{k: per[hid[i]].get(k) for k in ("score", "success", "steps", "end", "error",
+                                                                           "model_calls")}} for i in ids]
             with self.remote.lock():                       # incomplete: drop it so the next try replays
                 import shutil
                 shutil.rmtree(res, ignore_errors=True)

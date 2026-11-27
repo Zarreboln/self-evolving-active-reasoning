@@ -285,13 +285,53 @@ REBALANCE_EVERY = 120          # seconds between load checks
 RELEASE_HOLD = 300             # a handed-back episode is not taken back by the same broker for this long
 
 
-def _write_load(n):
+def priority(out):
+    """Scheduling order when GPUs are short (user, 2026-11-27): 0 our method, 1 its ablations, 2 the rest.
+    It decides only who gets the GPUs first, never how anything is scored."""
+    o = str(out).replace(os.sep, "/")
+    if "/evo_b/ours3/" in o:
+        return 0
+    if "/evo_b/ours3_" in o:
+        return 1
+    return 2
+
+
+LOW_PRIORITY_CAP = 2          # episodes the whole of a priority-2 evaluation may run while ours are running
+
+
+def _write_load(n, out=""):
     job = os.environ.get("SLURM_JOB_ID")
     if not job:
         return
     d = os.path.join(LOAD_DIR, job)
     os.makedirs(d, exist_ok=True)
-    _write(os.path.join(d, f"{os.getpid()}.json"), {"n": n, "t": time.time()})
+    _write(os.path.join(d, f"{os.getpid()}.json"), {"n": n, "t": time.time(), "out": str(out),
+                                                    "prio": priority(out)})
+
+
+def _all_loads():
+    rows = []
+    for f in __import__("glob").glob(os.path.join(LOAD_DIR, "*", "*.json")):
+        try:
+            x = json.load(open(f))
+            if time.time() - x["t"] < 90:
+                rows.append((f, x))
+        except (OSError, ValueError, KeyError):
+            pass
+    return rows
+
+
+def low_priority_allowance(out, mine):
+    """How many episodes this broker may run: no limit unless it is priority 2 and an evaluation of ours is
+    running, then LOW_PRIORITY_CAP for the whole evaluation (all its brokers together)."""
+    if priority(out) < 2:
+        return None
+    rows = _all_loads()
+    if not any(x.get("prio", 2) < 2 and x["n"] > 0 for _, x in rows):
+        return None
+    me = f"{os.getpid()}.json"
+    others = sum(x["n"] for f, x in rows if x.get("out") == str(out) and not f.endswith(os.sep + me))
+    return max(0, LOW_PRIORITY_CAP - others)
 
 
 def _drop_load():
@@ -574,7 +614,7 @@ def _run_jobs(a, jobs, done, bench, sub):
     else:
         share = min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
     print(f"{'helper' if a.assist else 'owner'} starts {share} of {left_n} unclaimed episodes", flush=True)
-    t0, running, tries, last_rb = time.time(), {}, {}, time.time()
+    t0, running, tries, last_rb, last_pr, allow = time.time(), {}, {}, time.time(), 0.0, None
     with ThreadPoolExecutor(a.workers) as ex:
         while True:
             running = {i: f for i, f in running.items() if not f.done()}
@@ -587,10 +627,31 @@ def _run_jobs(a, jobs, done, bench, sub):
                 break                             # done (a helper does not wait for the others), or only
                                                   # infrastructure failures left (rerun on resume)
             limit = share if time.time() - t0 < OWNER_GRACE else a.workers
+            if time.time() - last_pr > 60:
+                last_pr = time.time()
+                try:
+                    allow = low_priority_allowance(a.out, len(running))
+                except Exception:
+                    allow = None
+                if allow is not None and len(running) > allow:      # make room for ours: hand back (journal kept)
+                    with _HELD_LOCK:
+                        extra = [i for i in running if i in _PROCS][allow:]
+                    for inst in extra:
+                        _RELEASED[inst] = time.time()
+                        with _HELD_LOCK:
+                            proc = _PROCS.get(inst)
+                        if proc:
+                            proc.terminate()
+                    print(f"priority: paused {len(extra)} episodes while ours run", flush=True)
+            if allow is not None:
+                limit = min(limit, allow)
+                if a.assist and not running and limit == 0:
+                    break                         # a helper of a paused evaluation steps aside
             for j in free[:max(0, limit - len(running))]:
-                tries[j[3]] = tries.get(j[3], 0) + 1
+                if j[3] not in _RELEASED:         # a handed-back episode did not fail: no try used
+                    tries[j[3]] = tries.get(j[3], 0) + 1
                 running[j[3]] = ex.submit(_one_subprocess, j)
-            _write_load(len(running))
+            _write_load(len(running), a.out)
             if time.time() - last_rb > REBALANCE_EVERY:
                 last_rb = time.time()
                 rebalance(list(running))

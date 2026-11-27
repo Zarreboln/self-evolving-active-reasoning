@@ -263,31 +263,6 @@ def _write(p, r):
     os.replace(p + ".tmp", p)
 
 
-def _attempt(p, rec):
-    """Every run of an episode, however it ended (finished, cut off, handed back, its journal dropped), is
-    appended to <record>.attempts.jsonl: what each run cost is kept whatever happened to the machine."""
-    rec = {"at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "job": os.environ.get("SLURM_JOB_ID"),
-           "host": os.uname().nodename, **rec}
-    with open(p + ".attempts.jsonl", "a") as f:
-        f.write(json.dumps(rec) + "\n")
-
-
-def _journal_cost(journal):
-    """Seconds played and model tokens recorded in a journal."""
-    sec, i, o, n = 0.0, 0, 0, 0
-    try:
-        for line in open(journal):
-            e = json.loads(line)
-            sec = max(sec, float(e.get("el", 0) or 0))
-            if e.get("t") == "chat":
-                n += 1
-                i += (e.get("last") or {}).get("in_tok") or 0
-                o += (e.get("last") or {}).get("out_tok") or 0
-    except (OSError, ValueError):
-        pass
-    return {"seconds": round(sec, 1), "calls": n, "in_tok": i, "out_tok": o}
-
-
 def _one(job):
     cand, bench, sub, inst, url, out = job
     t0 = time.time()
@@ -299,27 +274,15 @@ def _one(job):
             r = episode(cand, bench, sub, inst, url, os.environ["POLICY_MODEL"], journal)
         except Diverged as d:
             print(f"journal of {inst} not reproducible ({d}); restarting it", file=sys.stderr, flush=True)
-            _attempt(p, {"outcome": f"journal dropped: {d}", "wasted": _journal_cost(journal)})
-            os.replace(journal, journal + ".dropped")
+            os.remove(journal)
             r = episode(cand, bench, sub, inst, url, os.environ["POLICY_MODEL"], journal)
             r["resumed"] = {"diverged": str(d)}
     except Infra as e:          # the journal stays: the rerun continues from it
         r = {"bench": bench, "subtask": sub, "instance": inst, "score": float("nan"), "infra": repr(e)}
     r["seconds"] = round(time.time() - t0, 1)
-    _attempt(p, {"outcome": "infra: " + r["infra"] if "infra" in r else "finished", "seconds": r["seconds"],
-                 "policy_tokens": None if "infra" in r else r.get("policy_tokens")})
-    if "infra" not in r:
-        try:
-            att = [json.loads(l) for l in open(p + ".attempts.jsonl")]
-        except (OSError, ValueError):
-            att = []
-        r["attempts"] = len(att)
-        r["all_runs_seconds"] = round(sum(a.get("seconds") or 0 for a in att), 1)   # incl. runs cut off or wasted
-        w = [a["wasted"] for a in att if a.get("wasted")]
-        r["policy_tokens_wasted"] = {k: sum(x[k] for x in w) for k in ("calls", "in_tok", "out_tok")} if w else {}
     _write(p, r)
     if "infra" not in r and os.path.exists(journal):
-        os.replace(journal, journal + ".done")            # kept: per-call tokens and play time for audits
+        os.remove(journal)
 
 
 def timeout_record(bench, sub, inst):
@@ -595,7 +558,6 @@ _RELEASED = {}                 # instance -> when this broker handed it back for
 
 def _one_subprocess_claimed(job):
     cand, bench, sub, inst, url, out = job
-    t_start = time.time()
     proc = subprocess.Popen([sys.executable, "-m", "mb.evolve.broker", "one", json.dumps(job)],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     with _HELD_LOCK:
@@ -607,12 +569,8 @@ def _one_subprocess_claimed(job):
         err = f"exit {proc.returncode}: {(stderr or '').strip()[-400:]}"
         if inst in _RELEASED:
             err = "handed to an idle GPU (resumes from its journal)"
-        _attempt(_path(out, bench, sub, inst), {"outcome": "cut off: " + err[:200],
-                                                "seconds": round(time.time() - t_start, 1)})
     except subprocess.TimeoutExpired:
         proc.kill()
-        _attempt(_path(out, bench, sub, inst), {"outcome": "cut off: wall-clock timeout",
-                                                "seconds": round(time.time() - t_start, 1)})
         # wall-clock time depends on the server's load, not only on the agent: infrastructure, rerun.
         # Runaway output is judged by tokens instead (a reply that fills MAX_TOKENS ends the episode).
         err = f"timeout after {EPISODE_TIMEOUT}s (rerun)"

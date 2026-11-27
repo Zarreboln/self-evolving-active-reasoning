@@ -229,13 +229,13 @@ class Run(st2.Run):
             g.setdefault("needs", {})[c] = [{"need": t, "vec": v} for t, v in zip(needs, vecs[1:])]
             # 2-3 retrieve and compose
             tasks, combos, ops = self.retrieve(g, c)
-            code, used = SKELETON.read_text(), {}
+            code, used, doc = SKELETON.read_text(), {}, SKELETON_DOC
             if tasks or combos or ops:
-                code, used = self.compose(f"{tp}_compose", c, g, meta, tasks, combos, ops)
+                code, used, doc = self.compose(f"{tp}_compose", c, g, meta, tasks, combos, ops)
             else:
                 (self.dir / "private" / f"leakbase_{slug}.py").write_text(SKELETON.read_text())
             g["order"].append(c)
-            g["leaves"][c] = {"code": code}
+            g["leaves"][c] = {"code": code, "doc": doc}
             # 4 start
             start, err = self.evaluate(g, [c], f"{tp}_start")
             if start is None:
@@ -323,6 +323,7 @@ class Run(st2.Run):
             (ws / "similar_games").mkdir()
             for x, sv in tasks.items():
                 (ws / "similar_games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
+                (ws / "similar_games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
                 shown.append(g["leaves"][x]["code"])
             (ws / "similar_games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["essence"].get(x, ""), "search_score": meta["scores"].get(x),
@@ -345,21 +346,30 @@ class Run(st2.Run):
         except Exception:
             used = []
         used = {n: combos.get(n) for n in used}
-        print(f"{tag}: rc {rc}, used nodes {sorted(used)}", flush=True)
-        return code, used
+        doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
+        if code == SKELETON.read_text() and not doc:
+            doc = SKELETON_DOC
+        print(f"{tag}: rc {rc}, used nodes {sorted(used)}, description {len(doc)} chars", flush=True)
+        return code, used, doc
 
     def edit(self, tag, c, g, meta):
         ws = self.dir / "workspaces" / tag
         if self.fresh(tag):
             ws = self.ws(tag)
             (ws / "harness.py").write_text(g["leaves"][c]["code"])
+            (ws / "harness.md").write_text(g["leaves"][c].get("doc") or "")
             self.add_evidence(ws, c, meta["last_export"][c])
             (ws / "TASK.md").write_text(TASK_EDIT.format(tid=self.tid(c), n=self.a.n))
         t0 = time.time()
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "edit", "proposer_rc": rc, "proposer_seconds": round(time.time() - t0)}
         new_code = (ws / "harness.py").read_text() if (ws / "harness.py").exists() else ""
+        new_doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
         if new_code == g["leaves"][c]["code"]:
+            if new_doc and new_doc != g["leaves"][c].get("doc"):   # a description alone changes no behaviour
+                g = json.loads(json.dumps(g))
+                g["leaves"][c]["doc"] = new_doc
+                self.save_state(g, meta)
             rec["outcome"] = "rejected: no change"
             self.record(tag, rec)
             return g, meta
@@ -373,6 +383,7 @@ class Run(st2.Run):
         if new[c]["mean_score"] > meta["scores"][c]:
             g = json.loads(json.dumps(g))
             g["leaves"][c]["code"] = new_code
+            g["leaves"][c]["doc"] = new_doc or g["leaves"][c].get("doc", "")
             meta["scores"][c], meta["per_episode"][c], meta["last_export"][c] = \
                 new[c]["mean_score"], new[c]["per_episode"], tag
             self.save_state(g, meta)
@@ -390,6 +401,7 @@ class Run(st2.Run):
             (ws / "games").mkdir()
             for x in g["order"]:
                 (ws / "games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
+                (ws / "games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
             (ws / "games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["essence"].get(x, ""), "search_score": meta["scores"].get(x)}
                  for x in g["order"]}, indent=1))
@@ -430,6 +442,8 @@ class Run(st2.Run):
                     why.append(f"member {t}: functions {names} not all defined in its harness")
             if len(mem) < 2:
                 why.append(f"distilled from {len(mem)} task(s); shared code needs at least 2")
+            if len(str(spec.get("desc", "")).strip()) < 20:
+                why.append("no description (a node is code plus a description)")
             if why:
                 dropped[n] = why
                 continue
@@ -501,7 +515,9 @@ few traces of the plain agent on it. You are given what was learned on earlier g
 
 Write `harness.py` for game `{tid}` by putting together what fits from these, adapting only what this game
 needs to run: its formats, symbols, lengths, wording of its messages. Do not add new strategies or tune it
-to the traces; improving it is the next step. If nothing fits, keep the skeleton. Write `compose.json`:
+to the traces; improving it is the next step. If nothing fits, keep the skeleton. Write `harness.md`: how the
+harness works, its main functions and what each does, its parameters (each earlier game's `.md` next to its
+code is such a description). Write `compose.json`:
 {{"used_nodes": ["<node id>", ...], "used_games": ["taskN", ...], "notes": "<what you took from where>"}}.
 No game or benchmark names or answers anywhere. `check_harness.py` and `mock_env.py` check that it runs.
 """
@@ -514,13 +530,16 @@ episodes end before reading traces; read the last steps of failing traces. Code 
 cannot read an observation should hand the decision back to the model. Write mechanisms for the problem, not
 its surface: keep symbols, lengths and formats as named parameters, and keep functions small and named for what
 they do (later, what several games share is distilled from their harnesses). No game or benchmark names or
-answers anywhere. `check_harness.py` and `mock_env.py` check that it runs. Write `proposal.md` (what you saw,
+answers anywhere. `check_harness.py` and `mock_env.py` check that it runs. Keep `harness.md` (how the harness
+works, its main functions and what each does, its parameters) up to date with the code; write it if it is
+empty. Write `proposal.md` (what you saw,
 what you changed, why). The change is kept only if this game's mean score on the same problems rises.
 """
 
 TASK_REVIEW = """# Review: distil what the games share into shared code
 
-Game `{tid}` has just finished its own edits. `games/` holds every game's own harness (`taskN.py`; `about.json`
+Game `{tid}` has just finished its own edits. `games/` holds every game's own harness (`taskN.py`, described in
+`taskN.md`; `about.json`
 says what each problem is), `nodes/` the shared code so far (`<id>.py` + `<id>.json`), `graph.md` an overview.
 The games' harnesses stay as they are; the nodes are what a new game will be built from.
 
@@ -532,7 +551,7 @@ Distil real shared code, layered by generality:
   are the operations it builds on; the more general a node, the higher it sits.
 Put each thing on the node shared by exactly the games that have it. You may add, change, merge, split or delete
 nodes. A node is a pair `nodes/<id>.py` (code: functions, no `run_episode` needed) + `nodes/<id>.json`:
-{{"kind": "operation" | "combination", "desc": "<what it does, when it fits, its parameters>",
+{{"kind": "operation" | "combination", "desc": "<required: what it does, when it fits, its parameters>",
   "parents": ["<node id>", ...],
   "members": {{"taskN": {{"functions": ["<names of that game's own functions this generalises>"],
                          "difference": "<how that game's version differs from this node>"}}, ...}}}}
@@ -544,6 +563,10 @@ A node is kept only if its code is valid and it is distilled from at least two g
 define the functions you list. Only what is genuinely shared: no node is better than a forced one. The skeleton
 (`skeleton.py`) is fixed and is not a node. No game or benchmark names or answers anywhere. Write `review.md`.
 {hard}"""
+
+SKELETON_DOC = ("The plain starting agent: each turn it sends a fixed system prompt and the current observation to the "
+                "model, with no memory of earlier turns, and sends the model's whole reply as the action. One function, "
+                "run_episode; no parameters.")
 
 NEEDS_NOTE = """
 Also write `needs.json`: a list of 2 to 6 short sentences, each one capability the game needs (for example

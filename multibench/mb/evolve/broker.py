@@ -301,6 +301,7 @@ CLAIM_STALE = 900
 
 
 LOAD_DIR = os.path.expanduser("~/results/mb/load")   # <slurm job>/<pid>.json: episodes each broker is running
+GPU_SPEED = {"h200": 3.5, "h100": 3.0, "a100": 2.0, "l40s": 1.0, "rtx_a6000": 0.8}   # relative, for long prompts
 REBALANCE_EVERY = 120          # seconds between load checks
 RELEASE_HOLD = 300             # a handed-back episode is not taken back by the same broker for this long
 
@@ -396,12 +397,14 @@ def _drop_load():
 
 def gpu_loads():
     """{slurm job of every running worker: episodes its brokers are running} (fresh load files only)."""
-    r = subprocess.run(["squeue", "-h", "-u", os.environ.get("USER", ""), "-t", "RUNNING", "-o", "%i %j"],
+    r = subprocess.run(["squeue", "-h", "-u", os.environ.get("USER", ""), "-t", "RUNNING", "-o", "%i %j %b"],
                        capture_output=True, text=True, timeout=60)
     if r.returncode != 0:
         return {}
-    jobs = [l.split()[0] for l in r.stdout.splitlines() if len(l.split()) > 1 and l.split()[1].startswith("mb_worker")]
-    gpu_loads.names = {l.split()[0]: l.split()[1][3:] for l in r.stdout.splitlines() if len(l.split()) > 1}
+    rows = [l.split() for l in r.stdout.splitlines() if len(l.split()) > 1]
+    jobs = [x[0] for x in rows if x[1].startswith("mb_worker")]
+    gpu_loads.names = {x[0]: x[1][3:] for x in rows}
+    gpu_loads.speed = {x[0]: next((v for k, v in GPU_SPEED.items() if len(x) > 2 and k in x[2]), 1.0) for x in rows}
     loads = {}
     for j in jobs:
         n = 0
@@ -429,9 +432,13 @@ def rebalance(running):
     if me not in loads or len(loads) < 2:
         return
     helping = set(idle_workers(fresh=180, max_busy=99))      # workers that say they take others' episodes
-    fair = math.ceil(sum(loads.values()) / len(loads))
-    # GPUs well below the fair share (not only empty ones) take handed-back episodes
-    idle = [j for j, n in loads.items() if n <= fair - 2 and j != me and gpu_loads.names.get(j) in helping]
+    # each GPU's fair share is proportional to its speed (long prompts: an A100 reads them about twice as fast
+    # as an L40S, an H100 about three times); GPUs well below their share take handed-back episodes
+    sp = getattr(gpu_loads, "speed", {})
+    tot_sp = sum(sp.get(j, 1.0) for j in loads)
+    share = {j: sum(loads.values()) * sp.get(j, 1.0) / tot_sp for j in loads}
+    fair = math.ceil(share[me])
+    idle = [j for j, n in loads.items() if n <= share[j] - 1.5 and j != me and gpu_loads.names.get(j) in helping]
     extra = min(loads[me] - fair, len(running) - 1, 2 * len(idle))
     if not idle or extra <= 0:
         return

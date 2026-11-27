@@ -63,8 +63,11 @@ def _hits(low, answers):
     return [a for a in answers if re.search(r"(?<![a-z0-9])" + re.escape(a.lower()) + r"(?![a-z0-9])", low)]
 
 
-def leaks(src: str, seen, unseen) -> str | None:
+def leaks(src: str, seen, unseen, base: str = "") -> str | None:
     """Whether the file holds answers of the seen split more than a general vocabulary would.
+
+    `base`: the file as it was before the proposer saw this task's traces (a shared code base written for
+    other tasks); words already there are not counted (user, 2026-11-27).
 
     A vocabulary contains many answers of every split, so a hit alone proves nothing. What copying
     from the traces leaves is an excess: the seen answers covered at a clearly higher rate than
@@ -72,12 +75,16 @@ def leaks(src: str, seen, unseen) -> str | None:
     hits exceed their expectation under the unseen rate by more than 2 + 2 sd.
     """
     low = src.lower()
-    # ids that are bare numbers (BabyAI, Hangman seeds) are not answer text: any code has digits
+    # ids that are bare numbers (seeds) are not answer text: any code has digits
     seen = [a for a in seen if not str(a).strip().isdigit()]
     unseen = [a for a in unseen if not str(a).strip().isdigit()]
     if not seen:
         return None
     hs, hu = _hits(low, seen), _hits(low, unseen)
+    if base:   # only what was written after the proposer could see this task's traces counts
+        b = base.lower()
+        old = set(_hits(b, seen)) | set(_hits(b, unseen))
+        hs, hu = [x for x in hs if x not in old], [x for x in hu if x not in old]
     rate = len(hu) / max(len(unseen), 1)
     exp = rate * len(seen)
     sd = (len(seen) * rate * (1 - rate)) ** 0.5

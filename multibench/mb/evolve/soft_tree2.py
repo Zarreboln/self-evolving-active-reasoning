@@ -238,6 +238,11 @@ class Run:
         hm, bad = self.harness_map(shared, tree, cells, tag)
         if bad:
             return None, "; ".join(bad)[:300]
+        for c in cells:   # the code before the proposer saw c's traces: the leak check counts only what came after
+            k = tree["order"].index(c) + 1 if c in tree["order"] else len(tree["order"]) + 1
+            jp = self.dir / "tmp" / f"t{k}_probe" / f"{c.replace(':', '_')}.py"
+            if jp.exists():
+                hm["leakbase_" + c] = jp
         n = n or self.a.n
         key = f"{self.a.run}/{tag}/search"
         params = {"cell": ",".join(cells), "split": "search", "n": n, "export": True, "smoke": False}
@@ -350,6 +355,8 @@ class Run:
         # 1-3: probe, essence, parents, start score
         if c not in tree["order"]:
             probe, err = self.evaluate(shared, tree, [c], f"{tagp}_probe", n=3)
+            if probe is None:   # without its traces the essence and edits would be blind: stop, a person looks
+                raise RuntimeError(f"{tagp}_probe failed: {err}")
             ess = self.essence(c, f"{tagp}_probe")
             vec = embed([ess])[0]
             tree["vecs"][c], tree["essence"][c] = vec, ess
@@ -397,9 +404,9 @@ class Run:
             (ws / "TASK.md").write_text(TASK_ESSENCE.format(tid=self.tid(c)))
         self.propose(ws, f"{probe_tag}_essence")
         try:
-            return (ws / "essence.txt").read_text().strip()[:600] or c
+            return (ws / "essence.txt").read_text().strip()[:600] or "(no description)"
         except FileNotFoundError:
-            return c
+            return "(no description)"
 
     def edit_leaf(self, tag, c, shared, tree, meta):
         lf = leaf(c)

@@ -306,7 +306,10 @@ def run(a):
     src = open(os.path.join(a.cand, "harness.py")).read()
     bad = problems(src)
     if a.seen_split:
-        lk = leaks(src, instances(a.cell, a.seen_split, a.seen_n), instances(a.cell, "selection", None))
+        bp = os.path.join(os.path.dirname(os.path.abspath(a.cand)), "leakbase_" + os.path.basename(
+            os.path.abspath(a.cand)), "harness.py")
+        base = open(bp).read() if os.path.exists(bp) else ""
+        lk = leaks(src, instances(a.cell, a.seen_split, a.seen_n), instances(a.cell, "selection", None), base)
         bad += [lk] if lk else []
     os.makedirs(a.out, exist_ok=True)
     if bad:

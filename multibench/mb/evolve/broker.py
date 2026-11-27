@@ -202,6 +202,9 @@ def timeout_record(bench, sub, inst):
 CLAIM_STALE = 900
 
 
+OWNER_GRACE = 150        # seconds an episode waits for a helper before the owner plays it
+
+
 def idle_workers(me=None, fresh=180, max_busy=6):
     """Other workers that are alive and have free slots, from the heartbeat each worker writes into its own
     mailbox clone every poll (~/mailbox*/heartbeat/<name>.json, the freshest copy per name)."""
@@ -215,9 +218,9 @@ def idle_workers(me=None, fresh=180, max_busy=6):
             continue
         name = os.path.basename(f)[:-5]
         if name not in best or t > best[name][0]:
-            best[name] = (t, hb.get("busy", []))
-    return [n for n, (t, busy) in best.items()
-            if n != me and time.time() - t < fresh and len(busy) < max_busy]
+            best[name] = (t, hb.get("busy", []), hb.get("helps", True))
+    return [n for n, (t, busy, helps) in best.items()
+            if n != me and helps and time.time() - t < fresh and len(busy) < max_busy]
 
 
 def owner_share(n_jobs, me=None):
@@ -391,30 +394,33 @@ def _run_jobs(a, jobs, done, bench, sub):
             print("rejected:", why, flush=True)
             return
         jobs = jobs[1:]
-    # An episode is claimed when a thread starts it, so the owner runs only its even share at once and leaves
-    # the rest unclaimed for idle workers (with 48 threads it claimed all 20 at once and helpers found nothing)
-    left_n = sum(1 for j in jobs if not _finished(_path(j[5], j[1], j[2], j[3])))   # a resumed run skips finished ones
-    share = a.workers if a.assist else min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
-    if not a.assist:
-        print(f"owner plays {share} of {left_n} unfinished episodes at once; idle workers take the rest", flush=True)
-    with ThreadPoolExecutor(share) as ex:
-        for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
-            f.result()
-    if a.assist:                              # a helper: the owner summarizes
+    if a.assist:                              # a helper plays what nobody has claimed; the owner summarizes
+        with ThreadPoolExecutor(a.workers) as ex:
+            for f in as_completed([ex.submit(_one_subprocess, j) for j in jobs]):
+                f.result()
         return
-    # the owner waits for episodes other workers are playing; one whose helper died is played here
+    # The owner starts only its even share and leaves the rest unclaimed for idle workers (an episode is claimed
+    # when it starts; with 48 threads the owner once claimed all 20 at once and helpers found nothing). An episode
+    # still unclaimed after OWNER_GRACE seconds (no helper came) or whose helper died is played here.
     def rec(j):
         return _path(a.out, bench, sub, j[3])
-    while True:
-        left = [j for j in jobs if not os.path.exists(rec(j)) or (not _finished(rec(j)) and _claimed_by_other(rec(j)))]
-        if not left:
-            break
-        free = [j for j in left if not _claimed_by_other(rec(j))]
-        if free:
-            with ThreadPoolExecutor(a.workers) as ex:
-                list(ex.map(_one_subprocess, free))
-        else:
-            time.sleep(30)
+    left_n = sum(1 for j in jobs if not _finished(rec(j)))   # a resumed run skips finished ones
+    share = min(a.workers, owner_share(max(1, left_n), os.environ.get("MB_WORKER_NAME")))
+    print(f"owner starts {share} of {left_n} unfinished episodes; idle workers take the rest", flush=True)
+    t0, running, tries = time.time(), {}, {}
+    with ThreadPoolExecutor(a.workers) as ex:
+        while True:
+            running = {i: f for i, f in running.items() if not f.done()}
+            todo = [j for j in jobs if not _finished(rec(j))]
+            free = [j for j in todo if j[3] not in running and not _claimed_by_other(rec(j))   # a stale claim is free
+                    and tries.get(j[3], 0) < 2]
+            if not running and not [j for j in todo if _claimed_by_other(rec(j))] and not free:
+                break                             # done, or only infrastructure failures left (rerun on resume)
+            limit = share if time.time() - t0 < OWNER_GRACE else a.workers
+            for j in free[:max(0, limit - len(running))]:
+                tries[j[3]] = tries.get(j[3], 0) + 1
+                running[j[3]] = ex.submit(_one_subprocess, j)
+            time.sleep(15)
     summarize(a.out)
 
 

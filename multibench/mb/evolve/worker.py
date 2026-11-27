@@ -245,6 +245,8 @@ def main():
     ap.add_argument("--name", default="play_worker", help="heartbeat file name")
     ap.add_argument("--drain", type=int, default=5400, help="stop taking new requests this many seconds before "
                     "--until, so long episodes end before the job's time limit (the next worker takes over)")
+    ap.add_argument("--assist-drain", type=int, default=1800, help="keep helping other workers' evaluations until "
+                    "this many seconds before --until (one episode, not a whole evaluation, must fit)")
     ap.add_argument("--only", default="", help="serve only requests whose key starts with one of these "
                     "comma-separated prefixes (a dedicated worker); the other workers skip them")
     a = ap.parse_args()
@@ -305,7 +307,8 @@ def main():
                         busy["eval:" + key] = ex.submit(serve_eval, box, eval_runs, key, log)
                     log(f"{kind} {key}: started")
                 # idle capacity helps other workers' evaluations still running (user, 2026-11-27)
-                if eval_runs and not draining and len(busy) < a.parallel - 2:   # keep 2 slots for own requests
+                helping = eval_runs and not (a.until and time.time() > a.until - a.assist_drain)
+                if helping and len(busy) < a.parallel - 2:   # keep 2 slots for own requests
                     for rj in sorted((box.repo / "requests").rglob("request.json")):
                         if len(busy) >= a.parallel - 2:
                             break
@@ -325,7 +328,7 @@ def main():
                         busy["assist:" + key] = ex.submit(assist_eval, box, eval_runs, key, log)
                 hb = box.repo / "heartbeat" / f"{a.name}.json"
                 hb.parent.mkdir(exist_ok=True)
-                hb.write_text(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "busy": sorted(busy)}))
+                hb.write_text(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "busy": sorted(busy), "helps": bool(helping)}))
                 if time.time() - last_hb > 300:               # commit it, or the next pull is blocked
                     box.push(f"{a.name}: heartbeat")
                     last_hb = time.time()

@@ -75,9 +75,27 @@ class Infra(Exception):
     pass
 
 
-def episode(cand, bench, sub, inst, url, model):
+class Diverged(Exception):
+    """Replaying an episode's journal did not reproduce it (the harness or the environment is not
+    deterministic): the journal is dropped and the episode restarts from its first step."""
+
+
+def _h(msgs):
+    import hashlib
+    return hashlib.sha1(json.dumps(msgs, sort_keys=True).encode()).hexdigest()
+
+
+def episode(cand, bench, sub, inst, url, model, journal=None):
+    """journal: a file recording every model reply and every environment step as they happen. If an earlier
+    run of this episode was cut off (preempted, killed, moved to another GPU), its journal is replayed first:
+    the harness runs again, its model calls are answered from the journal instead of the server, and every
+    action is applied to a fresh copy of the environment, whose observations must match the journal. Then the
+    episode continues live from where it stopped (user, 2026-11-27)."""
+    from collections import deque
     from mb.llm import Counter, make_chat
     b = get(bench)
+    if b.responder:
+        journal = None        # the environment itself calls a model: a replay could not reproduce it
     pc, rc = Counter(), Counter()
     responder = None
     if b.responder:
@@ -101,8 +119,34 @@ def episode(cand, bench, sub, inst, url, model):
     replies, prompts = [], []                 # since the last action
     env_text = env.instructions
     end, error = None, None
+    import hashlib
+    head = {"v": 1, "harness": hashlib.sha1(open(os.path.join(cand, "harness.py"), "rb").read()).hexdigest(),
+            "instance": str(inst)}
+    replay, jf = deque(), None
+    if journal:
+        try:
+            lines = [json.loads(x) for x in open(journal) if x.strip()]
+            if lines and lines[0] == head:
+                replay = deque(lines[1:])
+        except (OSError, ValueError):
+            replay = deque()
+        if not replay:
+            jf = open(journal, "w")
+            jf.write(json.dumps(head) + "\n")
+            jf.flush()
+    replayed = len(replay)
+
+    def jot(e):
+        nonlocal jf
+        if journal is None:
+            return
+        if jf is None:
+            jf = open(journal, "a")
+        jf.write(json.dumps(e) + "\n")
+        jf.flush()
+
     send({"instructions": env.instructions, "observation": env.observation, "max_steps": env.max_steps,
-          "reads_full_reply": env.reads_full_reply, "admissible": env.admissible()})
+          "reads_full_reply": env.reads_full_reply, "admissible": env.admissible(), "seed": str(inst)})
     try:
         while True:
             line = child.stdout.readline()
@@ -115,18 +159,31 @@ def episode(cand, bench, sub, inst, url, model):
                     send({"error": f"model-call budget of {CHAT_CAP} per step used up"})
                     continue
                 msgs = m["messages"]
-                try:
-                    # one cap for every harness and method: a reply longer than MAX_TOKENS is runaway output
-                    cap = min(m.get("max_tokens") or MAX_TOKENS, MAX_TOKENS)
-                    reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=cap,
-                                 top_p=m.get("top_p"), stop=m.get("stop"))
-                except urllib.error.HTTPError as e:      # e.g. 400: the prompt outgrew the context
-                    calls.append({"step": env.steps, "messages": msgs, "error": f"HTTP {e.code}"})
-                    send({"error": f"HTTP {e.code}: {e.read()[:300].decode(errors='replace')}"})
-                    continue
-                except Exception as e:                   # server unreachable: not the harness's doing
-                    raise Infra(repr(e))
-                last = dict(getattr(pc, "last", {}) or {})
+                # one cap for every harness and method: a reply longer than MAX_TOKENS is runaway output
+                cap = min(m.get("max_tokens") or MAX_TOKENS, MAX_TOKENS)
+                if replay:
+                    e = replay.popleft()
+                    if e.get("t") not in ("chat", "chat_err") or e.get("h") != _h(msgs):
+                        raise Diverged(f"model call {len(calls)}: the harness asked something else")
+                    if e["t"] == "chat_err":
+                        calls.append({"step": env.steps, "messages": msgs, "error": e["err"]})
+                        send({"error": e["msg"]})
+                        continue
+                    reply, last = e["reply"], e.get("last", {})
+                else:
+                    try:
+                        reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=cap,
+                                     top_p=m.get("top_p"), stop=m.get("stop"))
+                    except urllib.error.HTTPError as e:      # e.g. 400: the prompt outgrew the context
+                        msg = f"HTTP {e.code}: {e.read()[:300].decode(errors='replace')}"
+                        jot({"t": "chat_err", "h": _h(msgs), "err": f"HTTP {e.code}", "msg": msg})
+                        calls.append({"step": env.steps, "messages": msgs, "error": f"HTTP {e.code}"})
+                        send({"error": msg})
+                        continue
+                    except Exception as e:                   # server unreachable: not the harness's doing
+                        raise Infra(repr(e))
+                    last = dict(getattr(pc, "last", {}) or {})
+                    jot({"t": "chat", "h": _h(msgs), "reply": reply, "last": last})
                 calls.append({"step": env.steps, "messages": msgs, "reply": reply, **last})
                 if cap == MAX_TOKENS and last.get("finish") == "length":
                     # runaway output: the reply filled the whole cap. The agent's failure (as the
@@ -143,6 +200,12 @@ def episode(cand, bench, sub, inst, url, model):
                 action = m["action"]
                 src = _source(action, replies, prompts, env_text)
                 obs = env.act(action)
+                if replay:
+                    e = replay.popleft()
+                    if e.get("t") != "act" or e.get("a") != action or e.get("o") != obs:
+                        raise Diverged(f"step {env.steps}: a different action or observation than recorded")
+                else:
+                    jot({"t": "act", "a": action, "o": obs})
                 env_text += "\n" + obs
                 steps.append({"action": action, "observation": obs, "source": src,
                               "calls_this_step": len(replies)})
@@ -157,6 +220,8 @@ def episode(cand, bench, sub, inst, url, model):
             child.kill()
         except Exception:
             pass
+        if jf:
+            jf.close()
         errf.seek(0)
         stderr = errf.read()[-2000:]
         errf.close()
@@ -165,6 +230,8 @@ def episode(cand, bench, sub, inst, url, model):
     r = {**env.result(), "steps_log": steps, "calls": calls, "end": end, "error": error,
          "harness_stderr": stderr, "policy_tokens": pc.as_dict(), "responder_tokens": rc.as_dict()}
     r["source_counts"] = {k: sum(s["source"] == k for s in steps) for k in ("model", "model-picked", "code")}
+    if replayed:
+        r["resumed"] = {"journal_events": replayed}
     if end == "runaway":
         r.update(score=0.0, success=False)
     return r
@@ -179,12 +246,23 @@ def _write(p, r):
 def _one(job):
     cand, bench, sub, inst, url, out = job
     t0 = time.time()
+    p = _path(out, bench, sub, inst)
+    journal = p + ".journal"
+    os.makedirs(os.path.dirname(p), exist_ok=True)
     try:
-        r = episode(cand, bench, sub, inst, url, os.environ["POLICY_MODEL"])
-    except Infra as e:
+        try:
+            r = episode(cand, bench, sub, inst, url, os.environ["POLICY_MODEL"], journal)
+        except Diverged as d:
+            print(f"journal of {inst} not reproducible ({d}); restarting it", file=sys.stderr, flush=True)
+            os.remove(journal)
+            r = episode(cand, bench, sub, inst, url, os.environ["POLICY_MODEL"], journal)
+            r["resumed"] = {"diverged": str(d)}
+    except Infra as e:          # the journal stays: the rerun continues from it
         r = {"bench": bench, "subtask": sub, "instance": inst, "score": float("nan"), "infra": repr(e)}
     r["seconds"] = round(time.time() - t0, 1)
-    _write(_path(out, bench, sub, inst), r)
+    _write(p, r)
+    if "infra" not in r and os.path.exists(journal):
+        os.remove(journal)
 
 
 def timeout_record(bench, sub, inst):

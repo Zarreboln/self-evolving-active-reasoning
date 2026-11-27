@@ -73,6 +73,8 @@ def main():
     harness, lib = sys.argv[1], sys.argv[2]
     sys.path.insert(0, lib)
     init = json.loads(REQUESTS.readline())
+    import random
+    random.seed(str(init.get("seed", "")))     # the same instance, the same draws: lets a cut-off episode be replayed
     try:
         spec = importlib.util.spec_from_file_location("candidate_harness", harness)
         mod = importlib.util.module_from_spec(spec)

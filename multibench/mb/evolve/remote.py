@@ -106,9 +106,21 @@ class Mailbox:
         """Rebase local commits onto the remote. When two workers published the same result (one took over a
         request from a worker that later finished it too), the copy already on the remote wins (-X ours is
         upstream during a rebase): the method may have read it. A failure never leaves a rebase behind."""
+        lock = self.repo / ".git" / "index.lock"
+        try:                # left by a process killed mid-commit; every git call here holds the mailbox lock
+            if lock.exists() and time.time() - lock.stat().st_mtime > 300:
+                lock.unlink()
+        except OSError:
+            pass
         r = self._git("pull", "-q", "--rebase", "--autostash", "-X", "ours", check=False)
         if r.returncode != 0:
             self._git("rebase", "--abort", check=False)
+            if "autostash" in (r.stderr or "").lower():      # a stuck autostash (only heartbeats change here)
+                self._git("checkout", "--", "heartbeat", check=False)
+                self._git("stash", "drop", check=False)
+                r = self._git("pull", "-q", "--rebase", "--autostash", "-X", "ours", check=False)
+                if r.returncode != 0:
+                    self._git("rebase", "--abort", check=False)
         return r
 
     def push(self, msg):

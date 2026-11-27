@@ -128,9 +128,11 @@ class Run(st2.Run):
                 hm["leak_baseline_" + c] = lb
         n = n or self.a.n
         key = f"{self.a.run}/{tag}/search"
+        t0 = time.time()
         self.box.submit(key, hm, {"cell": ",".join(cells), "split": "search", "n": n, "export": True, "smoke": False})
         while (r := self.box.result(key)) is None:
             time.sleep(30)
+        self.timed("evaluation", tag, t0)
         if "rejected" in r:
             return None, "rejected on the cluster: " + "; ".join(r["rejected"])[:300]
         dest = self.dir / "exports" / tag
@@ -141,6 +143,26 @@ class Run(st2.Run):
             f = (dest / "cells" / c.replace(":", "_") / "scores.json") if len(cells) > 1 else dest / "scores.json"
             out[c] = json.loads(f.read_text())
         return out, None
+
+    def timed(self, kind, tag, t0):
+        t1 = time.time()
+        with (self.dir / "private" / "times.jsonl").open("a") as f:
+            f.write(json.dumps({"kind": kind, "tag": tag, "start": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t0)),
+                                "end": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t1)),
+                                "seconds": round(t1 - t0, 1)}) + "\n")
+
+    def propose(self, ws, tag):
+        """soft_tree2's proposer call, timed (user, 2026-11-27: record time as well as tokens)."""
+        if (self.dir / "private" / f"{tag}_proposed.json").exists() and ws.exists():
+            return super().propose(ws, tag)
+        t0 = time.time()
+        rc = super().propose(ws, tag)
+        self.timed("opus", tag, t0)
+        return rc
+
+    def record(self, tag, rec):
+        rec.setdefault("finished_at", time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+        super().record(tag, rec)
 
     def ws(self, tag):
         ws = self.dir / "workspaces" / tag
@@ -285,6 +307,9 @@ class Run(st2.Run):
         for k, c in enumerate(self.order):
             if self.done(f"t{k + 1}_review"):
                 continue
+            for x in g["order"]:               # a harness imported without a description gets one
+                if not (g["leaves"][x].get("doc") or "").strip():
+                    g = self.document(x, g, meta)
             g, meta = self.add_task(k + 1, c, g, meta)
         print("all tasks added; units used:", self.units, flush=True)
 
@@ -355,6 +380,21 @@ class Run(st2.Run):
         else:
             self.record(f"{tp}_review", {"outcome": "skipped (first task or flat)"})
         return g, meta
+
+    def document(self, c, g, meta):
+        tag = f"doc_{c.replace(':', '_')}_{meta['leaf_cand'].get(c, 'leaf')}"
+        ws = self.dir / "workspaces" / tag
+        if self.fresh(tag):
+            ws = self.ws(tag)
+            (ws / "harness.py").write_text(g["leaves"][c]["code"])
+            (ws / "TASK.md").write_text(TASK_DOCUMENT)
+        self.propose(ws, tag)
+        doc = (ws / "harness.md").read_text().strip() if (ws / "harness.md").exists() else ""
+        g = json.loads(json.dumps(g))
+        g["leaves"][c]["doc"] = doc or "(no description)"
+        self.save_state(g, meta)
+        self.record(tag, {"task": c, "kind": "document", "outcome": f"described ({len(doc)} chars)"})
+        return g
 
     def describe(self, c, probe_tag):
         tag = f"{probe_tag}_description"
@@ -700,6 +740,13 @@ EDIT_NOTE = """
 - `replay_test.py` replays this game's recorded episodes (from the archive) to a harness:
   `python replay_test.py harness/harness.py` must pass, as well as `check_harness.py` and `mock_env.py`.
 - Your change is kept only if this game's mean score on the same problems rises above the parent's.
+"""
+
+TASK_DOCUMENT = """# Describe a harness
+
+`harness.py` is a game's harness (`run_episode(env, chat)` drives a frozen open model through a text game). Write
+`harness.md`: how the harness works, its main functions and what each does, its parameters. Describe the code
+as it is; do not change it. No game or benchmark names.
 """
 
 START_NOTE = "Starting harness of this game ({how}); not written by an edit.\n"

@@ -312,7 +312,7 @@ def main():
                         key = str(rj.parent.relative_to(box.repo / "requests"))
                         res = box.repo / "results" / key
                         if (("eval:" + key) in busy or ("assist:" + key) in busy
-                                or time.time() - assisted.get(key, 0) < 300
+                                or time.time() - assisted.get(key, 0) < 60   # recheck each evaluation every minute
                                 or any((res / f).exists() for f in ("summary.json", "rejected.json", "failed.json"))
                                 or (only and not any(key.startswith(x) for x in only))
                                 or (not only and any(key.startswith(x) for x in reserved))):

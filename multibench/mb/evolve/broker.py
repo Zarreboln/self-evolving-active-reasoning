@@ -333,12 +333,30 @@ def ours_running(root=os.path.expanduser("~/results/mb/evo_b")):
     return False
 
 
+def ours_on_this_gpu():
+    """Does this GPU (slurm job) run any episode of ours or its ablations? Load files of brokers older than
+    the priority rule carry no "out": counted as ours, to be safe."""
+    job = os.environ.get("SLURM_JOB_ID")
+    if not job:
+        return True
+    for f in __import__("glob").glob(os.path.join(LOAD_DIR, job, "*.json")):
+        try:
+            x = json.load(open(f))
+        except (OSError, ValueError):
+            continue
+        if time.time() - x.get("t", 0) < 90 and x.get("n", 0) > 0 and (x.get("prio", 0) < 2 if "out" in x else True):
+            return True
+    return False
+
+
 def low_priority_allowance(out, assist):
     """How many episodes this broker may run: no limit unless it serves a priority-2 evaluation while ours are
     running. Then helpers step aside and the owner runs LOW_PRIORITY_CAP episodes for the whole evaluation:
     1 each for its first LOW_PRIORITY_CAP tasks (a fixed split, so brokers do not chase each other's counts)."""
     if priority(out) < 2 or not ours_running():
         return None
+    if not ours_on_this_gpu():
+        return None                    # work-conserving: a GPU without our episodes may run anything
     if assist:
         return 0
     o = str(out).rstrip(os.sep)

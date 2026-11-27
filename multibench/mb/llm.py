@@ -54,7 +54,8 @@ def make_chat(base_url: str, model: str, counter: Counter | None = None, retries
             counter.calls += 1
             counter.in_tok += u.get("prompt_tokens", 0)
             counter.out_tok += u.get("completion_tokens", 0)
-            counter.last = {"out_tok": u.get("completion_tokens"), "finish": o["choices"][0].get("finish_reason")}
+            counter.last = {"in_tok": u.get("prompt_tokens"), "out_tok": u.get("completion_tokens"),
+                            "finish": o["choices"][0].get("finish_reason")}
         return o["choices"][0]["message"]["content"] or ""
 
     return chat

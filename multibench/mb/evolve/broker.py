@@ -170,6 +170,10 @@ def episode(cand, bench, sub, inst, url, model, journal=None):
                         send({"error": e["msg"]})
                         continue
                     reply, last = e["reply"], e.get("last", {})
+                    # the replayed call was paid for in the cut-off run: count it as if made here
+                    pc.calls += 1
+                    pc.in_tok += last.get("in_tok") or 0
+                    pc.out_tok += last.get("out_tok") or 0
                 else:
                     try:
                         reply = chat(msgs, temperature=m.get("temperature", 0.7), max_tokens=cap,
@@ -289,7 +293,7 @@ def priority(out):
     """Scheduling order when GPUs are short (user, 2026-11-27): 0 our method, 1 its ablations, 2 the rest.
     It decides only who gets the GPUs first, never how anything is scored."""
     o = str(out).replace(os.sep, "/")
-    if "/evo_b/ours3/" in o:
+    if "/evo_b/ours3/" in o or "/play/dep3" in o:       # our method before deployment and at test time
         return 0
     if "/evo_b/ours3_" in o:
         return 1

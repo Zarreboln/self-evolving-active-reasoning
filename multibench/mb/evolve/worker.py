@@ -306,7 +306,7 @@ def main():
                         busy["eval:" + key] = ex.submit(serve_eval, box, eval_runs, key, log)
                     log(f"{kind} {key}: started")
                 # idle capacity helps other workers' evaluations still running (user, 2026-11-27)
-                helping = eval_runs and not draining
+                helping = eval_runs and not draining and not only   # a dedicated worker (--only) helps nobody else
                 if helping and len(busy) < a.parallel - 2:   # keep 2 slots for own requests
                     for rj in sorted((box.repo / "requests").rglob("request.json")):
                         if len(busy) >= a.parallel - 2:

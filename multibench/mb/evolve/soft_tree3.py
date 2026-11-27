@@ -417,6 +417,52 @@ class Run(st2.Run):
             caps = []
         return desc, caps
 
+    def lay_out(self, d, g, meta, tasks, workflows, modules):
+        """Write what a game is built from into d: nodes/ (code, description, members, similarity) and
+        similar_games/ (full harnesses with their descriptions and similarity). Returns the code shown."""
+        shown = []
+        (d / "nodes").mkdir()
+        listing = {}
+        for n in list(workflows) + list(modules):
+            nd = g["nodes"][n]
+            (d / "nodes" / f"{n}.py").write_text(nd["code"])
+            info = {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("builds_on") or nd.get("parents", []),
+                    "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}
+            if n in workflows:
+                info["similarity"] = workflows[n]
+            else:
+                info.update(modules[n])
+            (d / "nodes" / f"{n}.json").write_text(json.dumps(info, indent=1))
+            listing[n] = {k: info[k] for k in info if k not in ("members",)}
+            shown.append(nd["code"])
+        (d / "nodes" / "index.json").write_text(json.dumps(listing, indent=1))
+        (d / "similar_games").mkdir()
+        for x, sv in tasks.items():
+            (d / "similar_games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
+            (d / "similar_games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
+            shown.append(g["leaves"][x]["code"])
+        (d / "similar_games" / "about.json").write_text(json.dumps(
+            {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
+                           "similarity": sv} for x, sv in tasks.items()}, indent=1))
+        return shown
+
+    def share_with_edit(self, ws, c, g, meta):
+        """An edit sees what composing saw (user, 2026-11-27: what the model sees before deployment it sees at
+        test time, and the hierarchy is visible to edits too): the same retrieval, without the game itself, in
+        shared/ (read-only). The leak check's baseline grows by that code: it was written before this game."""
+        others = dict(g, order=[x for x in g["order"] if x != c])
+        tasks, workflows, modules = self.retrieve(others, c)
+        if not (tasks or workflows or modules):
+            return False
+        (ws / "shared").mkdir()
+        shown = self.lay_out(ws / "shared", g, meta, tasks, workflows, modules)
+        base = self.dir / "private" / f"leak_baseline_{c.replace(':', '_')}.py"
+        have = base.read_text() if base.exists() else ""
+        add = [x for x in shown if x not in have]
+        if add:
+            base.write_text(have + "\n" + "\n".join(add))
+        return True
+
     def compose(self, tag, c, g, meta, tasks, workflows, modules):
         ws = self.dir / "workspaces" / tag
         slug = c.replace(":", "_")
@@ -424,29 +470,7 @@ class Run(st2.Run):
             ws = self.ws(tag)
             shown = [BASE_AGENT.read_text()]
             (ws / "base_agent.py").write_text(BASE_AGENT.read_text())
-            (ws / "nodes").mkdir()
-            listing = {}
-            for n in list(workflows) + list(modules):
-                nd = g["nodes"][n]
-                (ws / "nodes" / f"{n}.py").write_text(nd["code"])
-                info = {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("builds_on") or nd.get("parents", []),
-                        "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}
-                if n in workflows:
-                    info["similarity"] = workflows[n]
-                else:
-                    info.update(modules[n])
-                (ws / "nodes" / f"{n}.json").write_text(json.dumps(info, indent=1))
-                listing[n] = {k: info[k] for k in info if k not in ("members",)}
-                shown.append(nd["code"])
-            (ws / "nodes" / "index.json").write_text(json.dumps(listing, indent=1))
-            (ws / "similar_games").mkdir()
-            for x, sv in tasks.items():
-                (ws / "similar_games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])
-                (ws / "similar_games" / f"{self.tid(x)}.md").write_text(g["leaves"][x].get("doc", ""))
-                shown.append(g["leaves"][x]["code"])
-            (ws / "similar_games" / "about.json").write_text(json.dumps(
-                {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
-                               "similarity": sv} for x, sv in tasks.items()}, indent=1))
+            shown += self.lay_out(ws, g, meta, tasks, workflows, modules)
             (ws / "this_game.txt").write_text(g["descriptions"][c] + "\n\nRequired capabilities:\n" + "".join(
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, [])))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
@@ -522,10 +546,11 @@ class Run(st2.Run):
             (ws / "harness" / "harness.py").write_text(g["leaves"][c]["code"])
             (ws / "harness.md").write_text(g["leaves"][c].get("doc") or "")
             noise = self.arc_fill(ws, c, parent)
+            shared = self.share_with_edit(ws, c, g, meta)
             (ws / "TASK.md").write_text(
                 (HERE / "ws_template" / "TASK_template.md").read_text().format(
                     model=MODEL, parent=parent, n=self.a.n, noise=noise, chat_cap=CHAT_CAP)
-                + EDIT_NOTE.format(tid=self.tid(c)))
+                + EDIT_NOTE.format(tid=self.tid(c)) + (SHARED_NOTE if shared else ""))
         t0 = time.time()
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "edit", "candidate": cid, "parent": parent, "proposer_rc": rc,
@@ -750,6 +775,11 @@ TASK_DOCUMENT = """# Describe a harness
 `harness.py` is a game's harness (`run_episode(env, chat)` drives a frozen open model through a text game). Write
 `harness.md`: how the harness works, its main functions and what each does, its parameters. Describe the code
 as it is; do not change it. No game or benchmark names.
+"""
+
+SHARED_NOTE = """- `shared/` (read-only) holds what this game was built from: the most similar other games' harnesses with
+  their descriptions and similarity (`shared/similar_games/`) and shared code distilled from earlier games, each
+  node with its description, the games using it and its similarity (`shared/nodes/`). You may reuse any of it.
 """
 
 START_NOTE = "Starting harness of this game ({how}); not written by an edit.\n"

@@ -42,7 +42,8 @@ def alive(owner: str) -> bool:
             return True
         except Exception:
             return False
-    r = subprocess.run(["squeue", "-h", "-j", owner], capture_output=True, text=True)
+    r = subprocess.run(["squeue", "-h", "-j", owner, "-t", "RUNNING,COMPLETING"], capture_output=True, text=True)
+    # a preempted owner waits in the queue (requeued, same id): not alive, so another worker takes over
     if r.returncode != 0:          # slurm controller unreachable: assume alive rather than steal the request
         return True
     return bool(r.stdout.strip())

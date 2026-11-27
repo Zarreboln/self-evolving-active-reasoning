@@ -25,7 +25,10 @@ def method_of(run: str) -> str:
     if run.startswith("mh_pb_"):
         return "MH per benchmark (official start)"
     return {"mh_global": "MH global", "ours": "Ours", "abl_hard": "Ablation: hard tree",
-            "abl_flat": "Ablation: flat", "h2": "Harness²", "ms": "Meta-Skills"}.get(run, run)
+            "abl_flat": "Ablation: flat", "h2": "Harness²", "ms": "Meta-Skills",
+            "ours2": "Ours (incremental)", "ours2_hard": "Ours ablation: hard", "ours2_flat": "Ours ablation: flat",
+            "ours2_pilot": "Ours pilot (discarded)", "ours3": "Ours v3 (graph of distilled code)",
+            "ours3_hard": "Ours v3 ablation: hard", "ours3_flat": "Ours v3 ablation: flat"}.get(run, run)
 
 
 def last_result(f: Path):
@@ -43,7 +46,8 @@ def last_result(f: Path):
 def opus() -> dict:
     agg = defaultdict(lambda: defaultdict(float))
     # Meta-Harness and the soft tree: one Claude Code stream log per proposer session
-    for f in list(RUNS.glob("mh_*/private/c*/proposer.jsonl")) + list(RUNS.glob("*/private/r*_proposer.jsonl")):
+    for f in (list(RUNS.glob("mh_*/private/c*/proposer.jsonl")) + list(RUNS.glob("*/private/r*_proposer.jsonl"))
+              + list(RUNS.glob("ours[23]*/private/t*_proposer.jsonl"))):
         run = f.relative_to(RUNS).parts[0]
         r = last_result(f)
         a = agg[method_of(run)]

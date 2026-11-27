@@ -172,10 +172,19 @@ class Run(st2.Run):
         for n, nd in g["nodes"].items():
             if nd.get("kind") == "combination" or (ABLATION == "hard" and n not in on_path):
                 continue
-            ops[n] = {"used_by": {self.tid(x): self.sim(v, g["vecs"][x]) for x in nd["members"]},
+            ops[n] = {"matches_needs": self.need_matches(g, c, nd),
+                      "used_by": {self.tid(x): self.sim(v, g["vecs"][x]) for x in nd["members"]},
                       "games_using_it": len(nd["members"]),
                       "built_on_by_retrieved_combinations": sorted(m for m in combos if n in up(m, set()))}
         return tasks, combos, ops
+
+    def need_matches(self, g, c, nd):
+        """Each of the new task's stated needs with its similarity to this operation's description (HyperSkill-style
+        retrieval by sub-needs, user 2026-11-27): direct evidence, unlike similarity through the games using it."""
+        if not nd.get("desc_vec"):
+            return {}
+        return dict(sorted(((x["need"], self.sim(x["vec"], nd["desc_vec"])) for x in g.get("needs", {}).get(c, [])),
+                           key=lambda t: -t[1]))
 
     def graph_md(self, g, meta):
         L = ["# Shared code graph", "", "Nodes are code distilled from the games' own harnesses. `operation`: a small",
@@ -214,8 +223,10 @@ class Run(st2.Run):
             probe, err = self.evaluate(g, [c], f"{tp}_probe", n=3, srcs={c: SKELETON.read_text()})
             if probe is None:
                 raise RuntimeError(f"{tp}_probe failed: {err}")
-            ess = self.essence(c, f"{tp}_probe")
-            g["vecs"][c], g["essence"][c] = embed([ess])[0], ess
+            ess, needs = self.essence(c, f"{tp}_probe")
+            vecs = embed([ess] + needs)
+            g["vecs"][c], g["essence"][c] = vecs[0], ess
+            g.setdefault("needs", {})[c] = [{"need": t, "vec": v} for t, v in zip(needs, vecs[1:])]
             # 2-3 retrieve and compose
             tasks, combos, ops = self.retrieve(g, c)
             code, used = SKELETON.read_text(), {}
@@ -233,9 +244,15 @@ class Run(st2.Run):
             meta["per_episode"][c] = start[c]["per_episode"]
             meta["last_export"][c] = f"{tp}_start"
             meta["used"][c] = used
+            us = meta.setdefault("node_usage", {})
+            for n in list(combos) + list(ops):
+                us.setdefault(n, {"retrieved": 0, "chosen": 0, "start_vs_skeleton": []})["retrieved"] += 1
             pw, pl = paired({i: e for i, e in start[c]["per_episode"].items() if i in probe[c]["per_episode"]},
                             probe[c]["per_episode"])
             for n in used:                     # evidence about the nodes: did starting from them beat the skeleton?
+                meta["node_usage"][n]["chosen"] += 1
+                meta["node_usage"][n]["start_vs_skeleton"].append(
+                    {"game": self.tid(c), "wins": pw, "losses": pl, "verdict": "better" if pw > pl else "worse" if pl > pw else "same"})
                 a = g["affinity"].setdefault(c, {}).get(n, 1.0)
                 if pw > pl:
                     g["affinity"][c][n] = min(AFF_MAX, a * AFF_UP)
@@ -269,12 +286,17 @@ class Run(st2.Run):
         if self.fresh(tag):
             ws = self.ws(tag)
             self.add_evidence(ws, c, probe_tag)
-            (ws / "TASK.md").write_text(st2.TASK_ESSENCE.format(tid=self.tid(c)))
+            (ws / "TASK.md").write_text(st2.TASK_ESSENCE.format(tid=self.tid(c)) + NEEDS_NOTE)
         self.propose(ws, tag)
         try:
-            return (ws / "essence.txt").read_text().strip()[:600] or "(no description)"
+            ess = (ws / "essence.txt").read_text().strip()[:600] or "(no description)"
         except FileNotFoundError:
-            return "(no description)"
+            ess = "(no description)"
+        try:
+            needs = [str(x)[:200] for x in json.loads((ws / "needs.json").read_text()) if str(x).strip()][:8]
+        except Exception:
+            needs = []
+        return ess, needs
 
     def compose(self, tag, c, g, meta, tasks, combos, ops):
         ws = self.dir / "workspaces" / tag
@@ -305,7 +327,8 @@ class Run(st2.Run):
             (ws / "similar_games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["essence"].get(x, ""), "search_score": meta["scores"].get(x),
                                "similarity": sv} for x, sv in tasks.items()}, indent=1))
-            (ws / "this_game.txt").write_text(g["essence"][c] + "\n")
+            (ws / "this_game.txt").write_text(g["essence"][c] + "\n\nWhat it needs:\n" + "".join(
+                f"- {x['need']}\n" for x in g.get("needs", {}).get(c, [])))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(SKELETON.read_text())
             (ws / "TASK.md").write_text(TASK_COMPOSE.format(tid=self.tid(c)))
@@ -375,7 +398,9 @@ class Run(st2.Run):
                 (ws / "nodes" / f"{n}.py").write_text(nd["code"])
                 (ws / "nodes" / f"{n}.json").write_text(json.dumps(
                     {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("parents", []),
-                     "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}, indent=1))
+                     "members": {self.tid(x): v for x, v in nd.get("members", {}).items()},
+                     "usage": meta.get("node_usage", {}).get(n, {"retrieved": 0, "chosen": 0, "start_vs_skeleton": []})},
+                    indent=1))
             (ws / "graph.md").write_text(self.graph_md(g, meta))
             (ws / "skeleton.py").write_text(SKELETON.read_text())
             (ws / "TASK.md").write_text(TASK_REVIEW.format(tid=self.tid(c), hard=HARD_NOTE if ABLATION == "hard" else ""))
@@ -415,12 +440,16 @@ class Run(st2.Run):
             nd["parents"] = [p for p in nd["parents"] if p in nodes and p != n][:1 if ABLATION == "hard" else None]
             nd["centre"] = [sum(g["vecs"][x][i] for x in nd["members"]) / len(nd["members"])
                             for i in range(len(g["vecs"][c]))]
+        descs = [n for n in nodes if nodes[n]["desc"]]
+        for n, dv in zip(descs, embed([nodes[n]["desc"] for n in descs]) if descs else []):
+            nodes[n]["desc_vec"] = dv
         new_g = json.loads(json.dumps(g))
         new_g["nodes"] = nodes
         rec.update(nodes={n: {"kind": nd["kind"], "members": [self.tid(x) for x in nd["members"]],
                               "lines": len(nd["code"].splitlines()), "parents": nd["parents"]} for n, nd in nodes.items()},
                    dropped=dropped, before=sorted(g["nodes"]))
-        if nodes == g["nodes"]:
+        strip = lambda d: {n: {k: v for k, v in nd.items() if k != "desc_vec"} for n, nd in d.items()}
+        if strip(nodes) == strip(g["nodes"]):
             rec["outcome"] = "no change to the graph" + (f" (dropped {sorted(dropped)})" if dropped else "")
             self.record(tag, rec)
             return g, meta
@@ -466,9 +495,9 @@ few traces of the plain agent on it. You are given what was learned on earlier g
   scores and similarity to this game, 1 = same problem);
 - `nodes/`: shared code distilled from earlier games (`<id>.py` real code; `<id>.json` what it does, which games
   it came from and how each differs; `index.json` an overview). `combination` nodes (ways a family of games puts
-  operations together) carry their similarity to this game. `operation` nodes (small reusable pieces) carry the
-  games that use them with those games' similarity to this game, how many games use them (more = more general),
-  and which retrieved combinations build on them.
+  operations together) carry their similarity to this game. `operation` nodes (small reusable pieces) carry how
+  well they match each of this game's needs (`this_game.txt`), the games that use them with those games' similarity
+  to this game, how many games use them (more = more general), and which retrieved combinations build on them.
 
 Write `harness.py` for game `{tid}` by putting together what fits from these, adapting only what this game
 needs to run: its formats, symbols, lengths, wording of its messages. Do not add new strategies or tune it
@@ -507,10 +536,20 @@ nodes. A node is a pair `nodes/<id>.py` (code: functions, no `run_episode` neede
   "parents": ["<node id>", ...],
   "members": {{"taskN": {{"functions": ["<names of that game's own functions this generalises>"],
                          "difference": "<how that game's version differs from this node>"}}, ...}}}}
+Each node's `usage` says how often it was offered to a new game (`retrieved`), picked (`chosen`), and whether the
+games started from it beat the plain skeleton on the same problems. A node never retrieved or never chosen is NOT
+a reason to delete it: later games may simply not have resembled it yet. Rewrite or remove a node only on evidence
+against it (chosen at least twice and worse than the skeleton each time) or when it duplicates another node.
 A node is kept only if its code is valid and it is distilled from at least two games whose harnesses really
 define the functions you list. Only what is genuinely shared: no node is better than a forced one. The skeleton
 (`skeleton.py`) is fixed and is not a node. No game or benchmark names or answers anywhere. Write `review.md`.
 {hard}"""
+
+NEEDS_NOTE = """
+Also write `needs.json`: a list of 2 to 6 short sentences, each one capability the game needs (for example
+"turn each round's feedback into constraints on the hidden answer", "remember what was already asked"). Generic
+capabilities, not the game's surface; no game or benchmark names.
+"""
 
 HARD_NOTE = "\nEach node has at most one parent (a strict tree): the first one listed is kept.\n"
 

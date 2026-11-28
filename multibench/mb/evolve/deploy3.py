@@ -324,6 +324,8 @@ class Deploy(S.Run):
             desc, caps = self.describe(c, f"{tp}_probe")
             vecs = embed([desc] + caps)
             g["vecs"][c], g["descriptions"][c] = vecs[0], desc
+            if S.PROFILE:
+                g.setdefault("profiles", {})[c] = self.profile(f"{tp}_probe")
             g.setdefault("capabilities", {})[c] = [{"capability": t, "vec": v} for t, v in zip(caps, vecs[1:])]
         # 3 compose
         if not self.vdir(c, "v0").exists():
@@ -458,6 +460,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0, help="a smoke test: only the first problems of each task")
     ap.add_argument("--report", action="store_true")
     ap.add_argument("--compose-free", action="store_true", help="as soft_tree3 --compose-free")
+    ap.add_argument("--profile", action="store_true", help="as soft_tree3 --profile (use with a graph built with it)")
     ap.add_argument("--tie-cost", action="store_true", help="the judge picks the cheaper version when both play equally well")
     ap.add_argument("--gate", action="store_true",
                     help="group 1 is split between the base agent and the composed v0 and judged: the composed "
@@ -468,7 +471,7 @@ def main():
     a = ap.parse_args()
     a.n = 20                                       # soft_tree3 helpers read it (noise estimates); unused here
     S.ABLATION = st2.ABLATION = a.ablation
-    S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST = a.struct_hint, a.compose_free, a.tie_cost
+    S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST, S.PROFILE = a.struct_hint, a.compose_free, a.tie_cost, a.profile
     global GATE
     GATE = a.gate
     d = Deploy(a)

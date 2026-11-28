@@ -324,6 +324,8 @@ class Run(st2.Run):
             desc, caps = self.describe(c, f"{tp}_probe")
             vecs = embed([desc] + caps)
             g["vecs"][c], g["descriptions"][c] = vecs[0], desc
+            if PROFILE:
+                g.setdefault("profiles", {})[c] = self.profile(f"{tp}_probe")
             g.setdefault("capabilities", {})[c] = [{"capability": t, "vec": v} for t, v in zip(caps, vecs[1:])]
             if c in IMPORT:                  # cold start (task k <= K): the task's own evolved harness, no transfer
                 g, meta = self.import_leaf(tp, c, g, meta)
@@ -450,7 +452,7 @@ class Run(st2.Run):
         if self.fresh(tag):
             ws = self.ws(tag)
             self.add_evidence(ws, c, probe_tag)
-            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c)))
+            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c)) + (DESCRIBE_PROFILE if PROFILE else ""))
         self.propose(ws, tag)
         try:
             desc = (ws / "description.txt").read_text().strip()[:600] or "(no description)"
@@ -461,6 +463,15 @@ class Run(st2.Run):
         except Exception:
             caps = []
         return desc, caps
+
+    def profile(self, probe_tag):
+        """The game profile written with the description (PROFILE runs), {} if none: shown to compose and review,
+        not used for retrieval (user, 2026-11-27)."""
+        try:
+            p = json.loads((self.dir / "workspaces" / f"{probe_tag}_description" / "profile.json").read_text())
+            return {str(k): str(v)[:300] for k, v in p.items()} if isinstance(p, dict) else {}
+        except Exception:
+            return {}
 
     def lay_out(self, d, g, meta, tasks, workflows, modules):
         """Write what a game is built from into d: nodes/ (code, description, members, similarity) and
@@ -488,7 +499,8 @@ class Run(st2.Run):
             shown.append(g["leaves"][x]["code"])
         (d / "similar_games" / "about.json").write_text(json.dumps(
             {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
-                           "similarity": sv} for x, sv in tasks.items()}, indent=1))
+                           "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {})}
+             for x, sv in tasks.items()}, indent=1))
         return shown
 
     def share_with_edit(self, ws, c, g, meta):
@@ -517,7 +529,8 @@ class Run(st2.Run):
             (ws / "base_agent.py").write_text(BASE_AGENT.read_text())
             shown += self.lay_out(ws, g, meta, tasks, workflows, modules)
             (ws / "this_game.txt").write_text(g["descriptions"][c] + "\n\nRequired capabilities:\n" + "".join(
-                f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, [])))
+                f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, []))
+                + (("\nProfile:\n" + json.dumps(g["profiles"][c], indent=1) + "\n") if g.get("profiles", {}).get(c) else ""))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
             task = TASK_COMPOSE
@@ -720,7 +733,8 @@ class Run(st2.Run):
             for n in sorted(set(g["nodes"]) | set(g.get("node_history", {}))):
                 (hs / "nodes" / f"{n}.md").write_text(self.node_history_md(n, g, meta))
             (ws / "games" / "about.json").write_text(json.dumps(
-                {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x)}
+                {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
+                               **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {})}
                  for x in g["order"]}, indent=1))
             (ws / "nodes").mkdir()
             for n, nd in g["nodes"].items():
@@ -857,6 +871,19 @@ Write `capabilities.json`: a list of 2 to 6 short sentences, each one capability
 "turn each round's feedback into constraints on the hidden answer", "remember what was already asked").
 General capabilities, not the game's surface. No game or benchmark names.
 """
+DESCRIBE_PROFILE = """Write `profile.json`, the game's profile as the traces show it, each field one short phrase:
+{"observation": "<what each observation holds: only the latest result / the whole history so far / a local view
+                 around the agent / ...>",
+ "action": "<the form of an action: one of a fixed list of commands / free text / a word or letter in a required
+            format / a command with arguments / ...>",
+ "episode_length": "<the turn limit if stated, and how many turns the traces actually took>",
+ "feedback": "<what the game reports after an action: structured per-element feedback / only win or lose at the
+              end / a message when an action is invalid / ...>",
+ "base_agent_failures": "<how the plain agent fails in these traces: its replies are not accepted as actions /
+                         it repeats actions that change nothing / it forgets earlier information / it reasons
+                         wrongly / ...>"}
+"""
+
 
 TASK_COMPOSE = """# Build a new game's first harness from shared code
 
@@ -937,6 +964,7 @@ IMPORT = {}            # cell -> (Meta-Harness run folder, chosen candidate): th
 COMPOSE_FREE = False
 STRUCT_HINT = False
 STOP_AT_FULL = False
+PROFILE = False         # the describe step also writes a game profile (user, 2026-11-27)
 
 
 def mean_tokens(per_episode, with_input=True):
@@ -1035,6 +1063,9 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--profile", action="store_true",
+                    help="the describe step also writes a game profile (observation, action, episode length, feedback, "
+                         "base agent failures), shown to compose and review, not used for retrieval")
     ap.add_argument("--compose-free", action="store_true",
                     help="compose writes the harness the game needs, reusing the retrieved code first and writing new "
                          "code where it does not fit (user, 2026-11-27)")
@@ -1048,8 +1079,9 @@ def main():
                     help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
                          "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT
+    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT, PROFILE
     TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE = a.tie_cost, a.struct_hint, a.stop_at_full, a.compose_free
+    PROFILE = a.profile
     IMPORT = {k: tuple(v) for k, v in json.loads(Path(a.import_from).read_text()).items()} if a.import_from else {}
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation

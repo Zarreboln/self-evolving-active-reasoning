@@ -241,8 +241,10 @@ def measure(episodes_dir):
             if i:
                 rep += (a == st[i - 1][0] and new.strip() == (prev_new or "").strip())
             prev_new = new
+    later = tot - len(steps_all)            # steps after the first of an episode: only they can repeat one
     if tot:
-        out["obs_has_history"] = {"yes": hist / tot, "no": 1 - hist / tot}
+        h = hist / later if later > 0 else 0.0
+        out["obs_has_history"] = {"yes": h, "no": 1 - h}
         out["measured_failures"] = {"format_rejected": rej / tot, "repeats_no_effect": rep / tot}
     return out
 

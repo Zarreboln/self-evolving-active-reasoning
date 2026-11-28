@@ -619,7 +619,7 @@ class Run(st2.Run):
                 if COMPOSE_FREE:
                     assert COMPOSE_AS_REFERENCE[0] in task
                     task = task.replace(*COMPOSE_AS_REFERENCE)
-                sp = self.suggest_params(g, c, modules) if REPR_D and modules else {}
+                sp = self.suggest_params(g, c, modules) if SUGGEST_PARAMS and REPR_D and modules else {}
                 if sp:
                     (ws / "nodes" / "suggested_params.json").write_text(json.dumps(sp, indent=1))
                 (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_D_NOTE if REPR_D else "")
@@ -1102,6 +1102,7 @@ IMPORT = {}            # cell -> (Meta-Harness run folder, chosen candidate): th
 COMPOSE_FREE = False
 STRUCT_HINT = False
 STOP_AT_FULL = False
+SUGGEST_PARAMS = False  # parameter suggestions at compose: off (user, 2026-11-28)
 REPR_D = False          # skeletons with slots, typed modules with parameters, per-game configs (user, 2026-11-28)
 PROFILE = False         # the describe step also writes a game profile (user, 2026-11-27)
 

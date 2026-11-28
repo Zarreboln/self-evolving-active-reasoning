@@ -328,6 +328,13 @@ class Run(st2.Run):
             vecs = embed([desc] + caps)
             g["vecs"][c], g["descriptions"][c] = vecs[0], desc
             g.setdefault("capabilities", {})[c] = [{"capability": t, "vec": v} for t, v in zip(caps, vecs[1:])]
+            if c in IMPORT:                  # cold start (task k <= K): the task's own evolved harness, no transfer
+                g, meta = self.import_leaf(tp, c, g, meta)
+                if ABLATION not in ("flat", "retrieve") and len(g["order"]) >= 2:
+                    g, meta = self.review(f"{tp}_review", c, g, meta)
+                else:
+                    self.record(f"{tp}_review", {"outcome": "skipped (first task, flat or retrieve)"})
+                return g, meta
             # 2-3 retrieve and compose
             tasks, workflows, modules = self.retrieve(g, c)
             code, used, doc = BASE_AGENT.read_text(), {}, BASE_AGENT_DOC
@@ -389,6 +396,46 @@ class Run(st2.Run):
         else:
             self.record(f"{tp}_review", {"outcome": "skipped (first task, flat or retrieve)"})
         return g, meta
+
+    def import_leaf(self, tp, c, g, meta):
+        """Cold start (user, 2026-11-27): the task joins with the harness its own evolution chose (a Meta-Harness
+        run: archive/<cand>/ with per-task scores and traces under cells/<task>/). Every candidate of that run is
+        copied into this task's archive, so the review's history summary shows how the harness was evolved."""
+        run, chosen = IMPORT[c]
+        slug = c.replace(":", "_")
+        src = Path(run).expanduser() / "archive"
+        for d in sorted(p for p in src.iterdir() if (p / "meta.json").exists()):
+            m = json.loads((d / "meta.json").read_text())
+            cell = d / "cells" / slug
+            if not (d / "cells").exists():   # a run on this task alone keeps its scores and traces at the top
+                cell = d
+            sc = json.loads((cell / "scores.json").read_text()) if (cell / "scores.json").exists() else None
+            dst = self.arc(c) / m["id"]
+            shutil.rmtree(dst, ignore_errors=True)
+            (dst / "harness").mkdir(parents=True)
+            shutil.copy(d / "harness" / "harness.py", dst / "harness" / "harness.py")
+            (dst / "proposal.md").write_text((d / "proposal.md").read_text() if (d / "proposal.md").exists() else "")
+            if sc is not None:
+                (dst / "scores.json").write_text(json.dumps(sc, indent=1))
+            if (cell / "episodes").exists():
+                shutil.copytree(cell / "episodes", dst / "episodes")
+            info = {"id": m["id"], "parent": m.get("parent"), "valid": m.get("valid", True), "reason": m.get("reason")}
+            (dst / "meta.json").write_text(json.dumps(info, indent=1))
+            (dst / "full.json").write_text(json.dumps({**info, "scores": sc}, indent=1))
+        sc = json.loads((self.arc(c) / chosen / "full.json").read_text())["scores"]
+        start = json.loads((self.arc(c) / "c000" / "full.json").read_text())["scores"] if (self.arc(c) / "c000").exists() else None
+        g = json.loads(json.dumps(g))
+        g["order"].append(c)
+        g["leaves"][c] = {"code": (self.arc(c) / chosen / "harness" / "harness.py").read_text(), "doc": ""}
+        meta["scores"][c], meta["per_episode"][c] = sc["mean_score"], sc["per_episode"]
+        meta["start"][c] = (start or {}).get("mean_score")
+        meta["last_export"][c] = f"import:{Path(run).name}/{chosen}"
+        meta["used"][c] = {}
+        meta.setdefault("leaf_cand", {})[c] = chosen
+        self.save_state(g, meta)
+        self.record(f"{tp}_start", {"task": c, "imported": f"{Path(run).name}/{chosen}", "start_score": meta["start"][c],
+                                    "outcome": f"imported {Path(run).name}/{chosen}; search {sc['mean_score']}"})
+        return self.document(c, g, meta), meta
 
     def document(self, c, g, meta):
         tag = f"doc_{c.replace(':', '_')}_{meta['leaf_cand'].get(c, 'leaf')}"
@@ -481,8 +528,11 @@ class Run(st2.Run):
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, [])))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
-            (ws / "TASK.md").write_text(TASK_COMPOSE.format(tid=self.tid(c))
-                                        + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
+            task = TASK_COMPOSE
+            if COMPOSE_FREE:
+                assert COMPOSE_AS_REFERENCE[0] in task
+                task = task.replace(*COMPOSE_AS_REFERENCE)
+            (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
             # the leak check counts only what was written after the model saw this game
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
@@ -838,6 +888,16 @@ No game or benchmark names or answers anywhere. `check_harness.py` checks the st
 replays this game's recorded episodes to it (`python replay_test.py harness.py`): it must pass.
 """
 
+COMPOSE_AS_REFERENCE = (
+    "Write `harness.py` for game `{tid}` by putting together what fits from these, adapting only what this game needs\n"
+    "to run: its formats, symbols, lengths, wording of its messages. Do not add new strategies or tune it to the\n"
+    "traces; improving it is the next step. If nothing fits, keep the base agent.",
+    "Write `harness.py` for game `{tid}` as this game actually needs it, using what you know about games of this kind.\n"
+    "The harnesses and nodes above are references, and you reuse them first: take what fits, as it is or adapted.\n"
+    "Write new code only where they do not fit this game, or where it needs something they do not have; say in\n"
+    "`compose.json` `notes` which parts are new and why. The evidence traces show what the game is like; do not\n"
+    "hard-code anything about specific instances. Improving the harness on its scores is the next step.")
+
 COMPOSE_STRUCTURE_NOTE = """
 ## A checklist, not a required structure
 
@@ -881,6 +941,8 @@ EDIT_NOTE_TIE = EDIT_NOTE.replace(
     "rises above the parent's, or equals it\n  with fewer model tokens per episode (input plus output, "
     "`model_in_tokens` + `model_out_tokens` in `scores.json`).\n")
 TIE_COST = False
+IMPORT = {}            # cell -> (Meta-Harness run folder, chosen candidate): the cold-start tasks
+COMPOSE_FREE = False
 STRUCT_HINT = False
 STOP_AT_FULL = False
 
@@ -981,6 +1043,12 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--compose-free", action="store_true",
+                    help="compose writes the harness the game needs, reusing the retrieved code first and writing new "
+                         "code where it does not fit (user, 2026-11-27)")
+    ap.add_argument("--import-from", default="",
+                    help="cold start: JSON {cell: [Meta-Harness run folder, chosen candidate]}; these tasks join with "
+                         "that harness (no compose, no edits) and are reviewed as usual")
     ap.add_argument("--stop-at-full", action="store_true",
                     help="a task's edits stop only when its search score reaches 1.0; no early stop after 3 edits "
                          "not kept (user, 2026-11-27)")
@@ -988,8 +1056,9 @@ def main():
                     help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
                          "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST, STRUCT_HINT, STOP_AT_FULL
-    TIE_COST, STRUCT_HINT, STOP_AT_FULL = a.tie_cost, a.struct_hint, a.stop_at_full
+    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT
+    TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE = a.tie_cost, a.struct_hint, a.stop_at_full, a.compose_free
+    IMPORT = {k: tuple(v) for k, v in json.loads(Path(a.import_from).read_text()).items()} if a.import_from else {}
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation
     run = Run(a)

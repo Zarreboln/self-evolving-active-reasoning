@@ -16,13 +16,13 @@ Parts
 For each task, in a fixed random order (seed "exp_b/incremental/0"):
   1. probe: 3 search problems with the base agent; the code-editing model writes a task description and the
      required capabilities, which are embedded
-  2. retrieve: similar tasks and workflow nodes, top-k by similarity (workflows weighted by affinity), all module
+  2. retrieve: similar tasks and workflow nodes, top-k by similarity, all module
      nodes with their match to the required capabilities ("hard": one path; "flat": nothing; "retrieve": the
      similar tasks only, no nodes and no review)
   3. compose: the model builds the task's first harness and its description from what was retrieved, adapting
      only what is needed to run on this task; no new optimisation. Skipped when nothing is retrieved
   4. start: 20 search problems (the transfer measurement); on the 3 probe problems the start is compared with
-     the base agent: better -> affinity to the used nodes x1.5 (max 3), worse -> x0.5
+     the base agent, and the result is recorded with each node used (node_usage)
   5. up to 5 edits of the task's own harness, in Meta-Harness's own workspace (its TASK template, the archive of
      this task's candidates with code, proposals, scores and traces), each kept if its mean rises; early stop
      after 3 in a row not kept. Every new harness is replayed on recorded episodes first; a crash goes back to
@@ -54,7 +54,6 @@ from mb.evolve.orchestrate import CHAT_CAP, MODEL
 RUNS = Path.home() / "evo_b_runs"
 BASE_AGENT = HERE / "seeds" / "textarena_standard.py"
 SIGMA, K_NODES, K_TASKS = 0.3, 3, 3          # top 3 of each, with their similarities; the model decides (user, 2026-11-27)
-AFF_UP, AFF_DOWN, AFF_MAX = 1.5, 0.5, 3.0
 EDITS = 5
 MAX_FIXES = 10          # repair sessions until the harness runs (user, 2026-11-27: fix until it passes; a safety cap)
 ABLATION = ""
@@ -240,8 +239,7 @@ class Run(st2.Run):
     def retrieve(self, g, c):
         """What a new task is built from (user, 2026-11-27):
         - similar earlier tasks, by description similarity (top K_TASKS; "hard": 1);
-        - workflow nodes, by the similarity of their nearest member to the task, times the task's affinity to the
-          node (top K_NODES; "hard": 1);
+        - workflow nodes, by the similarity of their nearest member to the task (top K_NODES; "hard": 1);
         - module nodes: all of them (short and general: a single similarity would bury the most shared ones), each
           with its match to the task's required capabilities, the tasks using it and their similarity, and whether
           a retrieved workflow builds on it; "hard": only the modules on the retrieved workflow's path.
@@ -253,12 +251,11 @@ class Run(st2.Run):
         tasks = dict(tasks[:1 if ABLATION == "hard" else K_TASKS])
         if ABLATION == "retrieve":              # retrieval without the hierarchy (user, 2026-11-27)
             return tasks, {}, {}
-        aff = g.get("affinity", {}).get(c, {})
-        workflows = {}
+        workflows = {}                          # (an affinity weight was dropped, 2026-11-27: never read again)
         for n, nd in g["nodes"].items():
-            if nd.get("kind") == "workflow" and aff.get(n, 1.0) > 0:
+            if nd.get("kind") == "workflow":
                 workflows[n] = max(self.sim(v, g["vecs"][x]) for x in nd["members"])
-        workflows = dict(sorted(workflows.items(), key=lambda t: -(t[1] * aff.get(t[0], 1.0)))[:1 if ABLATION == "hard" else K_NODES])
+        workflows = dict(sorted(workflows.items(), key=lambda t: -t[1])[:1 if ABLATION == "hard" else K_NODES])
         def up(n, seen):
             for p in g["nodes"].get(n, {}).get("parents", []):
                 if p in g["nodes"] and p not in seen:
@@ -364,11 +361,6 @@ class Run(st2.Run):
                 meta["node_usage"][n]["chosen"] += 1
                 meta["node_usage"][n]["start_vs_base_agent"].append(
                     {"game": self.tid(c), "wins": pw, "losses": pl, "verdict": "better" if pw > pl else "worse" if pl > pw else "same"})
-                a = g["affinity"].setdefault(c, {}).get(n, 1.0)
-                if pw > pl:
-                    g["affinity"][c][n] = min(AFF_MAX, a * AFF_UP)
-                elif pl > pw:
-                    g["affinity"][c][n] = a * AFF_DOWN
             self.save_state(g, meta)
             self.record(f"{tp}_start", {"task": c, "similar_tasks": tasks, "workflows": workflows,
                                         "modules": sorted(modules), "used": used,

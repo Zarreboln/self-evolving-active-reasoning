@@ -481,11 +481,8 @@ class Run(st2.Run):
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, [])))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
-            task = TASK_COMPOSE
-            if STRUCT_HINT:
-                assert COMPOSE_AS_REFERENCE[0] in task
-                task = task.replace(*COMPOSE_AS_REFERENCE) + COMPOSE_STRUCTURE_NOTE
-            (ws / "TASK.md").write_text(task.format(tid=self.tid(c)))
+            (ws / "TASK.md").write_text(TASK_COMPOSE.format(tid=self.tid(c))
+                                        + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
             # the leak check counts only what was written after the model saw this game
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
@@ -841,22 +838,13 @@ No game or benchmark names or answers anywhere. `check_harness.py` checks the st
 replays this game's recorded episodes to it (`python replay_test.py harness.py`): it must pass.
 """
 
-COMPOSE_AS_REFERENCE = (
-    "Write `harness.py` for game `{tid}` by putting together what fits from these, adapting only what this game needs\n"
-    "to run: its formats, symbols, lengths, wording of its messages. Do not add new strategies or tune it to the\n"
-    "traces; improving it is the next step. If nothing fits, keep the base agent.",
-    "Write `harness.py` for game `{tid}` as this game actually needs it. The harnesses and nodes above are references,\n"
-    "and you reuse them first: take what fits, as it is or adapted. Write new code only where they do not fit this\n"
-    "game, or where it needs something they do not have; say in `compose.json` `notes` which parts are new and why. The\n"
-    "evidence traces show what the game is like; do not hard-code anything about specific instances. Improving the\n"
-    "harness on its scores is the next step. If nothing fits, start from the base agent.")
-
 COMPOSE_STRUCTURE_NOTE = """
 ## A checklist, not a required structure
 
-A harness usually has some of these parts. Go through them for this game; for each, take it from the shared code
-above, adapt it, or leave it out, and say which in `compose.json` `notes`. They are prompts for your judgement,
-not an interface: write the code in whatever form suits the game, and leave out what it does not need.
+A harness usually has some of these parts. Go through them for this game so that nothing it needs from the shared
+code is missed; for each, take it from the shared code above, adapt it as described above, or leave it out, and say
+which in `compose.json` `notes`. They are prompts for your judgement, not an interface: the rules above still apply,
+and the code need not be organised this way.
 - instruction: what the model is told about the game and the reply format;
 - memory: what is kept from earlier turns, and in what form (raw messages, facts, a map, a list of candidates);
 - context: what the model sees each turn and how long that gets over a long episode;

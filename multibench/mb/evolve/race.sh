@@ -1,7 +1,7 @@
 # Sourced by the GPU job scripts. ORCD rewrites an untyped GPU request to L40S, so "whichever GPU is
 # free" is done by submitting one copy per GPU type under the same job name; the first copy to start
 # claims the work and cancels its pending siblings; a copy that starts later sees the claim and exits.
-GPU_TYPES=${GPU_TYPES:-"b200 h200 h100 a100 l40s rtx_a6000"}   # B200 added 2026-11-27 (torch cu130 builds sm_100); L4 and MIG left out
+GPU_TYPES=${GPU_TYPES:-"h200 h100 a100 l40s rtx_a6000"}   # B200 removed 2026-11-28: flashinfer JIT fails on sm_100a in our vLLM env (every B200 job failed); L4 and MIG left out
 GPU_PARTS=mit_normal_gpu,mit_preemptable
 # MB_EXCLUDE (from ~/.mb_site.sh): nodes whose GPUs failed to start CUDA
 

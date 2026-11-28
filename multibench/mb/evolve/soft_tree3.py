@@ -558,7 +558,7 @@ class Run(st2.Run):
                 (HERE / "ws_template" / "TASK_template.md").read_text().format(
                     model=MODEL, parent=parent, n=self.a.n, noise=noise, chat_cap=CHAT_CAP)
                 + (EDIT_NOTE_TIE if TIE_COST else EDIT_NOTE).format(tid=self.tid(c))
-                + (SHARED_NOTE if shared else ""))
+                + (SHARED_NOTE if shared else "") + (EDIT_STRUCTURE_NOTE if STRUCT_HINT else ""))
         t0 = time.time()
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "edit", "candidate": cid, "parent": parent, "proposer_rc": rc,
@@ -853,6 +853,14 @@ and the code need not be organised this way.
 - verification: checks on the model's reply or action before it is sent (format, repeats, contradictions);
 - workspace: anything set up once at the start of an episode.
 """
+
+EDIT_STRUCTURE_NOTE = """
+## A checklist for finding what is missing
+
+When you look for the failure pattern, it can help to go through the parts a harness usually has and ask which one
+the failures point to (one missing or weak, or one that grows too large over a long episode). This is a reference,
+not a required structure, and the rules above still apply (one mechanism per change).
+""" + "\n".join(l for l in COMPOSE_STRUCTURE_NOTE.splitlines() if l.startswith("- ")) + "\n"
 
 EDIT_NOTE = """
 ## In this setting

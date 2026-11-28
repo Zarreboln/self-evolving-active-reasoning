@@ -245,7 +245,8 @@ class Deploy(S.Run):
             (arc / "summary.md").write_text("\n".join(rows) + "\n")
             shared = self.share_with_edit(ws, c, g, meta)
             (ws / "TASK.md").write_text(TEST_EDIT.format(model=S.MODEL, parent=cur, chat_cap=S.CHAT_CAP)
-                                        + TEST_EDIT_NOTE + (S.SHARED_NOTE if shared else ""))
+                                        + TEST_EDIT_NOTE + (S.SHARED_NOTE if shared else "")
+                                        + (S.EDIT_STRUCTURE_NOTE if S.STRUCT_HINT else ""))
         self.propose(ws, tag)
         hp = ws / "harness" / "harness.py"
         code = hp.read_text() if hp.exists() else ""
@@ -448,9 +449,13 @@ def main():
     ap.add_argument("--tasks", default="", help="comma-separated test tasks (default: all, in the shared order)")
     ap.add_argument("--limit", type=int, default=0, help="a smoke test: only the first problems of each task")
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--struct-hint", action="store_true",
+                    help="test-time edits get the same checklist of harness parts as the dev edits of a "
+                         "--struct-hint run (what was visible in dev is visible at test time)")
     a = ap.parse_args()
     a.n = 20                                       # soft_tree3 helpers read it (noise estimates); unused here
     S.ABLATION = st2.ABLATION = a.ablation
+    S.STRUCT_HINT = a.struct_hint
     d = Deploy(a)
     d.report() if a.report else d.loop()
 

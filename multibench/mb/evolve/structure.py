@@ -41,33 +41,29 @@ DIMS = {
     "needed_roles": ("needs", "each", ROLES),
 }
 
-DESCRIBE_STRUCTURE = """Write `structure.json`: the game's structure as its instructions and traces show it, as degrees, not single
-choices. For a dimension marked "one of", give each option a weight; the weights add up to 1 (a game between two
-options splits the weight). For a dimension marked "each", give every option its own degree from 0 to 1. Use the
-option names exactly as spelled; leave out options with no weight. Example:
-{"hypothesis_space": {"enumerable": 0.7, "structured": 0.3}, "needed_roles": {"memory": 0.9, "verification": 0.6}}
+DESCRIBE_STRUCTURE = """Write `structure.json`: the game's structure as its instructions and traces show it. Choose options; do
+not write numbers. For a dimension marked "one of", give the one option that fits best, as a string. For a dimension
+marked "any of", give the list of options that apply (a game between two options gets both). Use the option names
+exactly as spelled. Example: {"hypothesis_space": "enumerable", "needed_roles": ["tools", "verification"]}
 Dimensions:
 - "goal" (one of): the end is giving an answer ("answer") or reaching a state of the world ("state");
-- "action_kind" (each): actions ask about the hidden thing ("query"), act on the world temporarily ("intervene"),
+- "action_kind" (any of): actions ask about the hidden thing ("query"), act on the world temporarily ("intervene"),
   change it for the rest of the episode ("persistent_change");
 - "hypothesis_space" (one of): what is being found is one of a list one can write down ("enumerable"), has structure
   but no list ("structured"), is open-ended ("open");
-- "observation_channel" (each): structured feedback per element of a guess ("per_element_feedback"), answers in
+- "observation_channel" (any of): structured feedback per element of a guess ("per_element_feedback"), answers in
   natural language ("natural_language_answer"), what is around the agent ("local_percept"), the whole state
   ("full_state");
 - "info_cost" (one of): information is free ("free"), limited by a total budget ("total_budget"), costs per step
   ("per_step_cost");
-- "stopping" (each): the episode ends when the budget runs out ("budget_exhausted"), when the agent submits
+- "stopping" (any of): the episode ends when the budget runs out ("budget_exhausted"), when the agent submits
   ("agent_submits"), when the goal is reached ("goal_reached");
 - "action_form" (one of): one of a fixed list of commands ("fixed_list"), a word or letter ("word_or_letter"), a command
   with arguments ("command_with_args"), free text ("free_text");
-- "obs_has_history" (one of): each observation already repeats what happened before ("yes") or not ("no");
-- "episode_length" (one of): up to 20 turns ("short"), 20 to 100 ("medium"), more than 100 ("long");
-- "base_agent_failures" (each): how often the plain agent's replies are not accepted as actions ("format_rejected"),
-  it repeats actions that change nothing ("repeats_no_effect"), it forgets earlier information ("forgets"), it
-  reasons wrongly ("wrong_reasoning"), other ("other");
-- "needed_roles" (each): how much a good harness for this game needs each part: instruction, memory, context, tools,
-  controller, verification, workspace.
+- "base_agent_failures" (any of): it reasons wrongly ("wrong_reasoning"), other ("other") (rejected and repeated
+  actions are counted from the traces);
+- "needed_roles" (any of): the two or three parts a good harness for this game needs most: instruction, memory,
+  context, tools, controller, verification, workspace.
 """
 
 
@@ -98,6 +94,21 @@ def clean(s):
             z = sum(w.values())
             w = {o: x / z for o, x in w.items()}
         out[d] = {o: round(x, 3) for o, x in w.items()}
+    return out
+
+
+def harden(struct):
+    """Choices instead of degrees (user, 2026-11-28: no numbers written by the model): a "one of" dimension keeps its
+    largest option, an "each" dimension the options at 0.5 or more (its largest if none). Counted dimensions
+    (episode length, history in observations, measured failures) are left to `with_measured`."""
+    out = {}
+    for d, v in clean(struct).items():
+        kind = DIMS[d][1]
+        if kind == "one":
+            out[d] = {max(v, key=v.get): 1.0}
+        else:
+            keep = [o for o, q in v.items() if q >= 0.5] or [max(v, key=v.get)]
+            out[d] = {o: 1.0 for o in keep}
     return out
 
 

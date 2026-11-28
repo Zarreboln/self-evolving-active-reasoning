@@ -102,6 +102,11 @@ def d_problems(spec, code):
                     why.append(f"slot {k}: role must be one of {', '.join(ROLES)}")
                 out["slots"][str(k)] = {"role": v.get("role"), "default": v.get("default") or None,
                                         "what": str(v.get("what", ""))[:200]}
+        pr = spec.get("params", {})                # a skeleton's own settings (temperature, reply length, ...)
+        if isinstance(pr, dict) and all(isinstance(v, dict) and "type" in v and "default" in v for v in pr.values()):
+            out["params"] = pr
+        elif pr:
+            why.append("`params`: each needs `type` and `default`")
     else:
         if spec.get("role") not in ROLES:
             why.append(f"`role` must be one of {', '.join(ROLES)}")
@@ -375,10 +380,7 @@ class Run(st2.Run):
         nstruct = {n: T.node_structure(nd, st) for n, nd in g["nodes"].items()}
         wsc = {n: T.match(me, nstruct[n], ("problem", "interface")) for n, nd in g["nodes"].items()
                if nd.get("kind") == "workflow" and nstruct[n]}
-        # skeletons: weights passed down the skeleton hierarchy, and the backed-off choice along it
-        wtree = {n: [p for p in g["nodes"][n].get("parents", []) if p in wsc] for n in wsc}
-        wdown, wpath = T.top_down(wtree, {n: v[0] for n, v in wsc.items()})
-        top = list(dict.fromkeys(wpath[-1:] + sorted(wsc, key=lambda n: -wdown[n])))[:1 if ABLATION == "hard" else K_NODES]
+        top = sorted(wsc, key=lambda n: -wsc[n][0])[:1 if ABLATION == "hard" else K_NODES]
 
         def up(n, seen):
             for p in g["nodes"].get(n, {}).get("parents", []):
@@ -387,26 +389,11 @@ class Run(st2.Run):
                     up(p, seen)
             return seen
         keep = set(top) | {p for n in top for p in up(n, set()) if g["nodes"][p].get("kind") == "workflow"}
-        workflows = {n: round(wsc[n][0], 3) for n in sorted(keep, key=lambda n: -wdown.get(n, 0.0)) if n in wsc}
+        workflows = {n: round(wsc[n][0], 3) for n in sorted(keep, key=lambda n: -wsc.get(n, (0,))[0]) if n in wsc}
         self._struct_info = {n: {"structure_match": round(wsc[n][0], 3), "by_dimension": wsc[n][1],
-                                 "weight_from_above": round(wdown.get(n, 0.0), 3),
-                                 "on_the_chosen_path": n in wpath, "chosen": bool(wpath) and n == wpath[-1],
                                  "ancestor_of_a_match": n not in top} for n in workflows}
         on_path = set().union(*(up(n, set()) for n in workflows)) if workflows else set()
         need = me.get("needed_roles", {})
-        # modules: per role, weights passed down that role's module hierarchy, and the backed-off choice
-        msc = {}
-        for n, nd in g["nodes"].items():
-            if nd.get("kind") != "workflow" and nstruct[n]:
-                msc[n] = T.match(me, nstruct[n], ("interface", "needs"))[0]
-        mdown, mchosen = {}, {}
-        for role in {g["nodes"][n].get("role") for n in msc}:
-            group = [n for n in msc if g["nodes"][n].get("role") == role]
-            tree = {n: [p for p in g["nodes"][n].get("parents", []) if p in group] for n in group}
-            wts, path = T.top_down(tree, {n: msc[n] for n in group})
-            mdown.update(wts)
-            if path:
-                mchosen[path[-1]] = role
         modules = {}
         for n, nd in g["nodes"].items():
             if nd.get("kind") == "workflow" or (ABLATION == "hard" and n not in on_path) or not nstruct[n]:
@@ -415,8 +402,6 @@ class Run(st2.Run):
             role_need = need.get(nd.get("role"), 0.0) if nd.get("role") else None
             score = sc * (0.5 + 0.5 * role_need) if role_need is not None else sc
             modules[n] = {"structure_match": round(score, 3), "by_dimension": det,
-                          "weight_from_above": round(mdown.get(n, 0.0), 3),
-                          **({"chosen_for_its_role": True} if n in mchosen else {}),
                           **({"role": nd.get("role"), "role_needed": round(role_need, 2)} if role_need is not None else {}),
                           "used_by": {self.tid(x): tsc.get(x) for x in nd["members"]},
                           "games_using_it": len(nd["members"]),
@@ -620,7 +605,7 @@ class Run(st2.Run):
 
     def structure(self, probe_tag):
         """The soft structure written with the description (STRUCT_RETRIEVE runs), {} if none."""
-        judged = T.parse_file(self.dir / "workspaces" / f"{probe_tag}_description" / "structure.json")
+        judged = T.harden(T.parse_file(self.dir / "workspaces" / f"{probe_tag}_description" / "structure.json"))
         return T.with_measured(judged, T.measure(self.dir / "exports" / probe_tag / "episodes"))
 
     def task_similarity(self, g, c, x):
@@ -1090,12 +1075,14 @@ class Run(st2.Run):
         session per task, from that task's probe traces and its description."""
         g = json.loads((state / "graph.json").read_text())
         st = g.setdefault("structures", {})
+        if g.get("structure_version") != 2:      # written as degrees before 2026-11-28: ask again, as choices
+            st.clear()
         for c in g["order"]:
             k = self.order.index(c) + 1
             if st.get(c):
-                st[c] = T.with_measured(st[c], T.measure(self.dir / "exports" / f"t{k}_probe" / "episodes"))
+                st[c] = T.with_measured(T.harden(st[c]), T.measure(self.dir / "exports" / f"t{k}_probe" / "episodes"))
                 continue
-            tag = f"t{k}_structure"
+            tag = f"t{k}_structure_v2"
             ws = self.dir / "workspaces" / tag
             if self.fresh(tag):
                 ws = self.ws(tag)
@@ -1105,9 +1092,10 @@ class Run(st2.Run):
                     f"playing a game (its instructions are the first message). Its description:\n\n"
                     f"{g['descriptions'].get(c, '')}\n\n" + T.DESCRIBE_STRUCTURE + "\nNo game or benchmark names.\n")
             self.propose(ws, tag)
-            st[c] = T.with_measured(T.parse_file(ws / "structure.json"),
+            st[c] = T.with_measured(T.harden(T.parse_file(ws / "structure.json")),
                                     T.measure(self.dir / "exports" / f"t{k}_probe" / "episodes"))
             print(f"{tag}: {self.tid(c)} {len(st[c])} dimensions", flush=True)
+        g["structure_version"] = 2
         bak = state / "graph.json.before_structures"
         if not bak.exists():
             shutil.copy(state / "graph.json", bak)
@@ -1356,7 +1344,8 @@ REVIEW_D_NOTE = """
 Lay the shared code out as a few skeletons with slots that modules fill:
 - A `workflow` node is a **skeleton**: the main loop of a family of games (who decides each step, in what order
   the steps run), with named **slots** where modules plug in. Its code takes the slot implementations as arguments
-  (functions or objects), so a game picks the modules. Add to its json
+  (functions or objects), so a game picks the modules. Its own settings (temperature, reply length, ...) go in
+  `"params"` as for a module. Add to its json
   `"slots": {"<slot name>": {"role": "<role>", "default": "<module id or null>", "what": "<what the slot does>"}}`.
 - A `module` node fills a slot. Add to its json `"role": "<role>"`, `"entry": "<its main function>"` and
   `"params": {"<name>": {"type": "int | float | bool | str | choice", "default": <value>,

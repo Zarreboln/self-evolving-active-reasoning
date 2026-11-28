@@ -229,14 +229,18 @@ def measure(episodes_dir):
     out = {"episode_length": {k: v / len(eps) for k, v in bands.items() if v}}
     hist = rej = rep = tot = 0
     for st in steps_all:
+        prev_new = None
         for i, (a, o) in enumerate(st):
             tot += 1
-            low = o.lower()
-            rej += any(m in low for m in INVALID_MARKS)
+            po = st[i - 1][1] if i else ""
+            # what this step added: an observation that repeats the previous one is judged on its new part only
+            new = o[o.index(po) + len(po):] if i and len(po) >= 40 and po in o and o != po else o
+            if i and len(po) >= 40 and po[:200] in o and o != po:
+                hist += 1
+            rej += any(m in new.lower() for m in INVALID_MARKS)
             if i:
-                pa, po = st[i - 1]
-                rep += (a == pa and o == po)
-                hist += (len(po) >= 40 and po[:200] in o and o != po)
+                rep += (a == st[i - 1][0] and new.strip() == (prev_new or "").strip())
+            prev_new = new
     if tot:
         out["obs_has_history"] = {"yes": hist / tot, "no": 1 - hist / tot}
         out["measured_failures"] = {"format_rejected": rej / tot, "repeats_no_effect": rep / tot}

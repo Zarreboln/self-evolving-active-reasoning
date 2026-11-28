@@ -393,19 +393,27 @@ class Run(st2.Run):
         self._struct_info = {n: {"structure_match": round(wsc[n][0], 3), "by_dimension": wsc[n][1],
                                  "ancestor_of_a_match": n not in top} for n in workflows}
         on_path = set().union(*(up(n, set()) for n in workflows)) if workflows else set()
-        need = me.get("needed_roles", {})
+        # modules: grouped by the slots of the retrieved skeletons (a slot asks for a role; the skeleton, not a judged
+        # list of needed roles, says which parts the game needs), ranked within a slot by structure match
+        slots = {}
+        for w in workflows:
+            for sl, sv in g["nodes"][w].get("slots", {}).items():
+                slots.setdefault(sv.get("role"), []).append(f"{w}.{sl}")
         modules = {}
         for n, nd in g["nodes"].items():
             if nd.get("kind") == "workflow" or (ABLATION == "hard" and n not in on_path) or not nstruct[n]:
                 continue
             sc, det = T.match(me, nstruct[n], ("interface", "needs"))
-            role_need = need.get(nd.get("role"), 0.0) if nd.get("role") else None
-            score = sc * (0.5 + 0.5 * role_need) if role_need is not None else sc
-            modules[n] = {"structure_match": round(score, 3), "by_dimension": det,
-                          **({"role": nd.get("role"), "role_needed": round(role_need, 2)} if role_need is not None else {}),
+            modules[n] = {"structure_match": round(sc, 3), "by_dimension": det,
+                          **({"role": nd.get("role"), "fits_slots": slots.get(nd.get("role"), [])} if nd.get("role") else {}),
                           "used_by": {self.tid(x): tsc.get(x) for x in nd["members"]},
                           "games_using_it": len(nd["members"]),
                           "used_by_retrieved_workflows": sorted(m for m in workflows if n in up(m, set()))}
+        by_slot = {}
+        for n, info in modules.items():
+            for sl in info.get("fits_slots", []):
+                by_slot.setdefault(sl, []).append(n)
+        self._by_slot = {sl: sorted(ms, key=lambda m: -modules[m]["structure_match"]) for sl, ms in by_slot.items()}
         return tasks, workflows, modules
 
     def capability_matches(self, g, c, nd):
@@ -646,6 +654,8 @@ class Run(st2.Run):
             listing[n] = {k: info[k] for k in info if k not in ("members",)}
             shown.append(nd["code"])
         (d / "nodes" / "index.json").write_text(json.dumps(listing, indent=1))
+        if getattr(self, "_by_slot", None):              # retrieval by structure: candidates per slot, best first
+            (d / "nodes" / "by_slot.json").write_text(json.dumps(self._by_slot, indent=1))
         (d / "similar_games").mkdir()
         for x, sv in tasks.items():
             (d / "similar_games" / f"{self.tid(x)}.py").write_text(g["leaves"][x]["code"])

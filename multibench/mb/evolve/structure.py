@@ -189,3 +189,68 @@ def top_down(nodes, scores, tau=0.1):
             cur = best
             path.append(cur)
     return w, path
+
+
+INVALID_MARKS = ("not a valid", "invalid action", "invalid move", "did not contain a valid action", "defaulted to action",
+                 "not recognized", "unknown command", "no known action", "unknown action", "i don't understand", "is not one of", "please provide a valid", "wrong format")
+
+
+def episode_steps(trace):
+    """[(action, observation)] from a visible trace (trace.md: '## action k', a fenced action, then an observation)."""
+    import re
+    out = []
+    for block in re.split(r"^## action \d+\s*$", trace, flags=re.M)[1:]:
+        fences = re.findall(r"```\n(.*?)```", block, flags=re.S)
+        act = fences[0].strip() if fences else ""
+        obs = ""
+        m = re.search(r"\*\*observation:\*\*\s*```\n(.*?)```", block, flags=re.S)
+        if m:
+            obs = m.group(1).strip()
+        out.append((act, obs))
+    return out
+
+
+def measure(episodes_dir):
+    """The dimensions that can be counted from probe traces instead of judged (user, 2026-11-28):
+    episode_length (share of episodes per length band), obs_has_history (share of steps whose observation repeats the
+    previous one), and two failure modes of the plain agent: format_rejected (share of observations saying the action
+    was not accepted) and repeats_no_effect (share of steps repeating the previous action with an unchanged
+    observation). Returns {} when there are no traces."""
+    from pathlib import Path
+    eps = [p / "trace.md" for p in sorted(Path(episodes_dir).glob("*")) if (p / "trace.md").exists()]
+    if not eps:
+        return {}
+    bands, steps_all = {"short": 0, "medium": 0, "long": 0}, []
+    for e in eps:
+        st = episode_steps(e.read_text(errors="ignore"))
+        n = len(st)
+        bands["short" if n <= 20 else "medium" if n <= 100 else "long"] += 1
+        steps_all.append(st)
+    out = {"episode_length": {k: v / len(eps) for k, v in bands.items() if v}}
+    hist = rej = rep = tot = 0
+    for st in steps_all:
+        for i, (a, o) in enumerate(st):
+            tot += 1
+            low = o.lower()
+            rej += any(m in low for m in INVALID_MARKS)
+            if i:
+                pa, po = st[i - 1]
+                rep += (a == pa and o == po)
+                hist += (len(po) >= 40 and po[:200] in o and o != po)
+    if tot:
+        out["obs_has_history"] = {"yes": hist / tot, "no": 1 - hist / tot}
+        out["measured_failures"] = {"format_rejected": rej / tot, "repeats_no_effect": rep / tot}
+    return out
+
+
+def with_measured(struct, measured):
+    """The structure with its countable dimensions replaced by the counts (the judged ones kept)."""
+    s = dict(struct)
+    for d in ("episode_length", "obs_has_history"):
+        if d in measured:
+            s[d] = {o: round(v, 3) for o, v in measured[d].items() if v > 0}
+    if "measured_failures" in measured:
+        f = dict(s.get("base_agent_failures", {}))
+        f.update({o: round(v, 3) for o, v in measured["measured_failures"].items()})
+        s["base_agent_failures"] = {o: v for o, v in f.items() if v > 0}
+    return clean(s)

@@ -604,7 +604,8 @@ class Run(st2.Run):
         if self.fresh(tag):
             ws = self.ws(tag)
             self.add_evidence(ws, c, probe_tag)
-            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c)) + (DESCRIBE_PROFILE if PROFILE else "")
+            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c))
+                                        + (DESCRIBE_PROFILE if PROFILE and not STRUCT_RETRIEVE else "")
                                         + (T.DESCRIBE_STRUCTURE if STRUCT_RETRIEVE else ""))
         self.propose(ws, tag)
         try:
@@ -619,7 +620,8 @@ class Run(st2.Run):
 
     def structure(self, probe_tag):
         """The soft structure written with the description (STRUCT_RETRIEVE runs), {} if none."""
-        return T.parse_file(self.dir / "workspaces" / f"{probe_tag}_description" / "structure.json")
+        judged = T.parse_file(self.dir / "workspaces" / f"{probe_tag}_description" / "structure.json")
+        return T.with_measured(judged, T.measure(self.dir / "exports" / probe_tag / "episodes"))
 
     def task_similarity(self, g, c, x):
         """How alike two tasks are: by soft structure (problem and interface dimensions) when both have one, else by
@@ -666,7 +668,7 @@ class Run(st2.Run):
             shown.append(g["leaves"][x]["code"])
         (d / "similar_games" / "about.json").write_text(json.dumps(
             {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
-                           "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {}),
+                           "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) and not STRUCT_RETRIEVE else {}),
                            **({"structure": g["structures"][x]} if g.get("structures", {}).get(x) else {}),
                            **({"config": g["configs"][x]} if g.get("configs", {}).get(x) else {})}
              for x, sv in tasks.items()}, indent=1))
@@ -728,7 +730,8 @@ class Run(st2.Run):
                     + json.dumps(g["structures"][c], indent=1)) if g.get("structures", {}).get(c) else "")
                 + "\n\nRequired capabilities:\n" + "".join(
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, []))
-                + (("\nProfile:\n" + json.dumps(g["profiles"][c], indent=1) + "\n") if g.get("profiles", {}).get(c) else ""))
+                + (("\nProfile:\n" + json.dumps(g["profiles"][c], indent=1) + "\n")
+                   if g.get("profiles", {}).get(c) and not STRUCT_RETRIEVE else ""))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
             task = TASK_COMPOSE
@@ -940,7 +943,7 @@ class Run(st2.Run):
                 (hs / "nodes" / f"{n}.md").write_text(self.node_history_md(n, g, meta))
             (ws / "games" / "about.json").write_text(json.dumps(
                 {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
-                               **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {})}
+                               **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) and not STRUCT_RETRIEVE else {})}
                  for x in g["order"]}, indent=1))
             (ws / "nodes").mkdir()
             for n, nd in g["nodes"].items():
@@ -1088,9 +1091,10 @@ class Run(st2.Run):
         g = json.loads((state / "graph.json").read_text())
         st = g.setdefault("structures", {})
         for c in g["order"]:
-            if st.get(c):
-                continue
             k = self.order.index(c) + 1
+            if st.get(c):
+                st[c] = T.with_measured(st[c], T.measure(self.dir / "exports" / f"t{k}_probe" / "episodes"))
+                continue
             tag = f"t{k}_structure"
             ws = self.dir / "workspaces" / tag
             if self.fresh(tag):
@@ -1101,7 +1105,8 @@ class Run(st2.Run):
                     f"playing a game (its instructions are the first message). Its description:\n\n"
                     f"{g['descriptions'].get(c, '')}\n\n" + T.DESCRIBE_STRUCTURE + "\nNo game or benchmark names.\n")
             self.propose(ws, tag)
-            st[c] = T.parse_file(ws / "structure.json")
+            st[c] = T.with_measured(T.parse_file(ws / "structure.json"),
+                                    T.measure(self.dir / "exports" / f"t{k}_probe" / "episodes"))
             print(f"{tag}: {self.tid(c)} {len(st[c])} dimensions", flush=True)
         bak = state / "graph.json.before_structures"
         if not bak.exists():

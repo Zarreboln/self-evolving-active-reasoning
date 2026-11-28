@@ -312,6 +312,8 @@ def priority(out):
     o = str(out).replace(os.sep, "/")
     if "/evo_b/ours3/" in o or "/play/dep3" in o:       # our method before deployment and at test time
         return 0
+    if "/evo_b/mh_one_" in o:            # single-task Meta-Harness runs: our method's cold start (user, 2026-11-27)
+        return 0
     if "/evo_b/ours3_" in o:
         return 1
     return 2

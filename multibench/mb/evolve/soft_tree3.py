@@ -845,8 +845,9 @@ COMPOSE_AS_REFERENCE = (
     "Write `harness.py` for game `{tid}` by putting together what fits from these, adapting only what this game needs\n"
     "to run: its formats, symbols, lengths, wording of its messages. Do not add new strategies or tune it to the\n"
     "traces; improving it is the next step. If nothing fits, keep the base agent.",
-    "Write `harness.py` for game `{tid}` as this game actually needs it. The harnesses and nodes above are references:\n"
-    "use what fits, as it is or adapted, and write new code where this game needs something they do not have. The\n"
+    "Write `harness.py` for game `{tid}` as this game actually needs it. The harnesses and nodes above are references,\n"
+    "and you reuse them first: take what fits, as it is or adapted. Write new code only where they do not fit this\n"
+    "game, or where it needs something they do not have; say in `compose.json` `notes` which parts are new and why. The\n"
     "evidence traces show what the game is like; do not hard-code anything about specific instances. Improving the\n"
     "harness on its scores is the next step. If nothing fits, start from the base agent.")
 

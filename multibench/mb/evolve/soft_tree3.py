@@ -475,7 +475,8 @@ class Run(st2.Run):
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, [])))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
-            (ws / "TASK.md").write_text(TASK_COMPOSE.format(tid=self.tid(c)))
+            (ws / "TASK.md").write_text(TASK_COMPOSE.format(tid=self.tid(c))
+                                        + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
             # the leak check counts only what was written after the model saw this game
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
@@ -831,6 +832,21 @@ No game or benchmark names or answers anywhere. `check_harness.py` checks the st
 replays this game's recorded episodes to it (`python replay_test.py harness.py`): it must pass.
 """
 
+COMPOSE_STRUCTURE_NOTE = """
+## A checklist, not a required structure
+
+A harness usually has some of these parts. Go through them for this game; for each, take it from the shared code
+above, adapt it, or leave it out, and say which in `compose.json` `notes`. They are prompts for your judgement,
+not an interface: write the code in whatever form suits the game, and leave out what it does not need.
+- instruction: what the model is told about the game and the reply format;
+- memory: what is kept from earlier turns, and in what form (raw messages, facts, a map, a list of candidates);
+- context: what the model sees each turn and how long that gets over a long episode;
+- tools: code that computes something for the model (parsing, search, counting);
+- controller: code that decides actions or steps itself, and when it hands the decision to the model;
+- verification: checks on the model's reply or action before it is sent (format, repeats, contradictions);
+- workspace: anything set up once at the start of an episode.
+"""
+
 EDIT_NOTE = """
 ## In this setting
 
@@ -850,6 +866,7 @@ EDIT_NOTE_TIE = EDIT_NOTE.replace(
     "rises above the parent's, or equals it\n  with fewer model tokens per episode (input plus output, "
     "`model_in_tokens` + `model_out_tokens` in `scores.json`).\n")
 TIE_COST = False
+STRUCT_HINT = False
 
 
 def mean_tokens(per_episode, with_input=True):
@@ -948,9 +965,12 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--struct-hint", action="store_true",
+                    help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
+                         "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST
-    TIE_COST = a.tie_cost
+    global TIE_COST, STRUCT_HINT
+    TIE_COST, STRUCT_HINT = a.tie_cost, a.struct_hint
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation
     run = Run(a)

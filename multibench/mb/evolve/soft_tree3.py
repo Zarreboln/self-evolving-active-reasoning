@@ -137,6 +137,38 @@ def config_problems(cf, nodes):
     return why
 
 
+def repair_config(cf, nodes):
+    """A game's config with every reference that is not a kept node replaced (a slot by `own`, a skeleton by null,
+    parameters of a dropped module removed); returns (config, what was replaced). An empty slot means `own`."""
+    cf = dict(cf) if isinstance(cf, dict) else {}
+    bad = []
+    wf = cf.get("workflow")
+    if wf is not None and (wf not in nodes or nodes[wf].get("kind") != "workflow"):
+        bad.append(f"workflow {wf!r} is not a kept skeleton: set to null")
+        cf["workflow"] = None
+    slots = {}
+    for sl, m in (cf.get("slots") or {}).items():
+        if m in (None, "", "own"):
+            slots[sl] = "own"
+        elif m in nodes:
+            slots[sl] = m
+        else:
+            slots[sl] = "own"
+            bad.append(f"slot {sl}: {m!r} is not a kept module: set to own")
+    cf["slots"] = slots
+    params = {}
+    for m, pv in (cf.get("params") or {}).items():
+        if m in nodes and isinstance(pv, dict):
+            known = nodes[m].get("params", {})
+            params[m] = {k: v for k, v in pv.items() if k in known}
+            if set(pv) - set(known):
+                bad.append(f"params for {m}: dropped unknown {sorted(set(pv) - set(known))}")
+        else:
+            bad.append(f"params for {m!r}: not a kept module, dropped")
+    cf["params"] = params
+    return cf, bad
+
+
 def node_problems(code):
     """Static rules for a node: a module of functions (no run_episode needed)."""
     out = [p for p in problems(code) if "run_episode" not in p]
@@ -343,7 +375,10 @@ class Run(st2.Run):
         nstruct = {n: T.node_structure(nd, st) for n, nd in g["nodes"].items()}
         wsc = {n: T.match(me, nstruct[n], ("problem", "interface")) for n, nd in g["nodes"].items()
                if nd.get("kind") == "workflow" and nstruct[n]}
-        top = sorted(wsc, key=lambda n: -wsc[n][0])[:1 if ABLATION == "hard" else K_NODES]
+        # skeletons: weights passed down the skeleton hierarchy, and the backed-off choice along it
+        wtree = {n: [p for p in g["nodes"][n].get("parents", []) if p in wsc] for n in wsc}
+        wdown, wpath = T.top_down(wtree, {n: v[0] for n, v in wsc.items()})
+        top = list(dict.fromkeys(wpath[-1:] + sorted(wsc, key=lambda n: -wdown[n])))[:1 if ABLATION == "hard" else K_NODES]
 
         def up(n, seen):
             for p in g["nodes"].get(n, {}).get("parents", []):
@@ -352,13 +387,26 @@ class Run(st2.Run):
                     up(p, seen)
             return seen
         keep = set(top) | {p for n in top for p in up(n, set()) if g["nodes"][p].get("kind") == "workflow"}
-        weight = T.soft({n: wsc[n][0] for n in wsc}, 0.1)
-        workflows = {n: round(wsc[n][0], 3) for n in sorted(keep, key=lambda n: -wsc.get(n, (0,))[0]) if n in wsc}
+        workflows = {n: round(wsc[n][0], 3) for n in sorted(keep, key=lambda n: -wdown.get(n, 0.0)) if n in wsc}
         self._struct_info = {n: {"structure_match": round(wsc[n][0], 3), "by_dimension": wsc[n][1],
-                                 "weight": round(weight.get(n, 0.0), 3),
+                                 "weight_from_above": round(wdown.get(n, 0.0), 3),
+                                 "on_the_chosen_path": n in wpath, "chosen": bool(wpath) and n == wpath[-1],
                                  "ancestor_of_a_match": n not in top} for n in workflows}
         on_path = set().union(*(up(n, set()) for n in workflows)) if workflows else set()
         need = me.get("needed_roles", {})
+        # modules: per role, weights passed down that role's module hierarchy, and the backed-off choice
+        msc = {}
+        for n, nd in g["nodes"].items():
+            if nd.get("kind") != "workflow" and nstruct[n]:
+                msc[n] = T.match(me, nstruct[n], ("interface", "needs"))[0]
+        mdown, mchosen = {}, {}
+        for role in {g["nodes"][n].get("role") for n in msc}:
+            group = [n for n in msc if g["nodes"][n].get("role") == role]
+            tree = {n: [p for p in g["nodes"][n].get("parents", []) if p in group] for n in group}
+            wts, path = T.top_down(tree, {n: msc[n] for n in group})
+            mdown.update(wts)
+            if path:
+                mchosen[path[-1]] = role
         modules = {}
         for n, nd in g["nodes"].items():
             if nd.get("kind") == "workflow" or (ABLATION == "hard" and n not in on_path) or not nstruct[n]:
@@ -367,6 +415,8 @@ class Run(st2.Run):
             role_need = need.get(nd.get("role"), 0.0) if nd.get("role") else None
             score = sc * (0.5 + 0.5 * role_need) if role_need is not None else sc
             modules[n] = {"structure_match": round(score, 3), "by_dimension": det,
+                          "weight_from_above": round(mdown.get(n, 0.0), 3),
+                          **({"chosen_for_its_role": True} if n in mchosen else {}),
                           **({"role": nd.get("role"), "role_needed": round(role_need, 2)} if role_need is not None else {}),
                           "used_by": {self.tid(x): tsc.get(x) for x in nd["members"]},
                           "games_using_it": len(nd["members"]),
@@ -911,83 +961,94 @@ class Run(st2.Run):
                     (ws / "leaves" / f"{self.tid(x)}.json").write_text(json.dumps(cf, indent=1))
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "review", "proposer_rc": rc}
-        nodes, dropped = {}, {}
-        fns = {x: defined_functions(g["leaves"][x]["code"]) for x in g["order"]}
-        for f in sorted((ws / "nodes").glob("*.json")):
-            n = f.stem
-            why = []
-            try:
-                spec = json.loads(f.read_text())
-                code = (ws / "nodes" / f"{n}.py").read_text()
-            except Exception as e:
-                dropped[n] = [f"unreadable: {e!r}"[:120]]
-                continue
-            if not NODE_ID.match(n):
-                why.append("bad id")
-            why += node_problems(code)
-            mem = {}
-            for t, v in (spec.get("members") or {}).items():
-                x = tids.get(t)
-                v = v if isinstance(v, dict) else {}
-                ev = v.get("evidence") if isinstance(v.get("evidence"), dict) else {}
-                names = [q for q in (ev.get("functions") or []) if isinstance(q, str)]
-                quotes = [q for q in (ev.get("excerpts") or []) if isinstance(q, str)]
-                diff = str(v.get("differences", "")).strip()
-                bad = evidence_problems(names, quotes, fns[x], g["leaves"][x]["code"]) if x else ["unknown game"]
-                if bad:
-                    why.append(f"member {t}: " + "; ".join(bad))
-                elif len(diff) < 10:
-                    why.append(f"member {t}: no `differences` (how its version differs from this node)")
-                else:
-                    mem[x] = {"implements": str(v.get("implements", ""))[:300],
-                              "evidence": {"functions": names, "excerpts": quotes}, "differences": diff[:600]}
-                    if REPR_D and isinstance(v.get("params"), dict):
-                        mem[x]["params"] = {str(k): q for k, q in v["params"].items()}
-            dfields = d_problems(spec, code) if REPR_D else ([], {})
-            why += dfields[0]
-            if len(mem) < 2:
-                why.append(f"distilled from {len(mem)} task(s); shared code needs at least 2")
-            if len(str(spec.get("desc", "")).strip()) < 20:
-                why.append("no description (a node is code plus a description)")
-            if why:
-                dropped[n] = why
-                continue
-            par = spec.get("parents") or {}
-            par = {q: "" for q in par} if isinstance(par, list) else par
-            nodes[n] = {"kind": spec.get("kind") if spec.get("kind") in ("module", "workflow") else "module",
-                        "desc": str(spec.get("desc", ""))[:400], "code": code, "members": mem,
-                        "builds_on": {p: str(d).strip()[:600] for p, d in par.items() if isinstance(p, str)},
-                        **dfields[1]}
-        for n, nd in nodes.items():           # links only to kept nodes, each with what this node adds to its parent
-            links = {p: d for p, d in nd.pop("builds_on").items() if p in nodes and p != n}
-            for p, d in list(links.items()):
-                if len(d) < 10:
-                    dropped[f"{n}<-{p}"] = ["link without a derivation note (what this node adds to that parent)"]
-                    del links[p]
-            links = dict(list(links.items())[:1]) if ABLATION == "hard" else links
-            nd["parents"], nd["builds_on"] = list(links), links
-            nd["centre"] = [sum(g["vecs"][x][i] for x in nd["members"]) / len(nd["members"])
-                            for i in range(len(g["vecs"][c]))]
-        if REPR_D:
-            for n, nd in nodes.items():
-                for sl, sv in nd.get("slots", {}).items():
-                    dm = sv.get("default")
-                    if dm and (dm not in nodes or nodes[dm].get("role") != sv.get("role")):
-                        dropped[f"{n}.{sl}"] = [f"default {dm!r} is not a kept module of role {sv.get('role')}"]
-                        sv["default"] = None
-            configs = {}
-            for f in sorted((ws / "leaves").glob("*.json")) if (ws / "leaves").exists() else []:
-                x = tids.get(f.stem)
+        for attempt in (0, 1):     # a review whose output fails the checks gets one session to fix it (2026-11-28)
+            nodes, dropped = {}, {}
+            fns = {x: defined_functions(g["leaves"][x]["code"]) for x in g["order"]}
+            for f in sorted((ws / "nodes").glob("*.json")):
+                n = f.stem
+                why = []
                 try:
-                    cf = json.loads(f.read_text())
+                    spec = json.loads(f.read_text())
+                    code = (ws / "nodes" / f"{n}.py").read_text()
                 except Exception as e:
-                    dropped[f"leaf {f.stem}"] = [f"unreadable: {e!r}"[:120]]
+                    dropped[n] = [f"unreadable: {e!r}"[:120]]
                     continue
-                bad = config_problems(cf, nodes) if x else ["unknown game"]
-                if bad:
-                    dropped[f"leaf {f.stem}"] = bad
-                else:
+                if not NODE_ID.match(n):
+                    why.append("bad id")
+                why += node_problems(code)
+                mem = {}
+                for t, v in (spec.get("members") or {}).items():
+                    x = tids.get(t)
+                    v = v if isinstance(v, dict) else {}
+                    ev = v.get("evidence") if isinstance(v.get("evidence"), dict) else {}
+                    names = [q for q in (ev.get("functions") or []) if isinstance(q, str)]
+                    quotes = [q for q in (ev.get("excerpts") or []) if isinstance(q, str)]
+                    diff = str(v.get("differences", "")).strip()
+                    bad = evidence_problems(names, quotes, fns[x], g["leaves"][x]["code"]) if x else ["unknown game"]
+                    if bad:
+                        why.append(f"member {t}: " + "; ".join(bad))
+                    elif len(diff) < 10:
+                        why.append(f"member {t}: no `differences` (how its version differs from this node)")
+                    else:
+                        mem[x] = {"implements": str(v.get("implements", ""))[:300],
+                                  "evidence": {"functions": names, "excerpts": quotes}, "differences": diff[:600]}
+                        if REPR_D and isinstance(v.get("params"), dict):
+                            mem[x]["params"] = {str(k): q for k, q in v["params"].items()}
+                dfields = d_problems(spec, code) if REPR_D else ([], {})
+                why += dfields[0]
+                if len(mem) < 2:
+                    why.append(f"distilled from {len(mem)} task(s); shared code needs at least 2")
+                if len(str(spec.get("desc", "")).strip()) < 20:
+                    why.append("no description (a node is code plus a description)")
+                if why:
+                    dropped[n] = why
+                    continue
+                par = spec.get("parents") or {}
+                par = {q: "" for q in par} if isinstance(par, list) else par
+                nodes[n] = {"kind": spec.get("kind") if spec.get("kind") in ("module", "workflow") else "module",
+                            "desc": str(spec.get("desc", ""))[:400], "code": code, "members": mem,
+                            "builds_on": {p: str(d).strip()[:600] for p, d in par.items() if isinstance(p, str)},
+                            **dfields[1]}
+            for n, nd in nodes.items():           # links only to kept nodes, each with what this node adds to its parent
+                links = {p: d for p, d in nd.pop("builds_on").items() if p in nodes and p != n}
+                for p, d in list(links.items()):
+                    if len(d) < 10:
+                        dropped[f"{n}<-{p}"] = ["link without a derivation note (what this node adds to that parent)"]
+                        del links[p]
+                links = dict(list(links.items())[:1]) if ABLATION == "hard" else links
+                nd["parents"], nd["builds_on"] = list(links), links
+                nd["centre"] = [sum(g["vecs"][x][i] for x in nd["members"]) / len(nd["members"])
+                                for i in range(len(g["vecs"][c]))]
+            if REPR_D:
+                for n, nd in nodes.items():
+                    for sl, sv in nd.get("slots", {}).items():
+                        dm = sv.get("default")
+                        if dm and (dm not in nodes or nodes[dm].get("role") != sv.get("role")):
+                            dropped[f"{n}.{sl}"] = [f"default {dm!r} is not a kept module of role {sv.get('role')}"]
+                            sv["default"] = None
+                configs = {}
+                for f in sorted((ws / "leaves").glob("*.json")) if (ws / "leaves").exists() else []:
+                    x = tids.get(f.stem)
+                    try:
+                        cf = json.loads(f.read_text())
+                    except Exception as e:
+                        dropped[f"leaf {f.stem}"] = [f"unreadable: {e!r}"[:120]]
+                        continue
+                    if not x:
+                        dropped[f"leaf {f.stem}"] = ["unknown game"]
+                        continue
+                    cf, bad = repair_config(cf, nodes)
+                    if bad:
+                        dropped[f"leaf {f.stem} (parts)"] = bad
                     configs[x] = cf
+            if not (REPR_D and attempt == 0 and dropped):
+                break
+            (ws / "check_report.md").write_text(
+                "# What failed the checks\n\nEach item below was dropped. Fix the files named and keep everything "
+                "else as it is.\n\n" + "\n".join(f"- `{k}`: " + "; ".join(v) for k, v in dropped.items()) + "\n")
+            (ws / "TASK.md").write_text((ws / "TASK.md").read_text() + REVIEW_FIX_NOTE)
+            rec["first_attempt_dropped"] = dict(dropped)
+            rec["fix_rc"] = self.propose(ws, f"{tag}_fix")
         descs = [n for n in nodes if nodes[n]["desc"]]
         for n, dv in zip(descs, embed([nodes[n]["desc"] for n in descs]) if descs else []):
             nodes[n]["desc_vec"] = dv
@@ -1303,9 +1364,19 @@ Lay the shared code out as a few skeletons with slots that modules fill:
   same kind (a skeleton for a narrower family built on a broader skeleton, a module built on a more general
   module), with what it adds. The hierarchy has no fixed depth: make a level only where the games show one, and a
   node may specialize several parents.
+- Code rules: plain functions and dicts; no names that start with an underscore anywhere (so no classes with
+  `__init__` or other dunder methods), and only the imports a harness may use.
 - Write `leaves/taskN.json` for every game: `{"workflow": "<skeleton id or null>", "slots": {"<slot>": "<module id
   or own>"}, "params": {"<module id>": {"<name>": <value>}}, "own": "<what stays specific to this game>"}`: how that
   game's harness is put together from the shared parts, as far as it is.
+"""
+
+REVIEW_FIX_NOTE = """
+## Fix what failed the checks
+
+Your first pass is in this workspace. `check_report.md` lists what the checks dropped and why. Fix those files so
+they pass (for example: no names that start with an underscore, so no classes with `__init__`; a config names only
+kept nodes, or `own`), and leave the rest as it is.
 """
 
 HARD_NOTE = "\nEach node has at most one parent (a strict tree): the first one listed is kept.\n"

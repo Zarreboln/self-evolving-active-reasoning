@@ -152,3 +152,40 @@ def parse_file(path):
         return clean(json.loads(path.read_text()))
     except Exception:
         return {}
+
+
+def top_down(nodes, scores, tau=0.1):
+    """Weights passed down a hierarchy (HSML's per-level softmax): the roots share weight 1 by a softmax of their
+    scores; each node passes its weight to its children by a softmax of the children's scores; a node with several
+    parents sums what it gets. And the backed-off choice: from the best root, go down to the best child only while
+    that child matches better than its parent; stop where none does.
+    nodes: {id: [parent ids within this hierarchy]}; scores: {id: match}. Returns (weights, chosen path)."""
+    kids = {n: [] for n in nodes}
+    for n, ps in nodes.items():
+        for p in ps:
+            if p in kids:
+                kids[p].append(n)
+    roots = [n for n, ps in nodes.items() if not [p for p in ps if p in nodes]]
+    w = {n: 0.0 for n in nodes}
+    frontier = soft({n: scores.get(n, 0.0) for n in roots}, tau)
+    for _ in range(len(nodes) + 1):
+        nxt = {}
+        for n, x in frontier.items():
+            w[n] += x
+            if kids[n]:
+                for ch, cx in soft({k: scores.get(k, 0.0) for k in kids[n]}, tau).items():
+                    nxt[ch] = nxt.get(ch, 0.0) + x * cx
+        frontier = nxt
+        if not frontier:
+            break
+    path = []
+    if roots:
+        cur = max(roots, key=lambda n: scores.get(n, 0.0))
+        path.append(cur)
+        while kids[cur]:
+            best = max(kids[cur], key=lambda k: scores.get(k, 0.0))
+            if scores.get(best, 0.0) <= scores.get(cur, 0.0):
+                break
+            cur = best
+            path.append(cur)
+    return w, path

@@ -44,8 +44,10 @@ def alive(owner: str) -> bool:
             return False
     r = subprocess.run(["squeue", "-h", "-j", owner, "-t", "RUNNING,COMPLETING"], capture_output=True, text=True)
     # a preempted owner waits in the queue (requeued, same id): not alive, so another worker takes over
-    if r.returncode != 0:          # slurm controller unreachable: assume alive rather than steal the request
-        return True
+    if r.returncode != 0:
+        if "invalid job id" in (r.stderr or "").lower():
+            return False           # the job has left slurm's records: long gone (2026-11-28)
+        return True                # slurm controller unreachable: assume alive rather than steal the request
     return bool(r.stdout.strip())
 
 

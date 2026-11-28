@@ -25,6 +25,8 @@ import statistics
 import sys
 from pathlib import Path
 
+from mb.evolve import structure as T
+
 
 def dot(a, b):
     return sum(x * y for x, y in zip(a, b))
@@ -133,6 +135,23 @@ def rank_A(g, nodes, t, tau):
     return out
 
 
+def rank_struct(g, nodes, t):
+    """Soft structure (the retrieval of --struct-retrieve): skeletons on the problem and interface dimensions,
+    modules on interface and needs, weighted by how much the task needs the module's role."""
+    st = {x: v for x, v in g.get("structures", {}).items() if x != t}
+    me = g["structures"][t]
+    out = {}
+    for n, nd in nodes.items():
+        ns = T.node_structure(nd, st)
+        if nd.get("kind") == "workflow":
+            out[n] = T.match(me, ns, ("problem", "interface"))[0]
+        else:
+            sc = T.match(me, ns, ("interface", "needs"))[0]
+            rn = me.get("needed_roles", {}).get(nd.get("role")) if nd.get("role") else None
+            out[n] = sc * (0.5 + 0.5 * rn) if rn is not None else sc
+    return out
+
+
 def score(rank, true):
     order = sorted(rank, key=lambda n: -rank[n])
     k = max(len(true), 1)
@@ -150,6 +169,8 @@ def main():
         for x, m in nd.get("members", {}).items():
             weights[(n, x)] = edge_weight(nd.get("code", ""), g["leaves"][x]["code"], m)
     rows = {"popular": [], "desc": [], "B": [], "A": []}
+    if g.get("structures"):
+        rows["struct"] = []
     wf_hit = {m: [] for m in rows}
     rows_specific = {m: [] for m in rows}       # only nodes that fewer than half the other tasks share
     for t in g["order"]:
@@ -158,6 +179,7 @@ def main():
             continue
         nodes = held_out_graph(g, t)
         ranks = {"popular": {n: len(nd["members"]) for n, nd in nodes.items()},
+                 **({"struct": rank_struct(g, nodes, t)} if "struct" in rows else {}),
                  "desc": rank_desc(g, nodes, t), "B": rank_B(g, nodes, t, weights), "A": rank_A(g, nodes, t, tau)}
         true &= set(nodes)
         wf_true = {n for n in true if nodes[n].get("kind") == "workflow"}

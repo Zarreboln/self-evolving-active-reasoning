@@ -49,6 +49,7 @@ from pathlib import Path
 from mb.evolve import remote, soft_tree2 as st2
 from mb.evolve.check import problems
 from mb.evolve.soft_tree import HERE, dist, embed, paired
+from mb.evolve import structure as T
 from mb.evolve.orchestrate import CHAT_CAP, MODEL
 
 RUNS = Path.home() / "evo_b_runs"
@@ -297,6 +298,8 @@ class Run(st2.Run):
         "flat": nothing. "retrieve": the similar tasks only (their full code), no nodes."""
         if ABLATION == "flat":
             return {}, {}, {}
+        if STRUCT_RETRIEVE and g.get("structures", {}).get(c):
+            return self.retrieve_by_structure(g, c)
         v = g["vecs"][c]
         tasks = sorted(((x, self.sim(v, g["vecs"][x])) for x in g["order"]), key=lambda t: -t[1])
         tasks = dict(tasks[:1 if ABLATION == "hard" else K_TASKS])
@@ -322,6 +325,52 @@ class Run(st2.Run):
                       "used_by": {self.tid(x): self.sim(v, g["vecs"][x]) for x in nd["members"]},
                       "games_using_it": len(nd["members"]),
                       "used_by_retrieved_workflows": sorted(m for m in workflows if n in up(m, set()))}
+        return tasks, workflows, modules
+
+    def retrieve_by_structure(self, g, c):
+        """Retrieval by soft structure (user, 2026-11-28): every task and node is described on the same dimensions
+        with soft values; a node's are the mean of its members'. Similar games and skeletons are matched on the
+        problem and interface dimensions; modules on the interface and needs dimensions, weighted by how much the new
+        game needs the module's role. Skeletons come with their ancestors (to fall back on a more general one), and a
+        slot's candidates may come from any skeleton. Each result carries its per-dimension match."""
+        st = g["structures"]
+        me = st[c]
+        others = [x for x in g["order"] if x != c and st.get(x)]
+        tsc = {x: self.task_similarity(g, c, x) for x in others}
+        tasks = dict(sorted(tsc.items(), key=lambda t: -t[1])[:1 if ABLATION == "hard" else K_TASKS])
+        if ABLATION == "retrieve":
+            return tasks, {}, {}
+        nstruct = {n: T.node_structure(nd, st) for n, nd in g["nodes"].items()}
+        wsc = {n: T.match(me, nstruct[n], ("problem", "interface")) for n, nd in g["nodes"].items()
+               if nd.get("kind") == "workflow" and nstruct[n]}
+        top = sorted(wsc, key=lambda n: -wsc[n][0])[:1 if ABLATION == "hard" else K_NODES]
+
+        def up(n, seen):
+            for p in g["nodes"].get(n, {}).get("parents", []):
+                if p in g["nodes"] and p not in seen:
+                    seen.add(p)
+                    up(p, seen)
+            return seen
+        keep = set(top) | {p for n in top for p in up(n, set()) if g["nodes"][p].get("kind") == "workflow"}
+        weight = T.soft({n: wsc[n][0] for n in wsc}, 0.1)
+        workflows = {n: round(wsc[n][0], 3) for n in sorted(keep, key=lambda n: -wsc.get(n, (0,))[0]) if n in wsc}
+        self._struct_info = {n: {"structure_match": round(wsc[n][0], 3), "by_dimension": wsc[n][1],
+                                 "weight": round(weight.get(n, 0.0), 3),
+                                 "ancestor_of_a_match": n not in top} for n in workflows}
+        on_path = set().union(*(up(n, set()) for n in workflows)) if workflows else set()
+        need = me.get("needed_roles", {})
+        modules = {}
+        for n, nd in g["nodes"].items():
+            if nd.get("kind") == "workflow" or (ABLATION == "hard" and n not in on_path) or not nstruct[n]:
+                continue
+            sc, det = T.match(me, nstruct[n], ("interface", "needs"))
+            role_need = need.get(nd.get("role"), 0.0) if nd.get("role") else None
+            score = sc * (0.5 + 0.5 * role_need) if role_need is not None else sc
+            modules[n] = {"structure_match": round(score, 3), "by_dimension": det,
+                          **({"role": nd.get("role"), "role_needed": round(role_need, 2)} if role_need is not None else {}),
+                          "used_by": {self.tid(x): tsc.get(x) for x in nd["members"]},
+                          "games_using_it": len(nd["members"]),
+                          "used_by_retrieved_workflows": sorted(m for m in workflows if n in up(m, set()))}
         return tasks, workflows, modules
 
     def capability_matches(self, g, c, nd):
@@ -377,6 +426,8 @@ class Run(st2.Run):
             g["vecs"][c], g["descriptions"][c] = vecs[0], desc
             if PROFILE:
                 g.setdefault("profiles", {})[c] = self.profile(f"{tp}_probe")
+            if STRUCT_RETRIEVE:
+                g.setdefault("structures", {})[c] = self.structure(f"{tp}_probe")
             g.setdefault("capabilities", {})[c] = [{"capability": t, "vec": v} for t, v in zip(caps, vecs[1:])]
             if c in IMPORT:                  # cold start (task k <= K): the task's own evolved harness, no transfer
                 g, meta = self.import_leaf(tp, c, g, meta)
@@ -503,7 +554,8 @@ class Run(st2.Run):
         if self.fresh(tag):
             ws = self.ws(tag)
             self.add_evidence(ws, c, probe_tag)
-            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c)) + (DESCRIBE_PROFILE if PROFILE else ""))
+            (ws / "TASK.md").write_text(TASK_DESCRIBE.format(tid=self.tid(c)) + (DESCRIBE_PROFILE if PROFILE else "")
+                                        + (T.DESCRIBE_STRUCTURE if STRUCT_RETRIEVE else ""))
         self.propose(ws, tag)
         try:
             desc = (ws / "description.txt").read_text().strip()[:600] or "(no description)"
@@ -514,6 +566,18 @@ class Run(st2.Run):
         except Exception:
             caps = []
         return desc, caps
+
+    def structure(self, probe_tag):
+        """The soft structure written with the description (STRUCT_RETRIEVE runs), {} if none."""
+        return T.parse_file(self.dir / "workspaces" / f"{probe_tag}_description" / "structure.json")
+
+    def task_similarity(self, g, c, x):
+        """How alike two tasks are: by soft structure (problem and interface dimensions) when both have one, else by
+        their descriptions."""
+        st = g.get("structures", {})
+        if STRUCT_RETRIEVE and st.get(c) and st.get(x):
+            return round(T.match(st[c], T.node_structure({"members": {x: 1}}, st), ("problem", "interface"))[0], 3)
+        return self.sim(g["vecs"][c], g["vecs"][x])
 
     def profile(self, probe_tag):
         """The game profile written with the description (PROFILE runs), {} if none: shown to compose and review,
@@ -538,6 +602,7 @@ class Run(st2.Run):
                     "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}
             if n in workflows:
                 info["similarity"] = workflows[n]
+                info.update(getattr(self, "_struct_info", {}).get(n, {}))
             else:
                 info.update(modules[n])
             (d / "nodes" / f"{n}.json").write_text(json.dumps(info, indent=1))
@@ -552,6 +617,7 @@ class Run(st2.Run):
         (d / "similar_games" / "about.json").write_text(json.dumps(
             {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
                            "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {}),
+                           **({"structure": g["structures"][x]} if g.get("structures", {}).get(x) else {}),
                            **({"config": g["configs"][x]} if g.get("configs", {}).get(x) else {})}
              for x, sv in tasks.items()}, indent=1))
         return shown
@@ -607,7 +673,10 @@ class Run(st2.Run):
             shown = [BASE_AGENT.read_text()]
             (ws / "base_agent.py").write_text(BASE_AGENT.read_text())
             shown += self.lay_out(ws, g, meta, tasks, workflows, modules)
-            (ws / "this_game.txt").write_text(g["descriptions"][c] + "\n\nRequired capabilities:\n" + "".join(
+            (ws / "this_game.txt").write_text(g["descriptions"][c]
+                + (("\n\nStructure (soft, the same dimensions as the nodes' and the similar games'):\n"
+                    + json.dumps(g["structures"][c], indent=1)) if g.get("structures", {}).get(c) else "")
+                + "\n\nRequired capabilities:\n" + "".join(
                 f"- {x['capability']}\n" for x in g.get("capabilities", {}).get(c, []))
                 + (("\nProfile:\n" + json.dumps(g["profiles"][c], indent=1) + "\n") if g.get("profiles", {}).get(c) else ""))
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
@@ -952,6 +1021,32 @@ class Run(st2.Run):
         self.record(tag, rec)
         return new_g, meta
 
+    def fill_structures(self, state):
+        """Add soft structures to a graph built without them (in place, the old graph.json kept as a backup): one
+        session per task, from that task's probe traces and its description."""
+        g = json.loads((state / "graph.json").read_text())
+        st = g.setdefault("structures", {})
+        for c in g["order"]:
+            if st.get(c):
+                continue
+            k = self.order.index(c) + 1
+            tag = f"t{k}_structure"
+            ws = self.dir / "workspaces" / tag
+            if self.fresh(tag):
+                ws = self.ws(tag)
+                self.add_evidence(ws, c, f"t{k}_probe")
+                (ws / "TASK.md").write_text(
+                    f"# Describe a game's structure\n\n`evidence/{self.tid(c)}/` has a few traces of a plain agent "
+                    f"playing a game (its instructions are the first message). Its description:\n\n"
+                    f"{g['descriptions'].get(c, '')}\n\n" + T.DESCRIBE_STRUCTURE + "\nNo game or benchmark names.\n")
+            self.propose(ws, tag)
+            st[c] = T.parse_file(ws / "structure.json")
+            print(f"{tag}: {self.tid(c)} {len(st[c])} dimensions", flush=True)
+        bak = state / "graph.json.before_structures"
+        if not bak.exists():
+            shutil.copy(state / "graph.json", bak)
+        (state / "graph.json").write_text(json.dumps(g))
+
     def final(self):
         full = []
         for v in self.versions():
@@ -1102,6 +1197,7 @@ IMPORT = {}            # cell -> (Meta-Harness run folder, chosen candidate): th
 COMPOSE_FREE = False
 STRUCT_HINT = False
 STOP_AT_FULL = False
+STRUCT_RETRIEVE = False # retrieval by soft structure instead of description wording (user, 2026-11-28)
 SUGGEST_PARAMS = False  # parameter suggestions at compose: off (user, 2026-11-28)
 REPR_D = False          # skeletons with slots, typed modules with parameters, per-game configs (user, 2026-11-28)
 PROFILE = False         # the describe step also writes a game profile (user, 2026-11-27)
@@ -1230,6 +1326,11 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--struct-retrieve", action="store_true",
+                    help="tasks described on fixed dimensions with soft values; retrieval by soft structure (2026-11-28)")
+    ap.add_argument("--fill-structures", default="",
+                    help="a state folder: write the soft structure of each of its tasks (one session each, from the "
+                         "task's probe traces) into its graph.json, then exit")
     ap.add_argument("--repr-d", action="store_true",
                     help="shared code as skeletons (workflows with slots) and typed modules with parameters, plus a "
                          "config per game saying how its harness is put together (user, 2026-11-28)")
@@ -1249,13 +1350,17 @@ def main():
                     help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
                          "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT, PROFILE, REPR_D
+    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT, PROFILE, REPR_D, STRUCT_RETRIEVE
     TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE = a.tie_cost, a.struct_hint, a.stop_at_full, a.compose_free
-    PROFILE, REPR_D = a.profile, a.repr_d
+    PROFILE, REPR_D, STRUCT_RETRIEVE = a.profile, a.repr_d, a.struct_retrieve
     IMPORT = {k: tuple(v) for k, v in json.loads(Path(a.import_from).read_text()).items()} if a.import_from else {}
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation
     run = Run(a)
+    if a.fill_structures:
+        STRUCT_RETRIEVE = True
+        run.fill_structures(Path(a.fill_structures).expanduser())
+        return
     run.final() if a.final else run.loop()
 
 

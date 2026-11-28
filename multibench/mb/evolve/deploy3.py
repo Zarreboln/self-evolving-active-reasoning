@@ -182,6 +182,7 @@ class Deploy(S.Run):
         if vs:
             g, meta = self.load(vs[-1])
             S.REPR_D = S.REPR_D or self.is_d(g)
+            S.STRUCT_RETRIEVE = S.STRUCT_RETRIEVE or bool(g.get("structures"))
             return g, meta
         if self.a.version == "D":
             g = {"nodes": {}, "leaves": {}, "vecs": {}, "descriptions": {}, "order": [], "affinity": {}}
@@ -191,6 +192,7 @@ class Deploy(S.Run):
             g, meta = json.loads((src / "graph.json").read_text()), json.loads((src / "meta.json").read_text())
             (self.dir / "private" / "graph_source.txt").write_text(str(src))
         S.REPR_D = S.REPR_D or self.is_d(g)   # a graph built with --repr-d: compose and review keep its layout
+        S.STRUCT_RETRIEVE = S.STRUCT_RETRIEVE or bool(g.get("structures"))
         self.save_state(g, meta)
         return g, meta
 
@@ -378,6 +380,8 @@ class Deploy(S.Run):
             g["vecs"][c], g["descriptions"][c] = vecs[0], desc
             if S.PROFILE:
                 g.setdefault("profiles", {})[c] = self.profile(f"{tp}_probe")
+            if S.STRUCT_RETRIEVE:
+                g.setdefault("structures", {})[c] = self.structure(f"{tp}_probe")
             g.setdefault("capabilities", {})[c] = [{"capability": t, "vec": v} for t, v in zip(caps, vecs[1:])]
         # 3 compose
         if not self.vdir(c, "v0").exists():
@@ -395,8 +399,8 @@ class Deploy(S.Run):
         if (GATE or SINGLE) and S.ABLATION not in ("flat",) and not self.vdir(c, "pick").exists():
             others = [x for x in g["order"] if x != c and x in g["vecs"]]
             if others:                      # single inheritance: the most similar earlier game's whole harness
-                near = max(others, key=lambda x: self.sim(g["vecs"][c], g["vecs"][x]))
-                code_p, _, doc_p = self.compose(f"{tp}_pick", c, g, meta, {near: self.sim(g["vecs"][c], g["vecs"][near])},
+                near = max(others, key=lambda x: self.task_similarity(g, c, x))
+                code_p, _, doc_p = self.compose(f"{tp}_pick", c, g, meta, {near: self.task_similarity(g, c, near)},
                                                 {}, {}, adapt_only=True)
                 self.v_add(c, "pick", None, code_p, doc_p,
                            f"The harness of the most similar earlier game ({self.tid(near)}), adapted only to run here.\n")

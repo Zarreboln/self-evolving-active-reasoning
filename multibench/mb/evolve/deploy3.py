@@ -156,6 +156,7 @@ Do not change any other file.
 """
 TIE_LINE = (" If several play equally well, pick the one that sends the model less text per episode (shorter prompts,"
             " fewer calls): it costs less to run.")
+SIMPLE = False          # compose, then each later group is preceded by one edit that is used at once
 SINGLE = False
 GATE = False            # group 1 is split between the base agent and the composed v0, judged like an edit
 
@@ -445,6 +446,8 @@ class Deploy(S.Run):
                     continue
                 if len(cands) == 2:
                     new = cands[1]
+            if SIMPLE and new is not None:   # simplest test (user, 2026-11-28): an edit is used at once, nothing compared
+                cur, new = new, None
             code_cur = (self.vdir(c, cur) / "harness" / "harness.py").read_text()
             if new is None:
                 ep = self.play(f"{gt}_{cur}", code_cur, grp)
@@ -553,6 +556,9 @@ def main():
     ap.add_argument("--compose-free", action="store_true", help="as soft_tree3 --compose-free")
     ap.add_argument("--profile", action="store_true", help="as soft_tree3 --profile (use with a graph built with it)")
     ap.add_argument("--tie-cost", action="store_true", help="the judge picks the cheaper version when both play equally well")
+    ap.add_argument("--simple", action="store_true",
+                    help="the simplest test: compose, then before each later group one edit that is used at once; no "
+                         "group is split and nothing is judged (user, 2026-11-28)")
     ap.add_argument("--single", action="store_true",
                     help="single inheritance: v0 is the most similar earlier game's whole harness, adapted only to run "
                          "(the comparison for soft inheritance, user 2026-11-28)")
@@ -566,8 +572,8 @@ def main():
     a.n = 20                                       # soft_tree3 helpers read it (noise estimates); unused here
     S.ABLATION = st2.ABLATION = a.ablation
     S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST, S.PROFILE = a.struct_hint, a.compose_free, a.tie_cost, a.profile
-    global GATE, SINGLE
-    GATE, SINGLE = a.gate, a.single
+    global GATE, SINGLE, SIMPLE
+    GATE, SINGLE, SIMPLE = a.gate, a.single, a.simple
     if not a.report:                    # hold (2026-11-28): tests wait until the retrieval to use is settled (user)
         flag = Path.home() / "evo_b_runs" / "TEST_READY"
         while not flag.exists():

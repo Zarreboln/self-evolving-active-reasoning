@@ -1163,6 +1163,10 @@ Lay the shared code out as a few skeletons with slots that modules fill:
 - Roles (what a part does in a harness; labels, not a required structure): instruction, memory, context, tools,
   controller, verification, workspace.
 - Modules are shared across skeletons where games of different families have the same part.
+- Slots say what a skeleton is assembled from; `parents` now say what a node specializes: a more general node of the
+  same kind (a skeleton for a narrower family built on a broader skeleton, a module built on a more general
+  module), with what it adds. The hierarchy has no fixed depth: make a level only where the games show one, and a
+  node may specialize several parents.
 - Write `leaves/taskN.json` for every game: `{"workflow": "<skeleton id or null>", "slots": {"<slot>": "<module id
   or own>"}, "params": {"<module id>": {"<name>": <value>}}, "own": "<what stays specific to this game>"}`: how that
   game's harness is put together from the shared parts, as far as it is.

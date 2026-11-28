@@ -136,6 +136,27 @@ TEST_JUDGE_TIE = TEST_JUDGE.replace(
     "Write `choice.json`",
     "If they play equally well, pick the one that sends the model less text per episode (shorter prompts, fewer\n"
     "calls): it costs less to run. Write `choice.json`")
+TEST_JUDGE_MANY = """# Which harness plays this game best?
+
+Several versions of a harness for the same text game (`X/`, `Y/`, `Z/`, ...) each just played different problems of
+the game (the problems alternate between them, and problems differ in difficulty). There are no scores.
+
+- `<label>/harness.py`, `<label>/harness.md`, `<label>/proposal.md` (if any): each version.
+- `episodes_<label>/<episode>/trace.md`: every message the model saw, every reply, every action and every
+  observation of each episode that version played.
+
+Decide which version plays this game best. Judge by what happened in the episodes: how each ended as the game
+reports it (won, lost, out of turns, an invalid move, a crash), and how close the play came. Do not judge by how
+much the code changed or how good its description sounds; use the code and descriptions only to understand the
+episodes.{tie} Write `choice.json` in the workspace root:
+
+    {{"better": "<label>", "why": "<the evidence, citing episodes>"}}
+
+Do not change any other file.
+"""
+TIE_LINE = (" If several play equally well, pick the one that sends the model less text per episode (shorter prompts,"
+            " fewer calls): it costs less to run.")
+SINGLE = False
 GATE = False            # group 1 is split between the base agent and the composed v0, judged like an edit
 
 
@@ -295,6 +316,30 @@ class Deploy(S.Run):
             pick, why = cur, f"no valid choice.json ({e!r}); the version in use stays"
         return pick, why, side
 
+    def judge_many(self, tag, c, eps):
+        """Group 1 (adaptive transfer): {version: episodes} -> the version that plays best, judged on traces."""
+        vids = sorted(eps)
+        random.Random(tag).shuffle(vids)                 # no position bias
+        side = {lab: vid for lab, vid in zip("XYZW", vids)}
+        ws = self.dir / "workspaces" / tag
+        if self.fresh(tag):
+            ws = self.ws(tag)
+            for lab, vid in side.items():
+                (ws / lab).mkdir()
+                for f in ("harness.md", "proposal.md"):
+                    shutil.copy(self.vdir(c, vid) / f, ws / lab / f)
+                shutil.copy(self.vdir(c, vid) / "harness" / "harness.py", ws / lab / "harness.py")
+                shutil.copytree(eps[vid], ws / f"episodes_{lab}")
+            (ws / "TASK.md").write_text(TEST_JUDGE_MANY.format(tie=TIE_LINE if S.TIE_COST else ""))
+        self.propose(ws, tag)
+        try:
+            ch = json.loads((ws / "choice.json").read_text())
+            pick = side[str(ch.get("better", "")).strip().upper()]
+            why = str(ch.get("why", ""))[:500]
+        except Exception as e:
+            pick, why = "v0", f"no valid choice.json ({e!r}); v0 stays"
+        return pick, why, side
+
     def history_md(self, x, meta):
         """At test time: before deployment the graph's own games keep their summary; a test game's versions come
         with the judge's choices instead of scores (none exist)."""
@@ -347,6 +392,19 @@ class Deploy(S.Run):
             self.v_traces(c, "base", self.dir / "exports" / f"{tp}_probe" / "episodes")
             self.v_add(c, "v0", None, code, doc, S.START_NOTE.format(how=how))
             self.record(f"{tp}_compose_used", {"outcome": f"used {sorted(used)}", "tasks": list(tasks)})
+        if (GATE or SINGLE) and S.ABLATION not in ("flat",) and not self.vdir(c, "pick").exists():
+            others = [x for x in g["order"] if x != c and x in g["vecs"]]
+            if others:                      # single inheritance: the most similar earlier game's whole harness
+                near = max(others, key=lambda x: self.sim(g["vecs"][c], g["vecs"][x]))
+                code_p, _, doc_p = self.compose(f"{tp}_pick", c, g, meta, {near: self.sim(g["vecs"][c], g["vecs"][near])},
+                                                {}, {}, adapt_only=True)
+                self.v_add(c, "pick", None, code_p, doc_p,
+                           f"The harness of the most similar earlier game ({self.tid(near)}), adapted only to run here.\n")
+                self.record(f"{tp}_pick", {"outcome": f"from {self.tid(near)}", "game": near})
+                if SINGLE:                  # this run starts from it instead of the composed harness
+                    shutil.rmtree(self.vdir(c, "v0"))
+                    self.v_add(c, "v0", None, code_p, doc_p,
+                               f"The harness of the most similar earlier game ({self.tid(near)}), adapted only to run here.\n")
         cur = (self.done(f"{tp}_current") or {}).get("current", "v0")
         # 4 groups
         for j, grp in enumerate(groups, 1):
@@ -358,9 +416,31 @@ class Deploy(S.Run):
             if j > 1 and self.a.version != "A":
                 new, how = self.test_edit(f"{gt}_edit", c, g, meta, cur)
                 self.record(f"{gt}_edit", {"outcome": f"{new or 'no new version'} ({how})", "parent": cur})
-            elif j == 1 and GATE and cur == "v0" and \
-                    (self.vdir(c, "v0") / "harness" / "harness.py").read_text() != S.BASE_AGENT.read_text():
-                new = "base"            # adaptive transfer (user, 2026-11-27): keep v0 only if it beats the base agent
+            elif j == 1 and GATE and cur == "v0":
+                # adaptive transfer (user, 2026-11-27/28): v0, the base agent and, unless this run starts from it,
+                # the most similar earlier game's whole harness play one group between them; the judge keeps one
+                cands, seen = [], set()
+                for vid in ["v0", "base"] + ([] if SINGLE else ["pick"]):
+                    hp = self.vdir(c, vid) / "harness" / "harness.py"
+                    if hp.exists() and hp.read_text() not in seen:
+                        cands.append(vid)
+                        seen.add(hp.read_text())
+                if len(cands) > 2:
+                    parts = {vid: grp[i::len(cands)] for i, vid in enumerate(cands)}
+                    with ThreadPoolExecutor(len(cands)) as ex:
+                        fs = {vid: ex.submit(self.play, f"{gt}_{vid}", (self.vdir(c, vid) / "harness" / "harness.py").read_text(), it)
+                              for vid, it in parts.items()}
+                        eps = {vid: f.result() for vid, f in fs.items()}
+                    for vid, ep in eps.items():
+                        self.v_traces(c, vid, ep)
+                    pick, why, side = self.judge_many(f"{gt}_judge", c, eps)
+                    rec = {"outcome": f"{' vs '.join(cands)}: {pick} kept", "current": pick, "why": why, "labels": side}
+                    self.record(f"{gt}_done", rec)
+                    self.record(f"{tp}_current", {"outcome": pick, "current": pick})
+                    cur = pick
+                    continue
+                if len(cands) == 2:
+                    new = cands[1]
             code_cur = (self.vdir(c, cur) / "harness" / "harness.py").read_text()
             if new is None:
                 ep = self.play(f"{gt}_{cur}", code_cur, grp)
@@ -469,6 +549,9 @@ def main():
     ap.add_argument("--compose-free", action="store_true", help="as soft_tree3 --compose-free")
     ap.add_argument("--profile", action="store_true", help="as soft_tree3 --profile (use with a graph built with it)")
     ap.add_argument("--tie-cost", action="store_true", help="the judge picks the cheaper version when both play equally well")
+    ap.add_argument("--single", action="store_true",
+                    help="single inheritance: v0 is the most similar earlier game's whole harness, adapted only to run "
+                         "(the comparison for soft inheritance, user 2026-11-28)")
     ap.add_argument("--gate", action="store_true",
                     help="group 1 is split between the base agent and the composed v0 and judged: the composed "
                          "harness is used only if it plays better (adaptive transfer, user 2026-11-27)")
@@ -479,8 +562,8 @@ def main():
     a.n = 20                                       # soft_tree3 helpers read it (noise estimates); unused here
     S.ABLATION = st2.ABLATION = a.ablation
     S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST, S.PROFILE = a.struct_hint, a.compose_free, a.tie_cost, a.profile
-    global GATE
-    GATE = a.gate
+    global GATE, SINGLE
+    GATE, SINGLE = a.gate, a.single
     d = Deploy(a)
     d.report() if a.report else d.loop()
 

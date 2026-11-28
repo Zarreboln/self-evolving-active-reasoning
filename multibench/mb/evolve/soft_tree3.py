@@ -573,7 +573,33 @@ class Run(st2.Run):
             base.write_text(have + "\n" + "\n".join(add))
         return True
 
-    def compose(self, tag, c, g, meta, tasks, workflows, modules):
+    def suggest_params(self, g, c, modules):
+        """Soft inheritance of parameters (user, 2026-11-28): for each retrieved module, the values its member games
+        use, averaged with their similarity to the new game as weights (numbers: weighted mean; others: weighted
+        vote). A suggestion only: the composer may ignore it."""
+        v, out = g["vecs"][c], {}
+        for n in modules:
+            nd = g["nodes"].get(n, {})
+            spec = nd.get("params") or {}
+            for p in spec:
+                vals = [(max(self.sim(v, g["vecs"][x]), 0.0), m["params"][p]) for x, m in nd.get("members", {}).items()
+                        if x in g["vecs"] and p in (m.get("params") or {})]
+                if not vals or sum(w for w, _ in vals) <= 0:
+                    continue
+                tot = sum(w for w, _ in vals)
+                if all(isinstance(q, (int, float)) and not isinstance(q, bool) for _, q in vals):
+                    val = sum(w * q for w, q in vals) / tot
+                    val = round(val) if all(isinstance(q, int) for _, q in vals) else round(val, 3)
+                else:
+                    votes = {}
+                    for w, q in vals:
+                        votes[json.dumps(q)] = votes.get(json.dumps(q), 0) + w
+                    val = json.loads(max(votes, key=votes.get))
+                out.setdefault(n, {})[p] = {"suggested": val, "from": {self.tid(x): m["params"][p]
+                                            for x, m in nd["members"].items() if p in (m.get("params") or {})}}
+        return out
+
+    def compose(self, tag, c, g, meta, tasks, workflows, modules, adapt_only=False):
         ws = self.dir / "workspaces" / tag
         slug = c.replace(":", "_")
         if self.fresh(tag):
@@ -587,11 +613,18 @@ class Run(st2.Run):
             self.add_evidence(ws, c, tag.replace("_compose", "_probe"))
             (ws / "harness.py").write_text(BASE_AGENT.read_text())
             task = TASK_COMPOSE
-            if COMPOSE_FREE:
-                assert COMPOSE_AS_REFERENCE[0] in task
-                task = task.replace(*COMPOSE_AS_REFERENCE)
-            (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_D_NOTE if REPR_D else "")
-                                        + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
+            if adapt_only:                  # single inheritance: one earlier game's harness, adapted to run here
+                (ws / "TASK.md").write_text(task.format(tid=self.tid(c)))
+            else:
+                if COMPOSE_FREE:
+                    assert COMPOSE_AS_REFERENCE[0] in task
+                    task = task.replace(*COMPOSE_AS_REFERENCE)
+                sp = self.suggest_params(g, c, modules) if REPR_D and modules else {}
+                if sp:
+                    (ws / "nodes" / "suggested_params.json").write_text(json.dumps(sp, indent=1))
+                (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_D_NOTE if REPR_D else "")
+                                            + (SUGGEST_NOTE if sp else "")
+                                            + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
             # the leak check counts only what was written after the model saw this game
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
@@ -1014,6 +1047,12 @@ in each slot, which parameter values, and what stays specific to that game. Wher
 from it: choose a module for each slot and set its parameters. Also write `config.json` in the same form:
 {"workflow": "<id or null>", "slots": {"<slot>": "<module id or own>"}, "params": {"<module id>": {...}},
  "own": "<what is specific to this game>"}.
+"""
+
+SUGGEST_NOTE = """
+`nodes/suggested_params.json` suggests a starting value for each parameter of the retrieved modules: the values
+their member games use, weighted by how similar each of those games is to this one. Use it where the parameter
+means the same here; ignore it where it does not.
 """
 
 COMPOSE_STRUCTURE_NOTE = """

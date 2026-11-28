@@ -132,6 +132,11 @@ episodes. Write `choice.json` in the workspace root:
 
 Do not change any other file.
 """
+TEST_JUDGE_TIE = TEST_JUDGE.replace(
+    "Write `choice.json`",
+    "If they play equally well, pick the one that sends the model less text per episode (shorter prompts, fewer\n"
+    "calls): it costs less to run. Write `choice.json`")
+GATE = False            # group 1 is split between the base agent and the composed v0, judged like an edit
 
 
 class Deploy(S.Run):
@@ -273,7 +278,7 @@ class Deploy(S.Run):
                     shutil.copy(self.vdir(c, vid) / f, ws / lab / f)
                 shutil.copy(self.vdir(c, vid) / "harness" / "harness.py", ws / lab / "harness.py")
                 shutil.copytree(eps[vid], ws / f"episodes_{lab}")
-            (ws / "TASK.md").write_text(TEST_JUDGE)
+            (ws / "TASK.md").write_text(TEST_JUDGE_TIE if S.TIE_COST else TEST_JUDGE)
         self.propose(ws, tag)
         try:
             ch = json.loads((ws / "choice.json").read_text())
@@ -344,6 +349,9 @@ class Deploy(S.Run):
             if j > 1 and self.a.version != "A":
                 new, how = self.test_edit(f"{gt}_edit", c, g, meta, cur)
                 self.record(f"{gt}_edit", {"outcome": f"{new or 'no new version'} ({how})", "parent": cur})
+            elif j == 1 and GATE and cur == "v0" and \
+                    (self.vdir(c, "v0") / "harness" / "harness.py").read_text() != S.BASE_AGENT.read_text():
+                new = "base"            # adaptive transfer (user, 2026-11-27): keep v0 only if it beats the base agent
             code_cur = (self.vdir(c, cur) / "harness" / "harness.py").read_text()
             if new is None:
                 ep = self.play(f"{gt}_{cur}", code_cur, grp)
@@ -449,13 +457,20 @@ def main():
     ap.add_argument("--tasks", default="", help="comma-separated test tasks (default: all, in the shared order)")
     ap.add_argument("--limit", type=int, default=0, help="a smoke test: only the first problems of each task")
     ap.add_argument("--report", action="store_true")
+    ap.add_argument("--compose-free", action="store_true", help="as soft_tree3 --compose-free")
+    ap.add_argument("--tie-cost", action="store_true", help="the judge picks the cheaper version when both play equally well")
+    ap.add_argument("--gate", action="store_true",
+                    help="group 1 is split between the base agent and the composed v0 and judged: the composed "
+                         "harness is used only if it plays better (adaptive transfer, user 2026-11-27)")
     ap.add_argument("--struct-hint", action="store_true",
                     help="test-time edits get the same checklist of harness parts as the dev edits of a "
                          "--struct-hint run (what was visible in dev is visible at test time)")
     a = ap.parse_args()
     a.n = 20                                       # soft_tree3 helpers read it (noise estimates); unused here
     S.ABLATION = st2.ABLATION = a.ablation
-    S.STRUCT_HINT = a.struct_hint
+    S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST = a.struct_hint, a.compose_free, a.tie_cost
+    global GATE
+    GATE = a.gate
     d = Deploy(a)
     d.report() if a.report else d.loop()
 

@@ -564,6 +564,10 @@ def main():
     S.STRUCT_HINT, S.COMPOSE_FREE, S.TIE_COST, S.PROFILE = a.struct_hint, a.compose_free, a.tie_cost, a.profile
     global GATE, SINGLE
     GATE, SINGLE = a.gate, a.single
+    if not a.report:                    # hold (2026-11-28): tests wait until the retrieval to use is settled (user)
+        flag = Path.home() / "evo_b_runs" / "TEST_READY"
+        while not flag.exists():
+            time.sleep(60)
     d = Deploy(a)
     d.report() if a.report else d.loop()
 

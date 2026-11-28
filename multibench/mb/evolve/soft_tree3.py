@@ -550,7 +550,8 @@ class Run(st2.Run):
             (ws / "TASK.md").write_text(
                 (HERE / "ws_template" / "TASK_template.md").read_text().format(
                     model=MODEL, parent=parent, n=self.a.n, noise=noise, chat_cap=CHAT_CAP)
-                + EDIT_NOTE.format(tid=self.tid(c)) + (SHARED_NOTE if shared else ""))
+                + (EDIT_NOTE_TIE if TIE_COST else EDIT_NOTE).format(tid=self.tid(c))
+                + (SHARED_NOTE if shared else ""))
         t0 = time.time()
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "edit", "candidate": cid, "parent": parent, "proposer_rc": rc,
@@ -584,7 +585,11 @@ class Run(st2.Run):
         self.arc_add(c, cid, parent, new_code, proposal, export_tag=tag)
         w, l = paired(new[c]["per_episode"], meta["per_episode"][c])
         rec["tests"] = {"wins": w, "losses": l}
-        if new[c]["mean_score"] > meta["scores"][c]:
+        nt, ot = token_costs(new[c]["per_episode"], meta["per_episode"][c])
+        rec["tokens"] = {"new": nt, "parent": ot}
+        tie_cheaper = (TIE_COST and new[c]["mean_score"] == meta["scores"][c]
+                       and nt is not None and ot is not None and nt < ot)
+        if new[c]["mean_score"] > meta["scores"][c] or tie_cheaper:
             g = json.loads(json.dumps(g))
             g["leaves"][c]["code"] = new_code
             g["leaves"][c]["doc"] = new_doc or g["leaves"][c].get("doc", "")
@@ -592,7 +597,8 @@ class Run(st2.Run):
                 new[c]["mean_score"], new[c]["per_episode"], tag
             meta["leaf_cand"][c] = cid
             self.save_state(g, meta)
-            rec["outcome"] = f"kept ({c} {new[c]['mean_score']})"
+            rec["outcome"] = (f"kept ({c} {new[c]['mean_score']}, tie, tokens/episode {nt:.0f} < {ot:.0f})"
+                              if tie_cheaper else f"kept ({c} {new[c]['mean_score']})")
         else:
             rec["outcome"] = f"rejected ({new[c]['mean_score']} <= {meta['scores'][c]})"
         self.record(tag, rec)
@@ -839,6 +845,27 @@ EDIT_NOTE = """
   `python replay_test.py harness/harness.py` must pass, as well as `check_harness.py` and `mock_env.py`.
 - Your change is kept only if this game's mean score on the same problems rises above the parent's.
 """
+EDIT_NOTE_TIE = EDIT_NOTE.replace(
+    "rises above the parent's.\n",
+    "rises above the parent's, or equals it\n  with fewer model tokens per episode (input plus output, "
+    "`model_in_tokens` + `model_out_tokens` in `scores.json`).\n")
+TIE_COST = False
+
+
+def mean_tokens(per_episode, with_input=True):
+    """Mean model tokens per episode (input + output, or output only), or None if any episode lacks them."""
+    keys = ("model_in_tokens", "model_out_tokens") if with_input else ("model_out_tokens",)
+    t = [[e.get(k) for k in keys] for e in per_episode.values()]
+    if not t or any(x is None for row in t for x in row):
+        return None
+    return sum(sum(row) for row in t) / len(t)
+
+
+def token_costs(new, old):
+    """(new, parent) mean tokens per episode on the same footing: input + output when both records have
+    input counts (exports from 2026-11-27 on), else output only."""
+    both = mean_tokens(new) is not None and mean_tokens(old) is not None
+    return mean_tokens(new, both), mean_tokens(old, both)
 
 TASK_DOCUMENT = """# Describe a harness
 
@@ -918,7 +945,12 @@ def main():
     ap.add_argument("--edits", type=int, default=5)
     ap.add_argument("--final", action="store_true")
     ap.add_argument("--ablation", default="", choices=["", "hard", "flat", "retrieve"])
+    ap.add_argument("--tie-cost", action="store_true",
+                    help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
+                         "episode (user, 2026-11-27); off for the runs started before")
     a = ap.parse_args()
+    global TIE_COST
+    TIE_COST = a.tie_cost
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation
     run = Run(a)

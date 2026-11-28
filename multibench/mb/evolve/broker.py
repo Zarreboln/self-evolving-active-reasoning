@@ -800,6 +800,7 @@ def export(a):
         res = {k: e.get(k) for k in ("instance_id", "score", "success", "steps", "end", "error", "seconds")}
         res["error"] = _clean(res["error"])
         res["model_calls"] = e.get("policy_tokens", {}).get("calls")
+        res["model_in_tokens"] = e.get("policy_tokens", {}).get("in_tok")
         res["model_out_tokens"] = e.get("policy_tokens", {}).get("out_tok")
         per[iid] = res
         d = os.path.join(a.dest, "episodes", _slug(iid))

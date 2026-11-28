@@ -159,7 +159,9 @@ class Deploy(S.Run):
     def start_graph(self):
         vs = self.versions()
         if vs:
-            return self.load(vs[-1])
+            g, meta = self.load(vs[-1])
+            S.REPR_D = S.REPR_D or self.is_d(g)
+            return g, meta
         if self.a.version == "D":
             g = {"nodes": {}, "leaves": {}, "vecs": {}, "descriptions": {}, "order": [], "affinity": {}}
             meta = {"scores": {}, "per_episode": {}, "last_export": {}, "start": {}, "used": {}, "leaf_cand": {}, "units": 0}
@@ -167,8 +169,13 @@ class Deploy(S.Run):
             src = Path(self.a.graph).expanduser()
             g, meta = json.loads((src / "graph.json").read_text()), json.loads((src / "meta.json").read_text())
             (self.dir / "private" / "graph_source.txt").write_text(str(src))
+        S.REPR_D = S.REPR_D or self.is_d(g)   # a graph built with --repr-d: compose and review keep its layout
         self.save_state(g, meta)
         return g, meta
+
+    @staticmethod
+    def is_d(g):
+        return bool(g.get("configs") or any(nd.get("slots") or nd.get("role") for nd in g.get("nodes", {}).values()))
 
     # ----- playing problems (scores stay on the cluster; we keep the visible traces) -----
     def play(self, tag, code, items):

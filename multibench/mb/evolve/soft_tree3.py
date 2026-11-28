@@ -85,6 +85,57 @@ def evidence_problems(names, quotes, defined, code):
     return out
 
 
+def d_problems(spec, code):
+    """Checks of the D fields of one node; returns (problems, fields to store)."""
+    why, out = [], {}
+    defined = defined_functions(code)
+    if spec.get("kind") == "workflow":
+        sl = spec.get("slots")
+        if not isinstance(sl, dict) or not sl:
+            why.append("a skeleton needs `slots`")
+        else:
+            out["slots"] = {}
+            for k, v in sl.items():
+                v = v if isinstance(v, dict) else {}
+                if v.get("role") not in ROLES:
+                    why.append(f"slot {k}: role must be one of {', '.join(ROLES)}")
+                out["slots"][str(k)] = {"role": v.get("role"), "default": v.get("default") or None,
+                                        "what": str(v.get("what", ""))[:200]}
+    else:
+        if spec.get("role") not in ROLES:
+            why.append(f"`role` must be one of {', '.join(ROLES)}")
+        if spec.get("entry") not in defined:
+            why.append("`entry` must name a function the node defines")
+        pr = spec.get("params", {})
+        if not isinstance(pr, dict):
+            why.append("`params` must be an object")
+            pr = {}
+        for k, v in pr.items():
+            if not isinstance(v, dict) or "type" not in v or "default" not in v:
+                why.append(f"param {k}: needs `type` and `default`")
+        out.update(role=spec.get("role"), entry=spec.get("entry"), params=pr)
+    return why, out
+
+
+def config_problems(cf, nodes):
+    """A game's config must point at kept nodes: a skeleton, modules per slot, parameters of those modules."""
+    why = []
+    if not isinstance(cf, dict):
+        return ["not an object"]
+    wf = cf.get("workflow")
+    if wf is not None and (wf not in nodes or nodes[wf].get("kind") != "workflow"):
+        why.append(f"workflow {wf!r} is not a kept skeleton")
+    for sl, m in (cf.get("slots") or {}).items():
+        if m != "own" and m not in nodes:
+            why.append(f"slot {sl}: {m!r} is not a kept module")
+    for m, pv in (cf.get("params") or {}).items():
+        if m not in nodes or not isinstance(pv, dict):
+            why.append(f"params for {m!r}: not a kept module")
+        elif set(pv) - set(nodes[m].get("params", {})):
+            why.append(f"params for {m}: unknown {sorted(set(pv) - set(nodes[m].get('params', {})))}")
+    return why
+
+
 def node_problems(code):
     """Static rules for a node: a module of functions (no run_episode needed)."""
     out = [p for p in problems(code) if "run_episode" not in p]
@@ -483,6 +534,7 @@ class Run(st2.Run):
             nd = g["nodes"][n]
             (d / "nodes" / f"{n}.py").write_text(nd["code"])
             info = {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("builds_on") or nd.get("parents", []),
+                    **{k: nd[k] for k in ("role", "entry", "params", "slots") if k in nd},
                     "members": {self.tid(x): v for x, v in nd.get("members", {}).items()}}
             if n in workflows:
                 info["similarity"] = workflows[n]
@@ -499,7 +551,8 @@ class Run(st2.Run):
             shown.append(g["leaves"][x]["code"])
         (d / "similar_games" / "about.json").write_text(json.dumps(
             {self.tid(x): {"problem": g["descriptions"].get(x, ""), "search_score": meta["scores"].get(x),
-                           "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {})}
+                           "similarity": sv, **({"profile": g["profiles"][x]} if g.get("profiles", {}).get(x) else {}),
+                           **({"config": g["configs"][x]} if g.get("configs", {}).get(x) else {})}
              for x, sv in tasks.items()}, indent=1))
         return shown
 
@@ -537,7 +590,8 @@ class Run(st2.Run):
             if COMPOSE_FREE:
                 assert COMPOSE_AS_REFERENCE[0] in task
                 task = task.replace(*COMPOSE_AS_REFERENCE)
-            (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
+            (ws / "TASK.md").write_text(task.format(tid=self.tid(c)) + (COMPOSE_D_NOTE if REPR_D else "")
+                                        + (COMPOSE_STRUCTURE_NOTE if STRUCT_HINT else ""))
             # the leak check counts only what was written after the model saw this game
             (self.dir / "private" / f"leak_baseline_{slug}.py").write_text("\n".join(shown))
         rc = self.propose(ws, tag)
@@ -741,12 +795,18 @@ class Run(st2.Run):
                 (ws / "nodes" / f"{n}.py").write_text(nd["code"])
                 (ws / "nodes" / f"{n}.json").write_text(json.dumps(
                     {"kind": nd.get("kind"), "desc": nd.get("desc"), "parents": nd.get("builds_on") or nd.get("parents", []),
+                     **{k: nd[k] for k in ("role", "entry", "params", "slots") if k in nd},
                      "members": {self.tid(x): v for x, v in nd.get("members", {}).items()},
                      "usage": meta.get("node_usage", {}).get(n, {"retrieved": 0, "chosen": 0, "start_vs_base_agent": []})},
                     indent=1))
             (ws / "graph.md").write_text(self.graph_md(g, meta))
             (ws / "base_agent.py").write_text(BASE_AGENT.read_text())
-            (ws / "TASK.md").write_text(TASK_REVIEW.format(tid=self.tid(c), hard=HARD_NOTE if ABLATION == "hard" else ""))
+            (ws / "TASK.md").write_text(TASK_REVIEW.format(tid=self.tid(c), hard=HARD_NOTE if ABLATION == "hard" else "")
+                                        + (REVIEW_D_NOTE if REPR_D else ""))
+            if REPR_D:
+                (ws / "leaves").mkdir()
+                for x, cf in g.get("configs", {}).items():
+                    (ws / "leaves" / f"{self.tid(x)}.json").write_text(json.dumps(cf, indent=1))
         rc = self.propose(ws, tag)
         rec = {"task": c, "kind": "review", "proposer_rc": rc}
         nodes, dropped = {}, {}
@@ -779,6 +839,10 @@ class Run(st2.Run):
                 else:
                     mem[x] = {"implements": str(v.get("implements", ""))[:300],
                               "evidence": {"functions": names, "excerpts": quotes}, "differences": diff[:600]}
+                    if REPR_D and isinstance(v.get("params"), dict):
+                        mem[x]["params"] = {str(k): q for k, q in v["params"].items()}
+            dfields = d_problems(spec, code) if REPR_D else ([], {})
+            why += dfields[0]
             if len(mem) < 2:
                 why.append(f"distilled from {len(mem)} task(s); shared code needs at least 2")
             if len(str(spec.get("desc", "")).strip()) < 20:
@@ -790,7 +854,8 @@ class Run(st2.Run):
             par = {q: "" for q in par} if isinstance(par, list) else par
             nodes[n] = {"kind": spec.get("kind") if spec.get("kind") in ("module", "workflow") else "module",
                         "desc": str(spec.get("desc", ""))[:400], "code": code, "members": mem,
-                        "builds_on": {p: str(d).strip()[:600] for p, d in par.items() if isinstance(p, str)}}
+                        "builds_on": {p: str(d).strip()[:600] for p, d in par.items() if isinstance(p, str)},
+                        **dfields[1]}
         for n, nd in nodes.items():           # links only to kept nodes, each with what this node adds to its parent
             links = {p: d for p, d in nd.pop("builds_on").items() if p in nodes and p != n}
             for p, d in list(links.items()):
@@ -801,11 +866,33 @@ class Run(st2.Run):
             nd["parents"], nd["builds_on"] = list(links), links
             nd["centre"] = [sum(g["vecs"][x][i] for x in nd["members"]) / len(nd["members"])
                             for i in range(len(g["vecs"][c]))]
+        if REPR_D:
+            for n, nd in nodes.items():
+                for sl, sv in nd.get("slots", {}).items():
+                    dm = sv.get("default")
+                    if dm and (dm not in nodes or nodes[dm].get("role") != sv.get("role")):
+                        dropped[f"{n}.{sl}"] = [f"default {dm!r} is not a kept module of role {sv.get('role')}"]
+                        sv["default"] = None
+            configs = {}
+            for f in sorted((ws / "leaves").glob("*.json")) if (ws / "leaves").exists() else []:
+                x = tids.get(f.stem)
+                try:
+                    cf = json.loads(f.read_text())
+                except Exception as e:
+                    dropped[f"leaf {f.stem}"] = [f"unreadable: {e!r}"[:120]]
+                    continue
+                bad = config_problems(cf, nodes) if x else ["unknown game"]
+                if bad:
+                    dropped[f"leaf {f.stem}"] = bad
+                else:
+                    configs[x] = cf
         descs = [n for n in nodes if nodes[n]["desc"]]
         for n, dv in zip(descs, embed([nodes[n]["desc"] for n in descs]) if descs else []):
             nodes[n]["desc_vec"] = dv
         new_g = json.loads(json.dumps(g))
         new_g["nodes"] = nodes
+        if REPR_D:
+            new_g["configs"] = configs
         rec.update(nodes={n: {"kind": nd["kind"], "members": [self.tid(x) for x in nd["members"]],
                               "lines": len(nd["code"].splitlines()), "parents": nd["parents"]} for n, nd in nodes.items()},
                    dropped=dropped, before=sorted(g["nodes"]))
@@ -917,6 +1004,18 @@ COMPOSE_AS_REFERENCE = (
     "`compose.json` `notes` which parts are new and why. The evidence traces show what the game is like; do not\n"
     "hard-code anything about specific instances. Improving the harness on its scores is the next step.")
 
+COMPOSE_D_NOTE = """
+## How the shared code is laid out
+
+`workflow` nodes are skeletons: a family's main loop with named `slots` (each with a role and a default module).
+`module` nodes fill slots; each has a `role`, an `entry` function and `params` with defaults; members list the
+values their games use. `similar_games/about.json` gives each similar game's `config`: which skeleton, which module
+in each slot, which parameter values, and what stays specific to that game. Where a skeleton fits this game, build
+from it: choose a module for each slot and set its parameters. Also write `config.json` in the same form:
+{"workflow": "<id or null>", "slots": {"<slot>": "<module id or own>"}, "params": {"<module id>": {...}},
+ "own": "<what is specific to this game>"}.
+"""
+
 COMPOSE_STRUCTURE_NOTE = """
 ## A checklist, not a required structure
 
@@ -964,6 +1063,7 @@ IMPORT = {}            # cell -> (Meta-Harness run folder, chosen candidate): th
 COMPOSE_FREE = False
 STRUCT_HINT = False
 STOP_AT_FULL = False
+REPR_D = False          # skeletons with slots, typed modules with parameters, per-game configs (user, 2026-11-28)
 PROFILE = False         # the describe step also writes a game profile (user, 2026-11-27)
 
 
@@ -1045,6 +1145,29 @@ this game's recorded episodes (`evidence/`) to the harness: run `python replay_t
 passes; `check_harness.py` checks the static rules. Keep `harness.md` accurate.
 """
 
+ROLES = ("instruction", "memory", "context", "tools", "controller", "verification", "workspace")
+# the component families of Learning Meta-Skills (Qian et al., 2026, Table 1), used here as role labels only
+
+REVIEW_D_NOTE = """
+## How shared code is laid out (skeletons, slots, modules, parameters)
+
+Lay the shared code out as a few skeletons with slots that modules fill:
+- A `workflow` node is a **skeleton**: the main loop of a family of games (who decides each step, in what order
+  the steps run), with named **slots** where modules plug in. Its code takes the slot implementations as arguments
+  (functions or objects), so a game picks the modules. Add to its json
+  `"slots": {"<slot name>": {"role": "<role>", "default": "<module id or null>", "what": "<what the slot does>"}}`.
+- A `module` node fills a slot. Add to its json `"role": "<role>"`, `"entry": "<its main function>"` and
+  `"params": {"<name>": {"type": "int | float | bool | str | choice", "default": <value>,
+  "range": [lo, hi] or "options": [...], "what": "<what it controls>"}}`, and to each member
+  `"params": {"<name>": <the value that game uses>}`.
+- Roles (what a part does in a harness; labels, not a required structure): instruction, memory, context, tools,
+  controller, verification, workspace.
+- Modules are shared across skeletons where games of different families have the same part.
+- Write `leaves/taskN.json` for every game: `{"workflow": "<skeleton id or null>", "slots": {"<slot>": "<module id
+  or own>"}, "params": {"<module id>": {"<name>": <value>}}, "own": "<what stays specific to this game>"}`: how that
+  game's harness is put together from the shared parts, as far as it is.
+"""
+
 HARD_NOTE = "\nEach node has at most one parent (a strict tree): the first one listed is kept.\n"
 
 
@@ -1063,6 +1186,9 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--repr-d", action="store_true",
+                    help="shared code as skeletons (workflows with slots) and typed modules with parameters, plus a "
+                         "config per game saying how its harness is put together (user, 2026-11-28)")
     ap.add_argument("--profile", action="store_true",
                     help="the describe step also writes a game profile (observation, action, episode length, feedback, "
                          "base agent failures), shown to compose and review, not used for retrieval")
@@ -1079,9 +1205,9 @@ def main():
                     help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
                          "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT, PROFILE
+    global TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE, IMPORT, PROFILE, REPR_D
     TIE_COST, STRUCT_HINT, STOP_AT_FULL, COMPOSE_FREE = a.tie_cost, a.struct_hint, a.stop_at_full, a.compose_free
-    PROFILE = a.profile
+    PROFILE, REPR_D = a.profile, a.repr_d
     IMPORT = {k: tuple(v) for k, v in json.loads(Path(a.import_from).read_text()).items()} if a.import_from else {}
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation

@@ -372,6 +372,12 @@ class Run(st2.Run):
             tag = f"{tp}_e{e}"
             if self.done(tag):
                 continue
+            if STOP_AT_FULL:
+                if meta["scores"][c] >= 1.0:
+                    self.record(tag, {"outcome": "skipped: full score reached"})
+                    continue
+                g, meta = self.edit(tag, c, g, meta)
+                continue
             last3 = [self.done(f"{tp}_e{j}") for j in range(e - 3, e) if j >= 1]
             if len(last3) == 3 and all(r and not str(r.get("outcome", "")).startswith("kept") for r in last3):
                 self.record(tag, {"outcome": "skipped: early stop (3 edits in a row not kept, as every method)"})
@@ -867,6 +873,7 @@ EDIT_NOTE_TIE = EDIT_NOTE.replace(
     "`model_in_tokens` + `model_out_tokens` in `scores.json`).\n")
 TIE_COST = False
 STRUCT_HINT = False
+STOP_AT_FULL = False
 
 
 def mean_tokens(per_episode, with_input=True):
@@ -965,12 +972,15 @@ def main():
     ap.add_argument("--tie-cost", action="store_true",
                     help="an edit that ties the parent's mean score is kept if it uses fewer model tokens per "
                          "episode (user, 2026-11-27); off for the runs started before")
+    ap.add_argument("--stop-at-full", action="store_true",
+                    help="a task's edits stop only when its search score reaches 1.0; no early stop after 3 edits "
+                         "not kept (user, 2026-11-27)")
     ap.add_argument("--struct-hint", action="store_true",
                     help="compose only: add a checklist of harness parts (instruction, memory, context, tools, "
                          "controller, verification, workspace) as prompts, not a required structure (user, 2026-11-27)")
     a = ap.parse_args()
-    global TIE_COST, STRUCT_HINT
-    TIE_COST, STRUCT_HINT = a.tie_cost, a.struct_hint
+    global TIE_COST, STRUCT_HINT, STOP_AT_FULL
+    TIE_COST, STRUCT_HINT, STOP_AT_FULL = a.tie_cost, a.struct_hint, a.stop_at_full
     ABLATION, EDITS = a.ablation, a.edits
     st2.ABLATION = a.ablation
     run = Run(a)
